@@ -26,6 +26,41 @@ function fmtENet(val, dec=2) { return (val>=0?'+':'')+val.toFixed(dec)+' €' }
 
 const cardS = { background:'var(--surface)', border:'0.5px solid var(--border)', borderRadius:'var(--radius-lg)' }
 
+
+// ── Mini Bar Chart for dashboard ──
+function MiniBarChart({firms, firmTotalSpent, firmTotalPayouts}) {
+  const ref = useRef(null)
+  const chart = useRef(null)
+
+  useEffect(()=>{
+    if(!ref.current||!firms.length) return
+    import('chart.js/auto').then(({default: Chart})=>{
+      if(chart.current){chart.current.destroy();chart.current=null}
+      const labels=firms.map(f=>f.name.length>8?f.name.slice(0,8)+'…':f.name)
+      const spent=firms.map(f=>parseFloat(firmTotalSpent(f).toFixed(2)))
+      const payouts=firms.map(f=>parseFloat(firmTotalPayouts(f).toFixed(2)))
+      chart.current=new Chart(ref.current,{
+        type:'bar',
+        data:{labels,datasets:[
+          {label:'Dépensé (€)',data:spent,backgroundColor:'#e8504a',borderRadius:4},
+          {label:'Payouts (€)',data:payouts,backgroundColor:'#1db87a',borderRadius:4}
+        ]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €`}}},
+          scales:{
+            x:{grid:{display:false},ticks:{color:'#565e78',font:{size:9}}},
+            y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#565e78',font:{size:9},callback:v=>v+'€'}}
+          }
+        }
+      })
+    })
+    return ()=>{if(chart.current){chart.current.destroy();chart.current=null}}
+  },[firms.map(f=>f.id).join(',')])
+
+  return <canvas ref={ref} />
+}
+
 function AnalyticsCharts({cLabels,cSpent,cPayout,cNet,yLabels,ySpent,yPayout,yNet,mLabels,mSpent,mPayout,mNet}) {
   const cRef=useRef(null), yRef=useRef(null), mRef=useRef(null)
   const charts=useRef({})
@@ -426,7 +461,11 @@ export default function Home() {
                 {!firms.length&&<div style={{gridColumn:'1/-1',textAlign:'center',color:'var(--text3)',padding:'60px'}}>Ajoutez votre première PropFirm pour commencer.</div>}
               </div>
 
-              <div>
+              {/* Content grid: Calendar + Right panel */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:'20px',alignItems:'start'}}>
+                {/* LEFT: Calendar */}
+                <div>
+ <div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}}>
                   <div style={{fontSize:'15px',fontWeight:'600'}}>Calendrier des transactions</div>
                   <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
@@ -483,6 +522,68 @@ export default function Home() {
                 </div>
               </div>
             </div>
+                </div>
+
+                {/* RIGHT: Stats + Bar chart + Firm list */}
+                <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+                  {/* Bar chart par firme */}
+                  <div style={{...S.card,padding:'18px'}}>
+                    <div style={{fontSize:'13px',fontWeight:'500',color:'var(--text2)',marginBottom:'10px'}}>Par firme (EUR)</div>
+                    <div style={{display:'flex',gap:'14px',marginBottom:'10px'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}><div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#e8504a'}}></div>Dépensé</div>
+                      <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}><div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a'}}></div>Payouts</div>
+                    </div>
+                    <div style={{position:'relative',height:'180px'}}><MiniBarChart firms={firms} firmTotalSpent={firmTotalSpent} firmTotalPayouts={firmTotalPayouts} /></div>
+                  </div>
+
+                  {/* Statistiques */}
+                  <div style={{...S.card,padding:'18px'}}>
+                    <div style={{fontSize:'13px',fontWeight:'500',color:'var(--text2)',marginBottom:'14px'}}>Statistiques</div>
+                    {(()=>{
+                      const paid=accts.filter(a=>a.status==='Financé').length
+                      const total=accts.length
+                      const allP=accts.reduce((s,a)=>s.concat(a.payouts||[]),[])
+                      const bestP=allP.reduce((max,p)=>{const v=toEUR(p.amount,accts.find(a=>(a.payouts||[]).find(x=>x.id===p.id))?.currency||'USD',rates);return v>max?v:max},0)
+                      const activeCount=accts.filter(a=>a.status==='Challenge'||a.status==='Financé').length
+                      const roi=totalSpentEUR>0?totalNet/totalSpentEUR*100:null
+                      return <>
+                        {[
+                          ['Taux de réussite', total>0?Math.round(paid/total*100)+'%':'—', paid/total>0.5?'var(--green)':'var(--text)'],
+                          ['Meilleur payout', bestP>0?fmtE(bestP):'—', 'var(--green)'],
+                          ['Coût moyen challenge', total>0?fmtE(totalSpentEUR/total):'—', 'var(--text)'],
+                          ['ROI global', roi!==null?(roi>=0?'+':'')+roi.toFixed(1)+'%':'—', roi>=0?'var(--green)':'var(--red)'],
+                          ['Comptes actifs', activeCount, 'var(--text)'],
+                        ].map(([label,value,color],i)=>(
+                          <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 0',borderBottom:'0.5px solid var(--border)'}}>
+                            <span style={{fontSize:'12px',color:'var(--text2)'}}>{label}</span>
+                            <span style={{fontSize:'12px',fontWeight:'600',color}}>{value}</span>
+                          </div>
+                        ))}
+                      </>
+                    })()}
+                  </div>
+
+                  {/* Par firme ranking */}
+                  <div style={{...S.card,padding:'18px'}}>
+                    <div style={{fontSize:'13px',fontWeight:'500',color:'var(--text2)',marginBottom:'14px'}}>Par firme</div>
+                    {firms.slice().sort((a,b)=>(firmTotalPayouts(b)-firmTotalSpent(b))-(firmTotalPayouts(a)-firmTotalSpent(a))).map(f=>{
+                      const net=firmTotalPayouts(f)-firmTotalSpent(f)
+                      return <div key={f.id} onClick={()=>setFirmDrawer(f.id)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 0',borderBottom:'0.5px solid var(--border)',cursor:'pointer'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                          {getFirmLogo(f.name,f.color,22)}
+                          <div>
+                            <div style={{fontSize:'12px',fontWeight:'600'}}>{f.name}</div>
+                            <div style={{fontSize:'10px',color:'var(--text3)'}}>{(f.accounts||[]).length} compte{(f.accounts||[]).length>1?'s':''}</div>
+                          </div>
+                        </div>
+                        <div style={{fontSize:'13px',fontWeight:'600',color:net>=0?'var(--green)':'var(--red)'}}>{net>=0?'+':''}{net.toFixed(0)} €</div>
+                      </div>
+                    })}
+                    {!firms.length&&<div style={{fontSize:'12px',color:'var(--text3)'}}>Aucune donnée</div>}
+                  </div>
+                </div>
+              </div>
+
           )}
 
           {page==='analytics'&&(
