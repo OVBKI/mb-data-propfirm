@@ -33,10 +33,9 @@ function AnalyticsCharts({cLabels,cSpent,cPayout,cNet,yLabels,ySpent,yPayout,yNe
   useEffect(()=>{
     let destroyed=false
     const destroy=(key)=>{ if(charts.current[key]){ charts.current[key].destroy(); delete charts.current[key] } }
-    import('chart.js').then((mod)=>{
+    import('chart.js/auto').then((mod)=>{
       if(destroyed) return
-      const { Chart, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip } = mod
-      Chart.register(CategoryScale,LinearScale,BarElement,LineElement,PointElement,Filler,Tooltip)
+      const { Chart } = mod
       const opts = {
         responsive:true, maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
@@ -196,7 +195,7 @@ export default function Home() {
     if(!pxLoginData.user||!pxLoginData.pass){setPxError('Renseignez vos identifiants');return}
     setPxConnecting(true);setPxError('')
     try{
-      const r=await fetch('/api/px-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userName:pxLoginData.user,password:pxLoginData.pass,clientId:PX_FIRMS[firm?.name]})})
+      const r=await fetch('/api/px-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userName:pxLoginData.user,apiKey:pxLoginData.pass,clientId:PX_FIRMS[firm?.name]})})
       const data=await r.json()
       if(!r.ok)throw new Error(data.error||'Erreur de connexion')
       setPxSessions(prev=>({...prev,[pxSelFirm]:{...data,connected:true}}))
@@ -584,9 +583,9 @@ export default function Home() {
                           {getFirmLogo(firm.name,firm.color,40)}
                           <div><div style={{fontSize:'18px',fontWeight:'700'}}>{firm.name}</div><div style={{fontSize:'12px',color:'var(--text3)'}}>Via ProjectX Gateway</div></div>
                         </div>
-                        <div style={{background:'rgba(45,111,255,0.08)',border:'0.5px solid var(--blue)',borderRadius:'var(--radius)',padding:'12px',marginBottom:'20px',fontSize:'12px',color:'var(--text2)'}}>ℹ️ Utilisez vos identifiants {firm.name} — même email/mot de passe que votre plateforme de trading.</div>
+                        <div style={{background:'rgba(45,111,255,0.08)',border:'0.5px solid var(--blue)',borderRadius:'var(--radius)',padding:'12px',marginBottom:'20px',fontSize:'12px',color:'var(--text2)'}}>ℹ️ Utilisez votre email + clé API (API Key) disponible dans les paramètres de votre compte {firm.name}.</div>
                         <div style={{marginBottom:'12px'}}><label style={S.label}>Email</label><input type="email" value={pxLoginData.user} onChange={e=>setPxLoginData(p=>({...p,user:e.target.value}))} placeholder="votre@email.com" style={S.input} /></div>
-                        <div style={{marginBottom:'20px'}}><label style={S.label}>Mot de passe</label><input type="password" value={pxLoginData.pass} onChange={e=>setPxLoginData(p=>({...p,pass:e.target.value}))} placeholder="••••••••" style={S.input} onKeyDown={e=>e.key==='Enter'&&doPxLogin()} /></div>
+                        <div style={{marginBottom:'20px'}}><label style={S.label}>Clé API (API Key)</label><input type="text" value={pxLoginData.pass} onChange={e=>setPxLoginData(p=>({...p,pass:e.target.value}))} placeholder="Votre clé API Topstep" style={S.input} onKeyDown={e=>e.key==='Enter'&&doPxLogin()} /></div>
                         {pxError&&<div style={{padding:'10px',background:'var(--red-bg)',border:'0.5px solid var(--red)',borderRadius:'var(--radius)',fontSize:'12px',color:'var(--red-text)',marginBottom:'14px'}}>{pxError}</div>}
                         <button onClick={doPxLogin} disabled={pxConnecting} style={{...S.btnPrimary,width:'100%',padding:'12px',fontSize:'14px'}}>{pxConnecting?'⏳ Connexion...':'🔌 Connecter mon compte'}</button>
                         <div style={{marginTop:'12px',fontSize:'11px',color:'var(--text3)',textAlign:'center'}}>Vos identifiants ne sont jamais stockés en base de données.</div>
