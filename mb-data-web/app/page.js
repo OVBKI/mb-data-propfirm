@@ -654,18 +654,7 @@ export default function Home() {
           )}
 
           {page==='calendar'&&(
-            <div>
-              {/* Language selector */}
-              <div style={{position:'sticky',top:'48px',zIndex:100,background:'var(--bg)',borderBottom:'0.5px solid var(--border)',padding:'8px 24px',display:'flex',alignItems:'center',gap:'8px'}}>
-                <span style={{fontSize:'12px',color:'var(--text3)',fontWeight:'600',textTransform:'uppercase',letterSpacing:'0.5px'}}>Langue :</span>
-                {[{code:'fr',label:'🇫🇷 Français'},{code:'en',label:'🇬🇧 English'},{code:'es',label:'🇪🇸 Español'}].map(l=>(
-                  <button key={l.code} onClick={()=>setCalLang(l.code)} style={{padding:'5px 14px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',background:calLang===l.code?'var(--blue)':'transparent',color:calLang===l.code?'#fff':'var(--text2)',fontFamily:'inherit',fontWeight:'500'}}>
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-              <CalendarPage lang={calLang} />
-            </div>
+            <CalendarPage lang={calLang} onLangChange={setCalLang} />
           )}
 
           {page==='sync'&&(
