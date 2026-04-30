@@ -24,8 +24,12 @@ create table if not exists accounts (
   activation_date date,
   status text default 'Challenge',
   notes text default '',
+  plan_size text default '50k',
   created_at timestamptz default now()
 );
+
+-- Si la table existe déjà sans la colonne, ajoute-la (à exécuter une seule fois)
+alter table accounts add column if not exists plan_size text default '50k';
 
 -- PAYOUTS table
 create table if not exists payouts (

@@ -1,6 +1,7 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { planSizeNum, maxDrawdown, isTrailingDD } from '../lib/constants'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -17,6 +18,152 @@ const labelS = { fontSize:'11px', fontWeight:'600', color:'var(--text3)', textTr
 const btnPrimary = { padding:'8px 18px', fontSize:'13px', fontWeight:'600', background:'var(--blue)', color:'#fff', border:'none', borderRadius:'var(--radius)', cursor:'pointer' }
 const btnGhost = { padding:'7px 14px', fontSize:'12px', background:'transparent', border:'0.5px solid var(--border2)', color:'var(--text2)', borderRadius:'var(--radius)', cursor:'pointer' }
 const chipBtn = (active)=>({ padding:'6px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:'0.5px solid var(--border2)', fontFamily:'inherit', fontWeight:'500', background:active?'var(--blue)':'transparent', color:active?'#fff':'var(--text2)' })
+
+// Carte avec courbe de balance pour un compte donné
+function EquityCurveCard({ account, entries, getFirmLogo }){
+  const ref = useRef(null)
+  const chart = useRef(null)
+
+  const planSize = planSizeNum(account.plan_size)
+  const ddMax = maxDrawdown(account.firmName, account.plan_size)
+  const trailing = isTrailingDD(account.firmName)
+  const ddMinBalance = ddMax!==null ? planSize - ddMax : null
+
+  // Trie les entries par date et construit la courbe cumulative
+  const data = useMemo(()=>{
+    const sorted = entries.slice().sort((a,b)=>a.date.localeCompare(b.date))
+    let cum = 0
+    const labels = []
+    const balances = []
+    // Point de départ : balance initial à la veille de la 1ère entry (ou aujourd'hui si vide)
+    if(sorted.length){
+      const startDate = sorted[0].date
+      labels.push(startDate)
+      balances.push(planSize) // jour 0
+    }
+    sorted.forEach(e=>{
+      cum += Number(e.pnl)||0
+      labels.push(e.date)
+      balances.push(+(planSize + cum).toFixed(2))
+    })
+    return { labels, balances, finalBalance: planSize + cum, totalPnl: cum }
+  },[entries, planSize])
+
+  useEffect(()=>{
+    if(!ref.current) return
+    if(!data.labels.length) return
+    let destroyed = false
+    import('chart.js/auto').then(({default: Chart})=>{
+      if(destroyed) return
+      if(chart.current){ chart.current.destroy(); chart.current = null }
+      const ddLine = ddMinBalance!==null ? data.labels.map(()=>ddMinBalance) : null
+      const datasets = [
+        {
+          label:'Balance', data:data.balances,
+          borderColor:'#1db87a', backgroundColor:'rgba(29,184,122,0.10)',
+          fill:true, tension:0.25, pointRadius:data.labels.length>30?0:3, borderWidth:2,
+        },
+      ]
+      if(ddLine){
+        datasets.push({
+          label:'DD max', data:ddLine,
+          borderColor:'#e8504a', backgroundColor:'transparent',
+          fill:false, tension:0, pointRadius:0, borderWidth:2, borderDash:[6,4],
+        })
+      }
+      // Calcule un range Y plus serré
+      const minVal = Math.min(...data.balances, ddMinBalance ?? Infinity) * 0.998
+      const maxVal = Math.max(...data.balances, planSize) * 1.002
+      chart.current = new Chart(ref.current, {
+        type:'line',
+        data:{ labels:data.labels, datasets },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          interaction:{mode:'index', intersect:false},
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              callbacks:{
+                label:(ctx)=>`${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('fr-FR',{maximumFractionDigits:0})}`
+              }
+            }
+          },
+          scales:{
+            x:{grid:{display:false},ticks:{color:'#565e78',font:{size:10},maxTicksLimit:8}},
+            y:{
+              grid:{color:'rgba(255,255,255,0.04)'},
+              ticks:{color:'#565e78',font:{size:10},callback:v=>'$'+v.toLocaleString('fr-FR',{maximumFractionDigits:0})},
+              suggestedMin:minVal,
+              suggestedMax:maxVal,
+            }
+          }
+        }
+      })
+    }).catch(e=>console.error('Chart.js:', e))
+    return ()=>{
+      destroyed = true
+      if(chart.current){ chart.current.destroy(); chart.current = null }
+    }
+  },[data.labels.join(','), data.balances.join(','), ddMinBalance, planSize])
+
+  const finalNet = data.totalPnl
+  const pctFromStart = planSize>0 ? (finalNet/planSize)*100 : 0
+
+  return (
+    <div style={{background:'var(--surface)', border:'0.5px solid var(--border)', borderRadius:'var(--radius-lg)', padding:'18px'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px',gap:'10px',flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+          {getFirmLogo ? getFirmLogo(account.firmName, account.firmColor, 28) : null}
+          <div>
+            <div style={{fontSize:'14px',fontWeight:'700'}}>{account.firmName}</div>
+            <div style={{fontSize:'11px',color:'var(--text3)'}}>
+              Plan {String(account.plan_size||'?').toUpperCase()} · Achat {account.buy_date}
+            </div>
+          </div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{fontSize:'18px',fontWeight:'700',color:finalNet>=0?'var(--green)':'var(--red)'}}>
+            ${data.finalBalance.toLocaleString('fr-FR',{maximumFractionDigits:0})}
+          </div>
+          <div style={{fontSize:'11px',color:finalNet>=0?'var(--green)':'var(--red)'}}>
+            {finalNet>=0?'+':''}{finalNet.toFixed(0)} $ ({pctFromStart>=0?'+':''}{pctFromStart.toFixed(2)}%)
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:'flex',gap:'14px',marginBottom:'10px',flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
+          <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a'}} />Balance
+        </div>
+        {ddMinBalance!==null && (
+          <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
+            <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#e8504a'}} />
+            DD max ({trailing?'trailing ':''}${ddMax.toLocaleString('fr-FR')}) → ${ddMinBalance.toLocaleString('fr-FR')}
+          </div>
+        )}
+        {ddMinBalance===null && (
+          <div style={{fontSize:'11px',color:'var(--text3)',fontStyle:'italic'}}>
+            ⓘ DD max non défini pour cette firme/plan
+          </div>
+        )}
+      </div>
+
+      {data.labels.length === 0 ? (
+        <div style={{padding:'40px',textAlign:'center',color:'var(--text3)',fontSize:'12px'}}>
+          Aucun trade pour ce compte — saisissez votre premier trade pour voir la courbe.
+        </div>
+      ) : (
+        <div style={{position:'relative',height:'200px'}}><canvas ref={ref} /></div>
+      )}
+
+      {trailing && ddMinBalance!==null && (
+        <div style={{marginTop:'10px',fontSize:'10px',color:'var(--amber-text)',padding:'6px 10px',background:'var(--amber-bg)',borderRadius:'6px'}}>
+          ⚠ {account.firmName} utilise un drawdown <strong>trailing</strong>. La ligne rouge ci-dessus représente le DD initial ; en réalité elle suit votre balance peak jusqu'au seuil profit.
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function JournalPage({ firms, user, getFirmLogo, showToast }){
   const [entries, setEntries] = useState([])
@@ -123,7 +270,16 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
         monthDays.add(d)
       }
     })
-    return { total, totalPnl, winners:winners.length, losers:losers.length, wr, avgWin, avgLoss, monthPnl, monthTrades, monthDays:monthDays.size }
+    // === Consistency (% du meilleur jour gagnant sur le total des jours gagnants) ===
+    const dayWinners = Object.values(dailyPnL).filter(v => v.pnl > 0)
+    const totalDayPositive = dayWinners.reduce((s,v)=>s+v.pnl, 0)
+    const bestDayPnl = dayWinners.reduce((max,v)=>v.pnl>max?v.pnl:max, 0)
+    const consistency = totalDayPositive > 0 ? (bestDayPnl/totalDayPositive)*100 : null
+    return {
+      total, totalPnl, winners:winners.length, losers:losers.length, wr,
+      avgWin, avgLoss, monthPnl, monthTrades, monthDays:monthDays.size,
+      consistency, bestDayPnl, totalDayPositive,
+    }
   },[filteredEntries, dailyPnL, calYear, calMonth])
 
   // Calendrier
@@ -319,15 +475,24 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
       ) : (
       <>
         {/* Stats */}
-        <div className="stats-5" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'20px'}}>
+        <div className="stats-5" style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'12px',marginBottom:'20px'}}>
           {[
             { l:'PnL filtré', v:fmtMoney(stats.totalPnl), c:stats.totalPnl>=0?'var(--green)':'var(--red)' },
             { l:`PnL ${monthLabel}`, v:fmtMoney(stats.monthPnl), c:stats.monthPnl>=0?'var(--green)':'var(--red)' },
             { l:'Win rate', v:stats.total?(stats.wr+'%'):'—', c:stats.wr>=50?'var(--green)':'var(--amber-text)' },
+            {
+              l:'Consistency',
+              v: stats.consistency!==null ? stats.consistency.toFixed(2)+'%' : '—',
+              c: stats.consistency===null ? 'var(--text3)'
+                : stats.consistency<30 ? 'var(--green)'
+                : stats.consistency<40 ? 'var(--amber-text)'
+                : 'var(--red)',
+              tip: stats.consistency!==null ? `Meilleur jour : ${fmtMoney(stats.bestDayPnl)} / Total jours gagnants : ${fmtMoney(stats.totalDayPositive)}` : 'Pas encore de jour gagnant'
+            },
             { l:'Trades', v:stats.total, c:'var(--text)' },
-            { l:'Jours tradés (mois)', v:stats.monthDays, c:'var(--text)' },
+            { l:'Jours tradés', v:stats.monthDays, c:'var(--text)', tip:`Sur ${monthLabel}` },
           ].map((k,i)=>(
-            <div key={i} style={{...card,padding:'16px'}}>
+            <div key={i} title={k.tip||''} style={{...card,padding:'16px'}}>
               <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>{k.l}</div>
               <div style={{fontSize:'20px',fontWeight:'600',color:k.c}}>{k.v}</div>
             </div>
@@ -506,6 +671,43 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
             </div>
           </div>
         )}
+
+        {/* === Courbes de balance par compte === */}
+        {(() => {
+          // Comptes à afficher : selon le scope
+          let acctsToShow = []
+          if(scope === 'all'){
+            // Tous les comptes ayant au moins une entrée OU étant Challenge/Financé (pour montrer un graphique vide)
+            acctsToShow = allAccounts.filter(a => a.status !== 'Échoué')
+          } else if(scope.includes(':')){
+            const [, acctId] = scope.split(':')
+            acctsToShow = allAccounts.filter(a => a.id === acctId)
+          } else {
+            acctsToShow = allAccounts.filter(a => a.firmId === scope && a.status !== 'Échoué')
+          }
+          if(!acctsToShow.length) return null
+
+          return (
+            <div style={{marginTop:'24px'}}>
+              <div style={{fontSize:'15px',fontWeight:'600',marginBottom:'12px',display:'flex',alignItems:'center',gap:'8px'}}>
+                📈 Courbes de balance ({acctsToShow.length})
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(420px,1fr))',gap:'16px'}}>
+                {acctsToShow.map(acc => {
+                  const accEntries = decoratedEntries.filter(e => e.account_id === acc.id)
+                  return (
+                    <EquityCurveCard
+                      key={acc.id}
+                      account={acc}
+                      entries={accEntries}
+                      getFirmLogo={getFirmLogo}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
       </>
       )}
 

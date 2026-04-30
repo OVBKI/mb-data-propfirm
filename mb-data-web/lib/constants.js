@@ -83,3 +83,40 @@ export const PX_FIRMS = {
   'TradeDay': 'tradeday',
   'Uprofit': 'uprofit',
 }
+
+// Plans génériques pour firmes non listées dans PROPFIRM_RULES
+export const GENERIC_PLANS = ['25k','50k','75k','100k','150k','250k','300k']
+
+// Convertit un plan ('50k', '100k', '25K') en nombre de dollars (50000, 100000, 25000)
+export function planSizeNum(plan){
+  if(!plan) return 50000
+  const m = String(plan).match(/(\d+)/)
+  return m ? parseInt(m[1],10)*1000 : 50000
+}
+
+// Retourne la liste des plans disponibles pour une firme (ou GENERIC_PLANS)
+export function plansForFirm(firmName){
+  return PROPFIRM_RULES[firmName]?.plans || GENERIC_PLANS
+}
+
+// Retourne le drawdown max (en $ numérique) pour une firme + plan
+// Cherche dans PROPFIRM_RULES la règle "Drawdown total max" ou "Drawdown trailing max"
+export function maxDrawdown(firmName, plan){
+  const rules = PROPFIRM_RULES[firmName]?.rules
+  if(!rules || !plan) return null
+  const ddKey = Object.keys(rules).find(k =>
+    /drawdown\s+(total|trailing)/i.test(k)
+  )
+  if(!ddKey) return null
+  const ddStr = rules[ddKey][plan]
+  if(!ddStr) return null
+  const m = String(ddStr).match(/[\d,]+/)
+  return m ? parseInt(m[0].replace(/,/g,''),10) : null
+}
+
+// Indique si la firme utilise un drawdown trailing (ex: Apex)
+export function isTrailingDD(firmName){
+  const rules = PROPFIRM_RULES[firmName]?.rules
+  if(!rules) return false
+  return Object.keys(rules).some(k => /drawdown\s+trailing/i.test(k))
+}
