@@ -1,120 +1,132 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
-
-// Détecte le PnL d'un trade quel que soit le format renvoyé par ProjectX
-function tPnl(t){ return Number(t.profit ?? t.pnl ?? t.realizedPnl ?? t.netPnl ?? 0) || 0 }
-// Détecte la date d'un trade (creationTimestamp, fillTimestamp, time...)
-function tDate(t){
-  const ts = t.creationTimestamp || t.fillTimestamp || t.closeTimestamp || t.time || t.date
-  if(!ts) return null
-  return String(ts).slice(0,10) // 'YYYY-MM-DD'
-}
-// Identifiant de compte ProjectX (peut être accountId, account, etc.)
-function tAccountId(t){ return t.accountId ?? t.account_id ?? t.account ?? null }
-function tAccountName(t){ return t.accountName ?? t.account_name ?? null }
 
 function fmtMoney(n, dec=2){
   const v = Number(n)||0
   return (v>=0?'+':'') + v.toFixed(dec) + ' $'
 }
+function todayISO(){ return new Date().toISOString().slice(0,10) }
 
-export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLORS }){
-  const [scope, setScope] = useState('all')      // 'all' | firmId | `${firmId}:${accountId}`
+const card = { background:'var(--surface)', border:'0.5px solid var(--border)', borderRadius:'var(--radius-lg)' }
+const inputS = { width:'100%', padding:'9px 11px', fontSize:'13px', border:'0.5px solid var(--border2)', borderRadius:'var(--radius)', background:'var(--surface2)', color:'var(--text)', outline:'none' }
+const labelS = { fontSize:'11px', fontWeight:'600', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.5px', display:'block', marginBottom:'5px' }
+const btnPrimary = { padding:'8px 18px', fontSize:'13px', fontWeight:'600', background:'var(--blue)', color:'#fff', border:'none', borderRadius:'var(--radius)', cursor:'pointer' }
+const btnGhost = { padding:'7px 14px', fontSize:'12px', background:'transparent', border:'0.5px solid var(--border2)', color:'var(--text2)', borderRadius:'var(--radius)', cursor:'pointer' }
+const chipBtn = (active)=>({ padding:'6px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:'0.5px solid var(--border2)', fontFamily:'inherit', fontWeight:'500', background:active?'var(--blue)':'transparent', color:active?'#fff':'var(--text2)' })
+
+export default function JournalPage({ firms, user, getFirmLogo, showToast }){
+  const [entries, setEntries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
   const [selDay, setSelDay] = useState(null)
 
-  // Construit la liste plate de tous les trades + identifiants
-  const allTrades = useMemo(()=>{
-    const out = []
-    Object.entries(pxSessions||{}).forEach(([firmId, sess])=>{
-      if(!sess?.connected) return
-      const firm = firms.find(f=>f.id===firmId)
-      const trades = sess.trades || []
-      trades.forEach(t=>{
-        out.push({
-          ...t,
-          _firmId: firmId,
-          _firmName: firm?.name || 'PropFirm',
-          _firmColor: firm?.color || '#2d6fff',
-          _date: tDate(t),
-          _pnl: tPnl(t),
-          _acctId: tAccountId(t),
-          _acctName: tAccountName(t),
-        })
-      })
-    })
-    return out.filter(t=>t._date) // dropper les trades sans date
-  },[firms, pxSessions])
+  // Modal d'ajout / édition
+  const [entryModal, setEntryModal] = useState(null) // null | { entry?, defaultDate? }
+  const [form, setForm] = useState({ accountId:'', date:todayISO(), pnl:'', instrument:'', side:'', notes:'' })
 
-  // Liste des comptes (selon trades) groupés par firme — pour le sélecteur
-  const accountsByFirm = useMemo(()=>{
-    const map = {}
-    allTrades.forEach(t=>{
-      if(!t._acctId) return
-      if(!map[t._firmId]) map[t._firmId] = { firmName: t._firmName, color: t._firmColor, accounts: new Map() }
-      if(!map[t._firmId].accounts.has(t._acctId)){
-        map[t._firmId].accounts.set(t._acctId, { id: t._acctId, name: t._acctName || `Compte ${String(t._acctId).slice(-4)}` })
+  // Tous les comptes plats
+  const allAccounts = useMemo(()=>{
+    return firms.flatMap(f => (f.accounts||[]).map(a => ({
+      ...a,
+      firmId: f.id,
+      firmName: f.name,
+      firmColor: f.color,
+    })))
+  },[firms])
+
+  async function loadEntries(){
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .select('*')
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
+    if(error){
+      console.error(error)
+      showToast?.('Erreur chargement journal')
+    } else {
+      setEntries(data || [])
+    }
+    setLoading(false)
+  }
+
+  useEffect(()=>{
+    if(user?.id) loadEntries()
+  },[user?.id])
+
+  // Décore les entries avec les infos firme/compte
+  const decoratedEntries = useMemo(()=>{
+    return entries.map(e=>{
+      const acc = allAccounts.find(a => a.id === e.account_id)
+      return {
+        ...e,
+        _firmId: acc?.firmId,
+        _firmName: acc?.firmName || 'Compte supprimé',
+        _firmColor: acc?.firmColor || '#565e78',
+        _accountLabel: acc ? `${acc.firmName} · ${acc.buy_date}` : 'Compte supprimé',
       }
     })
-    return map
-  },[allTrades])
+  },[entries, allAccounts])
 
-  // Filtre selon le scope choisi
-  const filteredTrades = useMemo(()=>{
-    if(scope === 'all') return allTrades
+  // Filtre par scope
+  const filteredEntries = useMemo(()=>{
+    if(scope === 'all') return decoratedEntries
     if(scope.includes(':')){
-      const [firmId, acctId] = scope.split(':')
-      return allTrades.filter(t=>t._firmId===firmId && String(t._acctId)===acctId)
+      const [, acctId] = scope.split(':')
+      return decoratedEntries.filter(e => e.account_id === acctId)
     }
-    return allTrades.filter(t=>t._firmId===scope)
-  },[allTrades, scope])
+    return decoratedEntries.filter(e => e._firmId === scope)
+  },[decoratedEntries, scope])
 
-  // PnL agrégé par jour (YYYY-MM-DD → { pnl, count, win, loss })
+  // PnL agrégé par jour
   const dailyPnL = useMemo(()=>{
     const map = {}
-    filteredTrades.forEach(t=>{
-      if(!map[t._date]) map[t._date] = { pnl:0, count:0, win:0, loss:0 }
-      map[t._date].pnl += t._pnl
-      map[t._date].count += 1
-      if(t._pnl>0) map[t._date].win += 1
-      else if(t._pnl<0) map[t._date].loss += 1
+    filteredEntries.forEach(e=>{
+      if(!map[e.date]) map[e.date] = { pnl:0, count:0, win:0, loss:0, entries:[] }
+      const v = Number(e.pnl)||0
+      map[e.date].pnl += v
+      map[e.date].count += 1
+      if(v>0) map[e.date].win += 1
+      else if(v<0) map[e.date].loss += 1
+      map[e.date].entries.push(e)
     })
     return map
-  },[filteredTrades])
+  },[filteredEntries])
 
-  // Stats globales (mois courant + total filtré)
+  // Stats
   const stats = useMemo(()=>{
-    const total = filteredTrades.length
-    const totalPnl = filteredTrades.reduce((s,t)=>s+t._pnl,0)
-    const winners = filteredTrades.filter(t=>t._pnl>0).length
-    const losers = filteredTrades.filter(t=>t._pnl<0).length
-    const wr = total ? Math.round(winners/total*100) : 0
-    const avgWin = winners ? filteredTrades.filter(t=>t._pnl>0).reduce((s,t)=>s+t._pnl,0)/winners : 0
-    const avgLoss = losers ? filteredTrades.filter(t=>t._pnl<0).reduce((s,t)=>s+t._pnl,0)/losers : 0
-    // Mois courant
+    const total = filteredEntries.length
+    const totalPnl = filteredEntries.reduce((s,e)=>s+(Number(e.pnl)||0), 0)
+    const winners = filteredEntries.filter(e => Number(e.pnl)>0)
+    const losers = filteredEntries.filter(e => Number(e.pnl)<0)
+    const wr = total ? Math.round(winners.length/total*100) : 0
+    const avgWin = winners.length ? winners.reduce((s,e)=>s+Number(e.pnl),0)/winners.length : 0
+    const avgLoss = losers.length ? losers.reduce((s,e)=>s+Number(e.pnl),0)/losers.length : 0
     const monthPrefix = `${calYear}-${String(calMonth+1).padStart(2,'0')}`
-    let monthPnl = 0, monthTrades = 0, monthDaysTraded = new Set()
+    let monthPnl = 0, monthTrades = 0, monthDays = new Set()
     Object.entries(dailyPnL).forEach(([d, v])=>{
       if(d.startsWith(monthPrefix)){
         monthPnl += v.pnl
         monthTrades += v.count
-        monthDaysTraded.add(d)
+        monthDays.add(d)
       }
     })
-    return { total, totalPnl, winners, losers, wr, avgWin, avgLoss, monthPnl, monthTrades, monthDays: monthDaysTraded.size }
-  },[filteredTrades, dailyPnL, calYear, calMonth])
+    return { total, totalPnl, winners:winners.length, losers:losers.length, wr, avgWin, avgLoss, monthPnl, monthTrades, monthDays:monthDays.size }
+  },[filteredEntries, dailyPnL, calYear, calMonth])
 
-  // Construction de la grille du calendrier
+  // Calendrier
   const calDays = useMemo(()=>{
     const firstDay = new Date(calYear, calMonth, 1)
-    let sdow = firstDay.getDay(); sdow = sdow===0?6:sdow-1 // Lundi=0
+    let sdow = firstDay.getDay(); sdow = sdow===0?6:sdow-1
     const dim = new Date(calYear, calMonth+1, 0).getDate()
     const dipm = new Date(calYear, calMonth, 0).getDate()
-    const todayStr = new Date().toISOString().slice(0,10)
+    const todayStr = todayISO()
     const out = []
     for(let i=sdow-1;i>=0;i--){
       const d = dipm-i, m2 = calMonth===0?11:calMonth-1, y2 = calMonth===0?calYear-1:calYear
@@ -132,71 +144,132 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
     return out
   },[calYear, calMonth])
 
-  // Trades du jour sélectionné
-  const dayTrades = useMemo(()=>{
+  const dayEntries = useMemo(()=>{
     if(!selDay) return []
-    return filteredTrades.filter(t=>t._date===selDay).sort((a,b)=>{
-      return String(a.creationTimestamp||'').localeCompare(String(b.creationTimestamp||''))
+    return filteredEntries.filter(e => e.date === selDay)
+  },[filteredEntries, selDay])
+
+  // === CRUD ===
+  function openNewEntry(defaultDate){
+    const acctId = allAccounts[0]?.id || ''
+    setForm({ accountId:acctId, date:defaultDate||todayISO(), pnl:'', instrument:'', side:'', notes:'' })
+    setEntryModal({ defaultDate })
+  }
+  function openEditEntry(e){
+    setForm({ accountId:e.account_id, date:e.date, pnl:String(e.pnl), instrument:e.instrument||'', side:e.side||'', notes:e.notes||'' })
+    setEntryModal({ entry:e })
+  }
+  async function saveEntry(){
+    if(!form.accountId){ showToast?.('Sélectionne un compte'); return }
+    if(!form.date){ showToast?.('Date requise'); return }
+    if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.('PnL requis (nombre)'); return }
+    const payload = {
+      user_id: user.id,
+      account_id: form.accountId,
+      date: form.date,
+      pnl: parseFloat(form.pnl),
+      instrument: form.instrument.trim(),
+      side: form.side,
+      notes: form.notes.trim(),
+    }
+    let res
+    if(entryModal?.entry){
+      res = await supabase.from('journal_entries').update(payload).eq('id', entryModal.entry.id)
+    } else {
+      res = await supabase.from('journal_entries').insert(payload)
+    }
+    if(res.error){
+      console.error(res.error)
+      showToast?.('Erreur enregistrement')
+      return
+    }
+    setEntryModal(null)
+    showToast?.(entryModal?.entry ? 'Trade modifié ✓' : 'Trade ajouté ✓')
+    await loadEntries()
+  }
+  async function deleteEntry(id){
+    if(!confirm('Supprimer ce trade ?')) return
+    const { error } = await supabase.from('journal_entries').delete().eq('id', id)
+    if(error){ showToast?.('Erreur suppression'); return }
+    showToast?.('Trade supprimé')
+    await loadEntries()
+  }
+
+  // Export CSV des trades filtrés
+  function exportJournalCSV(){
+    const rows = [['Date','Firme','Compte','Instrument','Side','PnL','Notes']]
+    filteredEntries.forEach(e=>{
+      rows.push([e.date, e._firmName, e._accountLabel, e.instrument||'', e.side||'', String(e.pnl), e.notes||''])
     })
-  },[filteredTrades, selDay])
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv)
+    a.download = `MB_Journal_${todayISO()}.csv`
+    a.click()
+    showToast?.('Export CSV ✓')
+  }
 
-  // Styles
-  const card = { background:'var(--surface)', border:'0.5px solid var(--border)', borderRadius:'var(--radius-lg)' }
-  const btn = (active)=>({ padding:'6px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:'0.5px solid var(--border2)', fontFamily:'inherit', fontWeight:'500', background:active?'var(--blue)':'transparent', color:active?'#fff':'var(--text2)' })
-  const ghostBtn = { padding:'7px 14px', fontSize:'12px', background:'transparent', border:'0.5px solid var(--border2)', color:'var(--text2)', borderRadius:'var(--radius)', cursor:'pointer' }
-
-  const connectedFirms = Object.entries(pxSessions||{}).filter(([_,s])=>s?.connected).length
   const monthLabel = MONTHS_FR[calMonth] + ' ' + calYear
+  const noAccounts = allAccounts.length === 0
 
   return (
-    <div className="journal-wrap" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
+    <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
 
       {/* Header */}
-      <div className="journal-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'20px',flexWrap:'wrap',gap:'12px'}}>
+      <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'20px',flexWrap:'wrap',gap:'12px'}}>
         <div>
           <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'4px'}}>📔 Journal de trading</h1>
           <div style={{fontSize:'12px',color:'var(--text3)'}}>
-            {connectedFirms===0
-              ? 'Aucun compte connecté — connectez vos firmes via Synchronisation'
-              : `${connectedFirms} firme${connectedFirms>1?'s':''} connectée${connectedFirms>1?'s':''} · ${allTrades.length} trade${allTrades.length>1?'s':''} importés`}
+            Saisie manuelle de tes trades · {entries.length} trade{entries.length>1?'s':''} enregistré{entries.length>1?'s':''}
           </div>
+        </div>
+        <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
+          <button onClick={exportJournalCSV} disabled={!filteredEntries.length} style={{...btnGhost,opacity:filteredEntries.length?1:0.5}}>↓ CSV</button>
+          <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>+ Ajouter trade</button>
         </div>
       </div>
 
-      {/* Sélecteur scope (Tout / Par firme / Par compte) */}
+      {noAccounts && (
+        <div style={{...card,padding:'24px',marginBottom:'16px',background:'rgba(250,199,117,0.07)',borderColor:'var(--amber-text)'}}>
+          <div style={{fontSize:'14px',fontWeight:'600',color:'var(--amber-text)',marginBottom:'4px'}}>⚠ Aucun compte trouvé</div>
+          <div style={{fontSize:'12px',color:'var(--text2)'}}>Va dans <strong>Tableau de bord</strong> et ajoute au moins une PropFirm + un compte avant de pouvoir saisir un trade.</div>
+        </div>
+      )}
+
+      {/* Filtre scope */}
       <div style={{...card, padding:'14px 18px', marginBottom:'16px'}}>
         <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>Filtrer par</div>
         <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
-          <button onClick={()=>setScope('all')} style={btn(scope==='all')}>📊 Toutes les firmes</button>
-          {Object.entries(accountsByFirm).map(([firmId, fInfo])=>(
-            <div key={firmId} style={{display:'inline-flex',gap:'4px',alignItems:'center',padding:'2px 4px 2px 8px',border:'0.5px solid var(--border)',borderRadius:'99px',background:scope===firmId||scope.startsWith(firmId+':')?'rgba(45,111,255,0.05)':'transparent'}}>
-              <button onClick={()=>setScope(firmId)} style={{...btn(scope===firmId),padding:'4px 10px'}}>
-                {getFirmLogo ? <span style={{display:'inline-flex',marginRight:'4px',verticalAlign:'middle'}}>{getFirmLogo(fInfo.firmName, fInfo.color, 16)}</span> : null}
-                {fInfo.firmName}
-              </button>
-              {Array.from(fInfo.accounts.values()).map(acc=>{
-                const v = `${firmId}:${acc.id}`
-                return (
-                  <button key={acc.id} onClick={()=>setScope(v)} title={String(acc.id)} style={{...btn(scope===v), padding:'4px 8px', fontSize:'11px'}}>
-                    {acc.name}
-                  </button>
-                )
-              })}
-            </div>
-          ))}
+          <button onClick={()=>setScope('all')} style={chipBtn(scope==='all')}>📊 Toutes les firmes</button>
+          {firms.map(f=>{
+            const accs = (f.accounts||[]).filter(a=>a.status!=='Échoué')
+            if(!accs.length) return null
+            return (
+              <div key={f.id} style={{display:'inline-flex',gap:'4px',alignItems:'center',padding:'2px 4px 2px 6px',border:'0.5px solid var(--border)',borderRadius:'99px',background:scope===f.id||scope.startsWith(f.id+':')?'rgba(45,111,255,0.05)':'transparent'}}>
+                <button onClick={()=>setScope(f.id)} style={{...chipBtn(scope===f.id), padding:'4px 10px'}}>
+                  {getFirmLogo ? <span style={{display:'inline-flex',marginRight:'4px',verticalAlign:'middle'}}>{getFirmLogo(f.name, f.color, 16)}</span> : null}
+                  {f.name}
+                </button>
+                {accs.map(a=>{
+                  const v = `${f.id}:${a.id}`
+                  return (
+                    <button key={a.id} onClick={()=>setScope(v)} title={`Compte du ${a.buy_date}`} style={{...chipBtn(scope===v), padding:'4px 8px', fontSize:'11px'}}>
+                      {a.buy_date}
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {connectedFirms===0 ? (
-        <div style={{...card, padding:'60px 24px', textAlign:'center', color:'var(--text3)'}}>
-          <div style={{fontSize:'40px',marginBottom:'14px'}}>🔌</div>
-          <div style={{fontSize:'15px',fontWeight:'600',marginBottom:'6px',color:'var(--text)'}}>Connectez d'abord vos PropFirms</div>
-          <div style={{fontSize:'13px'}}>Allez dans <strong>Synchronisation</strong> pour connecter vos comptes ProjectX et importer vos trades.</div>
-        </div>
+      {loading ? (
+        <div style={{...card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>⏳ Chargement…</div>
       ) : (
       <>
         {/* Stats */}
-        <div className="journal-stats stats-5" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'20px'}}>
+        <div className="stats-5" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'20px'}}>
           {[
             { l:'PnL filtré', v:fmtMoney(stats.totalPnl), c:stats.totalPnl>=0?'var(--green)':'var(--red)' },
             { l:`PnL ${monthLabel}`, v:fmtMoney(stats.monthPnl), c:stats.monthPnl>=0?'var(--green)':'var(--red)' },
@@ -211,17 +284,16 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
           ))}
         </div>
 
-        {/* Calendrier + détails du jour */}
-        <div className="journal-grid grid-1-320" style={{display:'grid',gridTemplateColumns:'1fr 320px',gap:'16px',alignItems:'start'}}>
+        {/* Calendrier + détails */}
+        <div className="grid-1-320" style={{display:'grid',gridTemplateColumns:'1fr 320px',gap:'16px',alignItems:'start'}}>
 
-          {/* Calendrier */}
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px',gap:'8px',flexWrap:'wrap'}}>
               <div style={{fontSize:'15px',fontWeight:'600'}}>Calendrier PnL — {monthLabel}</div>
               <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                <button onClick={()=>{const d=new Date(calYear,calMonth-1);setCalMonth(d.getMonth());setCalYear(d.getFullYear())}} style={ghostBtn}>‹</button>
-                <button onClick={()=>{setCalMonth(new Date().getMonth());setCalYear(new Date().getFullYear());setSelDay(null)}} style={ghostBtn}>Aujourd'hui</button>
-                <button onClick={()=>{const d=new Date(calYear,calMonth+1);setCalMonth(d.getMonth());setCalYear(d.getFullYear())}} style={ghostBtn}>›</button>
+                <button onClick={()=>{const d=new Date(calYear,calMonth-1);setCalMonth(d.getMonth());setCalYear(d.getFullYear())}} style={btnGhost}>‹</button>
+                <button onClick={()=>{setCalMonth(new Date().getMonth());setCalYear(new Date().getFullYear());setSelDay(null)}} style={btnGhost}>Aujourd'hui</button>
+                <button onClick={()=>{const d=new Date(calYear,calMonth+1);setCalMonth(d.getMonth());setCalYear(d.getFullYear())}} style={btnGhost}>›</button>
               </div>
             </div>
 
@@ -236,26 +308,30 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
                   const v = dailyPnL[day.dateStr]
                   const pnl = v?.pnl || 0
                   const isSel = day.dateStr === selDay
-                  // Couleur de fond selon PnL (intensité légère)
                   let bg = 'transparent'
                   if(v && pnl > 0) bg = 'rgba(29,184,122,0.10)'
                   else if(v && pnl < 0) bg = 'rgba(232,80,74,0.10)'
                   if(isSel) bg = 'rgba(45,111,255,0.12)'
                   return (
                     <div key={i}
-                      onClick={()=>setSelDay(v ? day.dateStr : null)}
+                      className="cal-cell"
+                      onClick={()=>{
+                        // clic sur jour : sélectionne pour voir détails (ou ouvre form si vide)
+                        if(v) setSelDay(day.dateStr)
+                        else if(!day.other && !noAccounts){ setSelDay(null); openNewEntry(day.dateStr) }
+                      }}
                       style={{
-                        minHeight:'78px', padding:'6px 7px',
+                        minHeight:'82px', padding:'6px 7px',
                         borderRight: (i+1)%7===0 ? 'none' : '0.5px solid var(--border)',
                         borderBottom: '0.5px solid var(--border)',
-                        cursor: v ? 'pointer' : 'default',
+                        cursor: (day.other||noAccounts) ? 'default' : 'pointer',
                         opacity: day.other ? 0.3 : 1,
                         background: bg,
                         outline: isSel ? '2px solid var(--blue)' : 'none',
                         outlineOffset: '-2px',
                       }}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'4px'}}>
-                        <span style={{
+                        <span className="cal-cell-num" style={{
                           fontSize:'11px',
                           width:'20px',height:'20px',display:'inline-flex',alignItems:'center',justifyContent:'center',
                           borderRadius:'50%',
@@ -263,7 +339,7 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
                           color: day.today ? '#fff' : 'var(--text2)',
                         }}>{day.day}</span>
                       </div>
-                      {v && (
+                      {v ? (
                         <>
                           <div style={{
                             fontSize:'12px', fontWeight:'700',
@@ -274,6 +350,10 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
                             {v.count} trade{v.count>1?'s':''}
                           </div>
                         </>
+                      ) : (
+                        !day.other && !noAccounts && (
+                          <div style={{fontSize:'10px',color:'var(--text3)',opacity:0.6}}>+ Ajouter</div>
+                        )
                       )}
                     </div>
                   )
@@ -282,28 +362,33 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
             </div>
           </div>
 
-          {/* Panneau détail */}
+          {/* Panneau jour sélectionné */}
           <div style={{...card, padding:'18px', minHeight:'300px'}}>
-            <div style={{fontSize:'13px',fontWeight:'600',marginBottom:'12px'}}>
-              {selDay
-                ? new Date(selDay+'T00:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})
-                : 'Sélectionnez un jour'}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px',gap:'8px',flexWrap:'wrap'}}>
+              <div style={{fontSize:'13px',fontWeight:'600'}}>
+                {selDay
+                  ? new Date(selDay+'T00:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})
+                  : 'Sélectionnez un jour'}
+              </div>
+              {selDay && !noAccounts && (
+                <button onClick={()=>openNewEntry(selDay)} style={{...btnGhost,padding:'4px 10px',fontSize:'11px'}}>+ Trade</button>
+              )}
             </div>
 
             {!selDay && (
               <div style={{color:'var(--text3)',fontSize:'12px',padding:'12px 0'}}>
-                Cliquez sur un jour avec des trades pour voir le détail.
+                Cliquez sur un jour pour voir les trades, ou sur un jour vide pour en ajouter un.
               </div>
             )}
 
-            {selDay && dayTrades.length===0 && (
+            {selDay && dayEntries.length===0 && (
               <div style={{color:'var(--text3)',fontSize:'12px',padding:'12px 0'}}>Aucun trade ce jour.</div>
             )}
 
-            {selDay && dayTrades.length>0 && (() => {
-              const dayPnl = dayTrades.reduce((s,t)=>s+t._pnl,0)
-              const dayWin = dayTrades.filter(t=>t._pnl>0).length
-              const dayLoss = dayTrades.filter(t=>t._pnl<0).length
+            {selDay && dayEntries.length>0 && (() => {
+              const dayPnl = dayEntries.reduce((s,e)=>s+(Number(e.pnl)||0),0)
+              const dayWin = dayEntries.filter(e=>Number(e.pnl)>0).length
+              const dayLoss = dayEntries.filter(e=>Number(e.pnl)<0).length
               return (
                 <>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'14px'}}>
@@ -321,22 +406,25 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
                     </div>
                   </div>
                   <div style={{maxHeight:'420px',overflowY:'auto'}}>
-                    {dayTrades.map((t, i)=>{
-                      const time = String(t.creationTimestamp||t.fillTimestamp||'').slice(11,16) || '—'
-                      const sym = t.contractId || t.symbol || '—'
+                    {dayEntries.map((e, i)=>{
+                      const pnl = Number(e.pnl)||0
                       return (
-                        <div key={i} style={{padding:'10px 12px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'6px'}}>
-                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'4px'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                              <span style={{fontFamily:'monospace',fontSize:'11px',color:'var(--text3)'}}>{time}</span>
-                              <span style={{fontWeight:'600',fontSize:'12px'}}>{sym}</span>
-                              {t.side && <span style={{fontSize:'10px',padding:'1px 6px',borderRadius:'99px',background:'var(--surface3)',color:'var(--text2)'}}>{t.side}</span>}
+                        <div key={e.id} style={{padding:'10px 12px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'6px'}}>
+                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'4px',gap:'6px'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}}>
+                              {e.instrument && <span style={{fontWeight:'600',fontSize:'12px'}}>{e.instrument}</span>}
+                              {e.side && <span style={{fontSize:'10px',padding:'1px 6px',borderRadius:'99px',background:'var(--surface3)',color:'var(--text2)'}}>{e.side}</span>}
                             </div>
-                            <span style={{fontSize:'13px',fontWeight:'700',color:t._pnl>=0?'var(--green)':t._pnl<0?'var(--red)':'var(--text3)'}}>{t._pnl===0?'—':fmtMoney(t._pnl)}</span>
+                            <span style={{fontSize:'13px',fontWeight:'700',color:pnl>=0?'var(--green)':pnl<0?'var(--red)':'var(--text3)'}}>{fmtMoney(pnl)}</span>
                           </div>
                           {scope==='all' && (
-                            <div style={{fontSize:'10px',color:'var(--text3)'}}>{t._firmName}{t._acctName?` · ${t._acctName}`:''}</div>
+                            <div style={{fontSize:'10px',color:'var(--text3)',marginBottom:e.notes?'4px':0}}>{e._accountLabel}</div>
                           )}
+                          {e.notes && <div style={{fontSize:'11px',color:'var(--text2)',marginTop:'4px',fontStyle:'italic'}}>{e.notes}</div>}
+                          <div style={{display:'flex',gap:'6px',marginTop:'6px'}}>
+                            <button onClick={()=>openEditEntry(e)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px'}}>✏ Modifier</button>
+                            <button onClick={()=>deleteEntry(e.id)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px',color:'var(--red-text)'}}>✕ Supprimer</button>
+                          </div>
                         </div>
                       )
                     })}
@@ -347,9 +435,9 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
           </div>
         </div>
 
-        {/* Mini stats avancées */}
+        {/* Stats avancées */}
         {stats.total>0 && (
-          <div className="journal-extra stats-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px',marginTop:'20px'}}>
+          <div className="stats-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px',marginTop:'20px'}}>
             <div style={{...card, padding:'16px'}}>
               <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>Gain moyen</div>
               <div style={{fontSize:'18px',fontWeight:'600',color:'var(--green)'}}>{fmtMoney(stats.avgWin)}</div>
@@ -369,6 +457,72 @@ export default function JournalPage({ firms, pxSessions, getFirmLogo, FIRM_COLOR
           </div>
         )}
       </>
+      )}
+
+      {/* Modal ajout / édition */}
+      {entryModal && (
+        <div onClick={()=>setEntryModal(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{...card,padding:'28px',width:'460px',maxWidth:'100%',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
+            <h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>
+              {entryModal?.entry ? 'Modifier le trade' : 'Nouveau trade'}
+            </h3>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+              <div style={{gridColumn:'1/-1'}}>
+                <label style={labelS}>Compte</label>
+                <select value={form.accountId} onChange={e=>setForm(p=>({...p,accountId:e.target.value}))} style={inputS}>
+                  <option value="">— Sélectionner —</option>
+                  {firms.map(f=>(
+                    <optgroup key={f.id} label={f.name}>
+                      {(f.accounts||[]).filter(a=>a.status!=='Échoué').map(a=>(
+                        <option key={a.id} value={a.id}>
+                          {f.name} · {a.buy_date} ({a.status})
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelS}>Date</label>
+                <input type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} style={inputS} />
+              </div>
+              <div>
+                <label style={labelS}>PnL ($)</label>
+                <input type="number" step="0.01" value={form.pnl} onChange={e=>setForm(p=>({...p,pnl:e.target.value}))} placeholder="ex : 250  ou  -125" style={inputS} autoFocus />
+              </div>
+              <div>
+                <label style={labelS}>Instrument</label>
+                <input list="instrSugg" value={form.instrument} onChange={e=>setForm(p=>({...p,instrument:e.target.value}))} placeholder="ES, NQ, MNQ, MES, GC..." style={inputS} />
+                <datalist id="instrSugg">
+                  {['ES','NQ','MNQ','MES','RTY','M2K','YM','MYM','GC','MGC','SI','CL','MCL','NG','6E','6B','6J','BTC','MBT'].map(s=><option key={s} value={s} />)}
+                </datalist>
+              </div>
+              <div>
+                <label style={labelS}>Side</label>
+                <select value={form.side} onChange={e=>setForm(p=>({...p,side:e.target.value}))} style={inputS}>
+                  <option value="">—</option>
+                  <option value="Long">Long</option>
+                  <option value="Short">Short</option>
+                </select>
+              </div>
+              <div style={{gridColumn:'1/-1'}}>
+                <label style={labelS}>Notes (setup, émotion, erreur…)</label>
+                <textarea rows={3} value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Optionnel" style={{...inputS,resize:'vertical',fontFamily:'inherit'}} />
+              </div>
+            </div>
+            <div style={{display:'flex',gap:'8px',justifyContent:'space-between',alignItems:'center',marginTop:'20px'}}>
+              <div>
+                {entryModal?.entry && (
+                  <button onClick={()=>{deleteEntry(entryModal.entry.id);setEntryModal(null)}} style={{...btnGhost,color:'var(--red-text)',borderColor:'var(--red-bg)'}}>Supprimer</button>
+                )}
+              </div>
+              <div style={{display:'flex',gap:'8px'}}>
+                <button onClick={()=>setEntryModal(null)} style={btnGhost}>Annuler</button>
+                <button onClick={saveEntry} style={btnPrimary}>{entryModal?.entry ? 'Enregistrer' : 'Ajouter'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

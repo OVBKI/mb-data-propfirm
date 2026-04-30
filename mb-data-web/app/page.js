@@ -361,7 +361,7 @@ export default function Home() {
     {key:'rules',icon:'📋',label:'Règles firmes',section:'PropFirm'},
     {key:'alerts',icon:'🔔',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
     {key:'calendar',icon:'📅',label:'Calendrier Éco.',section:'Live Data'},
-    {key:'sync',icon:'🔌',label:'Synchronisation',section:'Live Data'},
+    {key:'sync',icon:'🔌',label:'Sync auto (bientôt)',section:'Live Data'},
   ]
 
   return(
@@ -659,7 +659,7 @@ export default function Home() {
           )}
 
           {page==='journal'&&(
-            <JournalPage firms={firms} pxSessions={pxSessions} getFirmLogo={getFirmLogo} FIRM_COLORS={FIRM_COLORS} />
+            <JournalPage firms={firms} user={user} getFirmLogo={getFirmLogo} showToast={showToast} />
           )}
 
           {page==='calendar'&&(
@@ -667,82 +667,38 @@ export default function Home() {
           )}
 
           {page==='sync'&&(
-            <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
-              <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'4px'}}>Synchronisation ProjectX</h1>
-              <div style={{fontSize:'12px',color:'var(--text3)',marginBottom:'24px'}}>Connectez vos comptes PropFirm en temps réel via ProjectX Gateway</div>
-              <div className="grid-220-1" style={{display:'grid',gridTemplateColumns:'220px 1fr',gap:'20px',alignItems:'start'}}>
-                <div>
-                  {firms.map(f=>{
-                    const supported=!!PX_FIRMS[f.name],sess=pxSessions[f.id]
-                    return<div key={f.id} onClick={()=>supported&&setPxSelFirm(f.id)} style={{...S.card,padding:'14px 16px',marginBottom:'8px',cursor:supported?'pointer':'default',opacity:supported?1:0.45,borderColor:pxSelFirm===f.id?'var(--blue)':'rgba(255,255,255,0.07)',background:pxSelFirm===f.id?'rgba(45,111,255,0.05)':'var(--surface)'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'}}>{getFirmLogo(f.name,f.color,24)}<div style={{fontWeight:'600',fontSize:'13px'}}>{f.name}</div></div>
-                      <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text3)'}}><div style={{width:'6px',height:'6px',borderRadius:'50%',background:sess?.connected?'var(--green)':supported?'var(--text3)':'var(--surface3)'}} />{sess?.connected?'✓ Connecté':supported?'Non connecté':'Non supporté'}</div>
-                    </div>
-                  })}
+            <div className="page-pad" style={{maxWidth:'860px',margin:'0 auto',padding:'28px 24px 60px'}}>
+              <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'4px'}}>Synchronisation auto</h1>
+              <div style={{fontSize:'12px',color:'var(--text3)',marginBottom:'24px'}}>Import automatique des trades depuis vos plateformes</div>
+
+              <div style={{...S.card,padding:'48px 28px',textAlign:'center',marginBottom:'20px',background:'linear-gradient(180deg, rgba(45,111,255,0.04), transparent)'}}>
+                <div style={{fontSize:'56px',marginBottom:'14px'}}>🚧</div>
+                <div style={{fontSize:'20px',fontWeight:'700',marginBottom:'8px'}}>Bientôt disponible</div>
+                <div style={{fontSize:'13px',color:'var(--text2)',maxWidth:'520px',margin:'0 auto',lineHeight:1.5}}>
+                  La synchronisation automatique de vos trades via <strong>ProjectX Gateway</strong> et <strong>Rithmic</strong> est en cours d'intégration.
+                  En attendant, utilisez le <strong>Journal trading</strong> pour saisir vos trades manuellement.
                 </div>
-                <div>
-                  {!pxSelFirm?(
-                    <div style={{...S.card,padding:'60px',textAlign:'center'}}>
-                      <div style={{fontSize:'40px',marginBottom:'16px'}}>🔌</div>
-                      <div style={{fontSize:'17px',fontWeight:'600',marginBottom:'8px'}}>Sélectionnez une PropFirm</div>
-                      <div style={{fontSize:'13px',color:'var(--text3)',marginBottom:'20px'}}>Choisissez une PropFirm compatible ProjectX dans la liste à gauche.</div>
-                      <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'14px',fontSize:'12px',color:'var(--text2)',textAlign:'left',maxWidth:'300px',margin:'0 auto'}}>
-                        <div style={{fontWeight:'600',color:'#4d8fff',marginBottom:'8px'}}>✓ Compatibles ProjectX</div>
-                        {Object.keys(PX_FIRMS).map(n=><div key={n} style={{padding:'2px 0'}}>· {n}</div>)}
-                      </div>
-                    </div>
-                  ):(()=>{
-                    const firm=firms.find(f=>f.id===pxSelFirm)
-                    const sess=pxSessions[pxSelFirm]
-                    if(!sess?.connected) return(
-                      <div style={{...S.card,padding:'28px',maxWidth:'460px'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'24px'}}>
-                          {getFirmLogo(firm.name,firm.color,40)}
-                          <div><div style={{fontSize:'18px',fontWeight:'700'}}>{firm.name}</div><div style={{fontSize:'12px',color:'var(--text3)'}}>Via ProjectX Gateway</div></div>
-                        </div>
-                        <div style={{background:'rgba(45,111,255,0.08)',border:'0.5px solid var(--blue)',borderRadius:'var(--radius)',padding:'12px',marginBottom:'20px',fontSize:'12px',color:'var(--text2)'}}>ℹ️ Utilisez votre email + clé API (API Key) disponible dans les paramètres de votre compte {firm.name}.</div>
-                        <div style={{marginBottom:'12px'}}><label style={S.label}>Email</label><input type="email" value={pxLoginData.user} onChange={e=>setPxLoginData(p=>({...p,user:e.target.value}))} placeholder="votre@email.com" style={S.input} /></div>
-                        <div style={{marginBottom:'20px'}}><label style={S.label}>Clé API (API Key)</label><input type="text" value={pxLoginData.pass} onChange={e=>setPxLoginData(p=>({...p,pass:e.target.value}))} placeholder="Votre clé API Topstep" style={S.input} onKeyDown={e=>e.key==='Enter'&&doPxLogin()} /></div>
-                        {pxError&&<div style={{padding:'10px',background:'var(--red-bg)',border:'0.5px solid var(--red)',borderRadius:'var(--radius)',fontSize:'12px',color:'var(--red-text)',marginBottom:'14px'}}>{pxError}</div>}
-                        <button onClick={doPxLogin} disabled={pxConnecting} style={{...S.btnPrimary,width:'100%',padding:'12px',fontSize:'14px'}}>{pxConnecting?'⏳ Connexion...':'🔌 Connecter mon compte'}</button>
-                        <div style={{marginTop:'12px',fontSize:'11px',color:'var(--text3)',textAlign:'center'}}>Vos identifiants ne sont jamais stockés en base de données.</div>
-                      </div>
-                    )
-                    const trades=sess.trades||[],positions=sess.positions||[]
-                    const today=new Date().toISOString().slice(0,10)
-                    const todayT=trades.filter(t=>(t.creationTimestamp||'').slice(0,10)===today)
-                    const totalPnl=trades.reduce((s,t)=>s+(t.profit||t.pnl||0),0)
-                    const todayPnl=todayT.reduce((s,t)=>s+(t.profit||t.pnl||0),0)
-                    const wr=trades.length?Math.round(trades.filter(t=>(t.profit||t.pnl||0)>0).length/trades.length*100):0
-                    const filt=pxTradeFilter==='today'?todayT:pxTradeFilter==='winners'?trades.filter(t=>(t.profit||t.pnl||0)>0):pxTradeFilter==='losers'?trades.filter(t=>(t.profit||t.pnl||0)<0):trades
-                    return(
-                      <div>
-                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
-                          <div style={{display:'flex',alignItems:'center',gap:'10px'}}>{getFirmLogo(firm.name,firm.color,32)}<div style={{fontSize:'16px',fontWeight:'700'}}>{firm.name}</div></div>
-                          <button onClick={()=>setPxSessions(p=>{const n={...p};delete n[pxSelFirm];return n})} style={S.btnGhost}>Déconnecter</button>
-                        </div>
-                        <div className="stats-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'10px',marginBottom:'14px'}}>
-                          {[{l:'PnL Total',v:(totalPnl>=0?'+':'')+totalPnl.toFixed(2)+' $',c:totalPnl>=0?'var(--green)':'var(--red)'},{l:"PnL Aujourd'hui",v:(todayPnl>=0?'+':'')+todayPnl.toFixed(2)+' $',c:todayPnl>=0?'var(--green)':'var(--red)'},{l:'Win Rate',v:wr+'%',c:wr>=50?'var(--green)':'var(--amber-text)'},{l:'Trades',v:trades.length}].map((k,i)=>(
-                            <div key={i} style={{...S.card,padding:'14px 16px'}}><div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>{k.l}</div><div style={{fontSize:'20px',fontWeight:'600',color:k.c||'var(--text)'}}>{k.v}</div></div>
-                          ))}
-                        </div>
-                        {positions.length>0&&<div style={{...S.card,padding:'18px',marginBottom:'14px'}}>
-                          <div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)',marginBottom:'12px'}}>📍 Positions ouvertes ({positions.length})</div>
-                          <table style={{width:'100%',borderCollapse:'collapse',fontSize:'13px'}}><thead><tr style={{background:'var(--surface2)'}}><th style={{padding:'9px 12px',textAlign:'left',fontSize:'11px',color:'var(--text3)',borderBottom:'0.5px solid var(--border)'}}>Symbole</th><th style={{padding:'9px 12px',textAlign:'left',fontSize:'11px',color:'var(--text3)',borderBottom:'0.5px solid var(--border)'}}>Side</th><th style={{padding:'9px 12px',textAlign:'left',fontSize:'11px',color:'var(--text3)',borderBottom:'0.5px solid var(--border)'}}>PnL</th></tr></thead><tbody>{positions.map((p,i)=>{const pnl=p.unrealizedPnl||0;return<tr key={i}><td style={{padding:'10px 12px',fontWeight:'600'}}>{p.contractId||p.symbol||'—'}</td><td style={{padding:'10px 12px',color:'var(--text2)'}}>{p.side}</td><td style={{padding:'10px 12px',fontWeight:'600',color:pnl>=0?'var(--green)':'var(--red)'}}>{pnl>=0?'+':''}{pnl.toFixed(2)} $</td></tr>})}</tbody></table>
-                        </div>}
-                        <div style={{...S.card,padding:'18px'}}>
-                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}}>
-                            <div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)'}}>Historique des trades</div>
-                            <div style={{display:'flex',gap:'6px'}}>{['all','today','winners','losers'].map(f=>{const labels={all:`Tous (${trades.length})`,today:"Aujourd'hui",winners:'Gagnants',losers:'Perdants'};return<button key={f} onClick={()=>setPxTradeFilter(f)} style={{padding:'4px 12px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',background:pxTradeFilter===f?'var(--blue)':'transparent',color:pxTradeFilter===f?'#fff':'var(--text2)',fontFamily:'inherit'}}>{labels[f]}</button>})}</div>
-                          </div>
-                          <div style={{overflowX:'auto',maxHeight:'360px',overflowY:'auto'}}>
-                            <table style={{width:'100%',borderCollapse:'collapse',fontSize:'13px'}}><thead><tr style={{background:'var(--surface2)'}}><th style={{padding:'9px 12px',textAlign:'left',fontSize:'11px',color:'var(--text3)',borderBottom:'0.5px solid var(--border)'}}>Date</th><th style={{padding:'9px 12px',textAlign:'left',fontSize:'11px',color:'var(--text3)',borderBottom:'0.5px solid var(--border)'}}>Symbole</th><th style={{padding:'9px 12px',textAlign:'left',fontSize:'11px',color:'var(--text3)',borderBottom:'0.5px solid var(--border)'}}>Side</th><th style={{padding:'9px 12px',textAlign:'left',fontSize:'11px',color:'var(--text3)',borderBottom:'0.5px solid var(--border)'}}>PnL</th></tr></thead>
-                            <tbody>{filt.slice(0,100).map((t,i)=>{const pnl=t.profit||t.pnl||0;return<tr key={i} style={{borderBottom:'0.5px solid var(--border)'}}><td style={{padding:'10px 12px',color:'var(--text2)',fontSize:'12px'}}>{(t.creationTimestamp||'—').slice(0,16).replace('T',' ')}</td><td style={{padding:'10px 12px',fontWeight:'600'}}>{t.contractId||t.symbol||'—'}</td><td style={{padding:'10px 12px',color:'var(--text2)'}}>{t.side||'—'}</td><td style={{padding:'10px 12px',fontWeight:'600',color:pnl>=0?'var(--green)':'var(--red)'}}>{pnl!==0?(pnl>=0?'+':'')+pnl.toFixed(2)+' $':'—'}</td></tr>})}</tbody></table>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
+                <button onClick={()=>setPage('journal')} style={{...S.btnPrimary,marginTop:'24px'}}>📔 Aller au journal manuel</button>
+              </div>
+
+              <div className="stats-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px'}}>
+                <div style={{...S.card,padding:'18px'}}>
+                  <div style={{fontSize:'24px',marginBottom:'8px'}}>🔌</div>
+                  <div style={{fontSize:'13px',fontWeight:'600',marginBottom:'4px'}}>ProjectX Gateway</div>
+                  <div style={{fontSize:'11px',color:'var(--text3)',marginBottom:'10px'}}>Topstep, Tradeify, TPT, MFF, TradeDay, Uprofit</div>
+                  <span style={{fontSize:'10px',padding:'3px 10px',borderRadius:'99px',background:'var(--amber-bg)',color:'var(--amber-text)',fontWeight:'600'}}>EN ATTENTE D'API</span>
+                </div>
+                <div style={{...S.card,padding:'18px'}}>
+                  <div style={{fontSize:'24px',marginBottom:'8px'}}>📡</div>
+                  <div style={{fontSize:'13px',fontWeight:'600',marginBottom:'4px'}}>Rithmic</div>
+                  <div style={{fontSize:'11px',color:'var(--text3)',marginBottom:'10px'}}>Apex, Bulenox, Lucid, Earn2Trade, et autres</div>
+                  <span style={{fontSize:'10px',padding:'3px 10px',borderRadius:'99px',background:'var(--amber-bg)',color:'var(--amber-text)',fontWeight:'600'}}>EN ATTENTE D'API</span>
+                </div>
+                <div style={{...S.card,padding:'18px'}}>
+                  <div style={{fontSize:'24px',marginBottom:'8px'}}>📁</div>
+                  <div style={{fontSize:'13px',fontWeight:'600',marginBottom:'4px'}}>Import CSV</div>
+                  <div style={{fontSize:'11px',color:'var(--text3)',marginBottom:'10px'}}>Charger un export NinjaTrader / Tradovate</div>
+                  <span style={{fontSize:'10px',padding:'3px 10px',borderRadius:'99px',background:'var(--surface3)',color:'var(--text2)',fontWeight:'600'}}>PROCHAINEMENT</span>
                 </div>
               </div>
             </div>
