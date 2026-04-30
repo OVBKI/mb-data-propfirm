@@ -40,16 +40,22 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
     })))
   },[firms])
 
+  const [loadError, setLoadError] = useState('')
   async function loadEntries(){
-    setLoading(true)
+    setLoading(true);setLoadError('')
     const { data, error } = await supabase
       .from('journal_entries')
       .select('*')
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
     if(error){
-      console.error(error)
-      showToast?.('Erreur chargement journal')
+      console.error('[journal load]', error)
+      // 42P01 = relation does not exist (table manquante)
+      if(error.code==='42P01' || /does not exist/i.test(error.message||'')){
+        setLoadError('table_missing')
+      } else {
+        setLoadError(error.message || 'Erreur chargement journal')
+      }
     } else {
       setEntries(data || [])
     }
@@ -179,8 +185,12 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
       res = await supabase.from('journal_entries').insert(payload)
     }
     if(res.error){
-      console.error(res.error)
-      showToast?.('Erreur enregistrement')
+      console.error('[journal save]', res.error)
+      // Affiche le vrai message Supabase pour diagnostiquer (table manquante, RLS, etc.)
+      const msg = res.error.code==='42P01' || /does not exist/i.test(res.error.message||'')
+        ? '⚠ Table journal_entries manquante dans Supabase'
+        : (res.error.message || 'Erreur enregistrement')
+      showToast?.(msg)
       return
     }
     setEntryModal(null)
@@ -233,6 +243,46 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
         <div style={{...card,padding:'24px',marginBottom:'16px',background:'rgba(250,199,117,0.07)',borderColor:'var(--amber-text)'}}>
           <div style={{fontSize:'14px',fontWeight:'600',color:'var(--amber-text)',marginBottom:'4px'}}>⚠ Aucun compte trouvé</div>
           <div style={{fontSize:'12px',color:'var(--text2)'}}>Va dans <strong>Tableau de bord</strong> et ajoute au moins une PropFirm + un compte avant de pouvoir saisir un trade.</div>
+        </div>
+      )}
+
+      {loadError === 'table_missing' && (
+        <div style={{...card,padding:'20px',marginBottom:'16px',background:'var(--red-bg)',borderColor:'var(--red)'}}>
+          <div style={{fontSize:'14px',fontWeight:'700',color:'var(--red-text)',marginBottom:'8px'}}>⚠ Table Supabase manquante</div>
+          <div style={{fontSize:'12px',color:'var(--text2)',lineHeight:1.5,marginBottom:'12px'}}>
+            La table <code style={{background:'var(--surface3)',padding:'1px 6px',borderRadius:'4px'}}>journal_entries</code> n'existe pas encore dans ta base Supabase.
+            Va dans <strong>Supabase → SQL Editor</strong> et exécute le bloc SQL suivant :
+          </div>
+          <pre style={{background:'var(--surface3)',padding:'12px',borderRadius:'var(--radius)',fontSize:'11px',overflow:'auto',color:'var(--text2)',lineHeight:1.5,fontFamily:'monospace',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{`create table if not exists journal_entries (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  account_id uuid references accounts(id) on delete cascade not null,
+  date date not null,
+  pnl numeric(12,2) not null,
+  instrument text default '',
+  side text default '',
+  notes text default '',
+  created_at timestamptz default now()
+);
+alter table journal_entries enable row level security;
+create policy "Users manage own journal" on journal_entries
+  for all using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+create index if not exists journal_entries_user_id_idx    on journal_entries(user_id);
+create index if not exists journal_entries_account_id_idx on journal_entries(account_id);
+create index if not exists journal_entries_date_idx       on journal_entries(date);`}</pre>
+          <div style={{display:'flex',gap:'8px',marginTop:'12px',flexWrap:'wrap'}}>
+            <button onClick={loadEntries} style={btnPrimary}>↻ Réessayer</button>
+            <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" style={btnGhost}>Ouvrir Supabase ↗</a>
+          </div>
+        </div>
+      )}
+
+      {loadError && loadError !== 'table_missing' && (
+        <div style={{...card,padding:'16px',marginBottom:'16px',background:'var(--red-bg)',borderColor:'var(--red)'}}>
+          <div style={{fontSize:'13px',fontWeight:'600',color:'var(--red-text)',marginBottom:'4px'}}>Erreur de chargement</div>
+          <div style={{fontSize:'12px',color:'var(--text2)',fontFamily:'monospace'}}>{loadError}</div>
+          <button onClick={loadEntries} style={{...btnPrimary,marginTop:'10px'}}>↻ Réessayer</button>
         </div>
       )}
 
