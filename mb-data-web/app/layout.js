@@ -8,6 +8,13 @@ export const metadata = {
   description: 'Suivi de vos comptes PropFirm futures',
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#0d0f14',
+}
+
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
