@@ -19,6 +19,35 @@ const FIRM_LOGOS = {
 function getFirmLogo(name, color, size=36) {
   const url = FIRM_LOGOS[name]
   if (url) return <img src={url} alt={name} style={{width:size,height:size,borderRadius:8,objectFit:'cover',flexShrink:0}} />
+
+  // Logo custom Phidias Propfirm — "PP" serif blanc sur bleu marine
+  if (name === 'Phidias Propfirm') {
+    return (
+      <div style={{width:size,height:size,borderRadius:8,background:'#1e2a4a',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,position:'relative',overflow:'hidden'}}>
+        <span style={{fontFamily:'Georgia, "Times New Roman", serif',fontSize:size*0.5,fontWeight:600,color:'#fff',letterSpacing:'-0.04em',lineHeight:1}}>PP</span>
+      </div>
+    )
+  }
+
+  // Logo custom My Funded Futures — bouclier doré sur fond bleu marine
+  if (name === 'My Funded Futures') {
+    const s = size
+    return (
+      <div style={{width:s,height:s,borderRadius:8,background:'linear-gradient(135deg,#0a1628 0%,#1e2a4a 100%)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,overflow:'hidden'}}>
+        <svg width={s*0.78} height={s*0.78} viewBox="0 0 32 32" fill="none">
+          {/* Couronne stylisée */}
+          <path d="M11 7 L11 4.5 L13 6 L16 3.5 L19 6 L21 4.5 L21 7 Z" fill="#2d6fff" />
+          {/* Bouclier */}
+          <path d="M7 8 L25 8 L25 18 Q25 24 16 28 Q7 24 7 18 Z" fill="#d4af37" stroke="#b8941f" strokeWidth="0.5" />
+          {/* Barres graphique ascendant */}
+          <rect x="11" y="18" width="2.5" height="4" fill="#1e2a4a" rx="0.3" />
+          <rect x="14.5" y="15" width="2.5" height="7" fill="#1e2a4a" rx="0.3" />
+          <rect x="18" y="12" width="2.5" height="10" fill="#1e2a4a" rx="0.3" />
+        </svg>
+      </div>
+    )
+  }
+
   return <div style={{width:size,height:size,borderRadius:8,background:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,fontWeight:700,color:'#fff',flexShrink:0}}>{name.charAt(0)}</div>
 }
 
