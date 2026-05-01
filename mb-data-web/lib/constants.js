@@ -112,9 +112,6 @@ export const FIRM_SUGGESTIONS = [
   'Take Profit Trader',
   'My Funded Futures',
   'Phidias Propfirm',
-  'TradeDay',
-  'Elite Trader Funding',
-  'Uprofit',
 ]
 export const STATUS_COLORS = { 'Financé': '#1db87a', 'Challenge': '#fac775', 'Échoué': '#e8504a' }
 
@@ -123,8 +120,6 @@ export const PX_FIRMS = {
   'Tradeify': 'tradeify',
   'Take Profit Trader': 'tpt',
   'My Funded Futures': 'mff',
-  'TradeDay': 'tradeday',
-  'Uprofit': 'uprofit',
 }
 
 // Plans génériques pour firmes non listées dans PROPFIRM_RULES
