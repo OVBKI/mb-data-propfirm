@@ -28,8 +28,10 @@ create table if not exists accounts (
   created_at timestamptz default now()
 );
 
--- Si la table existe déjà sans la colonne, ajoute-la (à exécuter une seule fois)
+-- Si la table existe déjà sans les colonnes, ajoute-les (sans erreur si déjà présentes)
 alter table accounts add column if not exists plan_size text default '50k';
+alter table accounts add column if not exists name      text default '';
+alter table accounts add column if not exists dd_type   text default 'static';
 
 -- PAYOUTS table
 create table if not exists payouts (

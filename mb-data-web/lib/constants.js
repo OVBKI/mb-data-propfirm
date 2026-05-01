@@ -120,3 +120,18 @@ export function isTrailingDD(firmName){
   if(!rules) return false
   return Object.keys(rules).some(k => /drawdown\s+trailing/i.test(k))
 }
+
+// Type de DD par défaut suggéré pour une firme (utilisé à la création d'un compte)
+// Topstep et Apex sont trailing par défaut
+const TRAILING_DEFAULT = new Set(['Topstep','Apex Trader Funding'])
+export function defaultDdType(firmName){
+  if(TRAILING_DEFAULT.has(firmName)) return 'trailing'
+  if(isTrailingDD(firmName)) return 'trailing'
+  return 'static'
+}
+
+// Retourne l'étiquette d'affichage d'un compte : nom personnalisé sinon "Compte du <date>"
+export function accountLabel(a){
+  if(!a) return ''
+  return (a.name && a.name.trim()) ? a.name.trim() : `Compte du ${a.buy_date}`
+}

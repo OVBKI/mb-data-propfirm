@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { planSizeNum, maxDrawdown, isTrailingDD } from '../lib/constants'
+import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel } from '../lib/constants'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -26,28 +26,48 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
 
   const planSize = planSizeNum(account.plan_size)
   const ddMax = maxDrawdown(account.firmName, account.plan_size)
-  const trailing = isTrailingDD(account.firmName)
-  const ddMinBalance = ddMax!==null ? planSize - ddMax : null
+  const ddType = account.dd_type || (isTrailingDD(account.firmName) ? 'trailing' : 'static')
+  const isTrailing = ddType === 'trailing'
+  const ddInitial = ddMax!==null ? planSize - ddMax : null
 
-  // Trie les entries par date et construit la courbe cumulative
+  // Trie les entries par date et construit la courbe cumulative + ligne DD
+  // Pour le DD trailing : à chaque jour, ddLine[i] = min(balance_peak_jusqu'à i - DDmax, planSize)
+  // → la ligne suit le balance peak (s'élève) puis se fige au balance initial (planSize)
   const data = useMemo(()=>{
     const sorted = entries.slice().sort((a,b)=>a.date.localeCompare(b.date))
     let cum = 0
+    let peak = planSize
     const labels = []
     const balances = []
-    // Point de départ : balance initial à la veille de la 1ère entry (ou aujourd'hui si vide)
+    const ddLine = []  // ligne DD point par point
+    // Point de départ : jour 0 = balance initial avant 1er trade
     if(sorted.length){
       const startDate = sorted[0].date
       labels.push(startDate)
-      balances.push(planSize) // jour 0
+      balances.push(planSize)
+      ddLine.push(ddMax!==null ? planSize - ddMax : null)
     }
     sorted.forEach(e=>{
       cum += Number(e.pnl)||0
+      const bal = +(planSize + cum).toFixed(2)
+      if(bal > peak) peak = bal
       labels.push(e.date)
-      balances.push(+(planSize + cum).toFixed(2))
+      balances.push(bal)
+      if(ddMax === null){
+        ddLine.push(null)
+      } else if(isTrailing){
+        // DD trailing plafonné au balance initial : min(peak - DDmax, planSize)
+        ddLine.push(Math.min(peak - ddMax, planSize))
+      } else {
+        ddLine.push(planSize - ddMax)
+      }
     })
-    return { labels, balances, finalBalance: planSize + cum, totalPnl: cum }
-  },[entries, planSize])
+    return {
+      labels, balances, ddLine,
+      finalBalance: planSize + cum, totalPnl: cum, finalPeak: peak,
+      currentDD: ddLine.length ? ddLine[ddLine.length - 1] : null,
+    }
+  },[entries, planSize, ddMax, isTrailing])
 
   useEffect(()=>{
     if(!ref.current) return
@@ -56,7 +76,6 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
     import('chart.js/auto').then(({default: Chart})=>{
       if(destroyed) return
       if(chart.current){ chart.current.destroy(); chart.current = null }
-      const ddLine = ddMinBalance!==null ? data.labels.map(()=>ddMinBalance) : null
       const datasets = [
         {
           label:'Balance', data:data.balances,
@@ -64,16 +83,19 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
           fill:true, tension:0.25, pointRadius:data.labels.length>30?0:3, borderWidth:2,
         },
       ]
-      if(ddLine){
+      if(ddMax !== null){
         datasets.push({
-          label:'DD max', data:ddLine,
-          borderColor:'#e8504a', backgroundColor:'transparent',
-          fill:false, tension:0, pointRadius:0, borderWidth:2, borderDash:[6,4],
+          label: isTrailing ? 'DD max (trailing)' : 'DD max',
+          data: data.ddLine,
+          borderColor: '#e8504a', backgroundColor:'transparent',
+          fill:false, tension:0, pointRadius:0, borderWidth:2,
+          borderDash: isTrailing ? [4,3] : [6,4],
+          stepped: isTrailing ? 'before' : false, // marche d'escalier pour le trailing
         })
       }
-      // Calcule un range Y plus serré
-      const minVal = Math.min(...data.balances, ddMinBalance ?? Infinity) * 0.998
-      const maxVal = Math.max(...data.balances, planSize) * 1.002
+      const allVals = [...data.balances, ...(data.ddLine.filter(v=>v!==null))]
+      const minVal = Math.min(...allVals) * 0.998
+      const maxVal = Math.max(...allVals, planSize) * 1.002
       chart.current = new Chart(ref.current, {
         type:'line',
         data:{ labels:data.labels, datasets },
@@ -104,7 +126,7 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
       destroyed = true
       if(chart.current){ chart.current.destroy(); chart.current = null }
     }
-  },[data.labels.join(','), data.balances.join(','), ddMinBalance, planSize])
+  },[data.labels.join(','), data.balances.join(','), data.ddLine.join(','), planSize, isTrailing])
 
   const finalNet = data.totalPnl
   const pctFromStart = planSize>0 ? (finalNet/planSize)*100 : 0
@@ -115,9 +137,9 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
           {getFirmLogo ? getFirmLogo(account.firmName, account.firmColor, 28) : null}
           <div>
-            <div style={{fontSize:'14px',fontWeight:'700'}}>{account.firmName}</div>
+            <div style={{fontSize:'14px',fontWeight:'700'}}>{accountLabel(account)}</div>
             <div style={{fontSize:'11px',color:'var(--text3)'}}>
-              Plan {String(account.plan_size||'?').toUpperCase()} · Achat {account.buy_date}
+              {account.firmName} · Plan {String(account.plan_size||'?').toUpperCase()} · DD {isTrailing?'trailing':'static'}
             </div>
           </div>
         </div>
@@ -135,15 +157,17 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
         <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
           <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a'}} />Balance
         </div>
-        {ddMinBalance!==null && (
+        {ddMax!==null && (
           <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
             <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#e8504a'}} />
-            DD max ({trailing?'trailing ':''}${ddMax.toLocaleString('fr-FR')}) → ${ddMinBalance.toLocaleString('fr-FR')}
+            {isTrailing
+              ? <span>DD trailing (${ddMax.toLocaleString('fr-FR')}) → actuellement ${data.currentDD?.toLocaleString('fr-FR')}</span>
+              : <span>DD static (${ddMax.toLocaleString('fr-FR')}) → ${(planSize-ddMax).toLocaleString('fr-FR')}</span>}
           </div>
         )}
-        {ddMinBalance===null && (
+        {ddMax===null && (
           <div style={{fontSize:'11px',color:'var(--text3)',fontStyle:'italic'}}>
-            ⓘ DD max non défini pour cette firme/plan
+            ⓘ DD max non défini pour {account.firmName} / {String(account.plan_size||'').toUpperCase()}
           </div>
         )}
       </div>
@@ -156,9 +180,9 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
         <div style={{position:'relative',height:'200px'}}><canvas ref={ref} /></div>
       )}
 
-      {trailing && ddMinBalance!==null && (
-        <div style={{marginTop:'10px',fontSize:'10px',color:'var(--amber-text)',padding:'6px 10px',background:'var(--amber-bg)',borderRadius:'6px'}}>
-          ⚠ {account.firmName} utilise un drawdown <strong>trailing</strong>. La ligne rouge ci-dessus représente le DD initial ; en réalité elle suit votre balance peak jusqu'au seuil profit.
+      {isTrailing && ddMax!==null && data.currentDD === planSize && (
+        <div style={{marginTop:'10px',fontSize:'10px',color:'var(--green-text)',padding:'6px 10px',background:'var(--green-bg)',borderRadius:'6px'}}>
+          ✓ DD figé au balance initial (${planSize.toLocaleString('fr-FR')}) — votre compte a sécurisé son drawdown.
         </div>
       )}
     </div>
@@ -222,7 +246,7 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
         _firmId: acc?.firmId,
         _firmName: acc?.firmName || 'Compte supprimé',
         _firmColor: acc?.firmColor || '#565e78',
-        _accountLabel: acc ? `${acc.firmName} · ${acc.buy_date}` : 'Compte supprimé',
+        _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
       }
     })
   },[entries, allAccounts])
@@ -458,9 +482,10 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 </button>
                 {accs.map(a=>{
                   const v = `${f.id}:${a.id}`
+                  const lbl = accountLabel(a)
                   return (
-                    <button key={a.id} onClick={()=>setScope(v)} title={`Compte du ${a.buy_date}`} style={{...chipBtn(scope===v), padding:'4px 8px', fontSize:'11px'}}>
-                      {a.buy_date}
+                    <button key={a.id} onClick={()=>setScope(v)} title={`${lbl} (acheté le ${a.buy_date})`} style={{...chipBtn(scope===v), padding:'4px 8px', fontSize:'11px'}}>
+                      {lbl}
                     </button>
                   )
                 })}
@@ -727,7 +752,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                     <optgroup key={f.id} label={f.name}>
                       {(f.accounts||[]).filter(a=>a.status!=='Échoué').map(a=>(
                         <option key={a.id} value={a.id}>
-                          {f.name} · {a.buy_date} ({a.status})
+                          {f.name} · {accountLabel(a)} ({a.status})
                         </option>
                       ))}
                     </optgroup>
