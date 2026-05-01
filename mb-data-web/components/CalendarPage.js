@@ -3,57 +3,54 @@ import { useState, useEffect, useMemo } from 'react'
 
 const T = {
   fr: {
-    title:'Calendrier Économique', subtitle:'Données ForexFactory — actualisé toutes les 5 minutes',
+    title:'Calendrier Économique', subtitle:'Données ForexFactory — actualisé toutes les minutes',
     thisWeek:'Cette semaine', nextWeek:'Semaine prochaine', refresh:'↻ Actualiser',
-    loading:'Chargement...', error:'Erreur de chargement', noEvents:'Aucun événement', all:'Tout',
+    loading:'Chargement...', error:'Erreur de chargement', noEvents:'Aucun événement', all:'Toutes',
     high:'🔴 Fort', medium:'🟠 Moyen', low:'🟡 Faible',
     time:'Heure', currency:'Devise', event:'Événement', actual:'Réel', forecast:'Prévision', previous:'Précédent', impact:'Impact',
-    filterImpact:'Impact', filterZone:'Zone', filterCurrency:'Devises', clearFilters:'Tout effacer',
+    filterImpact:'Impact', filterCurrency:'Devises',
     lastUpdate:'MàJ', today:"Aujourd'hui", events:'événement', eventsP:'événements',
+    upcoming:'À venir', past:'Passé · données non publiées',
     days:['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
     months:['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],
+    nextEmpty:'La semaine prochaine n\'est pas encore publiée par ForexFactory. Réessayez plus tard.',
   },
   en: {
-    title:'Economic Calendar', subtitle:'ForexFactory data — refreshed every 5 minutes',
+    title:'Economic Calendar', subtitle:'ForexFactory data — refreshed every minute',
     thisWeek:'This week', nextWeek:'Next week', refresh:'↻ Refresh',
     loading:'Loading...', error:'Loading error', noEvents:'No events', all:'All',
     high:'🔴 High', medium:'🟠 Medium', low:'🟡 Low',
     time:'Time', currency:'Currency', event:'Event', actual:'Actual', forecast:'Forecast', previous:'Previous', impact:'Impact',
-    filterImpact:'Impact', filterZone:'Zone', filterCurrency:'Currencies', clearFilters:'Clear all',
+    filterImpact:'Impact', filterCurrency:'Currencies',
     lastUpdate:'Updated', today:'Today', events:'event', eventsP:'events',
+    upcoming:'Upcoming', past:'Past · data not yet released',
     days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
     months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    nextEmpty:'Next week\'s data is not published yet by ForexFactory. Try again later.',
   },
   es: {
-    title:'Calendario Económico', subtitle:'Datos ForexFactory — actualizado cada 5 minutos',
+    title:'Calendario Económico', subtitle:'Datos ForexFactory — actualizado cada minuto',
     thisWeek:'Esta semana', nextWeek:'Próxima semana', refresh:'↻ Actualizar',
-    loading:'Cargando...', error:'Error de carga', noEvents:'Sin eventos', all:'Todo',
+    loading:'Cargando...', error:'Error de carga', noEvents:'Sin eventos', all:'Todas',
     high:'🔴 Alto', medium:'🟠 Medio', low:'🟡 Bajo',
     time:'Hora', currency:'Divisa', event:'Evento', actual:'Real', forecast:'Previsión', previous:'Anterior', impact:'Impacto',
-    filterImpact:'Impacto', filterZone:'Zona', filterCurrency:'Divisas', clearFilters:'Borrar todo',
+    filterImpact:'Impacto', filterCurrency:'Divisas',
     lastUpdate:'Actualizado', today:'Hoy', events:'evento', eventsP:'eventos',
+    upcoming:'Próximo', past:'Pasado · datos aún no publicados',
     days:['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
     months:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+    nextEmpty:'Los datos de la próxima semana aún no han sido publicados por ForexFactory. Inténtelo más tarde.',
   }
 }
 
-const ZONES = {
-  all:    { fr:'Tout',       en:'All',          es:'Todo',      currencies:null },
-  usa:    { fr:'🇺🇸 USA',    en:'🇺🇸 USA',       es:'🇺🇸 USA',   currencies:['USD'] },
-  europe: { fr:'🇪🇺 Europe', en:'🇪🇺 Europe',    es:'🇪🇺 Europa', currencies:['EUR','GBP','CHF','SEK','NOK','DKK'] },
-  japan:  { fr:'🇯🇵 Japon',  en:'🇯🇵 Japan',     es:'🇯🇵 Japón', currencies:['JPY'] },
-  canada: { fr:'🇨🇦 Canada', en:'🇨🇦 Canada',    es:'🇨🇦 Canadá', currencies:['CAD'] },
-  aussie: { fr:'🇦🇺 Aus/NZ', en:'🇦🇺 Aus/NZ',    es:'🇦🇺 Aus/NZ', currencies:['AUD','NZD'] },
-  china:  { fr:'🇨🇳 Chine',  en:'🇨🇳 China',     es:'🇨🇳 China',  currencies:['CNY','CNH'] },
-}
+// Liste maîtresse des devises (toujours affichées dans les filtres si présentes dans les events)
+const CURRENCY_ORDER = ['USD','EUR','GBP','JPY','CAD','AUD','NZD','CHF','CNY','CNH','SEK','NOK','DKK','HKD','SGD','MXN','ZAR','TRY','INR','BRL']
 
-const FLAG={USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',CAD:'🇨🇦',AUD:'🇦🇺',NZD:'🇳🇿',CHF:'🇨🇭',CNY:'🇨🇳',CNH:'🇨🇳',SEK:'🇸🇪',NOK:'🇳🇴',DKK:'🇩🇰'}
+const FLAG={USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',CAD:'🇨🇦',AUD:'🇦🇺',NZD:'🇳🇿',CHF:'🇨🇭',CNY:'🇨🇳',CNH:'🇨🇳',SEK:'🇸🇪',NOK:'🇳🇴',DKK:'🇩🇰',HKD:'🇭🇰',SGD:'🇸🇬',MXN:'🇲🇽',ZAR:'🇿🇦',TRY:'🇹🇷',INR:'🇮🇳',BRL:'🇧🇷'}
 const IC={High:{dot:'#e8504a',text:'#e8504a',bg:'rgba(232,80,74,0.03)'},Medium:{dot:'#fac775',text:'#fac775',bg:'transparent'},Low:{dot:'#565e78',text:'#565e78',bg:'transparent'},Holiday:{dot:'#2d6fff',text:'#4d8fff',bg:'rgba(45,111,255,0.03)'}}
 
 // Traductions des événements ForexFactory (titres anglais → FR/ES)
-// On applique des regex case-insensitive, du plus spécifique au plus générique
 const EVENT_PATTERNS = [
-  // Inflation
   [/^Core CPI\b/i,                 {fr:'IPC sous-jacent',                es:'IPC subyacente'}],
   [/^CPI\b/i,                      {fr:'IPC (Inflation)',                es:'IPC (Inflación)'}],
   [/^Core PPI\b/i,                 {fr:'IPP sous-jacent',                es:'IPP subyacente'}],
@@ -62,8 +59,6 @@ const EVENT_PATTERNS = [
   [/^PCE Price Index\b/i,          {fr:'Indice des prix PCE',            es:'Índice de precios PCE'}],
   [/Inflation Rate/i,              {fr:"Taux d'inflation",               es:'Tasa de inflación'}],
   [/HICP/i,                        {fr:'IPCH (Indice harmonisé)',        es:'IPCA'}],
-
-  // Emploi
   [/Non[-\s]?Farm Employment/i,    {fr:'Emplois non agricoles (NFP)',    es:'Empleo no agrícola (NFP)'}],
   [/^NFP\b/i,                      {fr:'NFP — Emplois non agricoles',    es:'NFP — Empleo no agrícola'}],
   [/ADP.*Employment/i,             {fr:'Emplois privés ADP',             es:'Empleo privado ADP'}],
@@ -76,25 +71,21 @@ const EVENT_PATTERNS = [
   [/Employment Change/i,           {fr:"Variation de l'emploi",          es:'Variación del empleo'}],
   [/Job Openings/i,                {fr:"Offres d'emploi (JOLTS)",        es:'Ofertas de empleo (JOLTS)'}],
   [/Participation Rate/i,          {fr:'Taux de participation',          es:'Tasa de participación'}],
-
-  // Croissance / Production
   [/^GDP\b/i,                      {fr:'PIB',                            es:'PIB'}],
   [/Industrial Production/i,       {fr:'Production industrielle',        es:'Producción industrial'}],
   [/Manufacturing Production/i,    {fr:'Production manufacturière',      es:'Producción manufacturera'}],
   [/Capacity Utilization/i,        {fr:'Utilisation des capacités',      es:'Utilización de capacidad'}],
   [/Factory Orders/i,              {fr:"Commandes à l'industrie",        es:'Pedidos de fábrica'}],
   [/Durable Goods Orders/i,        {fr:'Commandes de biens durables',    es:'Pedidos de bienes duraderos'}],
-
-  // PMI / ISM
+  [/Final Manufacturing PMI/i,     {fr:'PMI manufacturier final',        es:'PMI manufacturero final'}],
   [/Manufacturing PMI/i,           {fr:'PMI manufacturier',              es:'PMI manufacturero'}],
+  [/Final Services PMI/i,          {fr:'PMI services final',             es:'PMI servicios final'}],
   [/Services PMI/i,                {fr:'PMI services',                   es:'PMI servicios'}],
   [/Composite PMI/i,               {fr:'PMI composite',                  es:'PMI compuesto'}],
   [/Flash.*PMI/i,                  {fr:'PMI flash',                      es:'PMI flash'}],
   [/ISM Manufacturing/i,           {fr:'ISM manufacturier',              es:'ISM manufacturero'}],
   [/ISM Services/i,                {fr:'ISM services',                   es:'ISM servicios'}],
   [/^PMI\b/i,                      {fr:'PMI',                            es:'PMI'}],
-
-  // Banques centrales
   [/Federal Funds Rate/i,          {fr:'Taux directeur Fed',             es:'Tipo de interés Fed'}],
   [/FOMC.*Statement/i,             {fr:'Communiqué FOMC',                es:'Comunicado FOMC'}],
   [/FOMC.*Minutes/i,               {fr:'Compte-rendu FOMC',              es:'Actas del FOMC'}],
@@ -111,24 +102,19 @@ const EVENT_PATTERNS = [
   [/Overnight Rate/i,              {fr:'Taux directeur BoC',             es:'Tipo de interés BoC'}],
   [/SNB.*Policy Rate/i,            {fr:'Taux directeur BNS',             es:'Tipo de interés BNS'}],
   [/BOJ.*Policy Rate/i,            {fr:'Taux directeur BoJ',             es:'Tipo de interés BoJ'}],
-
-  // Consommation / Ventes
   [/Retail Sales/i,                {fr:'Ventes au détail',               es:'Ventas minoristas'}],
   [/Consumer Confidence/i,         {fr:'Confiance consommateurs',        es:'Confianza del consumidor'}],
   [/Consumer Sentiment/i,          {fr:'Sentiment consommateurs',        es:'Sentimiento del consumidor'}],
   [/Consumer Spending/i,           {fr:'Dépenses des ménages',           es:'Gasto del consumidor'}],
   [/Personal Income/i,             {fr:'Revenu personnel',               es:'Ingreso personal'}],
   [/Personal Spending/i,           {fr:'Dépenses personnelles',          es:'Gasto personal'}],
-
-  // Logement
   [/Building Permits/i,            {fr:'Permis de construire',           es:'Permisos de construcción'}],
   [/Housing Starts/i,              {fr:'Mises en chantier',              es:'Inicios de viviendas'}],
   [/New Home Sales/i,              {fr:'Ventes de logements neufs',      es:'Ventas de viviendas nuevas'}],
   [/Existing Home Sales/i,         {fr:'Ventes de logements anciens',    es:'Ventas de viviendas usadas'}],
   [/Pending Home Sales/i,          {fr:'Ventes de logements en attente', es:'Ventas pendientes de viviendas'}],
   [/Case[-\s]?Shiller/i,           {fr:'Indice Case-Shiller (immobilier)',es:'Índice Case-Shiller (inmobiliario)'}],
-
-  // Confiance / Sentiment business
+  [/Nationwide HPI/i,              {fr:'Indice prix logement Nationwide',es:'Índice precios vivienda Nationwide'}],
   [/Business Confidence/i,         {fr:"Confiance des entreprises",      es:'Confianza empresarial'}],
   [/Empire State/i,                {fr:'Indice manufacturier Empire State',es:'Índice manufacturero Empire State'}],
   [/Philly Fed/i,                  {fr:'Indice Philly Fed',              es:'Índice Philly Fed'}],
@@ -137,18 +123,15 @@ const EVENT_PATTERNS = [
   [/IFO Business Climate/i,        {fr:'Climat des affaires IFO',        es:'Clima empresarial IFO'}],
   [/ZEW.*Sentiment/i,              {fr:'Sentiment économique ZEW',       es:'Sentimiento económico ZEW'}],
   [/Tankan/i,                      {fr:'Enquête Tankan (Japon)',         es:'Encuesta Tankan'}],
-
-  // Commerce / extérieur
   [/Trade Balance/i,                {fr:'Balance commerciale',           es:'Balanza comercial'}],
   [/Current Account/i,              {fr:'Balance des paiements',         es:'Cuenta corriente'}],
   [/Imports/i,                      {fr:'Importations',                  es:'Importaciones'}],
   [/Exports/i,                      {fr:'Exportations',                  es:'Exportaciones'}],
-
-  // Énergie
   [/Crude Oil Inventories/i,       {fr:'Stocks de pétrole brut',         es:'Inventarios de petróleo crudo'}],
   [/Natural Gas Storage/i,         {fr:'Stocks de gaz naturel',          es:'Reservas de gas natural'}],
-
-  // Divers
+  [/M4 Money Supply/i,             {fr:'Masse monétaire M4',             es:'Oferta monetaria M4'}],
+  [/Money Supply/i,                {fr:'Masse monétaire',                es:'Oferta monetaria'}],
+  [/Commodity Prices/i,            {fr:'Prix des matières premières',    es:'Precios de materias primas'}],
   [/Bank Holiday/i,                {fr:'Jour férié bancaire',            es:'Día festivo bancario'}],
   [/^Holiday/i,                    {fr:'Jour férié',                     es:'Día festivo'}],
   [/Speech/i,                      {fr:'Discours',                       es:'Discurso'}],
@@ -158,18 +141,9 @@ const EVENT_PATTERNS = [
   [/Bond Auction/i,                {fr:"Adjudication d'obligations",     es:'Subasta de bonos'}],
 ]
 
-// Suffixes type "m/m", "y/y", "q/q" — translation per language
 const SUFFIX_PATTERNS = {
-  fr: [
-    [/\bm\/m\b/gi, 'm/m'],
-    [/\by\/y\b/gi, 'a/a'],
-    [/\bq\/q\b/gi, 't/t'],
-  ],
-  es: [
-    [/\bm\/m\b/gi, 'm/m'],
-    [/\by\/y\b/gi, 'a/a'],
-    [/\bq\/q\b/gi, 't/t'],
-  ],
+  fr: [[/\bm\/m\b/gi, 'm/m'],[/\by\/y\b/gi, 'a/a'],[/\bq\/q\b/gi, 't/t']],
+  es: [[/\bm\/m\b/gi, 'm/m'],[/\by\/y\b/gi, 'a/a'],[/\bq\/q\b/gi, 't/t']],
   en: []
 }
 
@@ -178,11 +152,7 @@ function translateTitle(title, lang) {
   if (lang === 'en') return title
   let out = title
   for (const [re, dict] of EVENT_PATTERNS) {
-    if (re.test(out)) {
-      // Garder la partie suffixe (ex: " m/m", " (Q3)")
-      out = out.replace(re, dict[lang] || dict.fr)
-      break
-    }
+    if (re.test(out)) { out = out.replace(re, dict[lang] || dict.fr); break }
   }
   for (const [re, repl] of (SUFFIX_PATTERNS[lang] || [])) out = out.replace(re, repl)
   return out
@@ -200,47 +170,63 @@ function aColor(actual,forecast){
 }
 function todayFF(){const d=new Date();return`${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${d.getFullYear()}`}
 
+// Convertit "MM-DD-YYYY" + "h:mmam/pm" en timestamp pour comparer si l'event est passé
+function eventTime(dateStr, timeStr){
+  if(!dateStr) return 0
+  const [m,d,y] = dateStr.split('-')
+  const base = new Date(`${y}-${m}-${d}T00:00:00`)
+  if(!timeStr || /all day|tentative/i.test(timeStr)) return base.getTime()
+  const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i)
+  if(!match) return base.getTime()
+  let h = parseInt(match[1],10)
+  const mn = parseInt(match[2],10)
+  const ampm = (match[3]||'').toLowerCase()
+  if(ampm === 'pm' && h !== 12) h += 12
+  if(ampm === 'am' && h === 12) h = 0
+  base.setHours(h, mn, 0, 0)
+  return base.getTime()
+}
+
 export default function CalendarPage({lang='fr',onLangChange}){
   const[events,setEvents]=useState([])
   const[loading,setLoading]=useState(true)
   const[error,setError]=useState('')
   const[week,setWeek]=useState('this')
   const[fImpact,setFImpact]=useState('all')
-  const[fZone,setFZone]=useState('all')
-  const[fCurrencies,setFCurrencies]=useState([]) // multi-select de devises
+  const[fCurrencies,setFCurrencies]=useState([]) // [] = toutes
   const[lastUpd,setLastUpd]=useState('')
   const[openDay,setOpenDay]=useState(null)
   const t=T[lang]||T.fr
   const today=todayFF()
+  const nowTs = Date.now()
 
   async function load(){
     setLoading(true);setError('')
     try{
-      const r=await fetch(`/api/calendar?week=${week}&t=${Date.now()}`)
+      const r=await fetch(`/api/calendar?week=${week}&t=${Date.now()}`,{cache:'no-store'})
       const data=await r.json()
       if(data.error)throw new Error(data.error)
       setEvents(data.events||[])
       setLastUpd(new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}))
-    }catch(e){setError(e.message)}
+    }catch(e){setError(e.message);setEvents([])}
     setLoading(false)
   }
 
   useEffect(()=>{load()},[week])
-  useEffect(()=>{const iv=setInterval(load,300000);return()=>clearInterval(iv)},[week])
+  // Refresh toutes les 60s pour récupérer les actuals dès qu'ils sont publiés
+  useEffect(()=>{const iv=setInterval(load,60000);return()=>clearInterval(iv)},[week])
 
-  // Liste des devises présentes dans les événements (pour les chips)
+  // Devises présentes dans les events, ordonnées selon CURRENCY_ORDER
   const availableCurrencies = useMemo(()=>{
-    const s=new Set()
-    events.forEach(e=>{ if(e.currency) s.add(e.currency) })
-    return Array.from(s).sort()
+    const present = new Set(events.map(e=>e.currency).filter(Boolean))
+    return CURRENCY_ORDER.filter(c => present.has(c))
+      .concat([...present].filter(c => !CURRENCY_ORDER.includes(c)).sort())
   },[events])
 
-  const zoneCur=ZONES[fZone]?.currencies
   const filtered=events.filter(e=>{
     const iOk=fImpact==='all'||e.impact===fImpact
-    const zOk=!zoneCur||zoneCur.includes(e.currency)
     const cOk=fCurrencies.length===0||fCurrencies.includes(e.currency)
-    return iOk&&zOk&&cOk
+    return iOk&&cOk
   })
   const grouped={}
   filtered.forEach(e=>{if(!grouped[e.date])grouped[e.date]=[];grouped[e.date].push(e)})
@@ -249,19 +235,17 @@ export default function CalendarPage({lang='fr',onLangChange}){
   useEffect(()=>{
     if(dates.includes(today))setOpenDay(today)
     else if(dates.length)setOpenDay(dates[0])
-  },[events.length,fImpact,fZone,fCurrencies.join(',')])
+    else setOpenDay(null)
+  },[events.length,fImpact,fCurrencies.join(',')])
 
   function toggleCurrency(cur){
     setFCurrencies(prev=>prev.includes(cur)?prev.filter(c=>c!==cur):[...prev,cur])
   }
-  function clearAllFilters(){
-    setFImpact('all');setFZone('all');setFCurrencies([])
-  }
+  function selectAllCurrencies(){ setFCurrencies([]) }
 
   const btn=(active)=>({padding:'6px 14px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',fontFamily:'inherit',fontWeight:'500',background:active?'var(--blue)':'transparent',color:active?'#fff':'var(--text2)',transition:'all 0.15s'})
-  const chipBtn=(active)=>({padding:'5px 11px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',fontFamily:'inherit',fontWeight:'600',background:active?'var(--blue)':'var(--surface2)',color:active?'#fff':'var(--text2)',transition:'all 0.15s',display:'inline-flex',alignItems:'center',gap:'4px'})
+  const chipBtn=(active)=>({padding:'6px 12px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',fontFamily:'inherit',fontWeight:'600',background:active?'var(--blue)':'var(--surface2)',color:active?'#fff':'var(--text2)',transition:'all 0.15s',display:'inline-flex',alignItems:'center',gap:'5px'})
   const card={background:'var(--surface)',border:'0.5px solid var(--border)',borderRadius:'var(--radius-lg)'}
-  const hasActiveFilters = fImpact!=='all' || fZone!=='all' || fCurrencies.length>0
 
   return(
     <div className="cal-wrap" style={{maxWidth:'1100px',margin:'0 auto',padding:'28px 24px 60px'}}>
@@ -273,13 +257,11 @@ export default function CalendarPage({lang='fr',onLangChange}){
           <div style={{fontSize:'12px',color:'var(--text3)'}}>{t.subtitle}{lastUpd&&` · ${t.lastUpdate} : ${lastUpd}`}</div>
         </div>
         <div style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
-          {/* Language */}
           <div style={{display:'flex',border:'0.5px solid var(--border2)',borderRadius:'99px',overflow:'hidden',background:'var(--surface)'}}>
             {[{c:'fr',l:'🇫🇷 FR'},{c:'en',l:'🇬🇧 EN'},{c:'es',l:'🇪🇸 ES'}].map(x=>(
               <button key={x.c} onClick={()=>onLangChange&&onLangChange(x.c)} style={btn(lang===x.c)}>{x.l}</button>
             ))}
           </div>
-          {/* Week */}
           <div style={{display:'flex',border:'0.5px solid var(--border2)',borderRadius:'99px',overflow:'hidden',background:'var(--surface)'}}>
             <button onClick={()=>setWeek('this')} style={btn(week==='this')}>{t.thisWeek}</button>
             <button onClick={()=>setWeek('next')} style={btn(week==='next')}>{t.nextWeek}</button>
@@ -290,7 +272,6 @@ export default function CalendarPage({lang='fr',onLangChange}){
 
       {/* Filters */}
       <div style={{...card,padding:'14px 18px',marginBottom:'16px',display:'flex',flexDirection:'column',gap:'10px'}}>
-        {/* Ligne 1 : Impact */}
         <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
           <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t.filterImpact}</span>
           {['all','High','Medium','Low'].map(imp=>(
@@ -300,33 +281,21 @@ export default function CalendarPage({lang='fr',onLangChange}){
           ))}
         </div>
 
-        {/* Ligne 2 : Zone */}
-        <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
-          <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t.filterZone}</span>
-          {Object.entries(ZONES).map(([key,zone])=>(
-            <button key={key} onClick={()=>setFZone(key)} style={btn(fZone===key)}>
-              {zone[lang]||zone.en}
+        <div style={{display:'flex',flexWrap:'wrap',gap:'6px',alignItems:'center'}}>
+          <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t.filterCurrency}</span>
+          <button onClick={selectAllCurrencies} style={chipBtn(fCurrencies.length===0)}>
+            🌍 {t.all}
+          </button>
+          {availableCurrencies.length === 0 && !loading && (
+            <span style={{fontSize:'11px',color:'var(--text3)',fontStyle:'italic'}}>(aucune devise disponible)</span>
+          )}
+          {availableCurrencies.map(cur=>(
+            <button key={cur} onClick={()=>toggleCurrency(cur)} style={chipBtn(fCurrencies.includes(cur))}>
+              <span>{FLAG[cur]||''}</span>
+              <span>{cur}</span>
             </button>
           ))}
         </div>
-
-        {/* Ligne 3 : Devises individuelles (multi-select) */}
-        {availableCurrencies.length>0 && (
-          <div style={{display:'flex',flexWrap:'wrap',gap:'6px',alignItems:'center'}}>
-            <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t.filterCurrency}</span>
-            {availableCurrencies.map(cur=>(
-              <button key={cur} onClick={()=>toggleCurrency(cur)} style={chipBtn(fCurrencies.includes(cur))}>
-                <span>{FLAG[cur]||''}</span>
-                <span>{cur}</span>
-              </button>
-            ))}
-            {hasActiveFilters && (
-              <button onClick={clearAllFilters} style={{...btn(false),marginLeft:'auto',color:'var(--red-text)',borderColor:'var(--red-text)'}}>
-                ✕ {t.clearFilters}
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -340,7 +309,16 @@ export default function CalendarPage({lang='fr',onLangChange}){
           <div style={{marginTop:'12px'}}><button onClick={load} style={btn(true)}>{t.refresh}</button></div>
         </div>
       ):!dates.length?(
-        <div style={{...card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>{t.noEvents}</div>
+        <div style={{...card,padding:'60px 24px',textAlign:'center',color:'var(--text3)'}}>
+          <div style={{fontSize:'32px',marginBottom:'12px'}}>📅</div>
+          <div style={{fontSize:'14px',marginBottom:'10px'}}>{week==='next' && events.length===0 ? t.nextEmpty : t.noEvents}</div>
+          {events.length>0 && filtered.length===0 && (
+            <div style={{fontSize:'12px',color:'var(--text3)',marginTop:'6px'}}>
+              {events.length} événement{events.length>1?'s':''} masqué{events.length>1?'s':''} par les filtres
+            </div>
+          )}
+          <button onClick={load} style={{...btn(false),marginTop:'16px',background:'var(--surface2)'}}>{t.refresh}</button>
+        </div>
       ):(
         <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
           {dates.map(date=>{
@@ -380,6 +358,9 @@ export default function CalendarPage({lang='fr',onLangChange}){
                           const ic=IC[ev.impact]||IC.Low
                           const ac=aColor(ev.actual,ev.forecast)
                           const tTitle=translateTitle(ev.title,lang)
+                          const evTs = eventTime(ev.date, ev.time)
+                          const isPast = evTs > 0 && evTs < nowTs
+                          const hasActual = !!ev.actual
                           return(
                             <tr key={i} style={{borderBottom:'0.5px solid var(--border)',background:ic.bg}}>
                               <td style={{padding:'11px 14px',color:'var(--text2)',whiteSpace:'nowrap',fontFamily:'monospace',fontSize:'12px'}}>{ev.time||'—'}</td>
@@ -400,7 +381,15 @@ export default function CalendarPage({lang='fr',onLangChange}){
                                 {lang!=='en'&&tTitle!==ev.title&&<div style={{fontSize:'10px',color:'var(--text3)',marginTop:'1px',fontStyle:'italic'}}>{ev.title}</div>}
                                 {ev.country&&<div style={{fontSize:'10px',color:'var(--text3)',marginTop:'1px'}}>{ev.country}</div>}
                               </td>
-                              <td style={{padding:'11px 14px',fontWeight:'700',color:ac,whiteSpace:'nowrap'}}>{ev.actual||'—'}</td>
+                              <td style={{padding:'11px 14px',whiteSpace:'nowrap'}}>
+                                {hasActual ? (
+                                  <span style={{fontWeight:'700',color:ac}}>{ev.actual}</span>
+                                ) : isPast ? (
+                                  <span title={t.past} style={{fontSize:'10px',color:'var(--text3)',fontStyle:'italic'}}>⏳ en attente</span>
+                                ) : (
+                                  <span title={t.upcoming} style={{fontSize:'10px',color:'var(--text3)'}}>—</span>
+                                )}
+                              </td>
                               <td style={{padding:'11px 14px',color:'var(--text2)',whiteSpace:'nowrap'}}>{ev.forecast||'—'}</td>
                               <td style={{padding:'11px 14px',color:'var(--text3)',whiteSpace:'nowrap'}}>{ev.previous||'—'}</td>
                             </tr>
