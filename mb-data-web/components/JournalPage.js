@@ -29,6 +29,8 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
   const ddType = account.dd_type || (isTrailingDD(account.firmName) ? 'trailing' : 'static')
   const isTrailing = ddType === 'trailing'
   const ddInitial = ddMax!==null ? planSize - ddMax : null
+  const payoutTarget = account.payout_target != null ? Number(account.payout_target) : null
+  const minDays = account.min_trading_days != null ? Number(account.min_trading_days) : null
 
   // Trie les entries par date et construit la courbe cumulative + ligne DD
   // Pour le DD trailing : à chaque jour, ddLine[i] = min(balance_peak_jusqu'à i - DDmax, planSize)
@@ -62,10 +64,13 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
         ddLine.push(planSize - ddMax)
       }
     })
+    // Jours uniques tradés (sur ce compte)
+    const tradingDays = new Set(sorted.map(e=>e.date)).size
     return {
       labels, balances, ddLine,
       finalBalance: planSize + cum, totalPnl: cum, finalPeak: peak,
       currentDD: ddLine.length ? ddLine[ddLine.length - 1] : null,
+      tradingDays,
     }
   },[entries, planSize, ddMax, isTrailing])
 
@@ -93,7 +98,18 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
           stepped: isTrailing ? 'before' : false, // marche d'escalier pour le trailing
         })
       }
+      // Ligne d'objectif payout (verte horizontale)
+      if(payoutTarget !== null){
+        datasets.push({
+          label: 'Objectif payout',
+          data: data.labels.map(()=>payoutTarget),
+          borderColor: '#1db87a', backgroundColor:'transparent',
+          fill:false, tension:0, pointRadius:0, borderWidth:2,
+          borderDash:[2,3],
+        })
+      }
       const allVals = [...data.balances, ...(data.ddLine.filter(v=>v!==null))]
+      if(payoutTarget !== null) allVals.push(payoutTarget)
       const minVal = Math.min(...allVals) * 0.998
       const maxVal = Math.max(...allVals, planSize) * 1.002
       chart.current = new Chart(ref.current, {
@@ -126,7 +142,7 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
       destroyed = true
       if(chart.current){ chart.current.destroy(); chart.current = null }
     }
-  },[data.labels.join(','), data.balances.join(','), data.ddLine.join(','), planSize, isTrailing])
+  },[data.labels.join(','), data.balances.join(','), data.ddLine.join(','), planSize, isTrailing, payoutTarget])
 
   const finalNet = data.totalPnl
   const pctFromStart = planSize>0 ? (finalNet/planSize)*100 : 0
@@ -153,6 +169,63 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
         </div>
       </div>
 
+      {/* Indicateurs de progression : payout target + jours tradés */}
+      {(payoutTarget !== null || minDays !== null) && (
+        <div style={{display:'grid',gridTemplateColumns:payoutTarget!==null && minDays!==null?'1fr 1fr':'1fr',gap:'8px',marginBottom:'12px'}}>
+          {payoutTarget !== null && (() => {
+            const remaining = payoutTarget - data.finalBalance
+            const reached = remaining <= 0
+            const totalNeeded = payoutTarget - planSize
+            const progress = totalNeeded > 0 ? Math.max(0, Math.min(100, ((data.finalBalance - planSize) / totalNeeded) * 100)) : 0
+            return (
+              <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'10px 12px'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'5px'}}>
+                  <span style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:'700'}}>🎯 Objectif payout</span>
+                  <span style={{fontSize:'12px',fontWeight:'700',color:reached?'var(--green)':'var(--text)'}}>
+                    {reached ? '✓ Atteint' : `${progress.toFixed(0)}%`}
+                  </span>
+                </div>
+                <div style={{fontSize:'13px',fontWeight:'700',color:reached?'var(--green)':'var(--text)',marginBottom:'4px'}}>
+                  ${payoutTarget.toLocaleString('fr-FR',{maximumFractionDigits:0})}
+                </div>
+                <div style={{fontSize:'10px',color:reached?'var(--green-text)':'var(--text2)'}}>
+                  {reached
+                    ? `+$${(-remaining).toLocaleString('fr-FR',{maximumFractionDigits:0})} au-dessus`
+                    : `Il manque $${remaining.toLocaleString('fr-FR',{maximumFractionDigits:0})}`}
+                </div>
+                {/* Mini barre de progression */}
+                <div style={{height:'4px',background:'var(--surface3)',borderRadius:'99px',marginTop:'6px',overflow:'hidden'}}>
+                  <div style={{height:'100%',width:progress+'%',background:reached?'var(--green)':'linear-gradient(90deg,#1db87a,#fac775)',transition:'width 0.3s'}} />
+                </div>
+              </div>
+            )
+          })()}
+          {minDays !== null && (() => {
+            const reached = data.tradingDays >= minDays
+            const progress = minDays > 0 ? Math.min(100, (data.tradingDays / minDays) * 100) : 0
+            return (
+              <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'10px 12px'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'5px'}}>
+                  <span style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:'700'}}>📅 Jours tradés</span>
+                  <span style={{fontSize:'12px',fontWeight:'700',color:reached?'var(--green)':'var(--text)'}}>
+                    {reached ? '✓ Atteint' : `${progress.toFixed(0)}%`}
+                  </span>
+                </div>
+                <div style={{fontSize:'13px',fontWeight:'700',color:reached?'var(--green)':'var(--text)',marginBottom:'4px'}}>
+                  {data.tradingDays} / {minDays}
+                </div>
+                <div style={{fontSize:'10px',color:reached?'var(--green-text)':'var(--text2)'}}>
+                  {reached ? 'Minimum atteint' : `Encore ${minDays - data.tradingDays} jour${minDays-data.tradingDays>1?'s':''}`}
+                </div>
+                <div style={{height:'4px',background:'var(--surface3)',borderRadius:'99px',marginTop:'6px',overflow:'hidden'}}>
+                  <div style={{height:'100%',width:progress+'%',background:reached?'var(--green)':'#4d8fff',transition:'width 0.3s'}} />
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       <div style={{display:'flex',gap:'14px',marginBottom:'10px',flexWrap:'wrap'}}>
         <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
           <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a'}} />Balance
@@ -163,6 +236,12 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
             {isTrailing
               ? <span>DD trailing (${ddMax.toLocaleString('fr-FR')}) → actuellement ${data.currentDD?.toLocaleString('fr-FR')}</span>
               : <span>DD static (${ddMax.toLocaleString('fr-FR')}) → ${(planSize-ddMax).toLocaleString('fr-FR')}</span>}
+          </div>
+        )}
+        {payoutTarget!==null && (
+          <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
+            <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a',borderTop:'1px dashed #1db87a'}} />
+            <span>Objectif (${payoutTarget.toLocaleString('fr-FR')})</span>
           </div>
         )}
         {ddMax===null && (
@@ -193,6 +272,7 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
+  const [statusFilter, setStatusFilter] = useState('active') // 'all' | 'active' | 'Challenge' | 'Financé' | 'Échoué'
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
   const [selDay, setSelDay] = useState(null)
@@ -251,15 +331,30 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
     })
   },[entries, allAccounts])
 
-  // Filtre par scope
+  // Helper : un compte passe-t-il le filtre de statut ?
+  function passesStatus(acc){
+    if(!acc) return true
+    if(statusFilter === 'all') return true
+    if(statusFilter === 'active') return acc.status === 'Challenge' || acc.status === 'Financé'
+    return acc.status === statusFilter
+  }
+
+  // Filtre par scope ET par statut du compte rattaché
   const filteredEntries = useMemo(()=>{
-    if(scope === 'all') return decoratedEntries
+    let arr = decoratedEntries
     if(scope.includes(':')){
       const [, acctId] = scope.split(':')
-      return decoratedEntries.filter(e => e.account_id === acctId)
+      arr = arr.filter(e => e.account_id === acctId)
+    } else if(scope !== 'all'){
+      arr = arr.filter(e => e._firmId === scope)
     }
-    return decoratedEntries.filter(e => e._firmId === scope)
-  },[decoratedEntries, scope])
+    // Filtre statut : on filtre les entries dont le compte rattaché passe le statusFilter
+    arr = arr.filter(e => {
+      const acc = allAccounts.find(a => a.id === e.account_id)
+      return passesStatus(acc)
+    })
+    return arr
+  },[decoratedEntries, scope, statusFilter, allAccounts])
 
   // PnL agrégé par jour
   const dailyPnL = useMemo(()=>{
@@ -466,13 +561,28 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
         </div>
       )}
 
-      {/* Filtre scope */}
-      <div style={{...card, padding:'14px 18px', marginBottom:'16px'}}>
-        <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>Filtrer par</div>
+      {/* Filtres scope + statut */}
+      <div style={{...card, padding:'14px 18px', marginBottom:'16px',display:'flex',flexDirection:'column',gap:'10px'}}>
+        {/* Statut */}
         <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
-          <button onClick={()=>setScope('all')} style={chipBtn(scope==='all')}>📊 Toutes les firmes</button>
+          <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Statut</span>
+          {[
+            {k:'active',l:'🟢 Actifs'},
+            {k:'Challenge',l:'🟡 Challenge'},
+            {k:'Financé',l:'✅ Financé'},
+            {k:'Échoué',l:'🔴 Échoué'},
+            {k:'all',l:'Tous'},
+          ].map(s=>(
+            <button key={s.k} onClick={()=>setStatusFilter(s.k)} style={chipBtn(statusFilter===s.k)}>{s.l}</button>
+          ))}
+        </div>
+
+        {/* Firmes / Comptes */}
+        <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
+          <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Firme</span>
+          <button onClick={()=>setScope('all')} style={chipBtn(scope==='all')}>📊 Toutes</button>
           {firms.map(f=>{
-            const accs = (f.accounts||[]).filter(a=>a.status!=='Échoué')
+            const accs = (f.accounts||[]).filter(a=>passesStatus(a))
             if(!accs.length) return null
             return (
               <div key={f.id} style={{display:'inline-flex',gap:'4px',alignItems:'center',padding:'2px 4px 2px 6px',border:'0.5px solid var(--border)',borderRadius:'99px',background:scope===f.id||scope.startsWith(f.id+':')?'rgba(45,111,255,0.05)':'transparent'}}>
@@ -699,16 +809,15 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
 
         {/* === Courbes de balance par compte === */}
         {(() => {
-          // Comptes à afficher : selon le scope
+          // Comptes à afficher : selon le scope ET le statusFilter
           let acctsToShow = []
           if(scope === 'all'){
-            // Tous les comptes ayant au moins une entrée OU étant Challenge/Financé (pour montrer un graphique vide)
-            acctsToShow = allAccounts.filter(a => a.status !== 'Échoué')
+            acctsToShow = allAccounts.filter(a => passesStatus(a))
           } else if(scope.includes(':')){
             const [, acctId] = scope.split(':')
             acctsToShow = allAccounts.filter(a => a.id === acctId)
           } else {
-            acctsToShow = allAccounts.filter(a => a.firmId === scope && a.status !== 'Échoué')
+            acctsToShow = allAccounts.filter(a => a.firmId === scope && passesStatus(a))
           }
           if(!acctsToShow.length) return null
 

@@ -29,9 +29,11 @@ create table if not exists accounts (
 );
 
 -- Si la table existe déjà sans les colonnes, ajoute-les (sans erreur si déjà présentes)
-alter table accounts add column if not exists plan_size text default '50k';
-alter table accounts add column if not exists name      text default '';
-alter table accounts add column if not exists dd_type   text default 'static';
+alter table accounts add column if not exists plan_size         text          default '50k';
+alter table accounts add column if not exists name              text          default '';
+alter table accounts add column if not exists dd_type           text          default 'static';
+alter table accounts add column if not exists payout_target     numeric(12,2);
+alter table accounts add column if not exists min_trading_days  int;
 
 -- PAYOUTS table
 create table if not exists payouts (

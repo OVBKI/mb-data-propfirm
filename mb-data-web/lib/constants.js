@@ -81,6 +81,7 @@ export const PROPFIRM_RULES = {
       'Objectif de profit':       {'25k':'$1,500','50k':'$3,000','100k':'$6,000','150k':'$9,000'},
       'Drawdown journalier max':  {'25k':'$500','50k':'$1,200','100k':'$2,500','150k':'$3,500'},
       'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
+      'Jours de trading min':     {'25k':'5 jours','50k':'5 jours','100k':'5 jours','150k':'5 jours'},
       'Positions overnight':      {'25k':'Non','50k':'Non','100k':'Non','150k':'Non'},
       'Payout minimum':           {'25k':'$1,000','50k':'$1,000','100k':'$1,000','150k':'$1,000'},
       'Délai payout':             {'25k':'7-14j','50k':'7-14j','100k':'7-14j','150k':'7-14j'},
@@ -93,6 +94,7 @@ export const PROPFIRM_RULES = {
       'Objectif de profit':       {'25k':'$1,500','50k':'$3,000','100k':'$6,000','150k':'$9,000'},
       'Drawdown journalier max':  {'25k':'$500','50k':'$1,000','100k':'$2,000','150k':'$3,000'},
       'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,500','100k':'$3,000','150k':'$4,500'},
+      'Jours de trading min':     {'25k':'10 jours','50k':'10 jours','100k':'10 jours','150k':'10 jours'},
       'Positions overnight':      {'25k':'Non','50k':'Non','100k':'Non','150k':'Non'},
       'Payout minimum':           {'25k':'$500','50k':'$500','100k':'$500','150k':'$500'},
       'Délai payout':             {'25k':'14j','50k':'14j','100k':'14j','150k':'14j'},
@@ -181,4 +183,35 @@ export function defaultDdType(firmName){
 export function accountLabel(a){
   if(!a) return ''
   return (a.name && a.name.trim()) ? a.name.trim() : `Compte du ${a.buy_date}`
+}
+
+// Retourne le profit target ($ numérique) selon les règles de la firme (sans le balance initial)
+export function profitTarget(firmName, plan){
+  const rules = PROPFIRM_RULES[firmName]?.rules
+  if(!rules || !plan) return null
+  const ptKey = Object.keys(rules).find(k => /objectif|profit\s+target/i.test(k))
+  if(!ptKey) return null
+  const ptStr = rules[ptKey][plan]
+  if(!ptStr) return null
+  const m = String(ptStr).match(/[\d,]+/)
+  return m ? parseInt(m[0].replace(/,/g,''),10) : null
+}
+
+// Retourne le balance cible pour un payout (planSize + profit target)
+export function defaultPayoutTarget(firmName, plan){
+  const pt = profitTarget(firmName, plan)
+  if(pt === null) return null
+  return planSizeNum(plan) + pt
+}
+
+// Retourne le nombre de jours de trading min selon la firme
+export function defaultMinTradingDays(firmName, plan){
+  const rules = PROPFIRM_RULES[firmName]?.rules
+  if(!rules || !plan) return null
+  const dKey = Object.keys(rules).find(k => /jours.*trading.*min/i.test(k))
+  if(!dKey) return null
+  const dStr = rules[dKey][plan]
+  if(!dStr) return null
+  const m = String(dStr).match(/(\d+)/)
+  return m ? parseInt(m[1],10) : null
 }
