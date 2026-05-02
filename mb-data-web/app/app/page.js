@@ -410,7 +410,7 @@ export default function Home() {
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
           <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
           <Logo size={32} />
-          <div style={{fontWeight:'700',fontSize:'15px',letterSpacing:'0.08em'}}>QUANTARA</div>
+          <div style={{fontWeight:'700',fontSize:'15px',letterSpacing:'0.12em'}}>QUANTARA</div>
           <span className="top-bar-brand-sub" style={{fontSize:'11px',color:'var(--text3)',letterSpacing:'0.05em'}}>· TRACK · ANALYZE · GROW</span>
         </div>
         <div className="top-bar-actions" style={{display:'flex',gap:'6px'}}>
