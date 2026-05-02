@@ -4,8 +4,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'MB Data — PropFirm Journal',
-  description: 'Suivi de vos comptes PropFirm futures',
+  title: 'Quantara — Track. Analyze. Grow.',
+  description: 'Le journal de trading des PropFirms futures. Track. Analyze. Grow.',
 }
 
 export const viewport = {

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Logo from './Logo'
 
 export default function AuthPage({ onAuth }) {
   const [mode, setMode]       = useState('login') // login | register
@@ -46,12 +47,12 @@ export default function AuthPage({ onAuth }) {
         boxShadow: '0 24px 64px rgba(0,0,0,0.5)'
       }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <Logo size={56} />
           <div style={{
-            fontSize: '22px', fontWeight: '700', letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>MB Data</div>
-          <div style={{ fontSize: '13px', color: 'var(--text3)' }}>PropFirm Journal</div>
+            fontSize: '22px', fontWeight: '700', letterSpacing: '0.15em',
+          }}>QUANTARA</div>
+          <div style={{ fontSize: '11px', color: 'var(--text3)', letterSpacing: '0.1em' }}>TRACK · ANALYZE · GROW</div>
         </div>
 
         {/* Tabs */}

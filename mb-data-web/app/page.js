@@ -1,8 +1,9 @@
 import Link from 'next/link'
+import Logo from '../components/Logo'
 
 export const metadata = {
-  title: 'MB Data — Le journal de trading des PropFirms futures',
-  description: 'Suis tes PropFirms, journalise tes trades, garde l\'œil sur ton drawdown trailing et ta consistency. Le tableau de bord pensé pour les traders prop.',
+  title: 'Quantara — Track. Analyze. Grow.',
+  description: 'Suis tes PropFirms, journalise tes trades, garde l\'œil sur ton drawdown trailing et ta consistency. Quantara : Track. Analyze. Grow.',
 }
 
 // Styles inline pour rester cohérent avec le reste de l'app
@@ -123,21 +124,16 @@ export default function Landing() {
           padding: '14px 24px',
         }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: colors.text }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: `linear-gradient(135deg, ${colors.blue} 0%, ${colors.green} 100%)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 16, color: '#fff',
-            }}>MB</div>
+            <Logo size={40} />
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1 }}>MB Data</div>
-              <div style={{ fontSize: 11, color: colors.text3, marginTop: 2 }}>PropFirm Journal</div>
+              <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1, letterSpacing: '0.08em' }}>QUANTARA</div>
+              <div style={{ fontSize: 10, color: colors.text3, marginTop: 3, letterSpacing: '0.05em' }}>TRACK · ANALYZE · GROW</div>
             </div>
           </Link>
           <nav className="lp-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <a href="#features" style={{ fontSize: 13, color: colors.text2, textDecoration: 'none' }}>Fonctionnalités</a>
             <a href="#how" style={{ fontSize: 13, color: colors.text2, textDecoration: 'none' }}>Comment ça marche</a>
-            <a href="#why" style={{ fontSize: 13, color: colors.text2, textDecoration: 'none' }}>Pourquoi MB</a>
+            <a href="#why" style={{ fontSize: 13, color: colors.text2, textDecoration: 'none' }}>Pourquoi Quantara</a>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Btn href="/app">Se connecter</Btn>
@@ -334,14 +330,14 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* === Why MB Data === */}
+      {/* === Why Quantara === */}
       <section id="why" style={{ padding: '96px 24px' }}>
         <div className="lp-why" style={{
           maxWidth: 1100, margin: '0 auto',
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center',
         }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: colors.amber, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>POURQUOI MB DATA</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: colors.amber, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>POURQUOI QUANTARA</div>
             <h2 className="lp-h2" style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, marginBottom: 24, letterSpacing: '-0.01em' }}>
               Conçu pour les <span style={{ color: colors.amber }}>vraies</span> contraintes des PropFirms
             </h2>
@@ -433,14 +429,9 @@ export default function Landing() {
           gap: 16, flexWrap: 'wrap',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 6,
-              background: `linear-gradient(135deg, ${colors.blue} 0%, ${colors.green} 100%)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 12, color: '#fff',
-            }}>MB</div>
+            <Logo size={28} />
             <div style={{ fontSize: 13, color: colors.text2 }}>
-              © {new Date().getFullYear()} MB Data — Le journal des traders prop
+              © {new Date().getFullYear()} Quantara — Track. Analyze. Grow.
             </div>
           </div>
           <div style={{ display: 'flex', gap: 18, fontSize: 12, color: colors.text3 }}>

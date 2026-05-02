@@ -489,7 +489,7 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
     const a = document.createElement('a')
     a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv)
-    a.download = `MB_Journal_${todayISO()}.csv`
+    a.download = `Quantara_Journal_${todayISO()}.csv`
     a.click()
     showToast?.('Export CSV ✓')
   }

@@ -1,4 +1,4 @@
-# MB Data — PropFirm Journal (Web Version)
+# Quantara — Track. Analyze. Grow. (Web Version)
 
 ## 🚀 Déploiement en 4 étapes
 
