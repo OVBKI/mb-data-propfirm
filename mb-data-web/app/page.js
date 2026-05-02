@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import Logo from '../components/Logo'
+import Reveal from '../components/Reveal'
+import Counter from '../components/Counter'
 
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
@@ -96,14 +98,13 @@ function Btn({ href, primary, children, large }) {
         border: `1px solid ${colors.border2}`,
       }
   return (
-    <Link href={href} style={{
+    <Link href={href} className="lp-btn" style={{
       display: 'inline-block',
       padding,
       fontSize,
       fontWeight: 600,
       borderRadius: 99,
       textDecoration: 'none',
-      transition: 'transform 0.15s, box-shadow 0.15s',
       ...style,
     }}>{children}</Link>
   )
@@ -144,10 +145,10 @@ export default function Landing() {
 
       {/* === HERO === */}
       <section style={{ position: 'relative', overflow: 'hidden' }}>
-        {/* Halo gradient en fond */}
-        <div style={{
+        {/* Halo gradient animé en fond */}
+        <div className="lp-halo-animated" style={{
           position: 'absolute', inset: 0,
-          background: `radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,111,255,0.15), transparent 60%)`,
+          background: `radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,111,255,0.18), transparent 60%)`,
           pointerEvents: 'none',
         }} />
         <div className="lp-hero" style={{
@@ -155,41 +156,37 @@ export default function Landing() {
           padding: '96px 24px 80px',
           textAlign: 'center', position: 'relative', zIndex: 1,
         }}>
-          <div style={{
+          <div className="lp-anim-fadeDown lp-anim-pulse" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '6px 14px', borderRadius: 99,
             background: 'rgba(45,111,255,0.10)', border: `1px solid ${colors.blue}`,
             fontSize: 12, fontWeight: 600, color: colors.blueLight,
             marginBottom: 24,
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: colors.green, boxShadow: `0 0 8px ${colors.green}` }} />
+            <span className="lp-anim-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: colors.green }} />
             Beta gratuite — Plus de 8 PropFirms supportées
           </div>
-          <h1 className="lp-h1" style={{
+          <h1 className="lp-h1 lp-anim-fadeUp lp-delay-1" style={{
             fontSize: 'clamp(32px, 6vw, 64px)', fontWeight: 800, lineHeight: 1.05,
             marginBottom: 20, letterSpacing: '-0.02em',
           }}>
             Journalise tes trades,<br />
-            <span style={{
-              background: `linear-gradient(90deg, ${colors.blueLight} 0%, ${colors.green} 100%)`,
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>débloque tes payouts.</span>
+            <span className="lp-gradient-text">débloque tes payouts.</span>
           </h1>
-          <p style={{
+          <p className="lp-anim-fadeUp lp-delay-2" style={{
             fontSize: 'clamp(15px, 2vw, 18px)', color: colors.text2,
             maxWidth: 640, margin: '0 auto 36px', lineHeight: 1.55,
           }}>
             Le tableau de bord pensé pour les traders prop. Suis tes drawdowns trailing en temps réel,
             mesure ta consistency, et garde une vision claire sur tes performances par PropFirm.
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="lp-anim-fadeUp lp-delay-3" style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
             <Btn href="/app" primary large>🚀 Commencer maintenant</Btn>
             <Btn href="#features" large>Voir les fonctionnalités</Btn>
           </div>
 
-          {/* Mockup card simulé */}
-          <div className="lp-mockup" style={{
+          {/* Mockup card simulé — floating */}
+          <div className="lp-mockup lp-anim-fadeUp lp-delay-4 lp-mockup-float" style={{
             marginTop: 64, position: 'relative',
             background: colors.surface, border: `1px solid ${colors.border2}`,
             borderRadius: 16, padding: 14, maxWidth: 980, margin: '64px auto 0',
@@ -254,44 +251,61 @@ export default function Landing() {
           maxWidth: 1100, margin: '0 auto',
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, textAlign: 'center',
         }}>
-          {STATS.map((s, i) => (
-            <div key={i}>
-              <div style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, background: `linear-gradient(135deg, ${colors.blueLight} 0%, ${colors.green} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{s.v}</div>
-              <div style={{ fontSize: 12, color: colors.text2, marginTop: 4 }}>{s.l}</div>
-            </div>
-          ))}
+          {STATS.map((s, i) => {
+            // On parse la valeur pour animer si c'est un nombre
+            const numMatch = String(s.v).match(/^(\d+)(.*)$/)
+            const isNumeric = numMatch && !s.v.startsWith('∞')
+            const numValue = isNumeric ? parseInt(numMatch[1], 10) : null
+            const suffix = isNumeric ? numMatch[2] : ''
+            return (
+              <Reveal key={i} delay={i * 100}>
+                <div>
+                  <div style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, background: `linear-gradient(135deg, ${colors.blueLight} 0%, ${colors.green} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                    {isNumeric
+                      ? <Counter to={numValue} suffix={suffix} duration={1400} />
+                      : s.v}
+                  </div>
+                  <div style={{ fontSize: 12, color: colors.text2, marginTop: 4 }}>{s.l}</div>
+                </div>
+              </Reveal>
+            )
+          })}
         </div>
       </section>
 
       {/* === Features grid === */}
       <section id="features" style={{ padding: '96px 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: colors.blueLight, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>FONCTIONNALITÉS</div>
-            <h2 className="lp-h2" style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, marginBottom: 16, letterSpacing: '-0.01em' }}>
-              Tout ce qu'il te faut pour <span style={{ color: colors.green }}>réussir</span> tes challenges
-            </h2>
-            <p style={{ fontSize: 16, color: colors.text2, maxWidth: 600, margin: '0 auto', lineHeight: 1.5 }}>
-              Conçu par des traders prop, pour des traders prop. Pas de fonctionnalités gadget : juste ce qui compte.
-            </p>
-          </div>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: colors.blueLight, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>FONCTIONNALITÉS</div>
+              <h2 className="lp-h2" style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, marginBottom: 16, letterSpacing: '-0.01em' }}>
+                Tout ce qu'il te faut pour <span style={{ color: colors.green }}>réussir</span> tes challenges
+              </h2>
+              <p style={{ fontSize: 16, color: colors.text2, maxWidth: 600, margin: '0 auto', lineHeight: 1.5 }}>
+                Conçu par des traders prop, pour des traders prop. Pas de fonctionnalités gadget : juste ce qui compte.
+              </p>
+            </div>
+          </Reveal>
           <div className="lp-features" style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20,
           }}>
             {FEATURES.map((f, i) => (
-              <div key={i} style={{
-                background: colors.surface, border: `1px solid ${colors.border}`,
-                borderRadius: 16, padding: 28, transition: 'transform 0.2s, border-color 0.2s',
-              }}>
+              <Reveal key={i} delay={i * 80}>
                 <div style={{
-                  width: 48, height: 48, borderRadius: 12,
-                  background: 'rgba(45,111,255,0.10)', border: `1px solid ${colors.blue}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 22, marginBottom: 18,
-                }}>{f.icon}</div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{f.title}</h3>
-                <p style={{ fontSize: 13, color: colors.text2, lineHeight: 1.55 }}>{f.desc}</p>
-              </div>
+                  background: colors.surface, border: `1px solid ${colors.border}`,
+                  borderRadius: 16, padding: 28,
+                }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 12,
+                    background: 'rgba(45,111,255,0.10)', border: `1px solid ${colors.blue}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22, marginBottom: 18,
+                  }}>{f.icon}</div>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{f.title}</h3>
+                  <p style={{ fontSize: 13, color: colors.text2, lineHeight: 1.55 }}>{f.desc}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -300,31 +314,34 @@ export default function Landing() {
       {/* === How it works === */}
       <section id="how" style={{ padding: '96px 24px', background: colors.surface, borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: colors.green, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>EN 3 ÉTAPES</div>
-            <h2 className="lp-h2" style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, marginBottom: 16, letterSpacing: '-0.01em' }}>
-              Démarre en moins de <span style={{ color: colors.blueLight }}>2 minutes</span>
-            </h2>
-          </div>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: colors.green, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>EN 3 ÉTAPES</div>
+              <h2 className="lp-h2" style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, marginBottom: 16, letterSpacing: '-0.01em' }}>
+                Démarre en moins de <span style={{ color: colors.blueLight }}>2 minutes</span>
+              </h2>
+            </div>
+          </Reveal>
           <div className="lp-steps" style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24,
           }}>
             {STEPS.map((s, i) => (
-              <div key={i} style={{
-                background: colors.bg, border: `1px solid ${colors.border}`,
-                borderRadius: 16, padding: 28, position: 'relative',
-              }}>
+              <Reveal key={i} delay={i * 150}>
                 <div style={{
-                  position: 'absolute', top: -18, left: 28,
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${colors.blue} 0%, ${colors.blueLight} 100%)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 16, color: '#fff',
-                  boxShadow: '0 4px 12px rgba(45,111,255,0.4)',
-                }}>{s.n}</div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginTop: 14, marginBottom: 10 }}>{s.title}</h3>
-                <p style={{ fontSize: 13, color: colors.text2, lineHeight: 1.55 }}>{s.desc}</p>
-              </div>
+                  background: colors.bg, border: `1px solid ${colors.border}`,
+                  borderRadius: 16, padding: 28, position: 'relative',
+                }}>
+                  <div className="lp-anim-pulse" style={{
+                    position: 'absolute', top: -18, left: 28,
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${colors.blue} 0%, ${colors.blueLight} 100%)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: 16, color: '#fff',
+                  }}>{s.n}</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginTop: 14, marginBottom: 10 }}>{s.title}</h3>
+                  <p style={{ fontSize: 13, color: colors.text2, lineHeight: 1.55 }}>{s.desc}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -336,7 +353,7 @@ export default function Landing() {
           maxWidth: 1100, margin: '0 auto',
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center',
         }}>
-          <div>
+          <Reveal>
             <div style={{ fontSize: 12, fontWeight: 700, color: colors.amber, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12 }}>POURQUOI QUANTARA</div>
             <h2 className="lp-h2" style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, marginBottom: 24, letterSpacing: '-0.01em' }}>
               Conçu pour les <span style={{ color: colors.amber }}>vraies</span> contraintes des PropFirms
@@ -368,8 +385,8 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-          </div>
-          <div style={{
+          </Reveal>
+          <Reveal delay={200} style={{
             background: colors.surface, border: `1px solid ${colors.border2}`,
             borderRadius: 16, padding: 24,
             boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
@@ -397,28 +414,28 @@ export default function Landing() {
                 <div style={{ width: 10, height: 2, background: colors.red, borderTop: `1px dashed ${colors.red}` }} />DD trailing → balance initial
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* === CTA final === */}
       <section style={{ padding: '96px 24px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{
+        <div className="lp-halo-animated" style={{
           position: 'absolute', inset: 0,
-          background: `radial-gradient(ellipse 60% 60% at 50% 50%, rgba(45,111,255,0.18), transparent 70%)`,
+          background: `radial-gradient(ellipse 60% 60% at 50% 50%, rgba(45,111,255,0.20), transparent 70%)`,
           pointerEvents: 'none',
         }} />
-        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+        <Reveal style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
           <h2 className="lp-h2" style={{
             fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, marginBottom: 18, letterSpacing: '-0.01em', lineHeight: 1.1,
           }}>
-            Prêt à reprendre le contrôle<br />de ton trading prop ?
+            Prêt à reprendre le contrôle<br />de ton <span className="lp-gradient-text">trading prop</span> ?
           </h2>
           <p style={{ fontSize: 16, color: colors.text2, marginBottom: 32, lineHeight: 1.5 }}>
             Inscription gratuite. Aucune carte bancaire. Tes données restent privées.
           </p>
           <Btn href="/app" primary large>🚀 Commencer maintenant — c'est gratuit</Btn>
-        </div>
+        </Reveal>
       </section>
 
       {/* === Footer === */}
