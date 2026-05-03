@@ -65,6 +65,9 @@ a { color: inherit; text-decoration: none; }
   .stats-5 { grid-template-columns: repeat(2, 1fr) !important; }
   .stats-4 { grid-template-columns: repeat(2, 1fr) !important; }
   .stats-3 { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* Sidebar dashboard : 3 col -> 1 col */
+  .dash-sidebar-row { grid-template-columns: 1fr !important; }
 }
 
 /* Mobile (≤ 768px) */
@@ -130,6 +133,7 @@ a { color: inherit; text-decoration: none; }
   .grid-1-280 { grid-template-columns: 1fr !important; }
   .grid-220-1 { grid-template-columns: 1fr !important; }
   .grid-240-1 { grid-template-columns: 1fr !important; }
+  .dash-sidebar-row { grid-template-columns: 1fr !important; }
 
   /* Calendrier transactions : cellules plus petites */
   .cal-cell { min-height: 56px !important; padding: 3px !important; }

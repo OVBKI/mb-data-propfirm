@@ -508,9 +508,9 @@ export default function Home() {
                 {!firms.length&&<div style={{gridColumn:'1/-1',textAlign:'center',color:'var(--text3)',padding:'60px'}}>Ajoutez votre première PropFirm pour commencer.</div>}
               </div>
 
-              {/* Content grid: Calendar + Right panel */}
-              <div className="grid-1-340" style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:'20px',alignItems:'start'}}>
-                {/* LEFT: Calendar */}
+              {/* Content grid: Calendar (full width) — sidebar moves below */}
+              <div className="grid-1-340" style={{display:'grid',gridTemplateColumns:'1fr',gap:'20px',alignItems:'start'}}>
+                {/* Calendar block — pleine largeur */}
                 <div>
  <div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}}>
@@ -527,7 +527,7 @@ export default function Home() {
                     <div key={i} style={{...S.card,padding:'10px 14px'}}><div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'4px'}}>{s.l}</div><div style={{fontSize:'15px',fontWeight:'600',color:s.c}}>{s.v}</div></div>
                   ))}
                 </div>
-                <div className="grid-1-280" style={{display:'grid',gridTemplateColumns:'1fr 260px',gap:'18px',alignItems:'start'}}>
+                <div className="grid-1-280" style={{display:'grid',gridTemplateColumns:'1fr 320px',gap:'20px',alignItems:'start'}}>
                   <div style={{...S.card,overflow:'hidden'}}>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',background:'var(--surface2)',borderBottom:'0.5px solid var(--border)'}}>
                       {['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(d=><div key={d} style={{padding:'12px 0',textAlign:'center',fontSize:'11px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>{d}</div>)}
@@ -571,8 +571,8 @@ export default function Home() {
             </div>
                 </div>
 
-                {/* RIGHT: Stats + Bar chart + Firm list */}
-                <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+                {/* SIDEBAR (sous le calendrier) : Bar chart + Stats + Par firme — 3 colonnes */}
+                <div className="dash-sidebar-row" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'16px',alignItems:'start'}}>
                   {/* Bar chart par firme */}
                   <div style={{...S.card,padding:'18px'}}>
                     <div style={{fontSize:'13px',fontWeight:'500',color:'var(--text2)',marginBottom:'10px'}}>Par firme (EUR)</div>
