@@ -124,8 +124,8 @@ export default function Landing() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px 24px',
         }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: colors.text }}>
-            <Logo size={40} />
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: colors.text }}>
+            <Logo size={52} glow="strong" />
             <div>
               <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1, letterSpacing: '0.08em' }}>QUANTARA</div>
               <div style={{ fontSize: 10, color: colors.text3, marginTop: 3, letterSpacing: '0.05em' }}>TRACK · ANALYZE · GROW</div>

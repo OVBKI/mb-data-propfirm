@@ -409,7 +409,7 @@ export default function Home() {
       <div className="top-bar" style={{height:'48px',background:'var(--surface)',borderBottom:'0.5px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 20px',position:'sticky',top:0,zIndex:200}}>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
           <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
-          <Logo size={32} />
+          <Logo size={38} glow="strong" />
           <div style={{fontWeight:'700',fontSize:'15px',letterSpacing:'0.12em'}}>QUANTARA</div>
           <span className="top-bar-brand-sub" style={{fontSize:'11px',color:'var(--text3)',letterSpacing:'0.05em'}}>· TRACK · ANALYZE · GROW</span>
         </div>
