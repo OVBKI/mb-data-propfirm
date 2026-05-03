@@ -50,9 +50,9 @@ const FIRMS = [
     counts: { Challenge: 2, Financé: 2, Échoué: 1 }, // total = 5 comptes
     // 4 actifs (2 Fin + 2 Chal), 1 caché derrière "+1 autre..."
     activeAccounts: [
-      { date: '2026-02-10', status: 'Financé',   net: 1820 },  // payouts cumulés - $98 cost
-      { date: '2026-03-15', status: 'Financé',   net: 1245 },
-      { date: '2026-04-22', status: 'Challenge', net: -83 },   // $98 ≈ -83€
+      { date: '2026-02-10', status: 'Financé',   net: 2200 },  // payouts cumulés - $98 cost
+      { date: '2026-03-15', status: 'Financé',   net: 1544 },
+      { date: '2026-04-22', status: 'Challenge', net: -98 },   // coût challenge Topstep
     ],
     activeTotal: 4,
   },
@@ -65,9 +65,9 @@ const FIRMS = [
     nbPayouts: 2,
     counts: { Challenge: 2, Financé: 1, Échoué: 1 }, // total = 4 comptes
     activeAccounts: [
-      { date: '2026-03-08', status: 'Financé',   net: 1690 },
-      { date: '2026-04-12', status: 'Challenge', net: -81 },   // $95 ≈ -81€
-      { date: '2026-04-28', status: 'Challenge', net: -81 },
+      { date: '2026-03-08', status: 'Financé',   net: 2105 },
+      { date: '2026-04-12', status: 'Challenge', net: -95 },   // coût challenge Lucid
+      { date: '2026-04-28', status: 'Challenge', net: -95 },
     ],
     activeTotal: 3,
   },
@@ -80,8 +80,8 @@ const FIRMS = [
     nbPayouts: 1,
     counts: { Challenge: 1, Financé: 1, Échoué: 1 }, // total = 3 comptes
     activeAccounts: [
-      { date: '2026-04-05', status: 'Financé',   net: 290 },   // 1 payout reçu - $23 cost
-      { date: '2026-04-22', status: 'Challenge', net: -20 },   // $23 ≈ -20€
+      { date: '2026-04-05', status: 'Financé',   net: 356 },   // 1 payout reçu - $23 cost
+      { date: '2026-04-22', status: 'Challenge', net: -23 },   // coût challenge Apex
     ],
     activeTotal: 2,
   },
@@ -101,30 +101,30 @@ function buildCalendar() {
   return days
 }
 
-// Événements du calendrier — mix achats (prix réels des challenges) & payouts
-// Prix challenge en € (~85% du USD) : Topstep -83€, Lucid -81€, Apex -20€
+// Événements du calendrier — mix achats (prix réels des challenges $) & payouts
+// Achats : Topstep -$98, Lucid -$95, Apex -$23
 const CAL_EVENTS = {
-  1:  { buy: 83 },     // Topstep
-  5:  { pay: 850 },    // Topstep payout
-  7:  { buy: 20 },     // Apex
-  12: { pay: 1200 },   // Topstep payout
-  15: { buy: 81 },     // Lucid
-  19: { pay: 680 },    // Lucid payout
-  22: { buy: 20 },     // Apex
-  26: { pay: 1400 },   // Topstep payout
-  28: { buy: 81 },     // Lucid
+  1:  { buy: 98 },     // Topstep challenge
+  5:  { pay: 1000 },   // Topstep payout
+  7:  { buy: 23 },     // Apex challenge
+  12: { pay: 1400 },   // Topstep payout
+  15: { buy: 95 },     // Lucid challenge
+  19: { pay: 800 },    // Lucid payout
+  22: { buy: 23 },     // Apex challenge
+  26: { pay: 1640 },   // Topstep payout
+  28: { buy: 95 },     // Lucid challenge
 }
 
 // Quelques jours d'avril visibles (mois précédent) pour l'effet "déjà passé"
-const CAL_OTHER_PREV = { 28: -83, 29: 290, 30: 540 }
+const CAL_OTHER_PREV = { 28: -95, 29: 340, 30: 640 }
 
 // Transactions récentes (panneau de droite, triées date desc — 30 mai = aujourd'hui)
 const TRANSACTIONS = [
-  { firm: 'Lucid Trading',        date: '2026-05-28', type: 'Achat',  amount: -81,   sign: 'buy' },
-  { firm: 'Topstep',              date: '2026-05-26', type: 'Payout', amount: 1400,  sign: 'pay' },
-  { firm: 'Apex Trader Funding',  date: '2026-05-22', type: 'Achat',  amount: -20,   sign: 'buy' },
-  { firm: 'Lucid Trading',        date: '2026-05-19', type: 'Payout', amount: 680,   sign: 'pay' },
-  { firm: 'Lucid Trading',        date: '2026-05-15', type: 'Achat',  amount: -81,   sign: 'buy' },
+  { firm: 'Lucid Trading',        date: '2026-05-28', type: 'Achat',  amount: -95,   sign: 'buy' },
+  { firm: 'Topstep',              date: '2026-05-26', type: 'Payout', amount: 1640,  sign: 'pay' },
+  { firm: 'Apex Trader Funding',  date: '2026-05-22', type: 'Achat',  amount: -23,   sign: 'buy' },
+  { firm: 'Lucid Trading',        date: '2026-05-19', type: 'Payout', amount: 800,   sign: 'pay' },
+  { firm: 'Lucid Trading',        date: '2026-05-15', type: 'Achat',  amount: -95,   sign: 'buy' },
 ]
 
 export default function DashboardPreview() {
@@ -274,7 +274,7 @@ export default function DashboardPreview() {
                             }}>{acc.status}</span>
                           </div>
                           <span style={{ fontWeight: 600, color: acc.net >= 0 ? C.green : C.red, fontSize: 11 }}>
-                            {acc.net >= 0 ? '+' : ''}{acc.net} €
+                            {acc.net >= 0 ? '+' : ''}{acc.net} $
                           </span>
                         </div>
                       ))}
@@ -328,17 +328,17 @@ export default function DashboardPreview() {
                     </div>
                   </div>
 
-                  {/* 3 mini-stats du mois (mois rentable) */}
-                  {/* Achats = somme des `buy` dans CAL_EVENTS = 83+20+81+20+81 = 285€ */}
-                  {/* Payouts = somme des `pay`     = 850+1200+680+1400 = 4130€ */}
+                  {/* 3 mini-stats du mois (mois rentable) — tout en $ */}
+                  {/* Achats = somme des `buy` dans CAL_EVENTS = 98+23+95+23+95 = $334 */}
+                  {/* Payouts = somme des `pay`     = 1000+1400+800+1640 = $4 840 */}
                   <div className="dp-stats3" style={{
                     display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
                     gap: 10, marginBottom: 14,
                   }}>
                     {[
-                      { l: 'Achats du mois',  n: 285,  c: C.red },
-                      { l: 'Payouts du mois', n: 4130, c: C.green },
-                      { l: 'Net du mois',     n: 3845, c: C.green, prefix: '+' },
+                      { l: 'Achats du mois',  n: 334,  c: C.red },
+                      { l: 'Payouts du mois', n: 4840, c: C.green },
+                      { l: 'Net du mois',     n: 4506, c: C.green, prefix: '+' },
                     ].map((s, i) => (
                       <div key={i} style={{
                         background: C.surface, border: `1px solid ${C.border}`,
@@ -346,7 +346,7 @@ export default function DashboardPreview() {
                       }}>
                         <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4, fontWeight: 600 }}>{s.l}</div>
                         <div style={{ fontSize: 15, fontWeight: 600, color: s.c }}>
-                          <Counter to={s.n} suffix=" €" prefix={s.prefix || ''} duration={1500} />
+                          <Counter to={s.n} suffix=" $" prefix={s.prefix || ''} duration={1500} />
                         </div>
                       </div>
                     ))}
@@ -402,21 +402,21 @@ export default function DashboardPreview() {
                                   fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 3,
                                   background: otherPrev > 0 ? C.greenBg : C.redBg,
                                   color: otherPrev > 0 ? C.green : C.red, display: 'inline-block',
-                                }}>{otherPrev > 0 ? '+' : ''}{otherPrev} €</div>
+                                }}>{otherPrev > 0 ? '+' : ''}{otherPrev} $</div>
                               )}
                               {evt?.buy && (
                                 <div className="dp-cell-amount" style={{
                                   fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 3,
                                   background: C.redBg, color: C.red, display: 'inline-block',
                                   animationDelay: `${1300 + i * 30}ms`,
-                                }}>-{evt.buy} €</div>
+                                }}>-{evt.buy} $</div>
                               )}
                               {evt?.pay && (
                                 <div className="dp-cell-amount" style={{
                                   fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 3,
                                   background: C.greenBg, color: C.green, display: 'inline-block',
                                   animationDelay: `${1300 + i * 30}ms`,
-                                }}>+{evt.pay} €</div>
+                                }}>+{evt.pay} $</div>
                               )}
                             </div>
                           )
@@ -459,7 +459,7 @@ export default function DashboardPreview() {
                               fontSize: 12, fontWeight: 600,
                               color: t.sign === 'pay' ? C.green : C.red,
                             }}>
-                              {t.amount > 0 ? '+' : ''}{t.amount.toFixed(2)} €
+                              {t.amount > 0 ? '+' : ''}{t.amount.toFixed(2)} $
                             </div>
                           </div>
                         ))}
