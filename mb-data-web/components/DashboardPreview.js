@@ -29,62 +29,65 @@ const C = {
   blueBg: 'rgba(45,111,255,0.15)',
 }
 
-// 4 PropFirms (résultat global positif — montre une démo gagnante)
+// 3 PropFirms — données démo cohérentes avec la vraie logique du dashboard.
+// Les `activeAccounts` sont les comptes Challenge ou Financé (Échoué exclus).
+// Le rendu n'affiche que les 3 premiers, avec "+X autre..." si plus.
+// Le `net` de chaque compte = total payouts reçus − coût du compte.
 const FIRMS = [
   {
     name: 'Topstep',
     color: '#ff8c42',
     initials: 'TS',
-    net: 3450,
+    netTotal: 3450,
     spent: 1320,
     payouts: 4770,
-    accounts: 5,
-    financed: 2, challenge: 2, failed: 1,
     nbPayouts: 4,
-    items: [
-      { date: '2026-05-26', status: 'Financé', amount: 1400, type: 'pay' },
-      { date: '2026-04-22', status: 'Challenge', amount: -185, type: 'buy' },
-      { date: '2026-03-08', status: 'Échoué', amount: -165, type: 'buy' },
+    counts: { Challenge: 2, Financé: 2, Échoué: 1 }, // total = 5 comptes
+    // 4 actifs (2 Fin + 2 Chal), 1 caché derrière "+1 autre..."
+    activeAccounts: [
+      { date: '2026-02-10', status: 'Financé',   net: 2350 },
+      { date: '2026-03-15', status: 'Financé',   net: 1670 },
+      { date: '2026-04-22', status: 'Challenge', net: -185 },
     ],
+    activeTotal: 4,
   },
   {
     name: 'Lucid Trading',
     color: '#4d8fff',
     initials: 'LU',
-    net: 1820,
+    netTotal: 1820,
     spent: 740,
     payouts: 2560,
-    accounts: 4,
-    financed: 1, challenge: 2, failed: 1,
     nbPayouts: 2,
-    items: [
-      { date: '2026-05-19', status: 'Financé', amount: 680, type: 'pay' },
-      { date: '2026-04-28', status: 'Challenge', amount: -185, type: 'buy' },
-      { date: '2026-03-12', status: 'Échoué', amount: -250, type: 'buy' },
+    counts: { Challenge: 2, Financé: 1, Échoué: 1 }, // total = 4 comptes
+    activeAccounts: [
+      { date: '2026-03-08', status: 'Financé',   net: 2300 },
+      { date: '2026-04-12', status: 'Challenge', net: -185 },
+      { date: '2026-04-28', status: 'Challenge', net: -185 },
     ],
+    activeTotal: 3,
   },
   {
     name: 'Apex Trader',
     color: '#a86bff',
     initials: 'AP',
-    net: 310,
+    netTotal: 310,
     spent: 580,
     payouts: 890,
-    accounts: 3,
-    financed: 1, challenge: 1, failed: 1,
     nbPayouts: 1,
-    items: [
-      { date: '2026-05-08', status: 'Financé', amount: 890, type: 'pay' },
-      { date: '2026-04-22', status: 'Challenge', amount: -240, type: 'buy' },
-      { date: '2026-04-05', status: 'Échoué', amount: -190, type: 'buy' },
+    counts: { Challenge: 1, Financé: 1, Échoué: 1 }, // total = 3 comptes
+    activeAccounts: [
+      { date: '2026-04-05', status: 'Financé',   net: 740 },
+      { date: '2026-04-22', status: 'Challenge', net: -240 },
     ],
+    activeTotal: 2,
   },
 ]
 
-// Statuses → couleurs badge
-const STATUS_BG = { 'Financé': C.greenBg, 'Challenge': C.amberBg, 'Échoué': C.redBg, 'Payout': C.greenBg }
-const STATUS_COLOR = { 'Financé': C.green, 'Challenge': C.amber, 'Échoué': C.red, 'Payout': C.green }
-const STATUS_DOT = { 'Financé': C.green, 'Challenge': C.amber, 'Échoué': C.red, 'Payout': C.green }
+// Couleurs par statut (alignées sur lib/constants.js → STATUS_COLORS)
+const STATUS_BG    = { Financé: C.greenBg, Challenge: C.amberBg, Échoué: C.redBg }
+const STATUS_COLOR = { Financé: C.green,   Challenge: C.amber,   Échoué: C.red }
+const STATUS_DOT   = { Financé: C.green,   Challenge: C.amber,   Échoué: C.red }
 
 // Construit les cellules d'un calendrier "Mai 2026" (1er = vendredi)
 function buildCalendar() {
@@ -192,9 +195,9 @@ export default function DashboardPreview() {
                 display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 22,
               }}>
                 {[
-                  { l: 'PROPFIRMS', v: '4 firmes · 12 comptes', isText: true },
-                  { l: 'TOTAL DÉPENSÉ', n: 2840, suffix: '.00 $', c: C.red },
-                  { l: 'TOTAL PAYOUTS', n: 8420, suffix: '.00 $', c: C.green },
+                  { l: 'PROPFIRMS', v: '3 firmes · 12 comptes', isText: true },
+                  { l: 'TOTAL DÉPENSÉ', n: 2640, suffix: '.00 $', c: C.red },
+                  { l: 'TOTAL PAYOUTS', n: 8220, suffix: '.00 $', c: C.green },
                   { l: 'RÉSULTAT NET', n: 5580, suffix: '.00 $', c: C.green, prefix: '+' },
                   { l: 'NB PAYOUTS', n: 7, c: C.text },
                 ].map((s, i) => (
@@ -220,7 +223,11 @@ export default function DashboardPreview() {
                 display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: 14, marginBottom: 26,
               }}>
-                {FIRMS.map((f, idx) => (
+                {FIRMS.map((f, idx) => {
+                  const totalAccounts = f.counts.Challenge + f.counts.Financé + f.counts.Échoué
+                  const activeShown = f.activeAccounts.slice(0, 3)
+                  const hiddenCount = f.activeTotal - activeShown.length
+                  return (
                   <Reveal key={f.name} delay={650 + idx * 120}>
                     <div className="dp-card" style={{
                       background: C.surface,
@@ -233,17 +240,17 @@ export default function DashboardPreview() {
                         <FirmLogo initials={f.initials} color={f.color} size={34} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
-                          <div style={{ fontSize: 10, color: C.text3 }}>{f.accounts} comptes · {f.nbPayouts} payout{f.nbPayouts > 1 ? 's' : ''}</div>
+                          <div style={{ fontSize: 10, color: C.text3 }}>{totalAccounts} comptes · {f.nbPayouts} payout{f.nbPayouts > 1 ? 's' : ''}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: 14, fontWeight: 700, color: C.green }}>
-                            +<Counter to={f.net} duration={1400} /> $
+                            +<Counter to={f.netTotal} duration={1400} /> $
                           </div>
-                          <div style={{ fontSize: 9, color: C.text3 }}>ROI +{Math.round(f.net / f.spent * 100)}%</div>
+                          <div style={{ fontSize: 9, color: C.text3 }}>ROI +{Math.round(f.netTotal / f.spent * 100)}%</div>
                         </div>
                       </div>
 
-                      {/* Mini stats */}
+                      {/* Mini stats : Actifs = Financé + Challenge (Échoué exclu) */}
                       <div style={{
                         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: 6, marginBottom: 12,
@@ -251,7 +258,7 @@ export default function DashboardPreview() {
                         {[
                           { l: 'DÉPENSÉ', v: f.spent + ' $', c: C.red },
                           { l: 'PAYOUTS', v: f.payouts + ' $', c: C.green },
-                          { l: 'ACTIFS', v: f.financed + f.challenge, c: C.text },
+                          { l: 'ACTIFS', v: f.counts.Financé + f.counts.Challenge, c: C.text },
                         ].map((s, i) => (
                           <div key={i} style={{
                             background: C.surface3, borderRadius: 6, padding: '7px 4px', textAlign: 'center',
@@ -262,47 +269,56 @@ export default function DashboardPreview() {
                         ))}
                       </div>
 
-                      {/* 3 dernières lignes */}
-                      {f.items.map((it, i) => (
+                      {/* Comptes actifs (max 3) — Échoués exclus, ils sont juste dans les badges */}
+                      {activeShown.map((acc, i) => (
                         <div key={i} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '5px 0', borderBottom: i < f.items.length - 1 ? `1px solid ${C.border}` : 'none', fontSize: 11,
+                          padding: '5px 0', borderBottom: `1px solid ${C.border}`, fontSize: 11,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: STATUS_DOT[it.status], flexShrink: 0 }} />
-                            <span style={{ color: C.text2, fontSize: 10 }}>{it.date}</span>
+                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: STATUS_DOT[acc.status], flexShrink: 0 }} />
+                            <span style={{ color: C.text2, fontSize: 10 }}>{acc.date}</span>
                             <span style={{
                               fontSize: 9, padding: '1px 6px', borderRadius: 99,
-                              background: STATUS_BG[it.status], color: STATUS_COLOR[it.status], fontWeight: 600,
-                            }}>{it.status}</span>
+                              background: STATUS_BG[acc.status], color: STATUS_COLOR[acc.status], fontWeight: 600,
+                            }}>{acc.status}</span>
                           </div>
-                          <span style={{ fontWeight: 600, color: it.amount > 0 ? C.green : C.red, fontSize: 11 }}>
-                            {it.amount > 0 ? '+' : ''}{it.amount} €
+                          <span style={{ fontWeight: 600, color: acc.net >= 0 ? C.green : C.red, fontSize: 11 }}>
+                            {acc.net >= 0 ? '+' : ''}{acc.net} €
                           </span>
                         </div>
                       ))}
 
-                      {/* Badges status counts */}
+                      {/* +X autre... si plus de 3 comptes actifs */}
+                      {hiddenCount > 0 && (
+                        <div style={{ fontSize: 10, color: C.text3, padding: '4px 0' }}>
+                          +{hiddenCount} autre{hiddenCount > 1 ? 's' : ''}...
+                        </div>
+                      )}
+
+                      {/* Badges : ordre Challenge → Financé → Échoué (comme le vrai code) */}
                       <div style={{ display: 'flex', gap: 5, marginTop: 10, flexWrap: 'wrap' }}>
-                        {f.financed > 0 && (
-                          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 99, background: C.greenBg, color: C.green, fontWeight: 600 }}>
-                            {f.financed} Financé{f.financed > 1 ? 's' : ''}
-                          </span>
-                        )}
-                        {f.challenge > 0 && (
+                        {f.counts.Challenge > 0 && (
                           <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 99, background: C.amberBg, color: C.amber, fontWeight: 600 }}>
-                            {f.challenge} Challenge{f.challenge > 1 ? 's' : ''}
+                            {f.counts.Challenge} Challenge{f.counts.Challenge > 1 ? 's' : ''}
                           </span>
                         )}
-                        {f.failed > 0 && (
+                        {f.counts.Financé > 0 && (
+                          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 99, background: C.greenBg, color: C.green, fontWeight: 600 }}>
+                            {f.counts.Financé} Financé{f.counts.Financé > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {f.counts.Échoué > 0 && (
                           <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 99, background: C.redBg, color: C.red, fontWeight: 600 }}>
-                            {f.failed} Échoué{f.failed > 1 ? 's' : ''}
+                            {f.counts.Échoué} Échoué{f.counts.Échoué > 1 ? 's' : ''}
                           </span>
                         )}
+                        <span style={{ marginLeft: 'auto', fontSize: 10, color: C.text3, alignSelf: 'center' }}>Détails →</span>
                       </div>
                     </div>
                   </Reveal>
-                ))}
+                  )
+                })}
               </div>
 
               {/* === Bloc calendrier === */}
