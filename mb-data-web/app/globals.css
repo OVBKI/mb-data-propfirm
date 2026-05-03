@@ -334,6 +334,31 @@ html, body { overflow-x: hidden; }
 /* Barres du mockup calendrier qui poussent */
 .lp-mockup-cal > div { animation: lpBarGrow 0.6s ease-out both; transform-origin: bottom; }
 
+/* === Aperçu dashboard (DashboardPreview) === */
+@keyframes dpPop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.dp-cell-amount {
+  animation: dpPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@media (hover: hover) {
+  .dp-card { transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+  .dp-card:hover { transform: translateY(-2px); border-color: rgba(45,111,255,0.4); }
+  .dp-frame { transition: transform 0.5s ease, box-shadow 0.5s ease; }
+  .dp-frame:hover { transform: translateY(-3px); box-shadow: 0 40px 120px rgba(0,0,0,0.65), 0 0 0 1px rgba(45,111,255,0.18); }
+}
+@media (max-width: 1100px) {
+  .dp-stats5 { grid-template-columns: repeat(3, 1fr) !important; }
+  .dp-cal-grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 720px) {
+  .dp-stats5 { grid-template-columns: repeat(2, 1fr) !important; }
+  .dp-stats3 { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+  .dp-cal-cell { min-height: 50px !important; padding: 4px !important; }
+}
+
 /* Respect du prefers-reduced-motion (accessibilité) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

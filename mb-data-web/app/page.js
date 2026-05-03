@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Logo from '../components/Logo'
 import Reveal from '../components/Reveal'
 import Counter from '../components/Counter'
+import DashboardPreview from '../components/DashboardPreview'
 
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
@@ -272,6 +273,9 @@ export default function Landing() {
           })}
         </div>
       </section>
+
+      {/* === Aperçu dashboard === */}
+      <DashboardPreview />
 
       {/* === Features grid === */}
       <section id="features" style={{ padding: '96px 24px' }}>
