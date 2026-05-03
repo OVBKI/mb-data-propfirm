@@ -509,7 +509,7 @@ export default function Home() {
               </div>
 
               {/* Content grid: Calendar (full width) — sidebar moves below */}
-              <div className="grid-1-340" style={{display:'grid',gridTemplateColumns:'1fr',gap:'40px',alignItems:'start'}}>
+              <div className="grid-1-340" style={{display:'grid',gridTemplateColumns:'1fr',gap:'72px',alignItems:'start'}}>
                 {/* Calendar block — pleine largeur */}
                 <div>
  <div>
