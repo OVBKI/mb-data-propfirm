@@ -43,8 +43,8 @@ const FIRMS = [
     nbPayouts: 4,
     items: [
       { date: '2026-05-26', status: 'Financé', amount: 1400, type: 'pay' },
-      { date: '2026-05-12', status: 'Financé', amount: 1200, type: 'pay' },
-      { date: '2026-04-18', status: 'Financé', amount: -165, type: 'buy' },
+      { date: '2026-04-22', status: 'Challenge', amount: -185, type: 'buy' },
+      { date: '2026-03-08', status: 'Échoué', amount: -165, type: 'buy' },
     ],
   },
   {
@@ -60,7 +60,7 @@ const FIRMS = [
     items: [
       { date: '2026-05-19', status: 'Financé', amount: 680, type: 'pay' },
       { date: '2026-04-28', status: 'Challenge', amount: -185, type: 'buy' },
-      { date: '2026-04-12', status: 'Financé', amount: -185, type: 'buy' },
+      { date: '2026-03-12', status: 'Échoué', amount: -250, type: 'buy' },
     ],
   },
   {
