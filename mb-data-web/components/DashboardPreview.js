@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Counter from './Counter'
 import Reveal from './Reveal'
+import { getFirmLogo } from '../lib/firmLogos'
 
 // Aperçu visuel du dashboard pour la landing page.
 // Reproduit la vraie page /app avec données démo réalistes (4 PropFirms, mix
@@ -33,52 +34,54 @@ const C = {
 // Les `activeAccounts` sont les comptes Challenge ou Financé (Échoué exclus).
 // Le rendu n'affiche que les 3 premiers, avec "+X autre..." si plus.
 // Le `net` de chaque compte = total payouts reçus − coût du compte.
+//
+// Prix challenge réels :
+//   Topstep             $98
+//   Lucid Trading       $95
+//   Apex Trader Funding $23
 const FIRMS = [
   {
-    name: 'Topstep',
+    name: 'Topstep',                 // doit matcher FIRM_LOGOS pour avoir le vrai logo
     color: '#ff8c42',
-    initials: 'TS',
-    netTotal: 3450,
-    spent: 1320,
-    payouts: 4770,
+    netTotal: 3450,                  // gain global en $
+    spent: 490,                      // 5 comptes × $98 = $490
+    payouts: 3940,                   // 490 + 3450
     nbPayouts: 4,
     counts: { Challenge: 2, Financé: 2, Échoué: 1 }, // total = 5 comptes
     // 4 actifs (2 Fin + 2 Chal), 1 caché derrière "+1 autre..."
     activeAccounts: [
-      { date: '2026-02-10', status: 'Financé',   net: 2350 },
-      { date: '2026-03-15', status: 'Financé',   net: 1670 },
-      { date: '2026-04-22', status: 'Challenge', net: -185 },
+      { date: '2026-02-10', status: 'Financé',   net: 1820 },  // payouts cumulés - $98 cost
+      { date: '2026-03-15', status: 'Financé',   net: 1245 },
+      { date: '2026-04-22', status: 'Challenge', net: -83 },   // $98 ≈ -83€
     ],
     activeTotal: 4,
   },
   {
     name: 'Lucid Trading',
     color: '#4d8fff',
-    initials: 'LU',
     netTotal: 1820,
-    spent: 740,
-    payouts: 2560,
+    spent: 380,                      // 4 comptes × $95 = $380
+    payouts: 2200,                   // 380 + 1820
     nbPayouts: 2,
     counts: { Challenge: 2, Financé: 1, Échoué: 1 }, // total = 4 comptes
     activeAccounts: [
-      { date: '2026-03-08', status: 'Financé',   net: 2300 },
-      { date: '2026-04-12', status: 'Challenge', net: -185 },
-      { date: '2026-04-28', status: 'Challenge', net: -185 },
+      { date: '2026-03-08', status: 'Financé',   net: 1690 },
+      { date: '2026-04-12', status: 'Challenge', net: -81 },   // $95 ≈ -81€
+      { date: '2026-04-28', status: 'Challenge', net: -81 },
     ],
     activeTotal: 3,
   },
   {
-    name: 'Apex Trader',
+    name: 'Apex Trader Funding',     // nom complet pour matcher FIRM_LOGOS
     color: '#a86bff',
-    initials: 'AP',
     netTotal: 310,
-    spent: 580,
-    payouts: 890,
+    spent: 69,                       // 3 comptes × $23 = $69
+    payouts: 379,                    // 69 + 310
     nbPayouts: 1,
     counts: { Challenge: 1, Financé: 1, Échoué: 1 }, // total = 3 comptes
     activeAccounts: [
-      { date: '2026-04-05', status: 'Financé',   net: 740 },
-      { date: '2026-04-22', status: 'Challenge', net: -240 },
+      { date: '2026-04-05', status: 'Financé',   net: 290 },   // 1 payout reçu - $23 cost
+      { date: '2026-04-22', status: 'Challenge', net: -20 },   // $23 ≈ -20€
     ],
     activeTotal: 2,
   },
@@ -98,44 +101,31 @@ function buildCalendar() {
   return days
 }
 
-// Événements du calendrier — mix achats & payouts répartis sur le mois
+// Événements du calendrier — mix achats (prix réels des challenges) & payouts
+// Prix challenge en € (~85% du USD) : Topstep -83€, Lucid -81€, Apex -20€
 const CAL_EVENTS = {
-  1:  { buy: 250 },
-  5:  { pay: 850 },
-  7:  { buy: 180 },
-  12: { pay: 1200 },
-  14: { buy: 300 },
-  19: { pay: 680 },
-  22: { buy: 250 },
-  26: { pay: 1400 },
+  1:  { buy: 83 },     // Topstep
+  5:  { pay: 850 },    // Topstep payout
+  7:  { buy: 20 },     // Apex
+  12: { pay: 1200 },   // Topstep payout
+  15: { buy: 81 },     // Lucid
+  19: { pay: 680 },    // Lucid payout
+  22: { buy: 20 },     // Apex
+  26: { pay: 1400 },   // Topstep payout
+  28: { buy: 81 },     // Lucid
 }
 
-// Quelques jours d'avril visibles (autres mois) pour l'effet "déjà passé"
-const CAL_OTHER_PREV = { 28: -185, 29: -90, 30: 320 }
+// Quelques jours d'avril visibles (mois précédent) pour l'effet "déjà passé"
+const CAL_OTHER_PREV = { 28: -83, 29: 290, 30: 540 }
 
-// Transactions récentes (panneau de droite)
+// Transactions récentes (panneau de droite, triées date desc — 30 mai = aujourd'hui)
 const TRANSACTIONS = [
-  { firm: 'Topstep',       date: '2026-05-26', type: 'Payout', amount: 1400, sign: 'pay' },
-  { firm: 'Topstep',       date: '2026-05-22', type: 'Achat',  amount: -250, sign: 'buy' },
-  { firm: 'Lucid Trading', date: '2026-05-19', type: 'Payout', amount: 680,  sign: 'pay' },
-  { firm: 'Apex Trader',   date: '2026-05-14', type: 'Achat',  amount: -300, sign: 'buy' },
-  { firm: 'Topstep',       date: '2026-05-12', type: 'Payout', amount: 1200, sign: 'pay' },
+  { firm: 'Lucid Trading',        date: '2026-05-28', type: 'Achat',  amount: -81,   sign: 'buy' },
+  { firm: 'Topstep',              date: '2026-05-26', type: 'Payout', amount: 1400,  sign: 'pay' },
+  { firm: 'Apex Trader Funding',  date: '2026-05-22', type: 'Achat',  amount: -20,   sign: 'buy' },
+  { firm: 'Lucid Trading',        date: '2026-05-19', type: 'Payout', amount: 680,   sign: 'pay' },
+  { firm: 'Lucid Trading',        date: '2026-05-15', type: 'Achat',  amount: -81,   sign: 'buy' },
 ]
-
-// Mini-logo carré coloré + initiales (style cohérent avec le vrai app)
-function FirmLogo({ initials, color, size = 36 }) {
-  return (
-    <div style={{
-      width: size, height: size, flexShrink: 0,
-      borderRadius: 8,
-      background: `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.42, fontWeight: 800, color: '#fff',
-      letterSpacing: '0.02em',
-      boxShadow: `0 0 0 1px ${color}55, 0 4px 10px ${color}33`,
-    }}>{initials}</div>
-  )
-}
 
 export default function DashboardPreview() {
   const days = buildCalendar()
@@ -196,8 +186,8 @@ export default function DashboardPreview() {
               }}>
                 {[
                   { l: 'PROPFIRMS', v: '3 firmes · 12 comptes', isText: true },
-                  { l: 'TOTAL DÉPENSÉ', n: 2640, suffix: '.00 $', c: C.red },
-                  { l: 'TOTAL PAYOUTS', n: 8220, suffix: '.00 $', c: C.green },
+                  { l: 'TOTAL DÉPENSÉ', n: 939, suffix: '.00 $', c: C.red },     // 490+380+69
+                  { l: 'TOTAL PAYOUTS', n: 6519, suffix: '.00 $', c: C.green },  // 3940+2200+379
                   { l: 'RÉSULTAT NET', n: 5580, suffix: '.00 $', c: C.green, prefix: '+' },
                   { l: 'NB PAYOUTS', n: 7, c: C.text },
                 ].map((s, i) => (
@@ -235,9 +225,9 @@ export default function DashboardPreview() {
                       borderRadius: 10, padding: 14,
                       boxShadow: idx === 0 ? `0 0 0 1px ${f.color}30, 0 8px 24px ${f.color}15` : 'none',
                     }}>
-                      {/* Header firm */}
+                      {/* Header firm — vrai logo PNG/JPEG via getFirmLogo */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                        <FirmLogo initials={f.initials} color={f.color} size={34} />
+                        {getFirmLogo(f.name, f.color, 34)}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
                           <div style={{ fontSize: 10, color: C.text3 }}>{totalAccounts} comptes · {f.nbPayouts} payout{f.nbPayouts > 1 ? 's' : ''}</div>
@@ -339,14 +329,16 @@ export default function DashboardPreview() {
                   </div>
 
                   {/* 3 mini-stats du mois (mois rentable) */}
+                  {/* Achats = somme des `buy` dans CAL_EVENTS = 83+20+81+20+81 = 285€ */}
+                  {/* Payouts = somme des `pay`     = 850+1200+680+1400 = 4130€ */}
                   <div className="dp-stats3" style={{
                     display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
                     gap: 10, marginBottom: 14,
                   }}>
                     {[
-                      { l: 'Achats du mois', n: 980, c: C.red, prefix: '' },
+                      { l: 'Achats du mois',  n: 285,  c: C.red },
                       { l: 'Payouts du mois', n: 4130, c: C.green },
-                      { l: 'Net du mois', n: 3150, c: C.green, prefix: '+' },
+                      { l: 'Net du mois',     n: 3845, c: C.green, prefix: '+' },
                     ].map((s, i) => (
                       <div key={i} style={{
                         background: C.surface, border: `1px solid ${C.border}`,
@@ -380,7 +372,7 @@ export default function DashboardPreview() {
                         {days.map((d, i) => {
                           const evt = d.current ? CAL_EVENTS[d.day] : null
                           const otherPrev = d.other && CAL_OTHER_PREV[d.day]
-                          const isToday = d.current && d.day === 12
+                          const isToday = d.current && d.day === 30
                           const isHovered = hoveredDay === i
                           return (
                             <div
