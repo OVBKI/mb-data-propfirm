@@ -527,20 +527,20 @@ export default function Home() {
                     <div key={i} style={{...S.card,padding:'10px 14px'}}><div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'4px'}}>{s.l}</div><div style={{fontSize:'15px',fontWeight:'600',color:s.c}}>{s.v}</div></div>
                   ))}
                 </div>
-                <div className="grid-1-280" style={{display:'grid',gridTemplateColumns:'1fr 280px',gap:'16px',alignItems:'start'}}>
+                <div className="grid-1-280" style={{display:'grid',gridTemplateColumns:'1fr 260px',gap:'18px',alignItems:'start'}}>
                   <div style={{...S.card,overflow:'hidden'}}>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',background:'var(--surface2)',borderBottom:'0.5px solid var(--border)'}}>
-                      {['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(d=><div key={d} style={{padding:'8px 0',textAlign:'center',fontSize:'10px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase'}}>{d}</div>)}
+                      {['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(d=><div key={d} style={{padding:'12px 0',textAlign:'center',fontSize:'11px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px'}}>{d}</div>)}
                     </div>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)'}}>
                       {calDays.map((day,i)=>{
                         const evts=evtMap[day.dateStr]||[]
                         const buyT=evts.filter(e=>e.type==='buy').reduce((s,e)=>s+toEUR(e.amount,e.currency,rates),0)
                         const payT=evts.filter(e=>e.type==='pay').reduce((s,e)=>s+toEUR(e.amount,e.currency,rates),0)
-                        return<div key={i} className="cal-cell" onClick={()=>setSelDay(day.dateStr)} style={{minHeight:'72px',padding:'6px',borderRight:(i+1)%7===0?'none':'0.5px solid var(--border)',borderBottom:'0.5px solid var(--border)',cursor:'pointer',opacity:day.other?0.25:1,background:day.selected?'rgba(45,111,255,0.08)':'transparent',outline:day.selected?'2px solid var(--blue)':'none',outlineOffset:'-2px'}}>
-                          <div className="cal-cell-num" style={{fontSize:'11px',width:'20px',height:'20px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:day.today?'var(--blue)':'transparent',color:day.today?'#fff':'var(--text2)',marginBottom:'3px'}}>{day.day}</div>
-                          {buyT>0&&<div className="cal-cell-amount" style={{fontSize:'9px',fontWeight:'700',padding:'1px 4px',borderRadius:'3px',background:'var(--red-bg)',color:'var(--red-text)',marginBottom:'2px'}}>-{buyT.toFixed(0)} €</div>}
-                          {payT>0&&<div className="cal-cell-amount" style={{fontSize:'9px',fontWeight:'700',padding:'1px 4px',borderRadius:'3px',background:'var(--green-bg)',color:'var(--green-text)'}}>+{payT.toFixed(0)} €</div>}
+                        return<div key={i} className="cal-cell" onClick={()=>setSelDay(day.dateStr)} style={{minHeight:'108px',padding:'10px',borderRight:(i+1)%7===0?'none':'0.5px solid var(--border)',borderBottom:'0.5px solid var(--border)',cursor:'pointer',opacity:day.other?0.25:1,background:day.selected?'rgba(45,111,255,0.08)':'transparent',outline:day.selected?'2px solid var(--blue)':'none',outlineOffset:'-2px'}}>
+                          <div className="cal-cell-num" style={{fontSize:'13px',fontWeight:'600',width:'26px',height:'26px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:day.today?'var(--blue)':'transparent',color:day.today?'#fff':'var(--text2)',marginBottom:'5px'}}>{day.day}</div>
+                          {buyT>0&&<div className="cal-cell-amount" style={{fontSize:'11px',fontWeight:'700',padding:'2px 6px',borderRadius:'4px',background:'var(--red-bg)',color:'var(--red-text)',marginBottom:'3px',display:'inline-block'}}>-{buyT.toFixed(0)} €</div>}
+                          {payT>0&&<div className="cal-cell-amount" style={{fontSize:'11px',fontWeight:'700',padding:'2px 6px',borderRadius:'4px',background:'var(--green-bg)',color:'var(--green-text)',display:'inline-block'}}>+{payT.toFixed(0)} €</div>}
                         </div>
                       })}
                     </div>
