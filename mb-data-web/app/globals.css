@@ -351,11 +351,13 @@ html, body { overflow-x: hidden; }
 }
 @media (max-width: 1100px) {
   .dp-stats5 { grid-template-columns: repeat(3, 1fr) !important; }
+  .dp-firms  { grid-template-columns: repeat(2, 1fr) !important; }
   .dp-cal-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 720px) {
   .dp-stats5 { grid-template-columns: repeat(2, 1fr) !important; }
   .dp-stats3 { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+  .dp-firms  { grid-template-columns: 1fr !important; }
   .dp-cal-cell { min-height: 50px !important; padding: 4px !important; }
 }
 
