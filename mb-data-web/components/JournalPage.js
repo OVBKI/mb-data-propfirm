@@ -20,7 +20,7 @@ const btnGhost = { padding:'7px 14px', fontSize:'12px', background:'transparent'
 const chipBtn = (active)=>({ padding:'6px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:'0.5px solid var(--border2)', fontFamily:'inherit', fontWeight:'500', background:active?'var(--blue)':'transparent', color:active?'#fff':'var(--text2)' })
 
 // Carte avec courbe de balance pour un compte donné
-function EquityCurveCard({ account, entries, getFirmLogo }){
+function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance }){
   const ref = useRef(null)
   const chart = useRef(null)
 
@@ -31,12 +31,19 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
   const ddInitial = ddMax!==null ? planSize - ddMax : null
   const payoutTarget = account.payout_target != null ? Number(account.payout_target) : null
   const minDays = account.min_trading_days != null ? Number(account.min_trading_days) : null
+  // Si funded_date est définie, on ignore les trades d'avant (compte reset au passage en Financé)
+  const fundedDate = account.funded_date || null
+  const ignoredCount = fundedDate ? entries.filter(e => e.date < fundedDate).length : 0
 
   // Trie les entries par date et construit la courbe cumulative + ligne DD
   // Pour le DD trailing : à chaque jour, ddLine[i] = min(balance_peak_jusqu'à i - DDmax, planSize)
   // → la ligne suit le balance peak (s'élève) puis se fige au balance initial (planSize)
   const data = useMemo(()=>{
-    const sorted = entries.slice().sort((a,b)=>a.date.localeCompare(b.date))
+    // Filtre : si funded_date est définie, on ne prend que les trades à partir de cette date
+    const eligible = fundedDate
+      ? entries.filter(e => e.date >= fundedDate)
+      : entries
+    const sorted = eligible.slice().sort((a,b)=>a.date.localeCompare(b.date))
     let cum = 0
     let peak = planSize
     const labels = []
@@ -72,7 +79,7 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
       currentDD: ddLine.length ? ddLine[ddLine.length - 1] : null,
       tradingDays,
     }
-  },[entries, planSize, ddMax, isTrailing])
+  },[entries, planSize, ddMax, isTrailing, fundedDate])
 
   useEffect(()=>{
     if(!ref.current) return
@@ -147,6 +154,29 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
   const finalNet = data.totalPnl
   const pctFromStart = planSize>0 ? (finalNet/planSize)*100 : 0
 
+  // Action : reset balance au passage Challenge → Financé
+  function handleResetClick(){
+    if(!onResetBalance) return
+    const today = new Date().toISOString().slice(0,10)
+    const ans = window.prompt(
+      `Reset la balance du compte ${accountLabel(account)} ?\n\n` +
+      `Saisis la date du passage en Financé (YYYY-MM-DD).\n` +
+      `Les trades avant cette date seront masqués du calcul de balance (mais conservés dans l'historique).`,
+      today
+    )
+    if(!ans) return
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(ans.trim())){
+      alert('Format invalide. Utilise YYYY-MM-DD (ex: 2026-05-30)')
+      return
+    }
+    onResetBalance(account.id, ans.trim())
+  }
+  function handleUndoReset(){
+    if(!onResetBalance) return
+    if(!confirm('Annuler le reset ? Les anciens trades seront de nouveau pris en compte dans la balance.')) return
+    onResetBalance(account.id, null)
+  }
+
   return (
     <div style={{background:'var(--surface)', border:'0.5px solid var(--border)', borderRadius:'var(--radius-lg)', padding:'18px'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px',gap:'10px',flexWrap:'wrap'}}>
@@ -168,6 +198,39 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
           </div>
         </div>
       </div>
+
+      {/* Bandeau reset balance : visible si un reset est actif, ou bouton si compte Financé sans reset */}
+      {fundedDate ? (
+        <div style={{
+          display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',
+          padding:'8px 12px',marginBottom:'12px',
+          background:'rgba(45,111,255,0.08)',border:'1px solid rgba(45,111,255,0.25)',
+          borderRadius:'var(--radius)',fontSize:'11px',
+        }}>
+          <span style={{color:'var(--text2)'}}>
+            ↻ Compte reset le <strong style={{color:'var(--text)'}}>{fundedDate}</strong>
+            {ignoredCount>0 && <span style={{color:'var(--text3)'}}> · {ignoredCount} trade{ignoredCount>1?'s':''} antérieur{ignoredCount>1?'s':''} masqué{ignoredCount>1?'s':''}</span>}
+          </span>
+          <div style={{display:'flex',gap:'6px'}}>
+            <button onClick={handleResetClick} style={{
+              fontSize:'10px',padding:'3px 8px',borderRadius:'6px',
+              background:'transparent',border:'1px solid var(--border2)',color:'var(--text2)',cursor:'pointer',
+            }}>Modifier date</button>
+            <button onClick={handleUndoReset} style={{
+              fontSize:'10px',padding:'3px 8px',borderRadius:'6px',
+              background:'transparent',border:'1px solid var(--border2)',color:'var(--text3)',cursor:'pointer',
+            }}>Annuler</button>
+          </div>
+        </div>
+      ) : account.status === 'Financé' && onResetBalance ? (
+        <div style={{marginBottom:'12px'}}>
+          <button onClick={handleResetClick} style={{
+            fontSize:'11px',padding:'6px 12px',borderRadius:'6px',
+            background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
+            color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',
+          }}>↻ Reset balance (passage en Financé)</button>
+        </div>
+      ) : null}
 
       {/* Indicateurs de progression : payout target + jours tradés */}
       {(payoutTarget !== null || minDays !== null) && (
@@ -268,7 +331,7 @@ function EquityCurveCard({ account, entries, getFirmLogo }){
   )
 }
 
-export default function JournalPage({ firms, user, getFirmLogo, showToast }){
+export default function JournalPage({ firms, user, getFirmLogo, showToast, onReload }){
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
@@ -478,6 +541,19 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast }){
     if(error){ showToast?.('Erreur suppression'); return }
     showToast?.('Trade supprimé')
     await loadEntries()
+  }
+
+  // Reset balance d'un compte au passage Challenge → Financé
+  // Si fundedDate est null, annule le reset (les trades antérieurs reviennent dans le calcul)
+  async function resetAccountBalance(accountId, fundedDate){
+    const { error } = await supabase
+      .from('accounts')
+      .update({ funded_date: fundedDate })
+      .eq('id', accountId)
+    if(error){ showToast?.('Erreur reset : '+error.message); return }
+    showToast?.(fundedDate ? `Balance reset au ${fundedDate} ✓` : 'Reset annulé ✓')
+    // Recharge les firmes côté parent pour rafraîchir account.funded_date dans les props
+    if(onReload) await onReload()
   }
 
   // Export CSV des trades filtrés
@@ -835,6 +911,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                       account={acc}
                       entries={accEntries}
                       getFirmLogo={getFirmLogo}
+                      onResetBalance={resetAccountBalance}
                     />
                   )
                 })}

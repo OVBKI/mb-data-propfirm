@@ -656,7 +656,7 @@ export default function Home() {
           )}
 
           {page==='journal'&&(
-            <JournalPage firms={firms} user={user} getFirmLogo={getFirmLogo} showToast={showToast} />
+            <JournalPage firms={firms} user={user} getFirmLogo={getFirmLogo} showToast={showToast} onReload={loadFirms} />
           )}
 
           {page==='calendar'&&(

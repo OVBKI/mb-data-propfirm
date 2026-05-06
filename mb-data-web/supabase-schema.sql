@@ -34,6 +34,9 @@ alter table accounts add column if not exists name              text          de
 alter table accounts add column if not exists dd_type           text          default 'static';
 alter table accounts add column if not exists payout_target     numeric(12,2);
 alter table accounts add column if not exists min_trading_days  int;
+-- Date de passage en Financé (reset balance) : les trades antérieurs sont
+-- conservés mais ignorés dans le calcul de la balance du compte financé.
+alter table accounts add column if not exists funded_date       date;
 
 -- PAYOUTS table
 create table if not exists payouts (
