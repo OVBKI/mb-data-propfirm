@@ -43,10 +43,21 @@ const T = {
   }
 }
 
-// Liste maîtresse des devises (toujours affichées dans les filtres si présentes dans les events)
-const CURRENCY_ORDER = ['USD','EUR','GBP','JPY','CAD','AUD','NZD','CHF','CNY','CNH','SEK','NOK','DKK','HKD','SGD','MXN','ZAR','TRY','INR','BRL']
+// Devises majeures (G10) — affichées en priorité dans le filtre
+const MAJOR_CURRENCIES = ['USD','EUR','GBP','JPY','CAD','AUD','NZD','CHF']
+// Liste maîtresse pour ordonner les autres
+const CURRENCY_ORDER = [...MAJOR_CURRENCIES,'CNY','CNH','HKD','SGD','KRW','TWD','THB','MYR','IDR','PHP','VND','SEK','NOK','DKK','ISK','PLN','CZK','HUF','RON','RUB','UAH','TRY','BGN','RSD','MXN','BRL','ARS','CLP','COP','PEN','UYU','INR','AED','SAR','ILS','EGP','ZAR','MAD','NGN']
 
-const FLAG={USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',CAD:'🇨🇦',AUD:'🇦🇺',NZD:'🇳🇿',CHF:'🇨🇭',CNY:'🇨🇳',CNH:'🇨🇳',SEK:'🇸🇪',NOK:'🇳🇴',DKK:'🇩🇰',HKD:'🇭🇰',SGD:'🇸🇬',MXN:'🇲🇽',ZAR:'🇿🇦',TRY:'🇹🇷',INR:'🇮🇳',BRL:'🇧🇷'}
+const FLAG={
+  USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',CAD:'🇨🇦',AUD:'🇦🇺',NZD:'🇳🇿',CHF:'🇨🇭',
+  CNY:'🇨🇳',CNH:'🇨🇳',HKD:'🇭🇰',SGD:'🇸🇬',KRW:'🇰🇷',TWD:'🇹🇼',THB:'🇹🇭',MYR:'🇲🇾',
+  IDR:'🇮🇩',PHP:'🇵🇭',VND:'🇻🇳',INR:'🇮🇳',
+  SEK:'🇸🇪',NOK:'🇳🇴',DKK:'🇩🇰',ISK:'🇮🇸',
+  PLN:'🇵🇱',CZK:'🇨🇿',HUF:'🇭🇺',RON:'🇷🇴',RUB:'🇷🇺',UAH:'🇺🇦',TRY:'🇹🇷',BGN:'🇧🇬',RSD:'🇷🇸',
+  MXN:'🇲🇽',BRL:'🇧🇷',ARS:'🇦🇷',CLP:'🇨🇱',COP:'🇨🇴',PEN:'🇵🇪',UYU:'🇺🇾',
+  AED:'🇦🇪',SAR:'🇸🇦',ILS:'🇮🇱',EGP:'🇪🇬',ZAR:'🇿🇦',MAD:'🇲🇦',NGN:'🇳🇬',
+  WORLD:'🌍',
+}
 const IC={High:{dot:'#e8504a',text:'#e8504a',bg:'rgba(232,80,74,0.03)'},Medium:{dot:'#fac775',text:'#fac775',bg:'transparent'},Low:{dot:'#565e78',text:'#565e78',bg:'transparent'},Holiday:{dot:'#2d6fff',text:'#4d8fff',bg:'rgba(45,111,255,0.03)'}}
 
 // Traductions des événements ForexFactory (titres anglais → FR/ES)
@@ -196,6 +207,7 @@ export default function CalendarPage({lang='fr',onLangChange}){
   const[fCurrencies,setFCurrencies]=useState([]) // [] = toutes
   const[lastUpd,setLastUpd]=useState('')
   const[openDay,setOpenDay]=useState(null)
+  const[currencyModalOpen,setCurrencyModalOpen]=useState(false)
   const t=T[lang]||T.fr
   const today=todayFF()
   const nowTs = Date.now()
@@ -281,22 +293,181 @@ export default function CalendarPage({lang='fr',onLangChange}){
           ))}
         </div>
 
-        <div style={{display:'flex',flexWrap:'wrap',gap:'6px',alignItems:'center'}}>
+        {/* Bouton "Devises" qui ouvre un modal popup pour la sélection */}
+        <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
           <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t.filterCurrency}</span>
-          <button onClick={selectAllCurrencies} style={chipBtn(fCurrencies.length===0)}>
-            🌍 {t.all}
+          <button onClick={()=>setCurrencyModalOpen(true)} style={{
+            padding:'7px 14px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',
+            border:'1px solid var(--border2)',fontFamily:'inherit',fontWeight:'600',
+            background:'var(--surface2)',color:'var(--text)',
+            display:'inline-flex',alignItems:'center',gap:'8px',
+          }}>
+            <span style={{fontSize:'14px'}}>🌍</span>
+            {fCurrencies.length === 0 ? (
+              <>Toutes les devises ({availableCurrencies.length})</>
+            ) : (
+              <>
+                <span>Filtrées :</span>
+                <span style={{display:'inline-flex',gap:'2px'}}>
+                  {fCurrencies.slice(0,5).map(c=>(
+                    <span key={c} title={c}>{FLAG[c]||c}</span>
+                  ))}
+                  {fCurrencies.length>5 && <span style={{color:'var(--text3)',fontSize:'11px'}}>+{fCurrencies.length-5}</span>}
+                </span>
+                <span style={{
+                  background:'var(--blue)',color:'#fff',padding:'1px 7px',
+                  borderRadius:'99px',fontSize:'10px',fontWeight:'700',
+                }}>{fCurrencies.length}</span>
+              </>
+            )}
+            <span style={{color:'var(--text3)',fontSize:'10px'}}>▼</span>
           </button>
-          {availableCurrencies.length === 0 && !loading && (
-            <span style={{fontSize:'11px',color:'var(--text3)',fontStyle:'italic'}}>(aucune devise disponible)</span>
+          {fCurrencies.length > 0 && (
+            <button onClick={selectAllCurrencies} style={{
+              padding:'7px 12px',fontSize:'11px',cursor:'pointer',borderRadius:'99px',
+              border:'1px solid var(--border2)',fontFamily:'inherit',
+              background:'transparent',color:'var(--text3)',
+            }}>✕ Tout effacer</button>
           )}
-          {availableCurrencies.map(cur=>(
-            <button key={cur} onClick={()=>toggleCurrency(cur)} style={chipBtn(fCurrencies.includes(cur))}>
-              <span>{FLAG[cur]||''}</span>
-              <span>{cur}</span>
-            </button>
-          ))}
         </div>
       </div>
+
+      {/* === MODAL : sélection des devises avec drapeaux === */}
+      {currencyModalOpen && (() => {
+        const majors = availableCurrencies.filter(c => MAJOR_CURRENCIES.includes(c))
+        const others = availableCurrencies.filter(c => !MAJOR_CURRENCIES.includes(c))
+        // Compteur d'events par devise (utile pour le contexte)
+        const counts = {}
+        events.forEach(e => { if(e.currency) counts[e.currency] = (counts[e.currency]||0) + 1 })
+
+        const cellStyle = (active) => ({
+          display:'flex',alignItems:'center',gap:'8px',
+          padding:'10px 12px',borderRadius:'10px',cursor:'pointer',
+          border:`1px solid ${active ? 'var(--blue)' : 'var(--border)'}`,
+          background: active ? 'rgba(45,111,255,0.10)' : 'var(--surface2)',
+          color: active ? 'var(--text)' : 'var(--text2)',
+          transition:'all 0.15s', fontSize:'13px', fontWeight: active ? 700 : 500,
+        })
+
+        return (
+          <div
+            onClick={()=>setCurrencyModalOpen(false)}
+            style={{
+              position:'fixed',inset:0,zIndex:500,
+              background:'rgba(0,0,0,0.65)',backdropFilter:'blur(4px)',
+              display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',
+            }}
+          >
+            <div
+              onClick={e=>e.stopPropagation()}
+              style={{
+                background:'var(--surface)',borderRadius:'var(--radius-lg)',
+                border:'1px solid var(--border2)',
+                width:'100%',maxWidth:'640px',maxHeight:'85vh',
+                display:'flex',flexDirection:'column',
+                boxShadow:'0 30px 80px rgba(0,0,0,0.6)',
+              }}
+            >
+              {/* Header modal */}
+              <div style={{
+                padding:'18px 22px',borderBottom:'1px solid var(--border)',
+                display:'flex',alignItems:'center',justifyContent:'space-between',
+              }}>
+                <div>
+                  <div style={{fontSize:'15px',fontWeight:'700'}}>Filtrer par devise</div>
+                  <div style={{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}}>
+                    {fCurrencies.length === 0
+                      ? `${availableCurrencies.length} devises disponibles · toutes affichées`
+                      : `${fCurrencies.length}/${availableCurrencies.length} sélectionnée${fCurrencies.length>1?'s':''}`}
+                  </div>
+                </div>
+                <button onClick={()=>setCurrencyModalOpen(false)} style={{
+                  width:'32px',height:'32px',borderRadius:'8px',border:'1px solid var(--border2)',
+                  background:'transparent',color:'var(--text2)',cursor:'pointer',fontSize:'14px',
+                }}>✕</button>
+              </div>
+
+              {/* Body scrollable */}
+              <div style={{flex:1,overflow:'auto',padding:'18px 22px'}}>
+                {/* Actions rapides */}
+                <div style={{display:'flex',gap:'8px',marginBottom:'18px'}}>
+                  <button onClick={()=>setFCurrencies([])} style={{
+                    flex:1,padding:'9px 12px',fontSize:'12px',fontWeight:'600',cursor:'pointer',
+                    borderRadius:'8px',border:'1px solid var(--border2)',
+                    background: fCurrencies.length === 0 ? 'var(--blue)' : 'transparent',
+                    color: fCurrencies.length === 0 ? '#fff' : 'var(--text2)',
+                  }}>🌍 Tout afficher</button>
+                  <button onClick={()=>setFCurrencies([...MAJOR_CURRENCIES.filter(c=>availableCurrencies.includes(c))])} style={{
+                    flex:1,padding:'9px 12px',fontSize:'12px',fontWeight:'600',cursor:'pointer',
+                    borderRadius:'8px',border:'1px solid var(--border2)',
+                    background:'transparent',color:'var(--text2)',
+                  }}>⭐ Majeures uniquement</button>
+                </div>
+
+                {/* Devises majeures */}
+                {majors.length > 0 && (
+                  <div style={{marginBottom:'18px'}}>
+                    <div style={{fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>
+                      ⭐ Devises majeures (G10)
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:'8px'}}>
+                      {majors.map(cur => (
+                        <div key={cur} onClick={()=>toggleCurrency(cur)} style={cellStyle(fCurrencies.includes(cur))}>
+                          <span style={{fontSize:'18px'}}>{FLAG[cur]||'🏳️'}</span>
+                          <span style={{flex:1}}>{cur}</span>
+                          {counts[cur] > 0 && (
+                            <span style={{fontSize:'10px',color:'var(--text3)',background:'var(--surface3)',padding:'2px 6px',borderRadius:'99px'}}>
+                              {counts[cur]}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Autres devises */}
+                {others.length > 0 && (
+                  <div>
+                    <div style={{fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>
+                      Autres devises
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:'6px'}}>
+                      {others.map(cur => (
+                        <div key={cur} onClick={()=>toggleCurrency(cur)} style={{...cellStyle(fCurrencies.includes(cur)),padding:'8px 10px',fontSize:'12px'}}>
+                          <span style={{fontSize:'15px'}}>{FLAG[cur]||'🏳️'}</span>
+                          <span style={{flex:1}}>{cur}</span>
+                          {counts[cur] > 0 && (
+                            <span style={{fontSize:'9px',color:'var(--text3)'}}>{counts[cur]}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {availableCurrencies.length === 0 && (
+                  <div style={{textAlign:'center',padding:'40px',color:'var(--text3)',fontSize:'13px'}}>
+                    Aucune devise disponible dans les events de cette semaine.
+                  </div>
+                )}
+              </div>
+
+              {/* Footer modal */}
+              <div style={{
+                padding:'14px 22px',borderTop:'1px solid var(--border)',
+                display:'flex',justifyContent:'flex-end',gap:'8px',
+              }}>
+                <button onClick={()=>setCurrencyModalOpen(false)} style={{
+                  padding:'9px 22px',fontSize:'13px',fontWeight:'600',cursor:'pointer',
+                  borderRadius:'8px',border:'none',
+                  background:'var(--blue)',color:'#fff',
+                }}>OK</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Content */}
       {loading?(

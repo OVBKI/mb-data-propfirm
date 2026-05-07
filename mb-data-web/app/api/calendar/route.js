@@ -10,22 +10,66 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// Mapping ISO 2-letter country code → devise forex (utilisé pour filtrer dans l'UI)
+// Mapping ISO 2-letter country code → devise forex
 const COUNTRY_TO_CURRENCY = {
+  // === G10 (devises majeures) ===
   'US': 'USD',
-  // Zone euro
-  'DE': 'EUR', 'FR': 'EUR', 'IT': 'EUR', 'ES': 'EUR', 'NL': 'EUR',
-  'BE': 'EUR', 'AT': 'EUR', 'GR': 'EUR', 'IE': 'EUR', 'PT': 'EUR',
-  'FI': 'EUR', 'EU': 'EUR', 'EZ': 'EUR',
-  // Reste du G10
   'GB': 'GBP', 'UK': 'GBP',
   'JP': 'JPY',
   'CA': 'CAD',
   'AU': 'AUD',
   'NZ': 'NZD',
   'CH': 'CHF',
-  // Autres
+  // Zone euro (tous mappés vers EUR)
+  'EU': 'EUR', 'EZ': 'EUR',
+  'DE': 'EUR', 'FR': 'EUR', 'IT': 'EUR', 'ES': 'EUR', 'NL': 'EUR',
+  'BE': 'EUR', 'AT': 'EUR', 'GR': 'EUR', 'IE': 'EUR', 'PT': 'EUR',
+  'FI': 'EUR', 'LU': 'EUR', 'CY': 'EUR', 'MT': 'EUR', 'SI': 'EUR',
+  'SK': 'EUR', 'EE': 'EUR', 'LV': 'EUR', 'LT': 'EUR', 'HR': 'EUR',
+  // === Devises secondaires courantes ===
   'CN': 'CNY',
+  'HK': 'HKD',
+  'SG': 'SGD',
+  'KR': 'KRW',
+  'IN': 'INR',
+  'TW': 'TWD',
+  'TH': 'THB',
+  'MY': 'MYR',
+  'ID': 'IDR',
+  'PH': 'PHP',
+  'VN': 'VND',
+  // Europe (hors zone euro)
+  'SE': 'SEK',
+  'NO': 'NOK',
+  'DK': 'DKK',
+  'IS': 'ISK',
+  'PL': 'PLN',
+  'CZ': 'CZK',
+  'HU': 'HUF',
+  'RO': 'RON',
+  'RU': 'RUB',
+  'UA': 'UAH',
+  'TR': 'TRY',
+  'BG': 'BGN',
+  'RS': 'RSD',
+  // Amériques
+  'MX': 'MXN',
+  'BR': 'BRL',
+  'AR': 'ARS',
+  'CL': 'CLP',
+  'CO': 'COP',
+  'PE': 'PEN',
+  'UY': 'UYU',
+  // Moyen-Orient & Afrique
+  'AE': 'AED',
+  'SA': 'SAR',
+  'IL': 'ILS',
+  'EG': 'EGP',
+  'ZA': 'ZAR',
+  'MA': 'MAD',
+  'NG': 'NGN',
+  // Autres
+  'WW': 'WORLD', // Événements globaux (Finnhub utilise 'WW' parfois)
 }
 
 // "2026-04-01" → "04-01-2026" (format MM-DD-YYYY attendu par CalendarPage)
