@@ -48,15 +48,53 @@ const MAJOR_CURRENCIES = ['USD','EUR','GBP','JPY','CAD','AUD','NZD','CHF']
 // Liste maîtresse pour ordonner les autres
 const CURRENCY_ORDER = [...MAJOR_CURRENCIES,'CNY','CNH','HKD','SGD','KRW','TWD','THB','MYR','IDR','PHP','VND','SEK','NOK','DKK','ISK','PLN','CZK','HUF','RON','RUB','UAH','TRY','BGN','RSD','MXN','BRL','ARS','CLP','COP','PEN','UYU','INR','AED','SAR','ILS','EGP','ZAR','MAD','NGN']
 
-const FLAG={
-  USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',CAD:'🇨🇦',AUD:'🇦🇺',NZD:'🇳🇿',CHF:'🇨🇭',
-  CNY:'🇨🇳',CNH:'🇨🇳',HKD:'🇭🇰',SGD:'🇸🇬',KRW:'🇰🇷',TWD:'🇹🇼',THB:'🇹🇭',MYR:'🇲🇾',
-  IDR:'🇮🇩',PHP:'🇵🇭',VND:'🇻🇳',INR:'🇮🇳',
-  SEK:'🇸🇪',NOK:'🇳🇴',DKK:'🇩🇰',ISK:'🇮🇸',
-  PLN:'🇵🇱',CZK:'🇨🇿',HUF:'🇭🇺',RON:'🇷🇴',RUB:'🇷🇺',UAH:'🇺🇦',TRY:'🇹🇷',BGN:'🇧🇬',RSD:'🇷🇸',
-  MXN:'🇲🇽',BRL:'🇧🇷',ARS:'🇦🇷',CLP:'🇨🇱',COP:'🇨🇴',PEN:'🇵🇪',UYU:'🇺🇾',
-  AED:'🇦🇪',SAR:'🇸🇦',ILS:'🇮🇱',EGP:'🇪🇬',ZAR:'🇿🇦',MAD:'🇲🇦',NGN:'🇳🇬',
-  WORLD:'🌍',
+// Mapping devise → ISO 2-letter (pour aller chercher l'image du drapeau via flagcdn.com)
+const CURRENCY_TO_COUNTRY = {
+  USD:'us',EUR:'eu',GBP:'gb',JPY:'jp',CAD:'ca',AUD:'au',NZD:'nz',CHF:'ch',
+  CNY:'cn',CNH:'cn',HKD:'hk',SGD:'sg',KRW:'kr',TWD:'tw',THB:'th',MYR:'my',
+  IDR:'id',PHP:'ph',VND:'vn',INR:'in',
+  SEK:'se',NOK:'no',DKK:'dk',ISK:'is',
+  PLN:'pl',CZK:'cz',HUF:'hu',RON:'ro',RUB:'ru',UAH:'ua',TRY:'tr',BGN:'bg',RSD:'rs',
+  MXN:'mx',BRL:'br',ARS:'ar',CLP:'cl',COP:'co',PEN:'pe',UYU:'uy',
+  AED:'ae',SAR:'sa',ILS:'il',EGP:'eg',ZAR:'za',MAD:'ma',NGN:'ng',
+}
+
+// Composant Flag : affiche un drapeau via image PNG (flagcdn.com).
+// Contournement du bug Windows qui n'a pas de glyphes emoji pour les drapeaux.
+// Accepte soit `country` (ISO 2 lettres : 'us', 'de'), soit `currency` ('USD', 'EUR').
+function Flag({ country, currency, size = 18, style = {} }) {
+  let code = (country || '').toLowerCase()
+  if(!code && currency) {
+    code = CURRENCY_TO_COUNTRY[currency] || currency.toLowerCase()
+  }
+  // Cas spéciaux : alias et événements globaux
+  if(code === 'ww' || code === 'world') {
+    return <span style={{fontSize:size, lineHeight:1, ...style}} title="World">🌍</span>
+  }
+  if(code === 'ez') code = 'eu'
+  if(code === 'uk') code = 'gb'
+  if(!code || code.length !== 2) return null
+
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${code}.png`}
+      srcSet={`https://flagcdn.com/w80/${code}.png 2x`}
+      alt={code.toUpperCase()}
+      width={size}
+      height={Math.round(size * 0.75)}
+      loading="lazy"
+      decoding="async"
+      style={{
+        objectFit:'cover',
+        borderRadius:2,
+        display:'inline-block',
+        verticalAlign:'middle',
+        boxShadow:'0 0 0 0.5px rgba(255,255,255,0.10)',
+        flexShrink:0,
+        ...style,
+      }}
+    />
+  )
 }
 const IC={High:{dot:'#e8504a',text:'#e8504a',bg:'rgba(232,80,74,0.03)'},Medium:{dot:'#fac775',text:'#fac775',bg:'transparent'},Low:{dot:'#565e78',text:'#565e78',bg:'transparent'},Holiday:{dot:'#2d6fff',text:'#4d8fff',bg:'rgba(45,111,255,0.03)'}}
 
@@ -181,21 +219,7 @@ function aColor(actual,forecast){
 }
 function todayFF(){const d=new Date();return`${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${d.getFullYear()}`}
 
-// ISO 2-letter country code → emoji drapeau (trick Unicode regional indicators)
-// Ex: 'US' → 🇺🇸, 'DE' → 🇩🇪, 'JP' → 🇯🇵
-function countryFlag(code){
-  if(!code || typeof code !== 'string' || code.length !== 2) return ''
-  const up = code.toUpperCase()
-  // Cas spéciaux : codes pseudo / alias / globaux
-  if(up === 'WW') return '🌍'    // Événement mondial
-  if(up === 'EZ') return '🇪🇺'   // Alias zone euro
-  if(up === 'UK') return '🇬🇧'   // Alias officiel = GB
-  const A = 0x1F1E6 // U+1F1E6 = 🇦
-  const c1 = up.charCodeAt(0) - 65
-  const c2 = up.charCodeAt(1) - 65
-  if(c1 < 0 || c1 > 25 || c2 < 0 || c2 > 25) return ''
-  return String.fromCodePoint(A + c1) + String.fromCodePoint(A + c2)
-}
+// (Ancienne fonction countryFlag emoji-based supprimée — voir composant <Flag /> en bas qui utilise des images PNG via flagcdn)
 
 // Convertit "MM-DD-YYYY" + "h:mmam/pm" en timestamp pour comparer si l'event est passé
 function eventTime(dateStr, timeStr){
@@ -340,7 +364,7 @@ export default function CalendarPage({lang='fr',onLangChange}){
                 <span>Filtrées :</span>
                 <span style={{display:'inline-flex',gap:'2px'}}>
                   {fCurrencies.slice(0,5).map(c=>(
-                    <span key={c} title={c}>{FLAG[c]||c}</span>
+                    <Flag key={c} currency={c} size={16} />
                   ))}
                   {fCurrencies.length>5 && <span style={{color:'var(--text3)',fontSize:'11px'}}>+{fCurrencies.length-5}</span>}
                 </span>
@@ -443,7 +467,7 @@ export default function CalendarPage({lang='fr',onLangChange}){
                     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:'8px'}}>
                       {majors.map(cur => (
                         <div key={cur} onClick={()=>toggleCurrency(cur)} style={cellStyle(fCurrencies.includes(cur))}>
-                          <span style={{fontSize:'18px'}}>{FLAG[cur]||'🏳️'}</span>
+                          <Flag currency={cur} size={22} />
                           <span style={{flex:1}}>{cur}</span>
                           {counts[cur] > 0 && (
                             <span style={{fontSize:'10px',color:'var(--text3)',background:'var(--surface3)',padding:'2px 6px',borderRadius:'99px'}}>
@@ -465,7 +489,7 @@ export default function CalendarPage({lang='fr',onLangChange}){
                     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:'6px'}}>
                       {others.map(cur => (
                         <div key={cur} onClick={()=>toggleCurrency(cur)} style={{...cellStyle(fCurrencies.includes(cur)),padding:'8px 10px',fontSize:'12px'}}>
-                          <span style={{fontSize:'15px'}}>{FLAG[cur]||'🏳️'}</span>
+                          <Flag currency={cur} size={18} />
                           <span style={{flex:1}}>{cur}</span>
                           {counts[cur] > 0 && (
                             <span style={{fontSize:'9px',color:'var(--text3)'}}>{counts[cur]}</span>
@@ -566,11 +590,9 @@ export default function CalendarPage({lang='fr',onLangChange}){
                             <tr key={i} style={{borderBottom:'0.5px solid var(--border)',background:ic.bg}}>
                               <td style={{padding:'11px 14px',color:'var(--text2)',whiteSpace:'nowrap',fontFamily:'monospace',fontSize:'12px'}}>{ev.time||'—'}</td>
                               <td style={{padding:'11px 14px',whiteSpace:'nowrap'}}>
-                                <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                                  {/* Drapeau pays (basé sur ISO country code) — fallback sur drapeau devise si absent */}
-                                  <span style={{fontSize:'18px',lineHeight:1}} title={ev.country}>
-                                    {countryFlag(ev.country) || FLAG[ev.currency] || '🏳️'}
-                                  </span>
+                                <div style={{display:'flex',alignItems:'center',gap:'7px'}}>
+                                  {/* Drapeau pays via image (flagcdn) — fonctionne sur Windows */}
+                                  <Flag country={ev.country} currency={ev.currency} size={20} />
                                   <div style={{display:'flex',flexDirection:'column',gap:'1px'}}>
                                     <span style={{fontWeight:'700',fontSize:'12px',lineHeight:1}}>{ev.currency}</span>
                                     {ev.country && (
