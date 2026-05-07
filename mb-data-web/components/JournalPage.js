@@ -335,7 +335,7 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
-  const [statusFilter, setStatusFilter] = useState('active') // 'all' | 'active' | 'Challenge' | 'Financé' | 'Échoué'
+  const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'Challenge' | 'Financé' | 'Échoué'
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
   const [selDay, setSelDay] = useState(null)
@@ -398,7 +398,6 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
   function passesStatus(acc){
     if(!acc) return true
     if(statusFilter === 'all') return true
-    if(statusFilter === 'active') return acc.status === 'Challenge' || acc.status === 'Financé'
     return acc.status === statusFilter
   }
 
@@ -550,7 +549,22 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
       .from('accounts')
       .update({ funded_date: fundedDate })
       .eq('id', accountId)
-    if(error){ showToast?.('Erreur reset : '+error.message); return }
+    if(error){
+      // Si la colonne n'existe pas, message explicite avec la commande SQL à exécuter
+      const isMissingColumn = /column.*funded_date.*does not exist|funded_date.*column/i.test(error.message || '')
+      if(isMissingColumn){
+        alert(
+          '⚠ La colonne `funded_date` n\'existe pas dans Supabase.\n\n' +
+          'Va sur https://supabase.com → ton projet → SQL Editor, et exécute :\n\n' +
+          'alter table accounts add column if not exists funded_date date;\n\n' +
+          'Puis recharge la page et réessaye.'
+        )
+      } else {
+        alert('Erreur reset : ' + error.message)
+      }
+      showToast?.('❌ Reset échoué — voir popup')
+      return
+    }
     showToast?.(fundedDate ? `Balance reset au ${fundedDate} ✓` : 'Reset annulé ✓')
     // Recharge les firmes côté parent pour rafraîchir account.funded_date dans les props
     if(onReload) await onReload()
@@ -638,48 +652,80 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
       )}
 
       {/* Filtres scope + statut */}
-      <div style={{...card, padding:'14px 18px', marginBottom:'16px',display:'flex',flexDirection:'column',gap:'10px'}}>
-        {/* Statut */}
-        <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
-          <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Statut</span>
-          {[
-            {k:'active',l:'🟢 Actifs'},
-            {k:'Challenge',l:'🟡 Challenge'},
-            {k:'Financé',l:'✅ Financé'},
-            {k:'Échoué',l:'🔴 Échoué'},
-            {k:'all',l:'Tous'},
-          ].map(s=>(
-            <button key={s.k} onClick={()=>setStatusFilter(s.k)} style={chipBtn(statusFilter===s.k)}>{s.l}</button>
-          ))}
-        </div>
+      {(() => {
+        // Décompose `scope` ("all" | firmId | "firmId:accountId") en deux selects ergonomiques.
+        const selectedFirmId = scope === 'all' ? 'all' : scope.split(':')[0]
+        const selectedAcctId = scope.includes(':') ? scope.split(':')[1] : 'all'
+        const currentFirm = firms.find(f => f.id === selectedFirmId)
+        const accountsForFirm = currentFirm
+          ? (currentFirm.accounts || []).filter(a => passesStatus(a))
+          : []
+        const selectStyle = {
+          background:'var(--surface2)', border:'1px solid var(--border2)',
+          borderRadius:'8px', padding:'8px 12px', fontSize:'13px',
+          color:'var(--text)', cursor:'pointer', minWidth:'200px',
+          fontFamily:'inherit',
+        }
+        return (
+          <div style={{...card, padding:'14px 18px', marginBottom:'16px',display:'flex',flexDirection:'column',gap:'12px'}}>
+            {/* Statut (sans Actifs) */}
+            <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
+              <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Statut</span>
+              {[
+                {k:'all',l:'Tous'},
+                {k:'Challenge',l:'🟡 Challenge'},
+                {k:'Financé',l:'✅ Financé'},
+                {k:'Échoué',l:'🔴 Échoué'},
+              ].map(s=>(
+                <button key={s.k} onClick={()=>setStatusFilter(s.k)} style={chipBtn(statusFilter===s.k)}>{s.l}</button>
+              ))}
+            </div>
 
-        {/* Firmes / Comptes */}
-        <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
-          <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Firme</span>
-          <button onClick={()=>setScope('all')} style={chipBtn(scope==='all')}>📊 Toutes</button>
-          {firms.map(f=>{
-            const accs = (f.accounts||[]).filter(a=>passesStatus(a))
-            if(!accs.length) return null
-            return (
-              <div key={f.id} style={{display:'inline-flex',gap:'4px',alignItems:'center',padding:'2px 4px 2px 6px',border:'0.5px solid var(--border)',borderRadius:'99px',background:scope===f.id||scope.startsWith(f.id+':')?'rgba(45,111,255,0.05)':'transparent'}}>
-                <button onClick={()=>setScope(f.id)} style={{...chipBtn(scope===f.id), padding:'4px 10px'}}>
-                  {getFirmLogo ? <span style={{display:'inline-flex',marginRight:'4px',verticalAlign:'middle'}}>{getFirmLogo(f.name, f.color, 16)}</span> : null}
-                  {f.name}
-                </button>
-                {accs.map(a=>{
-                  const v = `${f.id}:${a.id}`
-                  const lbl = accountLabel(a)
-                  return (
-                    <button key={a.id} onClick={()=>setScope(v)} title={`${lbl} (acheté le ${a.buy_date})`} style={{...chipBtn(scope===v), padding:'4px 8px', fontSize:'11px'}}>
-                      {lbl}
-                    </button>
-                  )
-                })}
+            {/* Firme + Compte : 2 selects ergonomiques côte à côte */}
+            <div style={{display:'flex',flexWrap:'wrap',gap:'12px',alignItems:'center'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'8px',flex:'1 1 240px'}}>
+                <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Firme</span>
+                <select
+                  value={selectedFirmId}
+                  onChange={e => {
+                    const v = e.target.value
+                    if(v === 'all') setScope('all')
+                    else setScope(v) // changer de firme reset le compte à "Tous"
+                  }}
+                  style={{...selectStyle, flex:1}}
+                >
+                  <option value="all">📊 Toutes les firmes</option>
+                  {firms.map(f => {
+                    const has = (f.accounts || []).some(a => passesStatus(a))
+                    if(!has) return null
+                    return <option key={f.id} value={f.id}>{f.name}</option>
+                  })}
+                </select>
               </div>
-            )
-          })}
-        </div>
-      </div>
+              <div style={{display:'flex',alignItems:'center',gap:'8px',flex:'1 1 240px'}}>
+                <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Compte</span>
+                <select
+                  value={selectedAcctId}
+                  disabled={selectedFirmId === 'all'}
+                  onChange={e => {
+                    const v = e.target.value
+                    if(v === 'all') setScope(selectedFirmId)
+                    else setScope(`${selectedFirmId}:${v}`)
+                  }}
+                  style={{...selectStyle, flex:1, opacity: selectedFirmId === 'all' ? 0.5 : 1}}
+                >
+                  <option value="all">Tous les comptes{selectedFirmId !== 'all' && currentFirm ? ` de ${currentFirm.name}` : ''}</option>
+                  {accountsForFirm.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {accountLabel(a)} · {a.status} · acheté {a.buy_date}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {loading ? (
         <div style={{...card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>⏳ Chargement…</div>
