@@ -401,7 +401,7 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
     return acc.status === statusFilter
   }
 
-  // Filtre par scope ET par statut du compte rattaché
+  // Filtre par scope, statut, ET funded_date (reset balance) du compte rattaché
   const filteredEntries = useMemo(()=>{
     let arr = decoratedEntries
     if(scope.includes(':')){
@@ -410,10 +410,14 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
     } else if(scope !== 'all'){
       arr = arr.filter(e => e._firmId === scope)
     }
-    // Filtre statut : on filtre les entries dont le compte rattaché passe le statusFilter
+    // Filtre statut + funded_date : on exclut les trades antérieurs au reset balance
+    // de chaque compte (les anciens trades du challenge sont masqués partout : calendrier,
+    // stats, gain moyen, consistency, ratio R, etc.)
     arr = arr.filter(e => {
       const acc = allAccounts.find(a => a.id === e.account_id)
-      return passesStatus(acc)
+      if(!passesStatus(acc)) return false
+      if(acc?.funded_date && e.date < acc.funded_date) return false
+      return true
     })
     return arr
   },[decoratedEntries, scope, statusFilter, allAccounts])
