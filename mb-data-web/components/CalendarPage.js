@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 
 const T = {
   fr: {
-    title:'Calendrier Économique', subtitle:'Données ForexFactory — actualisé toutes les minutes',
+    title:'Calendrier Économique', subtitle:'Données Finnhub · heures Paris (CET) — actualisé toutes les minutes',
     thisWeek:'Cette semaine', nextWeek:'Semaine prochaine', refresh:'↻ Actualiser',
     loading:'Chargement...', error:'Erreur de chargement', noEvents:'Aucun événement', all:'Toutes',
     high:'🔴 Fort', medium:'🟠 Moyen', low:'🟡 Faible',
@@ -13,10 +13,10 @@ const T = {
     upcoming:'À venir', past:'Passé · données non publiées',
     days:['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
     months:['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],
-    nextEmpty:'La semaine prochaine n\'est pas encore publiée par ForexFactory. Réessayez plus tard.',
+    nextEmpty:'La semaine prochaine n\'est pas encore publiée par Finnhub. Réessayez plus tard.',
   },
   en: {
-    title:'Economic Calendar', subtitle:'ForexFactory data — refreshed every minute',
+    title:'Economic Calendar', subtitle:'Finnhub data · Paris time (CET) — refreshed every minute',
     thisWeek:'This week', nextWeek:'Next week', refresh:'↻ Refresh',
     loading:'Loading...', error:'Loading error', noEvents:'No events', all:'All',
     high:'🔴 High', medium:'🟠 Medium', low:'🟡 Low',
@@ -26,10 +26,10 @@ const T = {
     upcoming:'Upcoming', past:'Past · data not yet released',
     days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
     months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-    nextEmpty:'Next week\'s data is not published yet by ForexFactory. Try again later.',
+    nextEmpty:'Next week\'s data is not published yet by Finnhub. Try again later.',
   },
   es: {
-    title:'Calendario Económico', subtitle:'Datos ForexFactory — actualizado cada minuto',
+    title:'Calendario Económico', subtitle:'Datos Finnhub · hora París (CET) — actualizado cada minuto',
     thisWeek:'Esta semana', nextWeek:'Próxima semana', refresh:'↻ Actualizar',
     loading:'Cargando...', error:'Error de carga', noEvents:'Sin eventos', all:'Todas',
     high:'🔴 Alto', medium:'🟠 Medio', low:'🟡 Bajo',
@@ -39,7 +39,7 @@ const T = {
     upcoming:'Próximo', past:'Pasado · datos aún no publicados',
     days:['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
     months:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
-    nextEmpty:'Los datos de la próxima semana aún no han sido publicados por ForexFactory. Inténtelo más tarde.',
+    nextEmpty:'Los datos de la próxima semana aún no han sido publicados por Finnhub. Inténtelo más tarde.',
   }
 }
 
@@ -406,7 +406,7 @@ export default function CalendarPage({lang='fr',onLangChange}){
       )}
 
       <div style={{marginTop:'20px',textAlign:'center',fontSize:'11px',color:'var(--text3)'}}>
-        Source : <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" style={{color:'#4d8fff',textDecoration:'none'}}>ForexFactory</a>
+        Source : <a href="https://finnhub.io" target="_blank" rel="noopener noreferrer" style={{color:'#4d8fff',textDecoration:'none'}}>Finnhub</a>
         {' · '}Données indicatives uniquement.
       </div>
     </div>
