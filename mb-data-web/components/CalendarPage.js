@@ -181,6 +181,22 @@ function aColor(actual,forecast){
 }
 function todayFF(){const d=new Date();return`${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${d.getFullYear()}`}
 
+// ISO 2-letter country code → emoji drapeau (trick Unicode regional indicators)
+// Ex: 'US' → 🇺🇸, 'DE' → 🇩🇪, 'JP' → 🇯🇵
+function countryFlag(code){
+  if(!code || typeof code !== 'string' || code.length !== 2) return ''
+  const up = code.toUpperCase()
+  // Cas spéciaux : codes pseudo / alias / globaux
+  if(up === 'WW') return '🌍'    // Événement mondial
+  if(up === 'EZ') return '🇪🇺'   // Alias zone euro
+  if(up === 'UK') return '🇬🇧'   // Alias officiel = GB
+  const A = 0x1F1E6 // U+1F1E6 = 🇦
+  const c1 = up.charCodeAt(0) - 65
+  const c2 = up.charCodeAt(1) - 65
+  if(c1 < 0 || c1 > 25 || c2 < 0 || c2 > 25) return ''
+  return String.fromCodePoint(A + c1) + String.fromCodePoint(A + c2)
+}
+
 // Convertit "MM-DD-YYYY" + "h:mmam/pm" en timestamp pour comparer si l'event est passé
 function eventTime(dateStr, timeStr){
   if(!dateStr) return 0
@@ -203,7 +219,7 @@ export default function CalendarPage({lang='fr',onLangChange}){
   const[loading,setLoading]=useState(true)
   const[error,setError]=useState('')
   const[week,setWeek]=useState('this')
-  const[fImpact,setFImpact]=useState('all')
+  const[fImpact,setFImpact]=useState([]) // [] = tous, sinon ['High','Medium','Low'] (multi-select)
   const[fCurrencies,setFCurrencies]=useState([]) // [] = toutes
   const[lastUpd,setLastUpd]=useState('')
   const[openDay,setOpenDay]=useState(null)
@@ -236,9 +252,9 @@ export default function CalendarPage({lang='fr',onLangChange}){
   },[events])
 
   const filtered=events.filter(e=>{
-    const iOk=fImpact==='all'||e.impact===fImpact
-    const cOk=fCurrencies.length===0||fCurrencies.includes(e.currency)
-    return iOk&&cOk
+    const iOk = fImpact.length===0 || fImpact.includes(e.impact)
+    const cOk = fCurrencies.length===0 || fCurrencies.includes(e.currency)
+    return iOk && cOk
   })
   const grouped={}
   filtered.forEach(e=>{if(!grouped[e.date])grouped[e.date]=[];grouped[e.date].push(e)})
@@ -248,7 +264,7 @@ export default function CalendarPage({lang='fr',onLangChange}){
     if(dates.includes(today))setOpenDay(today)
     else if(dates.length)setOpenDay(dates[0])
     else setOpenDay(null)
-  },[events.length,fImpact,fCurrencies.join(',')])
+  },[events.length,fImpact.join(','),fCurrencies.join(',')])
 
   function toggleCurrency(cur){
     setFCurrencies(prev=>prev.includes(cur)?prev.filter(c=>c!==cur):[...prev,cur])
@@ -286,10 +302,24 @@ export default function CalendarPage({lang='fr',onLangChange}){
       <div style={{...card,padding:'14px 18px',marginBottom:'16px',display:'flex',flexDirection:'column',gap:'10px'}}>
         <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
           <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t.filterImpact}</span>
-          {['all','High','Medium','Low'].map(imp=>(
-            <button key={imp} onClick={()=>setFImpact(imp)} style={btn(fImpact===imp)}>
-              {imp==='all'?t.all:imp==='High'?t.high:imp==='Medium'?t.medium:t.low}
-            </button>
+          <button
+            onClick={()=>setFImpact([])}
+            style={btn(fImpact.length === 0)}
+          >{t.all}</button>
+          {[
+            {k:'High',   l:t.high},
+            {k:'Medium', l:t.medium},
+            {k:'Low',    l:t.low},
+          ].map(imp => (
+            <button
+              key={imp.k}
+              onClick={()=>{
+                setFImpact(prev => prev.includes(imp.k)
+                  ? prev.filter(x => x !== imp.k)
+                  : [...prev, imp.k])
+              }}
+              style={btn(fImpact.includes(imp.k))}
+            >{imp.l}</button>
           ))}
         </div>
 
@@ -536,9 +566,17 @@ export default function CalendarPage({lang='fr',onLangChange}){
                             <tr key={i} style={{borderBottom:'0.5px solid var(--border)',background:ic.bg}}>
                               <td style={{padding:'11px 14px',color:'var(--text2)',whiteSpace:'nowrap',fontFamily:'monospace',fontSize:'12px'}}>{ev.time||'—'}</td>
                               <td style={{padding:'11px 14px',whiteSpace:'nowrap'}}>
-                                <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
-                                  <span style={{fontSize:'15px'}}>{FLAG[ev.currency]||''}</span>
-                                  <span style={{fontWeight:'700',fontSize:'12px'}}>{ev.currency}</span>
+                                <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                  {/* Drapeau pays (basé sur ISO country code) — fallback sur drapeau devise si absent */}
+                                  <span style={{fontSize:'18px',lineHeight:1}} title={ev.country}>
+                                    {countryFlag(ev.country) || FLAG[ev.currency] || '🏳️'}
+                                  </span>
+                                  <div style={{display:'flex',flexDirection:'column',gap:'1px'}}>
+                                    <span style={{fontWeight:'700',fontSize:'12px',lineHeight:1}}>{ev.currency}</span>
+                                    {ev.country && (
+                                      <span style={{fontSize:'9px',color:'var(--text3)',lineHeight:1}}>{ev.country}</span>
+                                    )}
+                                  </div>
                                 </div>
                               </td>
                               <td style={{padding:'11px 14px'}}>
@@ -550,7 +588,6 @@ export default function CalendarPage({lang='fr',onLangChange}){
                               <td style={{padding:'11px 14px',maxWidth:'320px'}}>
                                 <div style={{fontWeight:ev.impact==='High'?'600':'400'}}>{tTitle}</div>
                                 {lang!=='en'&&tTitle!==ev.title&&<div style={{fontSize:'10px',color:'var(--text3)',marginTop:'1px',fontStyle:'italic'}}>{ev.title}</div>}
-                                {ev.country&&<div style={{fontSize:'10px',color:'var(--text3)',marginTop:'1px'}}>{ev.country}</div>}
                               </td>
                               <td style={{padding:'11px 14px',whiteSpace:'nowrap'}}>
                                 {hasActual ? (
