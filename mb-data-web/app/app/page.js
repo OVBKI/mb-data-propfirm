@@ -202,9 +202,26 @@ export default function Home() {
     const {firmId,acct}=acctModal
     if(!acctForm.buyDate){showToast('Date requise');return}
     const payload={firm_id:firmId,user_id:user.id,buy_date:acctForm.buyDate,currency:acctForm.currency,spent:parseFloat(acctForm.spent)||0,activation_fee:parseFloat(acctForm.activationFee)||0,activation_date:acctForm.activationDate||null,status:acctForm.status,notes:acctForm.notes,plan_size:acctForm.planSize||'50k',name:(acctForm.name||'').trim(),dd_type:acctForm.ddType||'static',payout_target:acctForm.payoutTarget?parseFloat(acctForm.payoutTarget):null,min_trading_days:acctForm.minTradingDays?parseInt(acctForm.minTradingDays,10):null}
+    // === Auto-reset balance au passage en Financé ===
+    // Si le compte vient de passer en Financé (et qu'il n'était pas déjà Financé)
+    // ET qu'aucun funded_date n'a déjà été fixé, on l'initialise automatiquement
+    // pour que la balance reparte de zéro à partir de la date d'activation (sinon aujourd'hui).
+    // Pareil pour un nouveau compte créé directement en Financé.
+    let autoReset = false
+    if(acctForm.status === 'Financé'){
+      const wasFinanced = acct?.status === 'Financé'
+      const alreadyHasResetDate = !!acct?.funded_date
+      if(!wasFinanced && !alreadyHasResetDate){
+        payload.funded_date = acctForm.activationDate || new Date().toISOString().slice(0,10)
+        autoReset = true
+      }
+    }
     if(acct)await supabase.from('accounts').update(payload).eq('id',acct.id)
     else await supabase.from('accounts').insert(payload)
-    setAcctModal(null);await loadFirms();showToast(acct?'Compte modifié ✓':'Compte ajouté ✓')
+    setAcctModal(null);await loadFirms()
+    showToast(autoReset
+      ? `Passage en Financé · balance reset au ${payload.funded_date} ✓`
+      : (acct?'Compte modifié ✓':'Compte ajouté ✓'))
   }
 
   async function deleteAccount(acctId){
