@@ -100,6 +100,32 @@ export const PROPFIRM_RULES = {
       'Délai payout':             {'25k':'14j','50k':'14j','100k':'14j','150k':'14j'},
     }
   },
+  'Funded Futures Network': {
+    // EOD trailing avec stop au balance initial — valeurs indicatives à vérifier sur fundedfuturesnetwork.com
+    plans: ['25k','50k','100k','150k'],
+    rules: {
+      'Objectif de profit':       {'25k':'$1,500','50k':'$3,000','100k':'$6,000','150k':'$9,000'},
+      'Drawdown journalier max':  {'25k':'$500','50k':'$1,100','100k':'$2,200','150k':'$3,300'},
+      'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,500','100k':'$3,000','150k':'$4,500'},
+      'Jours de trading min':     {'25k':'5 jours','50k':'5 jours','100k':'5 jours','150k':'5 jours'},
+      'Positions overnight':      {'25k':'Non','50k':'Non','100k':'Non','150k':'Non'},
+      'Payout minimum':           {'25k':'$500','50k':'$500','100k':'$500','150k':'$500'},
+      'Délai payout':             {'25k':'7-14j','50k':'7-14j','100k':'7-14j','150k':'7-14j'},
+    }
+  },
+  'FuturesELites': {
+    // EOD trailing — valeurs indicatives à vérifier sur futureselites.com
+    plans: ['25k','50k','100k','150k'],
+    rules: {
+      'Objectif de profit':       {'25k':'$1,500','50k':'$3,000','100k':'$6,000','150k':'$9,000'},
+      'Drawdown journalier max':  {'25k':'$500','50k':'$1,250','100k':'$2,500','150k':'$3,750'},
+      'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
+      'Jours de trading min':     {'25k':'5 jours','50k':'5 jours','100k':'5 jours','150k':'5 jours'},
+      'Positions overnight':      {'25k':'Non','50k':'Non','100k':'Non','150k':'Non'},
+      'Payout minimum':           {'25k':'$500','50k':'$500','100k':'$500','150k':'$500'},
+      'Délai payout':             {'25k':'14j','50k':'14j','100k':'14j','150k':'14j'},
+    }
+  },
 }
 
 export const FIRM_COLORS = ['#2d6fff','#1db87a','#e8504a','#fac775','#a78bfa','#f472b6','#34d399','#fb923c']
@@ -114,6 +140,8 @@ export const FIRM_SUGGESTIONS = [
   'Take Profit Trader',
   'My Funded Futures',
   'Phidias Propfirm',
+  'Funded Futures Network',
+  'FuturesELites',
 ]
 export const STATUS_COLORS = { 'Financé': '#1db87a', 'Challenge': '#fac775', 'Échoué': '#e8504a' }
 
