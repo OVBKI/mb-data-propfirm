@@ -448,6 +448,18 @@ export function defaultMinTradingDays(firmName, plan){
   return m ? parseInt(m[1],10) : null
 }
 
+// Retourne le % du profit split pour le trader (ex: 90 pour un split 90/10).
+// Cherche la clé "Répartition gains" dans les règles. Pour les valeurs composées
+// "80% trader / 90% (PRO+)" prend le PREMIER nombre rencontré.
+export function defaultProfitSplit(firmName, plan){
+  const rules = PROPFIRM_RULES[firmName]?.rules
+  if(!rules || !plan) return null
+  const k = Object.keys(rules).find(k => /répartition.*gains|profit.*split/i.test(k))
+  if(!k) return null
+  const m = String(rules[k][plan]||'').match(/(\d{2,3})\s*%/)
+  return m ? parseInt(m[1],10) : null
+}
+
 // Retourne le profit minimum par jour ($ numérique) pour qu'un jour compte
 // comme "validé" dans le décompte des jours de trading min (payout requirement).
 // Ex: Lucid demande $150 profit/jour pour valider un jour de trading.

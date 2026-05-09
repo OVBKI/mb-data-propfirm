@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel } from '../lib/constants'
+import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { uploadFile } from '../lib/uploadFile'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
@@ -38,29 +38,55 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   const fundedDate = account.funded_date || null
   const ignoredCount = fundedDate ? entries.filter(e => e.date < fundedDate).length : 0
 
+  // Payouts du compte (séparés des trades) — ils déduisent de la balance à leur date
+  const accountPayouts = account.payouts || []
+  // Profit split de la firme (% pour le trader). Ex: Lucid = 90 (= 90/10).
+  // Sert à convertir le NET (montant entré par le user = ce qu'il reçoit) en BRUT
+  // (montant qui sort du compte funded simulé). Brut = Net / (split/100).
+  const profitSplit = defaultProfitSplit(account.firmName, account.plan_size) || 90
+
   // Trie les entries par date et construit la courbe cumulative + ligne DD
   // Pour le DD trailing : à chaque jour, ddLine[i] = min(balance_peak_jusqu'à i - DDmax, planSize)
   // → la ligne suit le balance peak (s'élève) puis se fige au balance initial (planSize)
+  // Les PAYOUTS sont aussi pris en compte : à leur date, la balance descend du BRUT
+  // (= payout.amount NET / split%) car c'est le brut qui est réellement retiré du compte.
   const data = useMemo(()=>{
     // Filtre : si funded_date est définie, on ne prend que les trades à partir de cette date
-    const eligible = fundedDate
+    const eligibleTrades = fundedDate
       ? entries.filter(e => e.date >= fundedDate)
       : entries
-    const sorted = eligible.slice().sort((a,b)=>a.date.localeCompare(b.date))
+    const eligiblePayouts = fundedDate
+      ? accountPayouts.filter(p => p.date >= fundedDate)
+      : accountPayouts
+
+    // Combine trades + payouts en événements unifiés triés par date
+    // Type 'trade' avec pnl
+    // Type 'payout' : delta = -GROSS (= -netAmount / (split/100))
+    //   ex: payout net $1,800 sur split 90/10 → gross = $2,000 → delta = -$2,000
+    const splitRatio = profitSplit / 100
+    const events = [
+      ...eligibleTrades.map(e => ({ type:'trade',  date:e.date, delta: Number(e.pnl) || 0 })),
+      ...eligiblePayouts.map(p => {
+        const netAmount = Number(p.amount) || 0
+        const grossAmount = splitRatio > 0 ? netAmount / splitRatio : netAmount
+        return { type:'payout', date:p.date, delta: -grossAmount, netAmount, grossAmount }
+      }),
+    ].sort((a,b)=>a.date.localeCompare(b.date))
+
     let cum = 0
     let peak = planSize
     const labels = []
     const balances = []
     const ddLine = []  // ligne DD point par point
-    // Point de départ : jour 0 = balance initial avant 1er trade
-    if(sorted.length){
-      const startDate = sorted[0].date
+    // Point de départ : jour 0 = balance initial avant 1er événement
+    if(events.length){
+      const startDate = events[0].date
       labels.push(startDate)
       balances.push(planSize)
       ddLine.push(ddMax!==null ? planSize - ddMax : null)
     }
-    sorted.forEach(e=>{
-      cum += Number(e.pnl)||0
+    events.forEach(e=>{
+      cum += e.delta
       const bal = +(planSize + cum).toFixed(2)
       if(bal > peak) peak = bal
       labels.push(e.date)
@@ -74,23 +100,29 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
         ddLine.push(planSize - ddMax)
       }
     })
-    // Jours uniques tradés (sur ce compte)
-    const tradingDays = new Set(sorted.map(e=>e.date)).size
+    // Jours uniques tradés (sur ce compte) — uniquement trades, pas payouts
+    const tradeDates = eligibleTrades.map(e => e.date)
+    const tradingDays = new Set(tradeDates).size
     // Jours "validés" = jours dont le PnL net est >= seuil minDailyProfit
-    // Agrège le PnL par jour, puis compte ceux qui passent le seuil
     const dailyPnL = {}
-    sorted.forEach(e => {
+    eligibleTrades.forEach(e => {
       dailyPnL[e.date] = (dailyPnL[e.date] || 0) + (Number(e.pnl) || 0)
     })
     const validatedDays = Object.values(dailyPnL).filter(v => v >= minDailyProfit && v > 0).length
+    // Total payouts (NET reçu par le trader) et BRUT déduit du compte
+    const totalPayoutsNet = eligiblePayouts.reduce((s,p) => s + (Number(p.amount) || 0), 0)
+    const totalPayoutsGross = splitRatio > 0 ? totalPayoutsNet / splitRatio : totalPayoutsNet
     return {
       labels, balances, ddLine,
       finalBalance: planSize + cum, totalPnl: cum, finalPeak: peak,
       currentDD: ddLine.length ? ddLine[ddLine.length - 1] : null,
       tradingDays,
       validatedDays,
+      totalPayoutsNet,
+      totalPayoutsGross,
+      payoutCount: eligiblePayouts.length,
     }
-  },[entries, planSize, ddMax, isTrailing, fundedDate, minDailyProfit])
+  },[entries, accountPayouts, planSize, ddMax, isTrailing, fundedDate, minDailyProfit, profitSplit])
 
   useEffect(()=>{
     if(!ref.current) return
@@ -219,6 +251,11 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             <div style={{fontSize:'11px',color:finalNet>=0?'var(--green)':'var(--red)'}}>
               {finalNet>=0?'+':''}{finalNet.toFixed(0)} $ ({pctFromStart>=0?'+':''}{pctFromStart.toFixed(2)}%)
             </div>
+            {data.totalPayoutsNet > 0 && (
+              <div style={{fontSize:'10px',color:'var(--text3)',marginTop:'2px'}}>
+                💰 {data.payoutCount} payout{data.payoutCount>1?'s':''} : net {fmtMoney(data.totalPayoutsNet, 0)} (brut {fmtMoney(data.totalPayoutsGross, 0)} · split {profitSplit}%)
+              </div>
+            )}
           </div>
         </div>
       </div>
