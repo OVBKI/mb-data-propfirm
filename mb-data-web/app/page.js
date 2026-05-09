@@ -3,6 +3,7 @@ import Logo from '../components/Logo'
 import Reveal from '../components/Reveal'
 import Counter from '../components/Counter'
 import DashboardPreview from '../components/DashboardPreview'
+import Footer from '../components/Footer'
 
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
@@ -442,26 +443,8 @@ export default function Landing() {
         </Reveal>
       </section>
 
-      {/* === Footer === */}
-      <footer style={{ borderTop: `1px solid ${colors.border}`, padding: '32px 24px', background: colors.surface }}>
-        <div className="lp-footer" style={{
-          maxWidth: 1100, margin: '0 auto',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 16, flexWrap: 'wrap',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Logo size={28} />
-            <div style={{ fontSize: 13, color: colors.text2 }}>
-              © {new Date().getFullYear()} Quantara — Track. Analyze. Grow.
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 18, fontSize: 12, color: colors.text3 }}>
-            <a href="#features" style={{ color: 'inherit', textDecoration: 'none' }}>Fonctionnalités</a>
-            <a href="#how" style={{ color: 'inherit', textDecoration: 'none' }}>Comment ça marche</a>
-            <Link href="/app" style={{ color: 'inherit', textDecoration: 'none' }}>Connexion</Link>
-          </div>
-        </div>
-      </footer>
+      {/* === Footer pro (composant partagé avec /security, /docs, /integrations) === */}
+      <Footer />
     </div>
   )
 }

@@ -361,6 +361,29 @@ html, body { overflow-x: hidden; }
   .dp-cal-cell { min-height: 50px !important; padding: 4px !important; }
 }
 
+/* === Footer pro — responsive grid 4 cols → stack === */
+@media (max-width: 900px) {
+  .lp-footer-cols {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 28px !important;
+  }
+}
+@media (max-width: 540px) {
+  .lp-footer-cols {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+/* === Docs page : sidebar collapse en mobile === */
+@media (max-width: 820px) {
+  .docs-grid { grid-template-columns: 1fr !important; }
+  .docs-sidebar {
+    position: static !important;
+    margin-bottom: 24px;
+  }
+}
+
 /* Respect du prefers-reduced-motion (accessibilité) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
