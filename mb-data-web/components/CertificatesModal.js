@@ -16,9 +16,10 @@ import { uploadFile, deleteFile } from '../lib/uploadFile'
 const TYPES = [
   { k: 'challenge_passed', l: '🏆 Challenge réussi', color: '#fac775' },
   { k: 'payout',           l: '💰 Payout reçu',      color: '#1db87a' },
-  { k: 'certificate',      l: '🎓 Certificat',       color: '#4d8fff' },
-  { k: 'other',            l: '📄 Autre',            color: '#9098b0' },
 ]
+// Pour la rétrocompatibilité : si un cert en DB a un type non listé (ex: 'other', 'certificate'),
+// on retombe sur ce fallback à l'affichage.
+const FALLBACK_TYPE = { k: 'other', l: '📄 Autre', color: '#9098b0' }
 
 const labelStyle = {
   display:'block', fontSize:'11px', fontWeight:'600',
@@ -230,7 +231,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
           ) : (
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:'14px'}}>
               {certs.map(cert => {
-                const typeMeta = TYPES.find(t => t.k === cert.type) || TYPES[3]
+                const typeMeta = TYPES.find(t => t.k === cert.type) || FALLBACK_TYPE
                 return (
                   <div key={cert.id} style={{
                     background:'var(--surface2)', border:'1px solid var(--border)',
