@@ -517,12 +517,15 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
   },[filteredEntries, selDay])
 
   // === CRUD ===
-  // openNewEntry({ accountId, defaultDate }) — peut pré-sélectionner un compte
-  // Si pas de paramètre explicite, utilise le compte filtré actif (scope = 'firmId:accountId')
-  // sinon prend le premier compte disponible.
+  // openNewEntry(opts) — opts peut être :
+  //   - undefined         → pas de pré-remplissage
+  //   - une string YYYY-MM-DD → date par défaut, compte = filtre actif (scope)
+  //   - un objet { accountId, defaultDate } → pré-remplit explicitement
+  // Si aucun accountId explicite, utilise le compte filtré actif (scope = 'firmId:accountId').
   function openNewEntry(opts){
-    const explicitAcctId = typeof opts === 'string' ? opts : opts?.accountId
-    const defaultDate    = typeof opts === 'object'  ? opts?.defaultDate : opts
+    const isObj = opts && typeof opts === 'object' && !Array.isArray(opts)
+    const explicitAcctId = isObj ? opts?.accountId : undefined
+    const defaultDate    = isObj ? opts?.defaultDate : (typeof opts === 'string' ? opts : undefined)
     let acctId = explicitAcctId
     if(!acctId && scope.includes(':')) acctId = scope.split(':')[1]
     if(!acctId) acctId = allAccounts[0]?.id || ''
