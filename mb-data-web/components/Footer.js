@@ -38,6 +38,7 @@ const SECTIONS = [
       { label: 'Sécurité', href: '/security' },
       { label: 'CGU', href: '/legal/cgu' },
       { label: 'Confidentialité', href: '/legal/privacy' },
+      { label: 'Mentions légales', href: '/legal/imprint' },
       { label: 'Cookies', href: '/legal/privacy#cookies' },
     ],
   },
@@ -139,12 +140,13 @@ export default function Footer() {
           fontSize: 11, color: C.text3,
         }}>
           <div>
-            © {new Date().getFullYear()} Quantara — Track. Analyze. Grow. Tous droits réservés.
+            © {new Date().getFullYear()} <strong style={{ color: C.text2 }}>Quantara LLC</strong> — Track. Analyze. Grow.
+            <span style={{ marginLeft: 8, opacity: 0.7 }}>A Texas limited liability company.</span>
           </div>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
             <span>🇫🇷 Français</span>
             <span>·</span>
-            <span>Hébergé en EU 🇪🇺</span>
+            <span>🇺🇸 Quantara LLC · 🇪🇺 Hébergé en EU</span>
             <span>·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#1db87a', boxShadow: '0 0 6px rgba(29,184,122,0.6)' }} />
