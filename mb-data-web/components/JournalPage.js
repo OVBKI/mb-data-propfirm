@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel } from '../lib/constants'
+import { uploadFile } from '../lib/uploadFile'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -20,7 +21,7 @@ const btnGhost = { padding:'7px 14px', fontSize:'12px', background:'transparent'
 const chipBtn = (active)=>({ padding:'6px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:'0.5px solid var(--border2)', fontFamily:'inherit', fontWeight:'500', background:active?'var(--blue)':'transparent', color:active?'#fff':'var(--text2)' })
 
 // Carte avec courbe de balance pour un compte donné
-function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance }){
+function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade }){
   const ref = useRef(null)
   const chart = useRef(null)
 
@@ -189,12 +190,25 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance }){
             </div>
           </div>
         </div>
-        <div style={{textAlign:'right'}}>
-          <div style={{fontSize:'18px',fontWeight:'700',color:finalNet>=0?'var(--green)':'var(--red)'}}>
-            ${data.finalBalance.toLocaleString('fr-FR',{maximumFractionDigits:0})}
-          </div>
-          <div style={{fontSize:'11px',color:finalNet>=0?'var(--green)':'var(--red)'}}>
-            {finalNet>=0?'+':''}{finalNet.toFixed(0)} $ ({pctFromStart>=0?'+':''}{pctFromStart.toFixed(2)}%)
+        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+          {onAddTrade && (
+            <button
+              onClick={()=>onAddTrade(account.id)}
+              title="Ajouter un trade pour ce compte"
+              style={{
+                fontSize:'11px',padding:'7px 11px',borderRadius:'8px',
+                background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
+                color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',whiteSpace:'nowrap',
+              }}
+            >+ Trade</button>
+          )}
+          <div style={{textAlign:'right'}}>
+            <div style={{fontSize:'18px',fontWeight:'700',color:finalNet>=0?'var(--green)':'var(--red)'}}>
+              ${data.finalBalance.toLocaleString('fr-FR',{maximumFractionDigits:0})}
+            </div>
+            <div style={{fontSize:'11px',color:finalNet>=0?'var(--green)':'var(--red)'}}>
+              {finalNet>=0?'+':''}{finalNet.toFixed(0)} $ ({pctFromStart>=0?'+':''}{pctFromStart.toFixed(2)}%)
+            </div>
           </div>
         </div>
       </div>
@@ -342,7 +356,13 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
 
   // Modal d'ajout / édition
   const [entryModal, setEntryModal] = useState(null) // null | { entry?, defaultDate? }
-  const [form, setForm] = useState({ accountId:'', date:todayISO(), pnl:'', instrument:'', side:'', notes:'' })
+  const [form, setForm] = useState({
+    accountId:'', date:todayISO(), pnl:'', instrument:'', side:'', notes:'',
+    entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
+  })
+  const [uploadingScreen, setUploadingScreen] = useState(false)
+  // Lightbox pour afficher un screenshot en grand
+  const [lightboxUrl, setLightboxUrl] = useState(null)
 
   // Tous les comptes plats
   const allAccounts = useMemo(()=>{
@@ -497,19 +517,39 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
   },[filteredEntries, selDay])
 
   // === CRUD ===
-  function openNewEntry(defaultDate){
-    const acctId = allAccounts[0]?.id || ''
-    setForm({ accountId:acctId, date:defaultDate||todayISO(), pnl:'', instrument:'', side:'', notes:'' })
+  // openNewEntry({ accountId, defaultDate }) — peut pré-sélectionner un compte
+  // Si pas de paramètre explicite, utilise le compte filtré actif (scope = 'firmId:accountId')
+  // sinon prend le premier compte disponible.
+  function openNewEntry(opts){
+    const explicitAcctId = typeof opts === 'string' ? opts : opts?.accountId
+    const defaultDate    = typeof opts === 'object'  ? opts?.defaultDate : opts
+    let acctId = explicitAcctId
+    if(!acctId && scope.includes(':')) acctId = scope.split(':')[1]
+    if(!acctId) acctId = allAccounts[0]?.id || ''
+    setForm({
+      accountId:acctId, date:defaultDate||todayISO(),
+      pnl:'', instrument:'', side:'', notes:'',
+      entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
+    })
     setEntryModal({ defaultDate })
   }
   function openEditEntry(e){
-    setForm({ accountId:e.account_id, date:e.date, pnl:String(e.pnl), instrument:e.instrument||'', side:e.side||'', notes:e.notes||'' })
+    setForm({
+      accountId:e.account_id, date:e.date,
+      pnl:String(e.pnl), instrument:e.instrument||'', side:e.side||'', notes:e.notes||'',
+      entryPrice: e.entry_price != null ? String(e.entry_price) : '',
+      exitPrice:  e.exit_price  != null ? String(e.exit_price)  : '',
+      stopLoss:   e.stop_loss   != null ? String(e.stop_loss)   : '',
+      takeProfit: e.take_profit != null ? String(e.take_profit) : '',
+      screenshotUrl: e.screenshot_url || '',
+    })
     setEntryModal({ entry:e })
   }
   async function saveEntry(){
     if(!form.accountId){ showToast?.('Sélectionne un compte'); return }
     if(!form.date){ showToast?.('Date requise'); return }
     if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.('PnL requis (nombre)'); return }
+    const numOrNull = (s) => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
     const payload = {
       user_id: user.id,
       account_id: form.accountId,
@@ -518,6 +558,11 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
       instrument: form.instrument.trim(),
       side: form.side,
       notes: form.notes.trim(),
+      entry_price:    numOrNull(form.entryPrice),
+      exit_price:     numOrNull(form.exitPrice),
+      stop_loss:      numOrNull(form.stopLoss),
+      take_profit:    numOrNull(form.takeProfit),
+      screenshot_url: form.screenshotUrl || null,
     }
     let res
     if(entryModal?.entry){
@@ -538,6 +583,17 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
     showToast?.(entryModal?.entry ? 'Trade modifié ✓' : 'Trade ajouté ✓')
     await loadEntries()
   }
+  // Upload screenshot d'un trade vers Supabase Storage
+  async function handleScreenshotUpload(file){
+    if(!file || !user?.id) return
+    setUploadingScreen(true)
+    const { url, error } = await uploadFile({ bucket: 'trade-screenshots', file, userId: user.id })
+    setUploadingScreen(false)
+    if(error){ showToast?.('Upload : '+error); return }
+    setForm(p => ({ ...p, screenshotUrl: url }))
+    showToast?.('Screenshot ajouté ✓')
+  }
+
   async function deleteEntry(id){
     if(!confirm('Supprimer ce trade ?')) return
     const { error } = await supabase.from('journal_entries').delete().eq('id', id)
@@ -604,7 +660,15 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
         </div>
         <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
           <button onClick={exportJournalCSV} disabled={!filteredEntries.length} style={{...btnGhost,opacity:filteredEntries.length?1:0.5}}>↓ CSV</button>
-          <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>+ Ajouter trade</button>
+          {/* Si un compte spécifique est sélectionné dans le filtre, on l'affiche dans le bouton */}
+          {(() => {
+            const filteredAcct = scope.includes(':') ? allAccounts.find(a => a.id === scope.split(':')[1]) : null
+            return (
+              <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>
+                + Ajouter trade{filteredAcct ? ` · ${accountLabel(filteredAcct)}` : ''}
+              </button>
+            )
+          })()}
         </div>
       </div>
 
@@ -884,17 +948,37 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   <div style={{maxHeight:'420px',overflowY:'auto'}}>
                     {dayEntries.map((e, i)=>{
                       const pnl = Number(e.pnl)||0
+                      const hasDetails = e.entry_price || e.exit_price || e.stop_loss || e.take_profit
                       return (
                         <div key={e.id} style={{padding:'10px 12px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'6px'}}>
                           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'4px',gap:'6px'}}>
                             <div style={{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}}>
                               {e.instrument && <span style={{fontWeight:'600',fontSize:'12px'}}>{e.instrument}</span>}
                               {e.side && <span style={{fontSize:'10px',padding:'1px 6px',borderRadius:'99px',background:'var(--surface3)',color:'var(--text2)'}}>{e.side}</span>}
+                              {e.screenshot_url && (
+                                <button
+                                  onClick={()=>setLightboxUrl(e.screenshot_url)}
+                                  title="Voir le screenshot"
+                                  style={{
+                                    fontSize:'10px',padding:'1px 6px',borderRadius:'99px',
+                                    background:'rgba(45,111,255,0.15)',color:'var(--blue-light)',
+                                    border:'none',cursor:'pointer',fontWeight:'600',
+                                  }}
+                                >📷</button>
+                              )}
                             </div>
                             <span style={{fontSize:'13px',fontWeight:'700',color:pnl>=0?'var(--green)':pnl<0?'var(--red)':'var(--text3)'}}>{fmtMoney(pnl)}</span>
                           </div>
                           {scope==='all' && (
                             <div style={{fontSize:'10px',color:'var(--text3)',marginBottom:e.notes?'4px':0}}>{e._accountLabel}</div>
+                          )}
+                          {hasDetails && (
+                            <div style={{display:'flex',gap:'10px',flexWrap:'wrap',fontSize:'10px',color:'var(--text3)',marginTop:'3px'}}>
+                              {e.entry_price && <span>📍 In : <strong style={{color:'var(--text2)'}}>{e.entry_price}</strong></span>}
+                              {e.exit_price && <span>🏁 Out : <strong style={{color:'var(--text2)'}}>{e.exit_price}</strong></span>}
+                              {e.stop_loss && <span>🛡 SL : <strong style={{color:'var(--red-text)'}}>{e.stop_loss}</strong></span>}
+                              {e.take_profit && <span>🎯 TP : <strong style={{color:'var(--green-text)'}}>{e.take_profit}</strong></span>}
+                            </div>
                           )}
                           {e.notes && <div style={{fontSize:'11px',color:'var(--text2)',marginTop:'4px',fontStyle:'italic'}}>{e.notes}</div>}
                           <div style={{display:'flex',gap:'6px',marginTop:'6px'}}>
@@ -962,6 +1046,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                       entries={accEntries}
                       getFirmLogo={getFirmLogo}
                       onResetBalance={resetAccountBalance}
+                      onAddTrade={(acctId) => openNewEntry({ accountId: acctId })}
                     />
                   )
                 })}
@@ -972,10 +1057,25 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
       </>
       )}
 
+      {/* Lightbox plein écran pour visualiser un screenshot */}
+      {lightboxUrl && (
+        <div onClick={()=>setLightboxUrl(null)} style={{
+          position:'fixed',inset:0,background:'rgba(0,0,0,0.92)',zIndex:600,
+          display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',cursor:'zoom-out',
+        }}>
+          <img src={lightboxUrl} alt="Screenshot" style={{maxWidth:'95%',maxHeight:'95%',objectFit:'contain',borderRadius:'8px'}} />
+          <button onClick={()=>setLightboxUrl(null)} style={{
+            position:'absolute',top:'20px',right:'20px',
+            background:'rgba(255,255,255,0.1)',color:'#fff',border:'1px solid rgba(255,255,255,0.2)',
+            borderRadius:'8px',padding:'8px 16px',fontSize:'13px',cursor:'pointer',fontWeight:'600',
+          }}>✕ Fermer</button>
+        </div>
+      )}
+
       {/* Modal ajout / édition */}
       {entryModal && (
         <div onClick={()=>setEntryModal(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}>
-          <div className="modal" onClick={e=>e.stopPropagation()} style={{...card,padding:'28px',width:'460px',maxWidth:'100%',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{...card,padding:'28px',width:'560px',maxWidth:'100%',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
             <h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>
               {entryModal?.entry ? 'Modifier le trade' : 'Nouveau trade'}
             </h3>
@@ -1018,6 +1118,65 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   <option value="Short">Short</option>
                 </select>
               </div>
+
+              {/* === Détails approfondis (optionnels) === */}
+              <div style={{gridColumn:'1/-1',marginTop:'8px',paddingTop:'16px',borderTop:'1px solid var(--border)'}}>
+                <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>
+                  📊 Détails du trade (optionnel)
+                </div>
+              </div>
+              <div>
+                <label style={labelS}>Prix d'entrée</label>
+                <input type="number" step="0.0001" value={form.entryPrice} onChange={e=>setForm(p=>({...p,entryPrice:e.target.value}))} placeholder="ex : 5430.25" style={inputS} />
+              </div>
+              <div>
+                <label style={labelS}>Prix de sortie</label>
+                <input type="number" step="0.0001" value={form.exitPrice} onChange={e=>setForm(p=>({...p,exitPrice:e.target.value}))} placeholder="ex : 5435.50" style={inputS} />
+              </div>
+              <div>
+                <label style={labelS}>Stop Loss</label>
+                <input type="number" step="0.0001" value={form.stopLoss} onChange={e=>setForm(p=>({...p,stopLoss:e.target.value}))} placeholder="ex : 5425.00" style={inputS} />
+              </div>
+              <div>
+                <label style={labelS}>Take Profit</label>
+                <input type="number" step="0.0001" value={form.takeProfit} onChange={e=>setForm(p=>({...p,takeProfit:e.target.value}))} placeholder="ex : 5440.00" style={inputS} />
+              </div>
+
+              {/* === Screenshot du graphique === */}
+              <div style={{gridColumn:'1/-1'}}>
+                <label style={labelS}>📷 Screenshot du graphique</label>
+                {form.screenshotUrl ? (
+                  <div style={{position:'relative',marginBottom:'8px'}}>
+                    <img
+                      src={form.screenshotUrl}
+                      alt="Screenshot trade"
+                      onClick={()=>setLightboxUrl(form.screenshotUrl)}
+                      style={{width:'100%',maxHeight:'200px',objectFit:'cover',borderRadius:'8px',cursor:'zoom-in',border:'1px solid var(--border)'}}
+                    />
+                    <button onClick={()=>setForm(p=>({...p,screenshotUrl:''}))} style={{
+                      position:'absolute',top:'8px',right:'8px',
+                      background:'rgba(0,0,0,0.7)',color:'#fff',border:'none',borderRadius:'6px',
+                      padding:'5px 10px',fontSize:'11px',cursor:'pointer',fontWeight:'600',
+                    }}>✕ Retirer</button>
+                  </div>
+                ) : (
+                  <label style={{
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',
+                    padding:'16px',border:'1px dashed var(--border2)',borderRadius:'8px',
+                    cursor: uploadingScreen ? 'wait' : 'pointer',background:'var(--surface2)',
+                    color:'var(--text2)',fontSize:'12px',
+                  }}>
+                    {uploadingScreen ? '⏳ Upload en cours...' : '📤 Cliquer pour uploader (PNG/JPG, max 5 Mo)'}
+                    <input
+                      type="file" accept="image/*"
+                      disabled={uploadingScreen}
+                      onChange={e=>handleScreenshotUpload(e.target.files?.[0])}
+                      style={{display:'none'}}
+                    />
+                  </label>
+                )}
+              </div>
+
               <div style={{gridColumn:'1/-1'}}>
                 <label style={labelS}>Notes (setup, émotion, erreur…)</label>
                 <textarea rows={3} value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Optionnel" style={{...inputS,resize:'vertical',fontFamily:'inherit'}} />

@@ -61,6 +61,31 @@ create table if not exists journal_entries (
   notes text default '',
   created_at timestamptz default now()
 );
+-- Détails approfondis du trade (screenshot graphique + niveaux de prix)
+alter table journal_entries add column if not exists screenshot_url text;
+alter table journal_entries add column if not exists entry_price    numeric(12,5);
+alter table journal_entries add column if not exists exit_price     numeric(12,5);
+alter table journal_entries add column if not exists stop_loss      numeric(12,5);
+alter table journal_entries add column if not exists take_profit    numeric(12,5);
+
+-- CERTIFICATS / DIPLÔMES — captures de réussite challenge, payouts, etc.
+create table if not exists certificates (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  firm_id uuid references firms(id) on delete cascade not null,
+  account_id uuid references accounts(id) on delete cascade,  -- nullable : un cert peut être au niveau firme
+  type text default 'other',   -- 'challenge_passed' | 'payout' | 'certificate' | 'other'
+  file_url text not null,
+  date date,
+  note text default '',
+  created_at timestamptz default now()
+);
+alter table certificates enable row level security;
+create policy "Users manage own certificates" on certificates
+  for all using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+create index if not exists certificates_user_id_idx  on certificates(user_id);
+create index if not exists certificates_firm_id_idx  on certificates(firm_id);
 
 -- Row Level Security (each user sees only their data)
 alter table firms    enable row level security;
