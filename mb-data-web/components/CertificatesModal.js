@@ -71,7 +71,8 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
       bucket: 'certificates', file, userId: user.id,
     })
     if(upErr){
-      showToast?.(upErr)
+      alert(upErr)
+      showToast?.('❌ Upload échoué')
       setUploading(false)
       return
     }

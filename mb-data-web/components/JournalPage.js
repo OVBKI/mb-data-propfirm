@@ -592,7 +592,12 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
     setUploadingScreen(true)
     const { url, error } = await uploadFile({ bucket: 'trade-screenshots', file, userId: user.id })
     setUploadingScreen(false)
-    if(error){ showToast?.('Upload : '+error); return }
+    if(error){
+      // Affichage en alert (popup) car les erreurs upload sont critiques et trop longues pour un toast
+      alert(error)
+      showToast?.('❌ Upload échoué')
+      return
+    }
     setForm(p => ({ ...p, screenshotUrl: url }))
     showToast?.('Screenshot ajouté ✓')
   }

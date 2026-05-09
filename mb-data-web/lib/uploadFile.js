@@ -46,11 +46,23 @@ export async function uploadFile({ bucket, file, userId }) {
     contentType: file.type,
   })
   if (upErr) {
-    // Erreurs courantes : bucket inexistant, RLS, etc.
-    if (/bucket.*not.*found|not_found/i.test(upErr.message || '')) {
-      return { error: `Bucket "${bucket}" introuvable dans Supabase Storage. Crée-le dans Storage → New bucket (Public).` }
+    // Log complet pour debug
+    console.error('[uploadFile] Supabase storage error:', upErr)
+    const msg = upErr.message || String(upErr)
+    // Erreurs courantes avec messages explicites :
+    if (/bucket.*not.*found|not_found|404/i.test(msg)) {
+      return { error: `❌ Bucket "${bucket}" INTROUVABLE dans Supabase Storage.\n\nÀ faire : Supabase Dashboard → Storage → New bucket → Nom : "${bucket}" → coche "Public bucket" → Save.` }
     }
-    return { error: upErr.message || 'Erreur upload' }
+    if (/row.level.security|policy|unauthorized|403|forbidden|new row violates/i.test(msg)) {
+      return { error: `❌ RLS bloque l'upload sur "${bucket}".\n\nÀ faire dans Supabase Storage :\n1. Click sur le bucket "${bucket}"\n2. Onglet "Policies"\n3. Click "New Policy" → "For full customization"\n4. Allowed operation : INSERT\n5. Target roles : authenticated\n6. WITH CHECK : (bucket_id = '${bucket}')\n7. Save\n\nRépète pour SELECT (pour lire les fichiers).` }
+    }
+    if (/exceeded|too.large|size/i.test(msg)) {
+      return { error: `❌ Fichier trop lourd. Limite du bucket "${bucket}" dépassée.` }
+    }
+    if (/mime|content.type/i.test(msg)) {
+      return { error: `❌ Type de fichier refusé par le bucket "${bucket}". Vérifie les "Allowed MIME types" dans les settings du bucket.` }
+    }
+    return { error: `❌ Erreur upload : ${msg}` }
   }
 
   const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path)
