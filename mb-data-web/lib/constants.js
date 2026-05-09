@@ -12,6 +12,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'Drawdown journalier max':  {'50k':'$1,000','100k':'$2,000','150k':'$3,000'},
       'Jours de trading min':     {'50k':'2 jours (≥$150 win)','100k':'2 jours','150k':'2 jours'},
+      'Profit min jour valide':   {'50k':'$150','100k':'$200','150k':'$200'},
       'Règle de cohérence':       {'50k':'Best day < 50% du total','100k':'< 50%','150k':'< 50%'},
       // Trading
       'Positions overnight':      {'50k':'Permis (slippage risk)','100k':'Permis','150k':'Permis'},
@@ -43,6 +44,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,500','75k':'$2,750','100k':'$3,000','150k':'$5,000','250k':'$6,500','300k':'$7,500'},
       'Drawdown journalier max':  {'25k':'$500','50k':'$1,000','75k':'$1,250','100k':'$1,500','150k':'$2,000','250k':'$3,000','300k':'$3,500'},
       'Jours de trading min':     {'25k':'0 (aucun)','50k':'0','75k':'0','100k':'0','150k':'0','250k':'0','300k':'0'},
+      'Profit min jour valide':   {'25k':'$0 (aucun)','50k':'$0','75k':'$0','100k':'$0','150k':'$0','250k':'$0','300k':'$0'},
       'Règle de cohérence (eval)':{'25k':'Aucune','50k':'Aucune','75k':'Aucune','100k':'Aucune','150k':'Aucune','250k':'Aucune','300k':'Aucune'},
       // Trading
       'Positions overnight':      {'25k':'Non (flat 16:59 ET)','50k':'Non','75k':'Non','100k':'Non','150k':'Non','250k':'Non','300k':'Non'},
@@ -77,6 +79,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,500','100k':'$3,000','150k':'$4,500','250k':'$5,500'},
       'Drawdown journalier max':  {'25k':'$500 (EOD) · Aucun (No Scaling)','50k':'$1,100 / Aucun','100k':'$2,200 / Aucun','150k':'$3,300 / Aucun','250k':'$4,500 / Aucun'},
       'Jours de trading min':     {'25k':'0 (aucun)','50k':'0','100k':'0','150k':'0','250k':'0'},
+      'Profit min jour valide':   {'25k':'$0 (aucun)','50k':'$0','100k':'$0','150k':'$0','250k':'$0'},
       'Règle de cohérence (eval)':{'25k':'Aucune (40% sur Master/Funded)','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
       // Trading
       'Positions overnight':      {'25k':'Non (flat 15:59 CT)','50k':'Non','100k':'Non','150k':'Non','250k':'Non'},
@@ -109,6 +112,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'Drawdown journalier max':  {'25k':'Aucun (EOD only)','50k':'Aucun','100k':'Aucun','150k':'Aucun'},
       'Jours de trading min':     {'25k':'2 jours (3-7 conseillés)','50k':'2 jours','100k':'2 jours','150k':'2 jours'},
+      'Profit min jour valide':   {'25k':'$150','50k':'$150','100k':'$150','150k':'$150'},
       'Règle de cohérence':       {'25k':'≤ 50% (Eval uniquement)','50k':'≤ 50% (Eval uniquement)','100k':'≤ 50% (Eval uniquement)','150k':'≤ 50% (Eval uniquement)'},
       'Limite de temps Eval':     {'25k':'Aucune','50k':'Aucune','100k':'Aucune','150k':'Aucune'},
       // === Trading restrictions ===
@@ -145,6 +149,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'Drawdown journalier max':  {'25k':'Aucun (Select) / $600 (Growth)','50k':'Aucun / $1,200','100k':'Aucun / $2,500','150k':'Aucun / $3,750'},
       'Jours de trading min':     {'25k':'3 jours','50k':'3 jours','100k':'3 jours','150k':'3 jours'},
+      'Profit min jour valide':   {'25k':'$50','50k':'$100','100k':'$200','150k':'$300'},
       'Règle de cohérence (eval)':{'25k':'40% (Select) / 0% (Growth)','50k':'40% / 0%','100k':'40% / 0%','150k':'40% / 0%'},
       // Trading
       'Positions overnight':      {'25k':'Non (flat fin de session)','50k':'Non','100k':'Non','150k':'Non'},
@@ -179,6 +184,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,000','75k':'$2,500','100k':'$3,000','150k':'$4,500'},
       'Drawdown journalier max':  {'25k':'Aucun','50k':'Aucun','75k':'Aucun','100k':'Aucun','150k':'Aucun'},
       'Jours de trading min':     {'25k':'5 jours','50k':'5 jours','75k':'5 jours','100k':'5 jours','150k':'5 jours'},
+      'Profit min jour valide':   {'25k':'$50','50k':'$100','75k':'$150','100k':'$200','150k':'$300'},
       'Règle de cohérence':       {'25k':'≤ 50% / jour (Test uniquement)','50k':'≤ 50% / jour','75k':'≤ 50% / jour','100k':'≤ 50% / jour','150k':'≤ 50% / jour'},
       // === Trading restrictions ===
       'Positions overnight':      {'25k':'Non (clôture avant fin session)','50k':'Non','75k':'Non','100k':'Non','150k':'Non'},
@@ -211,6 +217,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'50k':'$1,500 (3%, Core/Pro EOD)','100k':'$3,000','150k':'$4,500'},
       'Drawdown journalier max':  {'50k':'Aucun','100k':'Aucun','150k':'Aucun'},
       'Jours de trading min':     {'50k':'2 jours','100k':'2 jours','150k':'2 jours'},
+      'Profit min jour valide':   {'50k':'$200 (winning day)','100k':'$300','150k':'$400'},
       'Règle de cohérence (eval)':{'50k':'Best day < 50% du profit','100k':'< 50%','150k':'< 50%'},
       // Variantes Rapid (intraday trail, plus large DD)
       'DD trailing Rapid':        {'50k':'$2,000 (4% intraday)','100k':'$4,000','150k':'$6,000'},
@@ -242,6 +249,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$500 (statique fixe)','50k':'$2,500 (EOD trailing)','100k':'$3,000','150k':'$4,500'},
       'Drawdown journalier max':  {'25k':'Aucun','50k':'Aucun','100k':'Aucun','150k':'Aucun'},
       'Jours de trading min':     {'25k':'0 jours','50k':'3 jours','100k':'3 jours','150k':'3 jours'},
+      'Profit min jour valide':   {'25k':'$0','50k':'$100 (estimé)','100k':'$150','150k':'$200'},
       'Règle de cohérence (eval)':{'25k':'Exempt','50k':'Aucune (30% sur CASH funded)','100k':'Aucune','150k':'Aucune'},
       // Trading
       'Positions overnight':      {'25k':'Non','50k':'Non (Premium = oui)','100k':'Non (Premium = oui)','150k':'Non (Premium = oui)'},
@@ -271,6 +279,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,000','100k':'$3,600','150k':'$5,000','250k':'$6,000'},
       'Drawdown journalier max':  {'25k':'Aucun','50k':'Aucun','100k':'Aucun','150k':'Aucun','250k':'Aucun'},
       'Jours de trading min':     {'25k':'15 (Standard) / 7 (Express)','50k':'15 / 7','100k':'15 / 7','150k':'15 / 7','250k':'15 / 7'},
+      'Profit min jour valide':   {'25k':'$50','50k':'$100','100k':'$200','150k':'$300','250k':'$500'},
       'Règle de cohérence (eval)':{'25k':'40% (Standard) / 15% (Express)','50k':'40% / 15%','100k':'40% / 15%','150k':'40% / 15%','250k':'40% / 15%'},
       // Trading
       'Positions overnight':      {'25k':'Non (flat 16:50 EST, weekends interdits)','50k':'Non','100k':'Non','150k':'Non','250k':'Non'},
@@ -301,6 +310,7 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'50k':'$2,000 (EOD, locks au starting)','100k':'$3,000','150k':'$5,000'},
       'Drawdown journalier max':  {'50k':'$1,100 (Starter) / Aucun (Pro)','100k':'$2,200 / Aucun','150k':'$3,000 / Aucun'},
       'Jours de trading min':     {'50k':'Non spécifié','100k':'Non spécifié','150k':'Non spécifié'},
+      'Profit min jour valide':   {'50k':'$100 (estimé)','100k':'$200','150k':'$300'},
       'Règle de cohérence':       {'50k':'40%','100k':'40%','150k':'40%'},
       // Trading
       'Positions overnight':      {'50k':'Permises (modèle EOD)','100k':'Permises','150k':'Permises'},
@@ -436,4 +446,43 @@ export function defaultMinTradingDays(firmName, plan){
   if(!dStr) return null
   const m = String(dStr).match(/(\d+)/)
   return m ? parseInt(m[1],10) : null
+}
+
+// Retourne le profit minimum par jour ($ numérique) pour qu'un jour compte
+// comme "validé" dans le décompte des jours de trading min (payout requirement).
+// Ex: Lucid demande $150 profit/jour pour valider un jour de trading.
+// Cherche la clé "Profit min jour" / "Min profit / jour" / etc.
+export function defaultMinDailyProfit(firmName, plan){
+  const rules = PROPFIRM_RULES[firmName]?.rules
+  if(!rules || !plan) return null
+  const k = Object.keys(rules).find(k =>
+    /profit\s*min.*jour|min.*profit.*jour|jour.*valid|min.*winning/i.test(k)
+  )
+  if(!k) return null
+  const m = String(rules[k][plan]||'').match(/\$\s*([\d,]+)/)
+  return m ? parseInt(m[1].replace(/,/g,''),10) : null
+}
+
+// Retourne le prix challenge approximatif ($ numérique) pour une firme + plan.
+// Cherche dans les rules une clé contenant "Prix" ET (mensuel OU one-time OU évaluation).
+// Pour les firmes avec multiple variantes, prend la PREMIÈRE clé matchée (ordre du fichier).
+// Pour les valeurs composites "X / Y" (ex: MFFU "Prix Core (m / o)" = "$77 / $229"),
+// prend la PREMIÈRE valeur ($X = mensuel typiquement).
+// → Sert à pré-remplir le champ "Montant dépensé" du formulaire création de compte.
+export function defaultChallengePrice(firmName, plan){
+  const rules = PROPFIRM_RULES[firmName]?.rules
+  if(!rules || !plan) return null
+  // Cherche la clé prix la plus appropriée (priorité : mensuel > one-time > évaluation)
+  const keys = Object.keys(rules)
+  const priceKey =
+    keys.find(k => /prix/i.test(k) && /mensuel|évaluation|eval/i.test(k))
+    || keys.find(k => /prix.*one[\s-]?time/i.test(k))
+    || keys.find(k => /^prix/i.test(k))
+  if(!priceKey) return null
+  const valStr = rules[priceKey][plan]
+  if(!valStr) return null
+  // Extrait le PREMIER nombre (avec virgules potentielles) après le 1er $
+  const m = String(valStr).match(/\$\s*([\d,]+)/)
+  if(!m) return null
+  return parseInt(m[1].replace(/,/g,''), 10)
 }

@@ -32,6 +32,8 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   const ddInitial = ddMax!==null ? planSize - ddMax : null
   const payoutTarget = account.payout_target != null ? Number(account.payout_target) : null
   const minDays = account.min_trading_days != null ? Number(account.min_trading_days) : null
+  // Profit min par jour pour valider le jour dans le décompte (ex Lucid : $150)
+  const minDailyProfit = account.min_daily_profit != null ? Number(account.min_daily_profit) : 0
   // Si funded_date est définie, on ignore les trades d'avant (compte reset au passage en Financé)
   const fundedDate = account.funded_date || null
   const ignoredCount = fundedDate ? entries.filter(e => e.date < fundedDate).length : 0
@@ -74,13 +76,21 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
     })
     // Jours uniques tradés (sur ce compte)
     const tradingDays = new Set(sorted.map(e=>e.date)).size
+    // Jours "validés" = jours dont le PnL net est >= seuil minDailyProfit
+    // Agrège le PnL par jour, puis compte ceux qui passent le seuil
+    const dailyPnL = {}
+    sorted.forEach(e => {
+      dailyPnL[e.date] = (dailyPnL[e.date] || 0) + (Number(e.pnl) || 0)
+    })
+    const validatedDays = Object.values(dailyPnL).filter(v => v >= minDailyProfit && v > 0).length
     return {
       labels, balances, ddLine,
       finalBalance: planSize + cum, totalPnl: cum, finalPeak: peak,
       currentDD: ddLine.length ? ddLine[ddLine.length - 1] : null,
       tradingDays,
+      validatedDays,
     }
-  },[entries, planSize, ddMax, isTrailing, fundedDate])
+  },[entries, planSize, ddMax, isTrailing, fundedDate, minDailyProfit])
 
   useEffect(()=>{
     if(!ref.current) return
@@ -278,22 +288,36 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             )
           })()}
           {minDays !== null && (() => {
-            const reached = data.tradingDays >= minDays
-            const progress = minDays > 0 ? Math.min(100, (data.tradingDays / minDays) * 100) : 0
+            // Si un seuil de profit min/jour est défini, on compte les jours VALIDÉS (pas les simples jours tradés)
+            // Sinon (seuil = 0), on retombe sur les simples jours tradés.
+            const useValidated = minDailyProfit > 0
+            const counted = useValidated ? data.validatedDays : data.tradingDays
+            const reached = counted >= minDays
+            const progress = minDays > 0 ? Math.min(100, (counted / minDays) * 100) : 0
+            const label = useValidated ? `📅 Jours validés (≥$${minDailyProfit})` : '📅 Jours tradés'
             return (
               <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'10px 12px'}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'5px'}}>
-                  <span style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:'700'}}>📅 Jours tradés</span>
+                  <span style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:'700'}}>{label}</span>
                   <span style={{fontSize:'12px',fontWeight:'700',color:reached?'var(--green)':'var(--text)'}}>
                     {reached ? '✓ Atteint' : `${progress.toFixed(0)}%`}
                   </span>
                 </div>
                 <div style={{fontSize:'13px',fontWeight:'700',color:reached?'var(--green)':'var(--text)',marginBottom:'4px'}}>
-                  {data.tradingDays} / {minDays}
+                  {counted} / {minDays}
                 </div>
                 <div style={{fontSize:'10px',color:reached?'var(--green-text)':'var(--text2)'}}>
-                  {reached ? 'Minimum atteint' : `Encore ${minDays - data.tradingDays} jour${minDays-data.tradingDays>1?'s':''}`}
+                  {reached
+                    ? 'Minimum atteint'
+                    : useValidated
+                      ? `Encore ${minDays - counted} jour${minDays-counted>1?'s':''} à ≥$${minDailyProfit}`
+                      : `Encore ${minDays - counted} jour${minDays-counted>1?'s':''}`}
                 </div>
+                {useValidated && data.tradingDays > data.validatedDays && (
+                  <div style={{fontSize:'9px',color:'var(--text3)',marginTop:'2px',fontStyle:'italic'}}>
+                    {`${data.tradingDays - data.validatedDays} jour${(data.tradingDays - data.validatedDays)>1?'s':''} traités mais <$${minDailyProfit}`}
+                  </div>
+                )}
                 <div style={{height:'4px',background:'var(--surface3)',borderRadius:'99px',marginTop:'6px',overflow:'hidden'}}>
                   <div style={{height:'100%',width:progress+'%',background:reached?'var(--green)':'#4d8fff',transition:'width 0.3s'}} />
                 </div>

@@ -37,6 +37,9 @@ alter table accounts add column if not exists min_trading_days  int;
 -- Date de passage en Financé (reset balance) : les trades antérieurs sont
 -- conservés mais ignorés dans le calcul de la balance du compte financé.
 alter table accounts add column if not exists funded_date       date;
+-- Profit min par jour pour qu'un jour compte comme "validé" dans le décompte
+-- des jours min de trading (pré-rempli depuis les règles de la firme).
+alter table accounts add column if not exists min_daily_profit  numeric(10,2);
 
 -- PAYOUTS table
 create table if not exists payouts (
