@@ -654,14 +654,78 @@ export default function Home() {
                     </div>
                   </div>
                   <div style={{padding:'20px'}}>
-                    {Object.entries(PROPFIRM_RULES[selRulesFirm]?.rules||{}).map(([rname,vals])=>{
-                      const val=vals[selRulesPlan]||'—'
-                      return<div key={rname} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'6px'}}>
-                        <span style={{fontSize:'13px',color:'var(--text2)'}}>{rname}</span>
-                        <span style={{fontSize:'13px',fontWeight:'600',color:rname.toLowerCase().includes('drawdown')?'var(--red)':rname.toLowerCase().includes('objectif')?'var(--green)':'var(--text)'}}>{val}</span>
-                      </div>
-                    })}
-                    <div style={{marginTop:'16px',padding:'12px 14px',background:'var(--amber-bg)',borderRadius:'var(--radius)',fontSize:'12px',color:'var(--amber-text)'}}>⚠ Ces règles sont indicatives. Consultez toujours le site officiel.</div>
+                    {(()=>{
+                      // Catégorise chaque règle dans 3 buckets : challenge / funded / common
+                      const categorize = (key) => {
+                        const k = key.toLowerCase()
+                        // FUNDED : payouts, activation, retraits, splits, cadence, etc.
+                        if(/payout|répartition|split|activation|retrait|cadence|délai|mode.*retrait/.test(k)) return 'funded'
+                        if(/data.*fee|funded|live|cash|exhib|nb.*payout/.test(k)) return 'funded'
+                        // CHALLENGE : profit target, DD, jours min, cohérence, prix, reset, eval
+                        if(/objectif|drawdown|jours.*trading|cohérence|consistency/.test(k)) return 'challenge'
+                        if(/limite.*temps|time.*limit|comptes eval|profit min jour|jour.*valide|min.*winning/.test(k)) return 'challenge'
+                        if(/prix|price|coût|^reset/.test(k)) return 'challenge'
+                        // COMMON : trading, contrats, overnight, news, DCA, comptes simul
+                        return 'common'
+                      }
+                      const allRules = Object.entries(PROPFIRM_RULES[selRulesFirm]?.rules||{})
+                      const challenge = allRules.filter(([k]) => categorize(k) === 'challenge')
+                      const funded    = allRules.filter(([k]) => categorize(k) === 'funded')
+                      const common    = allRules.filter(([k]) => categorize(k) === 'common')
+
+                      const renderRule = ([rname, vals]) => {
+                        const val = vals[selRulesPlan] || '—'
+                        const k = rname.toLowerCase()
+                        const color = k.includes('drawdown') ? 'var(--red)'
+                          : k.includes('objectif') ? 'var(--green)'
+                          : k.includes('payout') && k.includes('split') ? 'var(--green)'
+                          : 'var(--text)'
+                        return (
+                          <div key={rname} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'6px',gap:'12px'}}>
+                            <span style={{fontSize:'13px',color:'var(--text2)',flexShrink:0}}>{rname}</span>
+                            <span style={{fontSize:'13px',fontWeight:'600',color,textAlign:'right'}}>{val}</span>
+                          </div>
+                        )
+                      }
+
+                      const sectionHeader = (icon, title, count, color) => (
+                        <div style={{
+                          display:'flex',alignItems:'center',gap:'8px',
+                          padding:'10px 14px',marginTop:'4px',marginBottom:'10px',
+                          background:`${color}15`,borderLeft:`3px solid ${color}`,borderRadius:'4px',
+                        }}>
+                          <span style={{fontSize:'15px'}}>{icon}</span>
+                          <span style={{fontSize:'13px',fontWeight:'700',color,textTransform:'uppercase',letterSpacing:'0.5px'}}>{title}</span>
+                          <span style={{marginLeft:'auto',fontSize:'10px',color:'var(--text3)',fontWeight:'600'}}>{count} règle{count>1?'s':''}</span>
+                        </div>
+                      )
+
+                      return (
+                        <>
+                          {challenge.length > 0 && (
+                            <>
+                              {sectionHeader('🟡', 'Phase Challenge / Évaluation', challenge.length, '#fac775')}
+                              {challenge.map(renderRule)}
+                            </>
+                          )}
+                          {funded.length > 0 && (
+                            <>
+                              <div style={{height:'18px'}} />
+                              {sectionHeader('✅', 'Une fois Financé', funded.length, '#1db87a')}
+                              {funded.map(renderRule)}
+                            </>
+                          )}
+                          {common.length > 0 && (
+                            <>
+                              <div style={{height:'18px'}} />
+                              {sectionHeader('📊', 'Trading (commun aux 2 phases)', common.length, '#4d8fff')}
+                              {common.map(renderRule)}
+                            </>
+                          )}
+                          <div style={{marginTop:'18px',padding:'12px 14px',background:'var(--amber-bg)',borderRadius:'var(--radius)',fontSize:'12px',color:'var(--amber-text)'}}>⚠ Ces règles sont indicatives. Consultez toujours le site officiel.</div>
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>
