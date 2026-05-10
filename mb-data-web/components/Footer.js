@@ -46,8 +46,8 @@ const SECTIONS = [
     title: 'Société',
     links: [
       { label: 'À propos', href: '/#why' },
-      { label: 'Contact', href: 'mailto:contact@quantara.app', external: true },
-      { label: 'Sécurité (signaler)', href: 'mailto:security@quantara.app', external: true },
+      { label: 'Contact', href: 'mailto:contact@quantara.tech', external: true },
+      { label: 'Sécurité (signaler)', href: 'mailto:security@quantara.tech', external: true },
       { label: 'Discord', href: '#', external: true, soon: true },
     ],
   },

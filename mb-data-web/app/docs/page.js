@@ -57,7 +57,7 @@ const SECTIONS = [
     icon: '📜',
     items: [
       { q: 'Quelles PropFirms sont supportées ?', a: '8+ firmes pré-configurées : Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite. Voir /integrations pour la liste complète et le statut.' },
-      { q: 'Mes règles ne sont pas à jour, c\'est normal ?', a: 'Les PropFirms changent leurs règles régulièrement. Quantara fait au mieux pour rester à jour. Si tu vois une incohérence, tu peux toujours modifier les règles d\'un compte individuel (objectif payout, drawdown, jours min, profit min jour) directement dans le formulaire de création/édition. Sinon, signale-le à contact@quantara.app.' },
+      { q: 'Mes règles ne sont pas à jour, c\'est normal ?', a: 'Les PropFirms changent leurs règles régulièrement. Quantara fait au mieux pour rester à jour. Si tu vois une incohérence, tu peux toujours modifier les règles d\'un compte individuel (objectif payout, drawdown, jours min, profit min jour) directement dans le formulaire de création/édition. Sinon, signale-le à contact@quantara.tech.' },
       { q: 'Que veut dire "Drawdown trailing" ?', a: 'Le drawdown trailing suit la balance peak du compte (s\'élève quand tu gagnes), puis se "fige" généralement au balance initial (50K, 100K...) une fois que tu as atteint le seuil profit target. C\'est plus permissif qu\'un drawdown statique fixe.' },
     ],
   },
@@ -78,7 +78,7 @@ const SECTIONS = [
     items: [
       { q: 'Mes données sont-elles vendues ?', a: 'Non. Jamais. Quantara n\'a pas de modèle ads. Voir /security pour les détails techniques.' },
       { q: 'Comment exporter mes données ?', a: 'Bouton "↓ CSV" en haut du Journal et du Tableau de bord. Tout est exportable en clair.' },
-      { q: 'Comment supprimer mon compte ?', a: 'Envoie un mail à contact@quantara.app avec ton adresse email d\'inscription. Suppression sous 30 jours max conformément au RGPD.' },
+      { q: 'Comment supprimer mon compte ?', a: 'Envoie un mail à contact@quantara.tech avec ton adresse email d\'inscription. Suppression sous 30 jours max conformément au RGPD.' },
     ],
   },
   {
@@ -163,7 +163,7 @@ export default function DocsPage() {
             maxWidth: 600, margin: '0 auto', lineHeight: 1.5,
           }}>
             Setup, fonctionnalités, FAQ, roadmap — tout est ici. Si tu ne trouves pas
-            ta réponse, écris-nous à contact@quantara.app.
+            ta réponse, écris-nous à contact@quantara.tech.
           </p>
         </div>
       </section>
@@ -235,13 +235,13 @@ export default function DocsPage() {
                 <p style={{ fontSize: 13, color: C.text2, marginBottom: 18, maxWidth: 480, margin: '0 auto 18px', lineHeight: 1.5 }}>
                   Écris-nous, on répond vite (généralement sous 24-48h ouvrées).
                 </p>
-                <a href="mailto:contact@quantara.app" style={{
+                <a href="mailto:contact@quantara.tech" style={{
                   display: 'inline-block', padding: '10px 22px',
                   fontSize: 13, fontWeight: 600, borderRadius: 99,
                   background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,
                   color: '#fff', textDecoration: 'none',
                   boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
-                }}>contact@quantara.app</a>
+                }}>contact@quantara.tech</a>
               </div>
             </Reveal>
           </div>

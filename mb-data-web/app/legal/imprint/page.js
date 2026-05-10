@@ -3,7 +3,7 @@ import Footer from '../../../components/Footer'
 
 export const metadata = {
   title: 'Mentions Légales — Quantara',
-  description: 'Mentions légales de Quantara LLC — éditeur du service quantara.app.',
+  description: 'Mentions légales de Quantara LLC — éditeur du service quantara.tech.',
 }
 
 const C = {
@@ -62,19 +62,19 @@ export default function ImprintPage() {
             <div style={valueStyle}>
               <div style={{ marginBottom: 6 }}>
                 <strong style={{ color: C.text }}>Contact général</strong> :{' '}
-                <a href="mailto:contact@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>contact@quantara.app</a>
+                <a href="mailto:contact@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>contact@quantara.tech</a>
               </div>
               <div style={{ marginBottom: 6 }}>
                 <strong style={{ color: C.text }}>Privacy / RGPD</strong> :{' '}
-                <a href="mailto:privacy@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.app</a>
+                <a href="mailto:privacy@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a>
               </div>
               <div style={{ marginBottom: 6 }}>
                 <strong style={{ color: C.text }}>Sécurité (responsible disclosure)</strong> :{' '}
-                <a href="mailto:security@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>security@quantara.app</a>
+                <a href="mailto:security@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>security@quantara.tech</a>
               </div>
               <div>
                 <strong style={{ color: C.text }}>Légal</strong> :{' '}
-                <a href="mailto:legal@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>legal@quantara.app</a>
+                <a href="mailto:legal@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>legal@quantara.tech</a>
               </div>
             </div>
           </div>

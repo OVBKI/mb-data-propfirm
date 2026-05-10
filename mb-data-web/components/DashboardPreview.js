@@ -176,7 +176,7 @@ export default function DashboardPreview() {
                 marginLeft: 14, fontSize: 11, color: C.text3,
                 background: C.bg, padding: '4px 12px', borderRadius: 99,
                 border: `1px solid ${C.border}`,
-              }}>quantara.app/dashboard</div>
+              }}>quantara.tech/dashboard</div>
             </div>
 
             <div style={{ background: C.bg, borderRadius: 10, padding: '24px 22px' }}>

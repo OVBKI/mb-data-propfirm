@@ -27,7 +27,7 @@ const SECTIONS = [
     icon: '🔐',
     title: 'Chiffrement de bout en bout',
     items: [
-      { label: 'TLS 1.3', desc: 'Toutes les communications entre ton navigateur et nos serveurs sont chiffrées en TLS 1.3 (HSTS forcé sur quantara.app).' },
+      { label: 'TLS 1.3', desc: 'Toutes les communications entre ton navigateur et nos serveurs sont chiffrées en TLS 1.3 (HSTS forcé sur quantara.tech).' },
       { label: 'Données au repos', desc: 'PostgreSQL Supabase chiffre les données en AES-256 au repos. Les snapshots de backup sont également chiffrés.' },
       { label: 'Mots de passe', desc: 'Tes credentials Quantara sont hashés via bcrypt côté Supabase. On ne stocke jamais le mot de passe en clair, même temporairement.' },
     ],
@@ -55,7 +55,7 @@ const SECTIONS = [
     title: 'Hébergement & conformité',
     items: [
       { label: 'Hébergement EU', desc: 'Frontend Vercel (Paris/Frankfurt). Base de données Supabase (Frankfurt). Aucune donnée ne quitte l\'UE pour le tracking principal.' },
-      { label: 'RGPD compliant', desc: 'Tu peux exporter toutes tes données (CSV) depuis le journal et le dashboard. Suppression de compte sur demande à contact@quantara.app sous 30 jours max.' },
+      { label: 'RGPD compliant', desc: 'Tu peux exporter toutes tes données (CSV) depuis le journal et le dashboard. Suppression de compte sur demande à contact@quantara.tech sous 30 jours max.' },
       { label: 'Pas de tracking publicitaire', desc: 'Aucun Google Analytics, Facebook Pixel, ou tracker tiers. Quantara n\'a pas de modèle ads — tes données ne sont jamais vendues.' },
     ],
   },
@@ -72,7 +72,7 @@ const SECTIONS = [
     icon: '🐛',
     title: 'Responsible disclosure',
     items: [
-      { label: 'Tu as trouvé une faille ?', desc: 'Envoie un mail à security@quantara.app avec une description détaillée. Réponse sous 48h ouvrées garantie. On apprécie les chercheurs en sécurité — pas de poursuites tant que tu respectes la disclosure responsable (pas d\'exfiltration de données, pas de DoS, etc.).' },
+      { label: 'Tu as trouvé une faille ?', desc: 'Envoie un mail à security@quantara.tech avec une description détaillée. Réponse sous 48h ouvrées garantie. On apprécie les chercheurs en sécurité — pas de poursuites tant que tu respectes la disclosure responsable (pas d\'exfiltration de données, pas de DoS, etc.).' },
       { label: 'Hall of Fame', desc: 'Les chercheurs qui nous signalent des vulnérabilités valides sont listés (avec leur accord) sur cette page. Aucune récompense monétaire pour l\'instant (Quantara est en beta).' },
     ],
   },
@@ -168,14 +168,14 @@ export default function SecurityPage() {
                 contacte-nous directement.
               </p>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="mailto:security@quantara.app" style={{
+                <a href="mailto:security@quantara.tech" style={{
                   display: 'inline-block', padding: '10px 20px',
                   fontSize: 13, fontWeight: 600, borderRadius: 99,
                   background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,
                   color: '#fff', textDecoration: 'none',
                   boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
-                }}>security@quantara.app</a>
-                <a href="mailto:contact@quantara.app?subject=Demande%20RGPD" style={{
+                }}>security@quantara.tech</a>
+                <a href="mailto:contact@quantara.tech?subject=Demande%20RGPD" style={{
                   display: 'inline-block', padding: '10px 20px',
                   fontSize: 13, fontWeight: 600, borderRadius: 99,
                   background: 'transparent', color: C.text,

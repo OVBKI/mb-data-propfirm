@@ -218,7 +218,7 @@ export default function IntegrationsPage() {
             Quantara fonctionne avec toutes les PropFirms en mode saisie manuelle. Tu peux ajouter une PropFirm
             personnalisée depuis le dashboard et configurer ses règles toi-même.
           </p>
-          <a href="mailto:contact@quantara.app?subject=Demande%20d'ajout%20PropFirm" style={{
+          <a href="mailto:contact@quantara.tech?subject=Demande%20d'ajout%20PropFirm" style={{
             display: 'inline-block', padding: '12px 28px',
             fontSize: 14, fontWeight: 600, borderRadius: 99,
             background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,

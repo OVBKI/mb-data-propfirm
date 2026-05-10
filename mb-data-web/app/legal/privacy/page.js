@@ -53,9 +53,9 @@ export default function PrivacyPage() {
             <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
               <li style={liStyle}>EIN : <em>[à compléter après obtention auprès de l'IRS]</em></li>
               <li style={liStyle}>Siège social / Registered agent : <em>[à compléter avec l'adresse au Texas]</em></li>
-              <li style={liStyle}>Email général : <a href="mailto:contact@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>contact@quantara.app</a></li>
-              <li style={liStyle}>Email privacy/RGPD : <a href="mailto:privacy@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.app</a></li>
-              <li style={liStyle}>Email sécurité : <a href="mailto:security@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>security@quantara.app</a></li>
+              <li style={liStyle}>Email général : <a href="mailto:contact@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>contact@quantara.tech</a></li>
+              <li style={liStyle}>Email privacy/RGPD : <a href="mailto:privacy@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a></li>
+              <li style={liStyle}>Email sécurité : <a href="mailto:security@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>security@quantara.tech</a></li>
             </ul>
           </div>
 
@@ -148,7 +148,7 @@ export default function PrivacyPage() {
               <li style={liStyle}><strong>Réclamation</strong> : auprès de la CNIL (cnil.fr) ou de toute autorité de contrôle EU compétente</li>
             </ul>
             <p style={pStyle}>
-              Pour exercer ces droits : <a href="mailto:privacy@quantara.app?subject=Demande%20RGPD" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.app</a>
+              Pour exercer ces droits : <a href="mailto:privacy@quantara.tech?subject=Demande%20RGPD" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a>
               {' · '}Réponse sous 30 jours max conformément à l'article 12 RGPD.
             </p>
           </div>
@@ -168,7 +168,7 @@ export default function PrivacyPage() {
               <li style={liStyle}><strong>Right to Non-Discrimination</strong> : exercer ces droits ne donnera lieu à aucune discrimination dans la qualité du Service</li>
             </ul>
             <p style={pStyle}>
-              Pour exercer ces droits : <a href="mailto:privacy@quantara.app?subject=CCPA%20Request" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.app</a>
+              Pour exercer ces droits : <a href="mailto:privacy@quantara.tech?subject=CCPA%20Request" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a>
               {' · '}Réponse sous 45 jours max.
             </p>
           </div>
@@ -228,7 +228,7 @@ export default function PrivacyPage() {
             <h2 style={h2Style}>13. Mineurs</h2>
             <p style={pStyle}>
               Le Service n'est pas destiné aux personnes de moins de 18 ans. Quantara LLC ne collecte pas sciemment de données
-              personnelles d'enfants. Si tu es parent et que ton enfant a créé un compte, contacte privacy@quantara.app pour
+              personnelles d'enfants. Si tu es parent et que ton enfant a créé un compte, contacte privacy@quantara.tech pour
               suppression immédiate.
             </p>
           </div>

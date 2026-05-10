@@ -52,7 +52,7 @@ export default function CGUPage() {
               (« le Service »), un outil web de journalisation et d'analyse de performance pour traders de futures sur PropFirms,
               édité et opéré par <strong>Quantara LLC</strong>, une Limited Liability Company constituée selon les lois de l'État du
               Texas, États-Unis (EIN : <em>[à compléter après obtention]</em>, siège social : <em>[à compléter avec l'adresse du registered agent au Texas]</em>),
-              accessible à l'adresse quantara.app et ses sous-domaines.
+              accessible à l'adresse quantara.tech et ses sous-domaines.
             </p>
             <p style={pStyle}>
               En accédant au Service ou en créant un compte, l'utilisateur (« Utilisateur ») accepte sans réserve les présentes CGU.
@@ -194,7 +194,7 @@ export default function CGUPage() {
               Pour toute question relative aux présentes CGU :
             </p>
             <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}>Email : <a href="mailto:legal@quantara.app" style={{ color: '#4d8fff', textDecoration: 'none' }}>legal@quantara.app</a></li>
+              <li style={liStyle}>Email : <a href="mailto:legal@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>legal@quantara.tech</a></li>
               <li style={liStyle}>Adresse postale : Quantara LLC, <em>[adresse du registered agent au Texas]</em></li>
             </ul>
           </div>
