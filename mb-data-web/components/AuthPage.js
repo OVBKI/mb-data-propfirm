@@ -22,8 +22,16 @@ export default function AuthPage({ onAuth }) {
   const widgetIdRef = useRef(null)
 
   // Initialise Turnstile (script chargé via layout, attend qu'il soit prêt)
+  // Rendu dans LES DEUX modes (login + register) car Supabase exige un captcha
+  // pour toutes les requêtes auth quand CAPTCHA Protection est activé.
   useEffect(() => {
-    if (!TURNSTILE_SITE_KEY || mode !== 'register') return
+    if (!TURNSTILE_SITE_KEY) return
+    // Reset le token quand on switch de mode (le widget se re-render)
+    setCaptchaToken('')
+    if (widgetIdRef.current && typeof window !== 'undefined' && window.turnstile) {
+      try { window.turnstile.remove(widgetIdRef.current) } catch {}
+      widgetIdRef.current = null
+    }
     let cancelled = false
     let interval
     let timeout
@@ -82,9 +90,9 @@ export default function AuthPage({ onAuth }) {
       return
     }
 
-    // 🛡️ Anti-bot 2 : Turnstile (uniquement à l'inscription)
-    if (mode === 'register' && TURNSTILE_SITE_KEY && !captchaToken) {
-      setError('Merci de valider le captcha avant de continuer.')
+    // 🛡️ Anti-bot 2 : Turnstile (login ET signup, requis par Supabase)
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError('Merci d\'attendre la validation du captcha avant de continuer (quelques secondes).')
       return
     }
 
@@ -242,21 +250,19 @@ export default function AuthPage({ onAuth }) {
             </label>
           )}
 
-          {/* 🛡️ Turnstile widget (uniquement en mode register) */}
-          {mode === 'register' && (
-            <div style={{ marginBottom: '16px' }}>
-              {TURNSTILE_SITE_KEY ? (
-                <div ref={turnstileRef} style={{ minHeight: 65 }} />
-              ) : (
-                <div style={{
-                  padding: '10px 12px', fontSize: '11px', color: 'var(--amber-text)',
-                  background: 'var(--amber-bg)', borderRadius: 'var(--radius)',
-                }}>
-                  ⚠ Captcha non configuré (NEXT_PUBLIC_TURNSTILE_SITE_KEY manquant). L'inscription fonctionne quand même.
-                </div>
-              )}
-            </div>
-          )}
+          {/* 🛡️ Turnstile widget — affiché en login ET register (Supabase exige captcha pour toutes les auth) */}
+          <div style={{ marginBottom: '16px' }}>
+            {TURNSTILE_SITE_KEY ? (
+              <div ref={turnstileRef} style={{ minHeight: 65 }} />
+            ) : (
+              <div style={{
+                padding: '10px 12px', fontSize: '11px', color: 'var(--amber-text)',
+                background: 'var(--amber-bg)', borderRadius: 'var(--radius)',
+              }}>
+                ⚠ Captcha non configuré (NEXT_PUBLIC_TURNSTILE_SITE_KEY manquant).
+              </div>
+            )}
+          </div>
 
           {error && (
             <div style={{ padding: '10px 14px', background: 'var(--red-bg)', border: '0.5px solid var(--red)', borderRadius: 'var(--radius)', fontSize: '13px', color: 'var(--red-text)', marginBottom: '16px' }}>
