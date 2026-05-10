@@ -21,31 +21,53 @@ export default function AuthPage({ onAuth }) {
   const turnstileRef = useRef(null)
   const widgetIdRef = useRef(null)
 
-  // Initialise Turnstile une seule fois (script chargé via layout)
+  // Initialise Turnstile (script chargé via layout, attend qu'il soit prêt)
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY || mode !== 'register') return
+    let cancelled = false
+    let interval
+    let timeout
     function tryRender() {
-      if (typeof window === 'undefined' || !window.turnstile || !turnstileRef.current) return false
-      // Reset si déjà rendu
+      if (cancelled || typeof window === 'undefined') return false
+      if (!window.turnstile) return false
+      if (!turnstileRef.current) return false
+      // Reset si déjà rendu (cas re-rendu React)
       if (widgetIdRef.current) {
-        window.turnstile.reset(widgetIdRef.current)
+        try { window.turnstile.reset(widgetIdRef.current) } catch {}
         return true
       }
-      widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        theme: 'dark',
-        size: 'flexible',
-        callback: (token) => setCaptchaToken(token),
-        'error-callback': () => setCaptchaToken(''),
-        'expired-callback': () => setCaptchaToken(''),
-      })
-      return true
+      try {
+        widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          theme: 'dark',
+          size: 'flexible',
+          callback: (token) => setCaptchaToken(token),
+          'error-callback': (err) => {
+            console.warn('[Turnstile] error:', err)
+            setCaptchaToken('')
+          },
+          'expired-callback': () => setCaptchaToken(''),
+        })
+        return true
+      } catch (err) {
+        console.warn('[Turnstile] render failed:', err)
+        return false
+      }
     }
-    // Si script pas encore chargé, on attend max 5s
+    // Essai immédiat puis polling toutes les 150ms pendant 15s
     if (!tryRender()) {
-      const interval = setInterval(() => { if (tryRender()) clearInterval(interval) }, 200)
-      const timeout = setTimeout(() => clearInterval(interval), 5000)
-      return () => { clearInterval(interval); clearTimeout(timeout) }
+      interval = setInterval(() => { if (tryRender()) clearInterval(interval) }, 150)
+      timeout = setTimeout(() => {
+        clearInterval(interval)
+        if (!widgetIdRef.current) {
+          console.warn('[Turnstile] script not loaded after 15s — vérifie que le script Cloudflare se charge dans le navigateur (DevTools → Network).')
+        }
+      }, 15000)
+    }
+    return () => {
+      cancelled = true
+      if (interval) clearInterval(interval)
+      if (timeout) clearTimeout(timeout)
     }
   }, [mode])
 

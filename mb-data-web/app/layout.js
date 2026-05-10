@@ -21,10 +21,10 @@ export default function RootLayout({ children }) {
     <html lang="fr">
       <body className={inter.className}>
         {children}
-        {/* Cloudflare Turnstile — anti-bot, chargé asynchrone, n'impacte pas le LCP */}
+        {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
           async
           defer
         />
