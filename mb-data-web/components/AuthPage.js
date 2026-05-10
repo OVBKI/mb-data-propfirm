@@ -294,11 +294,27 @@ export default function AuthPage({ onAuth }) {
             <button
               type="button"
               onClick={async () => {
-                if (!email) { setError('Saisis ton email d\'abord, puis click "Mot de passe oublié"'); return }
+                setError(''); setSuccess('')
+                if (!email) {
+                  setError('Saisis ton email d\'abord, puis click "Mot de passe oublié".')
+                  return
+                }
+                if (TURNSTILE_SITE_KEY && !captchaToken) {
+                  setError('Attends que le captcha soit validé (✓ Succès) avant de cliquer "Mot de passe oublié".')
+                  return
+                }
                 const redirectTo = `${window.location.origin}/auth/callback`
-                const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo,
+                  captchaToken: captchaToken || undefined,
+                })
+                // Reset captcha pour qu'il soit ré-utilisable (1 token = 1 usage)
+                if (typeof window !== 'undefined' && window.turnstile && widgetIdRef.current) {
+                  window.turnstile.reset(widgetIdRef.current)
+                  setCaptchaToken('')
+                }
                 if (error) setError(error.message)
-                else setSuccess(`📧 Email de réinitialisation envoyé à ${email}`)
+                else setSuccess(`📧 Email de réinitialisation envoyé à ${email}. Vérifie ta boîte (et tes spams).`)
               }}
               style={{
                 background: 'none', border: 'none', color: 'var(--text3)',
