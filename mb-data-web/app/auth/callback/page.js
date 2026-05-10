@@ -1,72 +1,153 @@
 'use client'
-// Page d'atterrissage après que l'utilisateur clique sur le lien de confirmation
-// envoyé par email. Supabase ajoute le token dans l'URL hash → on le détecte
-// via detectSessionInUrl=true du client supabase, puis on affiche un message clair.
+// Page d'atterrissage après que l'utilisateur clique sur un lien email Supabase :
+//   - Confirmation de signup → success + redirect /app
+//   - Reset password → form pour saisir nouveau mot de passe
+//   - Lien expiré → option de renvoyer
+//   - Erreur autre → message + lien retour
 //
-// 3 cas gérés :
-//   - ✅ Confirmation réussie (token valide) → redirige vers /app après 3s
-//   - ⚠️ Lien expiré ou déjà utilisé → option de renvoyer un lien
-//   - ❌ Erreur autre → message + lien retour
+// Détection du type via le hash de l'URL (ex: #access_token=...&type=recovery&...)
 
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
 
+const C = {
+  bg: '#0d0f14',
+  surface: '#141720',
+  surface2: '#1c2030',
+  text: '#f0ede8',
+  text2: '#9098b0',
+  text3: '#565e78',
+  blue: '#2d6fff',
+  blueLight: '#4d8fff',
+  green: '#1db87a',
+  red: '#e8504a',
+  amber: '#fac775',
+}
+
 function CallbackInner() {
-  const [status, setStatus] = useState('loading') // loading | success | error | expired
+  const [status, setStatus] = useState('loading') // loading | success | error | expired | recovery
   const [errorMsg, setErrorMsg] = useState('')
   const [email, setEmail] = useState('')
   const [resending, setResending] = useState(false)
   const [resendOk, setResendOk] = useState(false)
+  // Form recovery
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [updating, setUpdating] = useState(false)
+  const [pwSuccess, setPwSuccess] = useState(false)
 
   useEffect(() => {
     let mounted = true
+
+    // Détecte le type d'événement depuis l'URL hash (ex: #type=recovery)
+    function getUrlParam(name) {
+      if (typeof window === 'undefined') return null
+      const hash = window.location.hash
+      const search = window.location.search
+      // Cherche dans le hash (style Supabase: #access_token=...&type=...)
+      if (hash) {
+        const params = new URLSearchParams(hash.slice(1))
+        const v = params.get(name)
+        if (v) return v
+      }
+      // Cherche dans les query params standards
+      if (search) {
+        const params = new URLSearchParams(search)
+        const v = params.get(name)
+        if (v) return v
+      }
+      return null
+    }
+
     async function process() {
-      // Supabase parse automatiquement le hash de l'URL et établit la session
-      // si le token est valide (detectSessionInUrl: true).
-      // On attend ~500ms pour laisser le temps au SDK de processer.
+      // Attend que Supabase parse le hash et établisse la session
       await new Promise(r => setTimeout(r, 500))
-
-      const { data: { session }, error } = await supabase.auth.getSession()
-
       if (!mounted) return
 
-      // Cas 1 : erreur dans l'URL
-      const hash = typeof window !== 'undefined' ? window.location.hash : ''
-      const url = new URL(window.location.href)
-      const errorCode = url.searchParams.get('error_code') || (hash.includes('error_code=') ? hash.split('error_code=')[1].split('&')[0] : null)
-      const errorDesc = url.searchParams.get('error_description') || (hash.includes('error_description=') ? decodeURIComponent(hash.split('error_description=')[1].split('&')[0]) : null)
+      const eventType = getUrlParam('type') // 'recovery' | 'signup' | 'magiclink' | 'invite' | 'email_change'
+      const errorCode = getUrlParam('error_code')
+      const errorDesc = getUrlParam('error_description')
 
+      // Erreurs explicites dans l'URL
       if (errorCode === 'otp_expired' || /expired/i.test(errorDesc || '')) {
         setStatus('expired')
-        setErrorMsg('Le lien de confirmation a expiré (validité 24h).')
+        setErrorMsg('Le lien a expiré (validité 24h).')
         return
       }
-      if (errorCode || error) {
+      if (errorCode) {
         setStatus('error')
-        setErrorMsg(errorDesc || error?.message || 'Une erreur est survenue lors de la confirmation.')
+        setErrorMsg(errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, ' ')) : 'Une erreur est survenue.')
         return
       }
 
-      // Cas 2 : session valide → succès
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) {
+        setStatus('error')
+        setErrorMsg(error.message)
+        return
+      }
+
+      // 🔑 RECOVERY : afficher le form de nouveau mot de passe
+      if (eventType === 'recovery' && session?.user) {
+        setEmail(session.user.email || '')
+        setStatus('recovery')
+        return
+      }
+
+      // ✅ SIGNUP / autres : session valide → success + redirect
       if (session?.user) {
         setEmail(session.user.email || '')
         setStatus('success')
-        // Redirige vers l'app après 3s
         setTimeout(() => {
           if (mounted) window.location.href = '/app'
         }, 3000)
         return
       }
 
-      // Cas 3 : pas de session, pas d'erreur → probablement déjà confirmé
+      // Pas de session, pas d'erreur → lien déjà utilisé
       setStatus('error')
       setErrorMsg('Aucune session active. Le lien a peut-être déjà été utilisé.')
     }
+
+    // Écoute aussi l'event PASSWORD_RECOVERY au cas où le SDK le déclenche après notre process()
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && mounted) {
+        setEmail(session?.user?.email || '')
+        setStatus('recovery')
+      }
+    })
+
     process()
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+      subscription?.subscription?.unsubscribe?.()
+    }
   }, [])
+
+  // Soumission du nouveau mot de passe
+  async function submitNewPassword(e) {
+    e.preventDefault()
+    setErrorMsg('')
+    if (newPassword.length < 8) {
+      setErrorMsg('Le mot de passe doit faire au moins 8 caractères.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('Les 2 mots de passe ne correspondent pas.')
+      return
+    }
+    setUpdating(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setUpdating(false)
+    if (error) {
+      setErrorMsg(error.message)
+      return
+    }
+    setPwSuccess(true)
+    setTimeout(() => { window.location.href = '/app' }, 2500)
+  }
 
   async function resendConfirmation() {
     if (!email) {
@@ -76,35 +157,42 @@ function CallbackInner() {
       setResending(true)
       const { error } = await supabase.auth.resend({ type: 'signup', email: ans })
       setResending(false)
-      if (error) {
-        alert('Erreur : ' + error.message)
-      } else {
-        setResendOk(true)
-      }
+      if (error) alert('Erreur : ' + error.message)
+      else setResendOk(true)
       return
     }
     setResending(true)
     const { error } = await supabase.auth.resend({ type: 'signup', email })
     setResending(false)
-    if (error) {
-      alert('Erreur : ' + error.message)
-    } else {
-      setResendOk(true)
-    }
+    if (error) alert('Erreur : ' + error.message)
+    else setResendOk(true)
   }
 
-  const C = {
-    bg: '#0d0f14',
-    surface: '#141720',
-    surface2: '#1c2030',
-    text: '#f0ede8',
-    text2: '#9098b0',
-    text3: '#565e78',
-    blue: '#2d6fff',
-    blueLight: '#4d8fff',
-    green: '#1db87a',
-    red: '#e8504a',
-    amber: '#fac775',
+  // === Styles communs ===
+  const cardStyle = {
+    width: '100%', maxWidth: 480,
+    background: C.surface, border: '1px solid rgba(255,255,255,0.13)',
+    borderRadius: 14, padding: 40, textAlign: 'center',
+    boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+  }
+  const inputStyle = {
+    width: '100%', padding: '11px 14px', fontSize: 14,
+    background: C.surface2, border: '1px solid rgba(255,255,255,0.13)',
+    borderRadius: 8, color: C.text, outline: 'none',
+    fontFamily: 'inherit', marginTop: 4,
+  }
+  const labelStyle = {
+    display: 'block', textAlign: 'left',
+    fontSize: 11, fontWeight: 600, color: C.text3,
+    textTransform: 'uppercase', letterSpacing: '0.5px',
+  }
+  const primaryBtn = {
+    display: 'inline-block', padding: '12px 28px',
+    fontSize: 14, fontWeight: 600, borderRadius: 99,
+    background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
+    color: '#fff', textDecoration: 'none', border: 'none', cursor: 'pointer',
+    boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
+    fontFamily: 'inherit',
   }
 
   return (
@@ -112,26 +200,21 @@ function CallbackInner() {
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: C.bg, padding: 20, color: C.text,
     }}>
-      <div style={{
-        width: '100%', maxWidth: 480,
-        background: C.surface, border: '1px solid rgba(255,255,255,0.13)',
-        borderRadius: 14, padding: 40, textAlign: 'center',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-      }}>
-        {/* Logo */}
+      <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
           <Logo size={56} glow="strong" />
         </div>
 
-        {/* États */}
+        {/* === LOADING === */}
         {status === 'loading' && (
           <>
             <div style={{ fontSize: 36, marginBottom: 16 }}>⏳</div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Confirmation en cours...</h1>
-            <p style={{ fontSize: 13, color: C.text2 }}>On vérifie ton lien de confirmation.</p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Vérification en cours...</h1>
+            <p style={{ fontSize: 13, color: C.text2 }}>Quelques secondes...</p>
           </>
         )}
 
+        {/* === SUCCESS (signup confirmation) === */}
         {status === 'success' && (
           <>
             <div style={{
@@ -145,16 +228,80 @@ function CallbackInner() {
               Bienvenue sur Quantara{email ? ` (${email})` : ''}.<br />
               Tu vas être redirigé vers ton tableau de bord dans 3 secondes...
             </p>
-            <Link href="/app" style={{
-              display: 'inline-block', padding: '12px 32px',
-              fontSize: 14, fontWeight: 600, borderRadius: 99,
-              background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
-              color: '#fff', textDecoration: 'none',
-              boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
-            }}>Accéder maintenant →</Link>
+            <Link href="/app" style={primaryBtn}>Accéder maintenant →</Link>
           </>
         )}
 
+        {/* === RECOVERY (form nouveau mot de passe) === */}
+        {status === 'recovery' && !pwSuccess && (
+          <>
+            <div style={{
+              width: 72, height: 72, borderRadius: '50%',
+              background: 'rgba(45,111,255,0.15)', border: `1px solid ${C.blue}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 36, margin: '0 auto 18px',
+            }}>🔐</div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Nouveau mot de passe</h1>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 22 }}>
+              Choisis un nouveau mot de passe pour <strong style={{ color: C.text }}>{email}</strong>.
+            </p>
+            <form onSubmit={submitNewPassword} style={{ textAlign: 'left' }}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Nouveau mot de passe</label>
+                <input
+                  type="password" autoComplete="new-password"
+                  value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                  placeholder="••••••••" minLength={8} required autoFocus
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <label style={labelStyle}>Confirmer le mot de passe</label>
+                <input
+                  type="password" autoComplete="new-password"
+                  value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••" minLength={8} required
+                  style={inputStyle}
+                />
+                <div style={{ fontSize: 10, color: C.text3, marginTop: 6 }}>
+                  Minimum 8 caractères. Mélange lettres, chiffres, symboles pour plus de sécurité.
+                </div>
+              </div>
+              {errorMsg && (
+                <div style={{
+                  padding: '10px 14px', background: 'rgba(232,80,74,0.1)',
+                  border: `1px solid ${C.red}`, borderRadius: 8,
+                  fontSize: 12, color: C.red, marginBottom: 14, textAlign: 'left',
+                }}>{errorMsg}</div>
+              )}
+              <button type="submit" disabled={updating} style={{
+                ...primaryBtn, width: '100%', padding: '14px 28px',
+                opacity: updating ? 0.6 : 1, cursor: updating ? 'wait' : 'pointer',
+              }}>
+                {updating ? '⏳ Mise à jour...' : '🔐 Mettre à jour mon mot de passe'}
+              </button>
+            </form>
+          </>
+        )}
+
+        {/* === SUCCESS du recovery === */}
+        {status === 'recovery' && pwSuccess && (
+          <>
+            <div style={{
+              width: 72, height: 72, borderRadius: '50%',
+              background: 'rgba(29,184,122,0.15)', border: `1px solid ${C.green}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 36, margin: '0 auto 18px',
+            }}>✓</div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>Mot de passe modifié !</h1>
+            <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, marginBottom: 20 }}>
+              Tu vas être redirigé vers ton tableau de bord dans 2 secondes...
+            </p>
+            <Link href="/app" style={primaryBtn}>Accéder maintenant →</Link>
+          </>
+        )}
+
+        {/* === EXPIRED === */}
         {status === 'expired' && (
           <>
             <div style={{
@@ -165,28 +312,18 @@ function CallbackInner() {
             }}>⌛</div>
             <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Lien expiré</h1>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 18 }}>
-              {errorMsg} Pas de souci, on peut t'en renvoyer un nouveau.
+              {errorMsg} Tu peux demander un nouveau lien.
             </p>
             {resendOk ? (
               <div style={{
                 padding: '12px 16px', background: 'rgba(29,184,122,0.10)',
                 border: `1px solid ${C.green}`, borderRadius: 8,
                 fontSize: 13, color: C.green, marginBottom: 16,
-              }}>
-                ✓ Email renvoyé ! Vérifie ta boîte de réception.
-              </div>
+              }}>✓ Email renvoyé !</div>
             ) : (
-              <button
-                onClick={resendConfirmation}
-                disabled={resending}
-                style={{
-                  padding: '12px 28px', fontSize: 14, fontWeight: 600,
-                  borderRadius: 99, border: 'none', cursor: resending ? 'wait' : 'pointer',
-                  background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
-                  color: '#fff', boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
-                  marginBottom: 16,
-                }}
-              >{resending ? '⏳ Envoi...' : '📧 Renvoyer le lien'}</button>
+              <button onClick={resendConfirmation} disabled={resending} style={{ ...primaryBtn, marginBottom: 16 }}>
+                {resending ? '⏳ Envoi...' : '📧 Renvoyer le lien'}
+              </button>
             )}
             <div>
               <Link href="/app" style={{ fontSize: 12, color: C.text3, textDecoration: 'none' }}>← Retour à la connexion</Link>
@@ -194,6 +331,7 @@ function CallbackInner() {
           </>
         )}
 
+        {/* === ERROR === */}
         {status === 'error' && (
           <>
             <div style={{
@@ -202,30 +340,10 @@ function CallbackInner() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>✕</div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Confirmation impossible</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Lien invalide</h1>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 18 }}>
               {errorMsg}
             </p>
-            {resendOk ? (
-              <div style={{
-                padding: '12px 16px', background: 'rgba(29,184,122,0.10)',
-                border: `1px solid ${C.green}`, borderRadius: 8,
-                fontSize: 13, color: C.green, marginBottom: 16,
-              }}>
-                ✓ Email renvoyé ! Vérifie ta boîte de réception.
-              </div>
-            ) : (
-              <button
-                onClick={resendConfirmation}
-                disabled={resending}
-                style={{
-                  padding: '10px 22px', fontSize: 13, fontWeight: 600,
-                  borderRadius: 99, border: '1px solid rgba(255,255,255,0.13)',
-                  background: 'transparent', color: C.text, cursor: resending ? 'wait' : 'pointer',
-                  marginBottom: 16,
-                }}
-              >{resending ? '⏳ Envoi...' : '📧 Renvoyer un lien de confirmation'}</button>
-            )}
             <div style={{ marginTop: 8 }}>
               <Link href="/app" style={{ fontSize: 12, color: C.blueLight, textDecoration: 'none' }}>
                 Retour à la page de connexion →
@@ -244,7 +362,7 @@ function CallbackInner() {
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<div style={{minHeight:'100vh',background:'#0d0f14'}} />}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#0d0f14' }} />}>
       <CallbackInner />
     </Suspense>
   )
