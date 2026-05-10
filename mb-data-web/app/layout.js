@@ -1,4 +1,5 @@
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -18,7 +19,16 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        {/* Cloudflare Turnstile — anti-bot, chargé asynchrone, n'impacte pas le LCP */}
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="lazyOnload"
+          async
+          defer
+        />
+      </body>
     </html>
   )
 }
