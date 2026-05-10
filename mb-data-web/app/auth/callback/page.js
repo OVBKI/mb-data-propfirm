@@ -7,10 +7,26 @@
 //
 // Détection du type via le hash de l'URL (ex: #access_token=...&type=recovery&...)
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
+
+// Détecte le type d'auth event depuis l'URL hash AU CHARGEMENT
+// (avant que Supabase parse et nettoie le hash). Synchrone.
+function detectInitialType() {
+  if (typeof window === 'undefined') return null
+  const hash = window.location.hash || ''
+  const search = window.location.search || ''
+  const sources = [hash.replace(/^#/, ''), search.replace(/^\?/, '')]
+  for (const src of sources) {
+    if (!src) continue
+    const params = new URLSearchParams(src)
+    const t = params.get('type')
+    if (t) return t
+  }
+  return null
+}
 
 const C = {
   bg: '#0d0f14',
@@ -27,7 +43,12 @@ const C = {
 }
 
 function CallbackInner() {
-  const [status, setStatus] = useState('loading') // loading | success | error | expired | recovery
+  // Détection initiale SYNCHRONE du type (avant que Supabase nettoie le hash)
+  // Si type=recovery on démarre direct en mode recovery, sans flash de "loading"
+  const initialType = typeof window !== 'undefined' ? detectInitialType() : null
+  const initialStatus = initialType === 'recovery' ? 'recovery' : 'loading'
+
+  const [status, setStatus] = useState(initialStatus)
   const [errorMsg, setErrorMsg] = useState('')
   const [email, setEmail] = useState('')
   const [resending, setResending] = useState(false)
@@ -37,6 +58,9 @@ function CallbackInner() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [updating, setUpdating] = useState(false)
   const [pwSuccess, setPwSuccess] = useState(false)
+  // Ref pour bloquer le redirect auto si on est en recovery
+  // (évite la race condition où le success path redirigerait avant qu'on switch en recovery)
+  const isRecoveryRef = useRef(initialType === 'recovery')
 
   useEffect(() => {
     let mounted = true
@@ -66,7 +90,7 @@ function CallbackInner() {
       await new Promise(r => setTimeout(r, 500))
       if (!mounted) return
 
-      const eventType = getUrlParam('type') // 'recovery' | 'signup' | 'magiclink' | 'invite' | 'email_change'
+      const eventType = detectInitialType() // peut être null si Supabase a déjà nettoyé
       const errorCode = getUrlParam('error_code')
       const errorDesc = getUrlParam('error_description')
 
@@ -89,19 +113,28 @@ function CallbackInner() {
         return
       }
 
-      // 🔑 RECOVERY : afficher le form de nouveau mot de passe
-      if (eventType === 'recovery' && session?.user) {
-        setEmail(session.user.email || '')
+      // 🔑 RECOVERY : si initialType OU eventType actuel = recovery, on reste en recovery
+      // (isRecoveryRef évite que le success path override)
+      if (eventType === 'recovery' || isRecoveryRef.current) {
+        isRecoveryRef.current = true
+        if (session?.user) setEmail(session.user.email || '')
         setStatus('recovery')
         return
       }
 
       // ✅ SIGNUP / autres : session valide → success + redirect
+      // MAIS on vérifie isRecoveryRef en garde — si quelqu'un l'a marqué entre-temps, on n'override pas
       if (session?.user) {
+        if (isRecoveryRef.current) {
+          setStatus('recovery')
+          setEmail(session.user.email || '')
+          return
+        }
         setEmail(session.user.email || '')
         setStatus('success')
         setTimeout(() => {
-          if (mounted) window.location.href = '/app'
+          // Garde double : si le flag recovery a été set entre temps, on annule le redirect
+          if (mounted && !isRecoveryRef.current) window.location.href = '/app'
         }, 3000)
         return
       }
@@ -111,9 +144,11 @@ function CallbackInner() {
       setErrorMsg('Aucune session active. Le lien a peut-être déjà été utilisé.')
     }
 
-    // Écoute aussi l'event PASSWORD_RECOVERY au cas où le SDK le déclenche après notre process()
+    // Écoute PASSWORD_RECOVERY (Supabase fire cet event quand l'URL est un recovery link)
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' && mounted) {
+      if (!mounted) return
+      if (event === 'PASSWORD_RECOVERY') {
+        isRecoveryRef.current = true
         setEmail(session?.user?.email || '')
         setStatus('recovery')
       }
