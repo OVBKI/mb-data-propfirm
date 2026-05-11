@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { uploadFile } from '../lib/uploadFile'
+import { TooltipIcon } from './Tooltip'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -284,12 +285,13 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
           </div>
         </div>
       ) : account.status === 'Financé' && onResetBalance ? (
-        <div style={{marginBottom:'12px'}}>
-          <button onClick={handleResetClick} style={{
+        <div style={{marginBottom:'12px',display:'flex',alignItems:'center',gap:'8px'}}>
+          <button onClick={handleResetClick} title="Repart la balance à 0 depuis une date donnée — utile au passage Challenge → Financé pour ne pas mélanger les trades des 2 phases" style={{
             fontSize:'11px',padding:'6px 12px',borderRadius:'6px',
             background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
             color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',
           }}>↻ Reset balance (passage en Financé)</button>
+          <TooltipIcon text="Quand tu passes Challenge → Financé, ton compte simulé repart à 0 (les trades de la phase challenge sont conservés mais masqués du calcul de balance Financé). Click pour définir manuellement la date du reset." maxWidth={320} />
         </div>
       ) : null}
 
@@ -875,9 +877,9 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
         {/* Stats */}
         <div className="stats-5" style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'12px',marginBottom:'20px'}}>
           {[
-            { l:'PnL filtré', v:fmtMoney(stats.totalPnl), c:stats.totalPnl>=0?'var(--green)':'var(--red)' },
-            { l:`PnL ${monthLabel}`, v:fmtMoney(stats.monthPnl), c:stats.monthPnl>=0?'var(--green)':'var(--red)' },
-            { l:'Win rate', v:stats.total?(stats.wr+'%'):'—', c:stats.wr>=50?'var(--green)':'var(--amber-text)' },
+            { l:'PnL filtré', v:fmtMoney(stats.totalPnl), c:stats.totalPnl>=0?'var(--green)':'var(--red)', tt:'Somme du PnL de tous les trades correspondant aux filtres actuels (firme/compte/statut).' },
+            { l:`PnL ${monthLabel}`, v:fmtMoney(stats.monthPnl), c:stats.monthPnl>=0?'var(--green)':'var(--red)', tt:`Somme du PnL pour le mois affiché (${monthLabel}).` },
+            { l:'Win rate', v:stats.total?(stats.wr+'%'):'—', c:stats.wr>=50?'var(--green)':'var(--amber-text)', tt:'Pourcentage de trades gagnants (PnL > 0). Calculé sur les trades filtrés.' },
             {
               l:'Consistency',
               v: stats.consistency!==null ? stats.consistency.toFixed(2)+'%' : '—',
@@ -885,13 +887,16 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 : stats.consistency<30 ? 'var(--green)'
                 : stats.consistency<40 ? 'var(--amber-text)'
                 : 'var(--red)',
-              tip: stats.consistency!==null ? `Meilleur jour : ${fmtMoney(stats.bestDayPnl)} / Total jours gagnants : ${fmtMoney(stats.totalDayPositive)}` : 'Pas encore de jour gagnant'
+              tt: 'Ratio (meilleur jour gagnant / total des gains positifs). Plus c\'est BAS mieux c\'est. La plupart des PropFirms exigent ≤ 40-50% pour valider tes payouts. Vert <30%, ambre <40%, rouge ≥40%.'
             },
-            { l:'Trades', v:stats.total, c:'var(--text)' },
-            { l:'Jours tradés', v:stats.monthDays, c:'var(--text)', tip:`Sur ${monthLabel}` },
+            { l:'Trades', v:stats.total, c:'var(--text)', tt:'Nombre total de trades correspondant aux filtres actuels.' },
+            { l:'Jours tradés', v:stats.monthDays, c:'var(--text)', tt:`Nombre de jours uniques avec au moins 1 trade sur ${monthLabel}.` },
           ].map((k,i)=>(
-            <div key={i} title={k.tip||''} style={{...card,padding:'16px'}}>
-              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>{k.l}</div>
+            <div key={i} style={{...card,padding:'16px'}}>
+              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px',display:'inline-flex',alignItems:'center'}}>
+                {k.l}
+                {k.tt && <TooltipIcon text={k.tt} maxWidth={300} />}
+              </div>
               <div style={{fontSize:'20px',fontWeight:'600',color:k.c}}>{k.v}</div>
             </div>
           ))}
