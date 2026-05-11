@@ -11,6 +11,7 @@ import OnboardingModal from '../../components/OnboardingModal'
 import Skeleton from '../../components/Skeleton'
 import Tooltip, { TooltipIcon } from '../../components/Tooltip'
 import PropfirmComparator from '../../components/PropfirmComparator'
+import AnnouncementBanner from '../../components/AnnouncementBanner'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
 
 
@@ -403,6 +404,7 @@ export default function Home() {
   return(
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
       <div style={{height:'2px',background:'linear-gradient(90deg,var(--blue) 0%,transparent 100%)'}} />
+      <AnnouncementBanner />
       <div className="top-bar" style={{height:'48px',background:'var(--surface)',borderBottom:'0.5px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 20px',position:'sticky',top:0,zIndex:200}}>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
           <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
@@ -429,6 +431,14 @@ export default function Home() {
               ))}
             </div>
           ))}
+          {/* Lien admin — visible uniquement pour les emails admin */}
+          {user && ['bakkali-omar@hotmail.com','omar.mbtrading@gmail.com','admin@quantara.tech'].includes(user.email) && (
+            <div style={{padding:'8px 12px',marginTop:'12px',borderTop:'1px solid var(--border)'}}>
+              <a href="/admin" style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'8px',background:'rgba(232,80,74,0.08)',border:'1px solid rgba(232,80,74,0.25)',color:'var(--red-text)',fontSize:'12px',fontWeight:'600',textDecoration:'none'}}>
+                🔧 Admin Panel
+              </a>
+            </div>
+          )}
           <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 14px'}}>
             <div style={{fontSize:'11px',color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
           </div>
