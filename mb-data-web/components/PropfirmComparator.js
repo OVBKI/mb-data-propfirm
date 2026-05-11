@@ -14,8 +14,13 @@ import { getFirmLogo } from '../lib/firmLogos'
 import { TooltipIcon } from './Tooltip'
 import { supabase } from '../lib/supabase'
 
-// Email admin autorisé à modifier les règles (synchro avec les RLS policies Supabase)
-const ADMIN_EMAIL = 'bakkali-omar@hotmail.com'
+// Emails admins autorisés à modifier les règles (synchro avec les RLS policies Supabase)
+// IMPORTANT : doit matcher la liste dans la policy `propfirm_rules` côté Supabase.
+const ADMIN_EMAILS = [
+  'bakkali-omar@hotmail.com',
+  'omar.mbtrading@gmail.com',
+  'admin@quantara.tech',
+]
 
 const C = {
   bg: '#0d0f14',
@@ -125,7 +130,7 @@ export default function PropfirmComparator({ user }) {
   const firms = useMemo(() => getFirms(), [])
 
   // === Admin editing ===
-  const isAdmin = user?.email === ADMIN_EMAIL
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email)
   // Map des overrides : key = `${firmName}::${ruleKey}::${plan}`, value = string
   const [overrides, setOverrides] = useState({})
   const [loadingOverrides, setLoadingOverrides] = useState(true)
