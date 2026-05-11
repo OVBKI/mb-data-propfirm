@@ -394,20 +394,34 @@ export function isTrailingDD(firmName){
 }
 
 // Type de DD par défaut suggéré pour une firme (utilisé à la création d'un compte)
-// Toutes les firmes connues ci-dessus utilisent du trailing
-const TRAILING_DEFAULT = new Set([
-  'Topstep',
-  'Apex Trader Funding',
-  'Bulenox',
-  'Lucid Trading',
-  'Tradeify',
-  'Take Profit Trader',
-  'My Funded Futures',
-  'Phidias Propfirm',
+// 3 types possibles : 'static' | 'eod' | 'trailing'
+//   - static : ligne fixe (rare, surtout Phidias Static 25K)
+//   - eod : trailing en fin de journée (la majorité des firmes futures)
+//   - trailing : trailing intraday temps réel
+//
+// Classification confirmée par user 2026-05 :
+//   - Topstep : EOD
+//   - Apex : EOD (par défaut) — option Intraday existe aussi, l'user peut switch
+//   - Bulenox : Trailing intraday
+//   - Lucid / Tradeify / TPT / MFFU / Phidias / FFN / FuturesElite : EOD
+const INTRADAY_TRAILING_FIRMS = new Set([
+  'Bulenox', // Bulenox utilise du trailing intraday (option par défaut "No Scaling")
+])
+const EOD_TRAILING_FIRMS = new Set([
+  'Topstep',                // EOD trailing (corrigé par user)
+  'Apex Trader Funding',    // Apex 4.0 = EOD par défaut (option intraday existe aussi)
+  'Lucid Trading',          // EOD avec MLL check à la cloture
+  'Tradeify',               // Select Eval = EOD
+  'Take Profit Trader',     // EOD trailing
+  'My Funded Futures',      // Core/Pro = EOD (Rapid = intraday mais on prend le default)
+  'Phidias Propfirm',       // Fundamental = EOD (Static = static)
+  'Funded Futures Network', // EOD
+  'FuturesELites',          // EOD
 ])
 export function defaultDdType(firmName){
-  if(TRAILING_DEFAULT.has(firmName)) return 'trailing'
-  if(isTrailingDD(firmName)) return 'trailing'
+  if(INTRADAY_TRAILING_FIRMS.has(firmName)) return 'trailing'
+  if(EOD_TRAILING_FIRMS.has(firmName)) return 'eod'
+  if(isTrailingDD(firmName)) return 'eod' // fallback pour firmes inconnues avec règle trailing
   return 'static'
 }
 

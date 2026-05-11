@@ -28,8 +28,13 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
 
   const planSize = planSizeNum(account.plan_size)
   const ddMax = maxDrawdown(account.firmName, account.plan_size)
+  // 3 types possibles : 'static' | 'eod' | 'trailing'
+  // - static : ligne fixe à (planSize - ddMax)
+  // - eod : trailing basé sur la balance de fin de journée (peak EOD only)
+  // - trailing : trailing intraday (peak après chaque trade)
   const ddType = account.dd_type || (isTrailingDD(account.firmName) ? 'trailing' : 'static')
   const isTrailing = ddType === 'trailing'
+  const isEod = ddType === 'eod'
   const ddInitial = ddMax!==null ? planSize - ddMax : null
   const payoutTarget = account.payout_target != null ? Number(account.payout_target) : null
   const minDays = account.min_trading_days != null ? Number(account.min_trading_days) : null
@@ -74,8 +79,29 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       }),
     ].sort((a,b)=>a.date.localeCompare(b.date))
 
+    // Pour le DD EOD : on précalcule la balance de fin de journée pour chaque date
+    // (la dernière valeur cumulée à chaque date unique). Le peak EOD ne monte qu'à la cloture.
+    const eodBalances = {} // date → balance EOD
+    {
+      let runningCum = 0
+      events.forEach(e => {
+        runningCum += e.delta
+        eodBalances[e.date] = +(planSize + runningCum).toFixed(2)
+      })
+    }
+    // eodPeak[date] = max des EOD balances jusqu'à cette date inclus
+    const eodPeakByDate = {}
+    {
+      const sortedDates = Object.keys(eodBalances).sort()
+      let runningPeak = planSize
+      sortedDates.forEach(d => {
+        if(eodBalances[d] > runningPeak) runningPeak = eodBalances[d]
+        eodPeakByDate[d] = runningPeak
+      })
+    }
+
     let cum = 0
-    let peak = planSize
+    let peak = planSize  // peak intraday (pour 'trailing')
     const labels = []
     const balances = []
     const ddLine = []  // ligne DD point par point
@@ -89,15 +115,22 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
     events.forEach(e=>{
       cum += e.delta
       const bal = +(planSize + cum).toFixed(2)
-      if(bal > peak) peak = bal
+      if(bal > peak) peak = bal // peak intraday (utilisé pour 'trailing')
       labels.push(e.date)
       balances.push(bal)
       if(ddMax === null){
         ddLine.push(null)
       } else if(isTrailing){
-        // DD trailing plafonné au balance initial : min(peak - DDmax, planSize)
+        // Trailing intraday : suit le peak temps réel, plafonné au balance initial
+        // ddLine = min(peak_intraday - DDmax, planSize)
         ddLine.push(Math.min(peak - ddMax, planSize))
+      } else if(isEod){
+        // EOD : suit le peak EOD (pas intraday), plafonné au balance initial
+        // Les pics intraday n'updatent PAS le DD — seul le peak de fin de journée compte
+        const eodPeak = eodPeakByDate[e.date] || planSize
+        ddLine.push(Math.min(eodPeak - ddMax, planSize))
       } else {
+        // Static : ligne fixe à (planSize - DDmax), ne bouge jamais
         ddLine.push(planSize - ddMax)
       }
     })
@@ -123,7 +156,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       totalPayoutsGross,
       payoutCount: eligiblePayouts.length,
     }
-  },[entries, accountPayouts, planSize, ddMax, isTrailing, fundedDate, minDailyProfit, profitSplit])
+  },[entries, accountPayouts, planSize, ddMax, isTrailing, isEod, fundedDate, minDailyProfit, profitSplit])
 
   useEffect(()=>{
     if(!ref.current) return
@@ -140,13 +173,14 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
         },
       ]
       if(ddMax !== null){
+        const isMoving = isTrailing || isEod
         datasets.push({
-          label: isTrailing ? 'DD max (trailing)' : 'DD max',
+          label: isTrailing ? 'DD max (trailing intraday)' : isEod ? 'DD max (EOD)' : 'DD max (static)',
           data: data.ddLine,
           borderColor: '#e8504a', backgroundColor:'transparent',
           fill:false, tension:0, pointRadius:0, borderWidth:2,
-          borderDash: isTrailing ? [4,3] : [6,4],
-          stepped: isTrailing ? 'before' : false, // marche d'escalier pour le trailing
+          borderDash: isTrailing ? [4,3] : isEod ? [6,3] : [6,4],
+          stepped: isMoving ? 'before' : false, // marche d'escalier pour les types qui bougent
         })
       }
       // Ligne d'objectif payout (verte horizontale)
@@ -229,7 +263,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
           <div>
             <div style={{fontSize:'14px',fontWeight:'700'}}>{accountLabel(account)}</div>
             <div style={{fontSize:'11px',color:'var(--text3)'}}>
-              {account.firmName} · Plan {String(account.plan_size||'?').toUpperCase()} · DD {isTrailing?'trailing':'static'}
+              {account.firmName} · Plan {String(account.plan_size||'?').toUpperCase()} · DD {isTrailing?'trailing intraday':isEod?'EOD':'static'}
             </div>
           </div>
         </div>
@@ -374,7 +408,9 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
           <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
             <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#e8504a'}} />
             {isTrailing
-              ? <span>DD trailing (${ddMax.toLocaleString('fr-FR')}) → actuellement ${data.currentDD?.toLocaleString('fr-FR')}</span>
+              ? <span>DD trailing intraday (${ddMax.toLocaleString('fr-FR')}) → actuellement ${data.currentDD?.toLocaleString('fr-FR')}</span>
+              : isEod
+              ? <span>DD EOD (${ddMax.toLocaleString('fr-FR')}) → actuellement ${data.currentDD?.toLocaleString('fr-FR')}</span>
               : <span>DD static (${ddMax.toLocaleString('fr-FR')}) → ${(planSize-ddMax).toLocaleString('fr-FR')}</span>}
           </div>
         )}
