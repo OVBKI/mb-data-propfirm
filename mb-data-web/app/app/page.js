@@ -667,7 +667,7 @@ export default function Home() {
           )}
 
           {page==='rules'&&(
-            <PropfirmComparator />
+            <PropfirmComparator user={user} />
           )}
 
           {page==='alerts'&&(

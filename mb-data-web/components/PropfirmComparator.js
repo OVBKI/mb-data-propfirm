@@ -3,11 +3,19 @@
 // 2 onglets : Règles (drawdown/cohérence/etc.) et Prix (challenges/frais/payouts).
 // Sections délimitées : Challenge / Financé / Trading commun.
 // Plan selector unifié (toggles entre 25K, 50K, 100K, 150K).
+//
+// Admin editing : si user.email === ADMIN_EMAIL, des crayons ✏️ s'affichent sur chaque
+// cellule, permettant de modifier la valeur (override stocké en DB Supabase).
+// Les overrides s'appliquent par-dessus les valeurs par défaut de constants.js.
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { PROPFIRM_RULES } from '../lib/constants'
 import { getFirmLogo } from '../lib/firmLogos'
 import { TooltipIcon } from './Tooltip'
+import { supabase } from '../lib/supabase'
+
+// Email admin autorisé à modifier les règles (synchro avec les RLS policies Supabase)
+const ADMIN_EMAIL = 'bakkali-omar@hotmail.com'
 
 const C = {
   bg: '#0d0f14',
@@ -111,10 +119,108 @@ const COLOR_MAP = {
 // Plans communs disponibles à comparer (la plupart des firmes ont 25K, 50K, 100K, 150K)
 const COMMON_PLANS = ['25k', '50k', '100k', '150k']
 
-export default function PropfirmComparator() {
+export default function PropfirmComparator({ user }) {
   const [tab, setTab] = useState('rules') // 'rules' | 'pricing'
   const [plan, setPlan] = useState('50k')
   const firms = useMemo(() => getFirms(), [])
+
+  // === Admin editing ===
+  const isAdmin = user?.email === ADMIN_EMAIL
+  // Map des overrides : key = `${firmName}::${ruleKey}::${plan}`, value = string
+  const [overrides, setOverrides] = useState({})
+  const [loadingOverrides, setLoadingOverrides] = useState(true)
+  // Modal d'édition : null ou { firm, ruleLabel, ruleKey, plan, currentValue, isOverride }
+  const [editing, setEditing] = useState(null)
+  const [editValue, setEditValue] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // Charge les overrides depuis Supabase au montage
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      const { data, error } = await supabase.from('propfirm_rules').select('firm_name, rule_key, plan, value')
+      if (!mounted) return
+      if (error) {
+        // Table absente ou RLS bloque → on continue sans overrides (fallback constants.js)
+        console.warn('[PropfirmComparator] overrides not loaded:', error.message)
+        setOverrides({})
+      } else {
+        const map = {}
+        ;(data || []).forEach(row => {
+          map[`${row.firm_name}::${row.rule_key}::${row.plan}`] = row.value
+        })
+        setOverrides(map)
+      }
+      setLoadingOverrides(false)
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  // Helper : retourne la valeur effective (override si présent, sinon valeur par défaut de constants.js)
+  function getEffectiveValue(firm, ruleKey, plan) {
+    const overrideKey = `${firm}::${ruleKey}::${plan}`
+    if (overrides[overrideKey] !== undefined) {
+      return { value: overrides[overrideKey], isOverride: true }
+    }
+    const firmRules = PROPFIRM_RULES[firm]?.rules
+    if (!firmRules || !firmRules[ruleKey]) return { value: null, isOverride: false }
+    const rule = firmRules[ruleKey]
+    const value = rule[plan] || rule['50k'] || rule[Object.keys(rule)[0]] || null
+    return { value, isOverride: false }
+  }
+
+  // Ouvre le modal d'édition pour une cellule
+  function openEdit(firm, ruleLabel, ruleKey, currentValue, isOverride) {
+    setEditing({ firm, ruleLabel, ruleKey, plan, currentValue, isOverride })
+    setEditValue(currentValue || '')
+  }
+
+  // Save un override dans Supabase (upsert)
+  async function saveEdit() {
+    if (!editing) return
+    setSaving(true)
+    const overrideKey = `${editing.firm}::${editing.ruleKey}::${editing.plan}`
+    const { error } = await supabase.from('propfirm_rules').upsert({
+      firm_name: editing.firm,
+      rule_key: editing.ruleKey,
+      plan: editing.plan,
+      value: editValue.trim(),
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id,
+    }, { onConflict: 'firm_name,rule_key,plan' })
+    setSaving(false)
+    if (error) {
+      alert('Erreur enregistrement : ' + error.message)
+      return
+    }
+    setOverrides(prev => ({ ...prev, [overrideKey]: editValue.trim() }))
+    setEditing(null)
+  }
+
+  // Reset : supprime l'override → retour à la valeur par défaut de constants.js
+  async function resetEdit() {
+    if (!editing) return
+    if (!confirm('Supprimer cet override et revenir à la valeur par défaut (codée) ?')) return
+    setSaving(true)
+    const { error } = await supabase.from('propfirm_rules')
+      .delete()
+      .eq('firm_name', editing.firm)
+      .eq('rule_key', editing.ruleKey)
+      .eq('plan', editing.plan)
+    setSaving(false)
+    if (error) {
+      alert('Erreur suppression : ' + error.message)
+      return
+    }
+    const overrideKey = `${editing.firm}::${editing.ruleKey}::${editing.plan}`
+    setOverrides(prev => {
+      const copy = { ...prev }
+      delete copy[overrideKey]
+      return copy
+    })
+    setEditing(null)
+  }
 
   // Helper pour rendre une cellule (valeur ou tiret)
   const renderCell = (value, color) => {
@@ -162,6 +268,9 @@ export default function PropfirmComparator() {
   )
 
   // Ligne de règle (label sticky + valeurs par firme)
+  // - Cherche la VRAIE clé dans PROPFIRM_RULES via regex (pour le lookup d'override)
+  // - Applique override si présent, sinon valeur constants.js
+  // - Si admin : affiche crayon ✏️ pour éditer
   const renderRow = (rule) => (
     <tr key={rule.label}>
       <td style={{
@@ -184,23 +293,50 @@ export default function PropfirmComparator() {
       </td>
       {firms.map(firm => {
         const firmRules = PROPFIRM_RULES[firm]?.rules
-        const val = findRuleValue(firmRules, rule.regex, plan)
+        // Trouve la vraie clé dans la firme qui match la regex
+        const ruleKey = firmRules ? Object.keys(firmRules).find(k => rule.regex.test(k)) : null
+        const { value, isOverride } = ruleKey
+          ? getEffectiveValue(firm, ruleKey, plan)
+          : { value: null, isOverride: false }
+        const displayVal = value || '—'
+        const isEmpty = !value || value === '—' || (typeof value === 'string' && value.toLowerCase() === 'non spécifié')
         return (
           <td key={firm} style={{
             padding: '12px 14px',
             textAlign: 'right',
             borderBottom: `1px solid ${C.border}`,
-            background: C.surface,
-            fontSize: 12, fontWeight: val ? 600 : 400,
-            color: val ? (COLOR_MAP[rule.color] || C.text) : C.text3,
+            background: isOverride ? 'rgba(45,111,255,0.06)' : C.surface,
+            fontSize: 12, fontWeight: !isEmpty ? 600 : 400,
+            color: isEmpty ? C.text3 : (COLOR_MAP[rule.color] || C.text),
             verticalAlign: 'middle',
             whiteSpace: 'nowrap',
             minWidth: 130,
             maxWidth: 220,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-          }} title={val || '—'}>
-            {val || '—'}
+            position: 'relative',
+          }} title={isOverride ? `${displayVal} (modifié par admin)` : displayVal}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+              {isOverride && (
+                <span title="Valeur modifiée par l'admin" style={{
+                  fontSize: 9, color: C.blueLight, opacity: 0.8,
+                }}>●</span>
+              )}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayVal}</span>
+              {isAdmin && ruleKey && (
+                <button
+                  onClick={() => openEdit(firm, rule.label, ruleKey, value, isOverride)}
+                  title={`Modifier ${rule.label} pour ${firm} (${plan.toUpperCase()})`}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: C.text3, fontSize: 11, padding: '2px 4px',
+                    borderRadius: 4, opacity: 0.5, transition: 'opacity 0.15s, color 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = C.blueLight }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = C.text3 }}
+                >✏️</button>
+              )}
+            </div>
           </td>
         )
       })}
@@ -209,9 +345,22 @@ export default function PropfirmComparator() {
 
   return (
     <div className="page-pad" style={{ maxWidth: '100%', margin: '0 auto', padding: '28px 24px 60px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>📋 Comparateur PropFirms</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 8, flexWrap: 'wrap' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 600 }}>📋 Comparateur PropFirms</h1>
+        {isAdmin && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '6px 12px', borderRadius: 99,
+            background: 'rgba(45,111,255,0.10)', border: `1px solid ${C.blue}`,
+            fontSize: 11, fontWeight: 700, color: C.blueLight,
+          }}>
+            🔧 MODE ADMIN — clique sur ✏️ pour modifier les cellules
+          </span>
+        )}
+      </div>
       <p style={{ fontSize: 13, color: C.text3, marginBottom: 22 }}>
         Compare les règles, drawdowns, payouts et prix des {firms.length} PropFirms supportées sur Quantara.
+        {loadingOverrides && ' · ⏳ Chargement des overrides admin...'}
       </p>
 
       {/* Tabs + Plan selector */}
@@ -363,7 +512,106 @@ export default function PropfirmComparator() {
           <span style={{ color: C.text3 }}>—</span>
           Non applicable / Non spécifié
         </span>
+        {isAdmin && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ color: C.blueLight }}>●</span>
+            Valeur modifiée par l'admin (override)
+          </span>
+        )}
       </div>
+
+      {/* Modal d'édition admin */}
+      {editing && (
+        <div
+          onClick={() => !saving && setEditing(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 500,
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: C.surface, borderRadius: 14, padding: 28,
+              width: '100%', maxWidth: 480,
+              border: `1px solid ${C.border2}`,
+              boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+            }}
+          >
+            <div style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 10 }}>
+              {getFirmLogo(editing.firm, FIRM_COLORS[editing.firm] || C.blue, 28)}
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{editing.firm}</div>
+                <div style={{ fontSize: 11, color: C.text3 }}>Plan {editing.plan.toUpperCase()}</div>
+              </div>
+            </div>
+            <div style={{
+              padding: '10px 0', marginBottom: 16, marginTop: 14,
+              borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`,
+            }}>
+              <div style={{ fontSize: 11, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Règle</div>
+              <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>{editing.ruleLabel}</div>
+              <div style={{ fontSize: 10, color: C.text3, marginTop: 4, fontFamily: 'monospace' }}>
+                clé interne : <code>{editing.ruleKey}</code>
+              </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
+                Nouvelle valeur
+              </label>
+              <input
+                type="text"
+                value={editValue}
+                onChange={e => setEditValue(e.target.value)}
+                placeholder="Ex : $99 ou 5 jours"
+                autoFocus
+                style={{
+                  width: '100%', padding: '10px 14px', fontSize: 14,
+                  background: C.surface2, border: `1px solid ${C.border2}`,
+                  borderRadius: 8, color: C.text, outline: 'none', fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ fontSize: 11, color: C.text3, marginTop: 6, lineHeight: 1.5 }}>
+                Tu peux mettre du texte libre (ex: "$99", "Aucun", "≤ 50%"). Cette valeur s'appliquera partout
+                où on affiche cette règle, et pour tous tes utilisateurs.
+              </div>
+            </div>
+            {editing.isOverride && (
+              <div style={{
+                padding: '10px 12px', marginBottom: 16,
+                background: 'rgba(45,111,255,0.08)', border: `1px solid rgba(45,111,255,0.25)`,
+                borderRadius: 8, fontSize: 11, color: C.blueLight,
+              }}>
+                ● Cette cellule est déjà un override admin. Click "Réinitialiser" pour revenir à la valeur codée par défaut.
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              {editing.isOverride && (
+                <button onClick={resetEdit} disabled={saving} style={{
+                  padding: '10px 18px', fontSize: 12, fontWeight: 600,
+                  borderRadius: 8, border: `1px solid ${C.border2}`,
+                  background: 'transparent', color: C.text3, cursor: saving ? 'wait' : 'pointer',
+                  fontFamily: 'inherit',
+                }}>↺ Réinitialiser</button>
+              )}
+              <button onClick={() => setEditing(null)} disabled={saving} style={{
+                padding: '10px 18px', fontSize: 12, fontWeight: 600,
+                borderRadius: 8, border: `1px solid ${C.border2}`,
+                background: 'transparent', color: C.text, cursor: saving ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+              }}>Annuler</button>
+              <button onClick={saveEdit} disabled={saving} style={{
+                padding: '10px 22px', fontSize: 13, fontWeight: 600,
+                borderRadius: 8, border: 'none',
+                background: saving ? C.surface3 : C.blue, color: '#fff',
+                cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit',
+                boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
+              }}>{saving ? '⏳ Enregistrement...' : '✓ Enregistrer'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
