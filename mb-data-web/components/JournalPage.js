@@ -742,9 +742,13 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
       </div>
 
       {noAccounts && (
-        <div style={{...card,padding:'24px',marginBottom:'16px',background:'rgba(250,199,117,0.07)',borderColor:'var(--amber-text)'}}>
-          <div style={{fontSize:'14px',fontWeight:'600',color:'var(--amber-text)',marginBottom:'4px'}}>⚠ Aucun compte trouvé</div>
-          <div style={{fontSize:'12px',color:'var(--text2)'}}>Va dans <strong>Tableau de bord</strong> et ajoute au moins une PropFirm + un compte avant de pouvoir saisir un trade.</div>
+        <div style={{...card,padding:'40px 24px',marginBottom:'16px',background:'var(--surface2)',borderStyle:'dashed',borderColor:'var(--border2)',textAlign:'center'}}>
+          <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>📔</div>
+          <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'8px'}}>Aucun compte à journaliser</div>
+          <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',maxWidth:'460px',margin:'0 auto 20px',lineHeight:1.6}}>
+            Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.
+          </div>
+          <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
         </div>
       )}
 

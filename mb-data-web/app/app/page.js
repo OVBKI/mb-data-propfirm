@@ -7,6 +7,7 @@ import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
 import Logo from '../../components/Logo'
 import CertificatesModal from '../../components/CertificatesModal'
+import OnboardingModal from '../../components/OnboardingModal'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
 
 
@@ -117,6 +118,7 @@ export default function Home() {
   const [acctModal,setAcctModal]=useState(null)
   const [firmDrawer,setFirmDrawer]=useState(null)
   const [certsFirm,setCertsFirm]=useState(null) // firme dont on affiche les diplômes
+  const [showOnboarding,setShowOnboarding]=useState(false) // modal d'accueil pour nouveau user
   const [acctDrawer,setAcctDrawer]=useState(null)
   const [payoutForm,setPayoutForm]=useState(false)
   const [newFirmName,setNewFirmName]=useState('')
@@ -143,6 +145,19 @@ export default function Home() {
   },[])
 
   useEffect(()=>{if(user){loadFirms();fetchRates()}},[user])
+
+  // Détecte si on doit afficher le modal d'onboarding (nouveau user, 0 firmes, pas dismissed)
+  // Se déclenche quand `firms` est chargé et qu'un user est présent
+  useEffect(()=>{
+    if(!user || loading) return
+    if(typeof window === 'undefined') return
+    const dismissed = localStorage.getItem('quantara_onboarding_dismissed') === '1'
+    if(!dismissed && firms.length === 0){
+      // Petit délai pour laisser l'UI se stabiliser après le load
+      const t = setTimeout(()=>setShowOnboarding(true), 600)
+      return ()=>clearTimeout(t)
+    }
+  },[user, loading, firms.length])
 
   async function fetchRates(){
     try{
@@ -490,7 +505,20 @@ export default function Home() {
                     </div>
                   )
                 })}
-                {!firms.length&&<div style={{gridColumn:'1/-1',textAlign:'center',color:'var(--text3)',padding:'60px'}}>Ajoutez votre première PropFirm pour commencer.</div>}
+                {!firms.length && (
+                  <div style={{gridColumn:'1/-1',textAlign:'center',padding:'80px 24px',background:'var(--surface2)',borderRadius:'var(--radius-lg)',border:'1px dashed var(--border2)'}}>
+                    <div style={{fontSize:'48px',marginBottom:'16px',opacity:0.6}}>📊</div>
+                    <h2 style={{fontSize:'18px',fontWeight:'700',marginBottom:'8px'}}>Aucune PropFirm pour l'instant</h2>
+                    <p style={{fontSize:'13px',color:'var(--text3)',marginBottom:'20px',maxWidth:'420px',margin:'0 auto 20px',lineHeight:1.6}}>
+                      Ajoute ta première PropFirm (Topstep, Apex, Lucid...) pour commencer à tracker tes comptes,
+                      tes drawdowns trailing et tes payouts en temps réel.
+                    </p>
+                    <div style={{display:'flex',gap:'10px',justifyContent:'center',flexWrap:'wrap'}}>
+                      <button onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>+ Ajouter ma 1ère PropFirm</button>
+                      <button onClick={()=>{localStorage.removeItem('quantara_onboarding_dismissed');setShowOnboarding(true)}} style={S.btnGhost}>🎮 Voir avec données démo</button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Content grid: Calendar (full width) — sidebar moves below */}
@@ -810,6 +838,16 @@ export default function Home() {
           onClose={()=>setCertsFirm(null)}
           showToast={showToast}
           getFirmLogo={getFirmLogo}
+        />
+      )}
+
+      {/* Modal d'onboarding pour nouveaux users (0 firmes + pas dismissed) */}
+      {showOnboarding && user && (
+        <OnboardingModal
+          user={user}
+          showToast={showToast}
+          onComplete={()=>setShowOnboarding(false)}
+          onAddFirm={()=>{setFirmModal(true);setNewFirmName('')}}
         />
       )}
 
