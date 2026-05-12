@@ -49,7 +49,11 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   // Profit split de la firme (% pour le trader). Ex: Lucid = 90 (= 90/10).
   // Sert à convertir le NET (montant entré par le user = ce qu'il reçoit) en BRUT
   // (montant qui sort du compte funded simulé). Brut = Net / (split/100).
-  const profitSplit = defaultProfitSplit(account.firmName, account.plan_size) || 90
+  // Profit split : utilise celui stocké sur le compte (configuré par l'user dans le modal),
+  // sinon fallback sur la suggestion firme, sinon 90 par défaut.
+  const profitSplit = account.profit_split != null
+    ? Number(account.profit_split)
+    : (defaultProfitSplit(account.firmName, account.plan_size) || 90)
 
   // Trie les entries par date et construit la courbe cumulative + ligne DD
   // Pour le DD trailing : à chaque jour, ddLine[i] = min(balance_peak_jusqu'à i - DDmax, planSize)
