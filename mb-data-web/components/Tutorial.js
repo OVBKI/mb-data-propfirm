@@ -145,7 +145,7 @@ const STEPS = [
     icon: '🚀',
     badge: 'Étape 4/5',
     title: 'Passe ton compte en Financé',
-    desc: "Ouvre ta firme → clique sur ton compte → bouton \"✏ Modifier\" → change le statut de \"Challenge\" en \"Financé\" → sauvegarde. Quantara reset automatiquement le PnL du journal à partir de la date de financement.",
+    desc: "Ouvre ta firme → clique sur ton compte → bouton vert \"🚀 J'ai passé le challenge — Passer en Financé\" en haut du drawer → remplis les règles funded (payout target, jours min, profit split…) → valide. Le journal se réinitialise automatiquement et les mensualités s'arrêtent.",
     actionHint: "En attente que ton compte passe en Financé…",
     waitFor: (s, i) => s.financedCount > i.financedCount,
   },
