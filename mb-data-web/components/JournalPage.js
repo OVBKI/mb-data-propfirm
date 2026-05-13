@@ -497,9 +497,13 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
   const [loadError, setLoadError] = useState('')
   async function loadEntries(){
     setLoading(true);setLoadError('')
+    if(!user){ setLoading(false); return }
+    // ⚠ Filtre explicite par user_id : les RLS admin (lecture all) override le filtrage classique,
+    // sans ce filtre l'admin verrait TOUS les trades de TOUS les users dans son journal.
     const { data, error } = await supabase
       .from('journal_entries')
       .select('*')
+      .eq('user_id', user.id)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
     if(error){
