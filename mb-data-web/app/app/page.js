@@ -645,7 +645,7 @@ export default function Home() {
                         const aNet=totalPayoutsEUR(a)-totalSpentForAccount(a)
                         return<div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid var(--border)',fontSize:'12px'}}>
                           <div style={{display:'flex',alignItems:'center',gap:'6px'}}><div style={{width:'6px',height:'6px',borderRadius:'50%',background:STATUS_COLORS[a.status]||'var(--text3)',flexShrink:0}} /><span style={{color:'var(--text2)'}}>{a.buy_date}</span><span style={{...S.badge(a.status),fontSize:'9px',padding:'1px 6px'}}>{a.status}</span></div>
-                          <span style={{fontWeight:'600',color:aNet>=0?'var(--green)':'var(--red)'}}>{aNet>=0?'+':''}{aNet.toFixed(0)} €</span>
+                          <span style={{fontWeight:'600',color:aNet>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(aNet,0)}</span>
                         </div>
                       })}
                       {activeAccts.length>3&&<div style={{fontSize:'11px',color:'var(--text3)',padding:'4px 0'}}>+{activeAccts.length-3} autre{activeAccts.length-3>1?'s':''}...</div>}
@@ -713,8 +713,8 @@ export default function Home() {
                         const payT=evts.filter(e=>e.type==='pay').reduce((s,e)=>s+toEUR(e.amount,e.currency,rates),0)
                         return<div key={i} className="cal-cell" onClick={()=>setSelDay(day.dateStr)} style={{minHeight:'108px',padding:'10px',borderRight:(i+1)%7===0?'none':'0.5px solid var(--border)',borderBottom:'0.5px solid var(--border)',cursor:'pointer',opacity:day.other?0.25:1,background:day.selected?'rgba(45,111,255,0.08)':'transparent',outline:day.selected?'2px solid var(--blue)':'none',outlineOffset:'-2px'}}>
                           <div className="cal-cell-num" style={{fontSize:'13px',fontWeight:'600',width:'26px',height:'26px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:day.today?'var(--blue)':'transparent',color:day.today?'#fff':'var(--text2)',marginBottom:'5px'}}>{day.day}</div>
-                          {buyT>0&&<div className="cal-cell-amount" style={{fontSize:'11px',fontWeight:'700',padding:'2px 6px',borderRadius:'4px',background:'var(--red-bg)',color:'var(--red-text)',marginBottom:'3px',display:'inline-block'}}>-{buyT.toFixed(0)} €</div>}
-                          {payT>0&&<div className="cal-cell-amount" style={{fontSize:'11px',fontWeight:'700',padding:'2px 6px',borderRadius:'4px',background:'var(--green-bg)',color:'var(--green-text)',display:'inline-block'}}>+{payT.toFixed(0)} €</div>}
+                          {buyT>0&&<div className="cal-cell-amount" style={{fontSize:'11px',fontWeight:'700',padding:'2px 6px',borderRadius:'4px',background:'var(--red-bg)',color:'var(--red-text)',marginBottom:'3px',display:'inline-block'}}>-{fmtMoney(buyT,0)}</div>}
+                          {payT>0&&<div className="cal-cell-amount" style={{fontSize:'11px',fontWeight:'700',padding:'2px 6px',borderRadius:'4px',background:'var(--green-bg)',color:'var(--green-text)',display:'inline-block'}}>+{fmtMoney(payT,0)}</div>}
                         </div>
                       })}
                     </div>
@@ -725,7 +725,7 @@ export default function Home() {
                       {selDay?(evtMap[selDay]||[]).length>0?(evtMap[selDay]||[]).map((e,i)=>(
                         <div key={i} onClick={()=>setFirmDrawer(e.firmId)} style={{padding:'10px 12px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'8px',cursor:'pointer'}}>
                           <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}><span style={{fontWeight:'600',fontSize:'13px'}}>{e.firm}</span><span style={{fontSize:'10px',padding:'2px 8px',borderRadius:'99px',background:e.type==='buy'?'var(--red-bg)':'var(--green-bg)',color:e.type==='buy'?'var(--red-text)':'var(--green-text)',fontWeight:'600'}}>{e.label||(e.type==='buy'?'Achat':'Payout')}</span></div>
-                          <div style={{fontSize:'12px',color:e.type==='buy'?'var(--red)':'var(--green)',fontWeight:'600'}}>{e.type==='buy'?'-':'+'}{toEUR(e.amount,e.currency,rates).toFixed(2)} €</div>
+                          <div style={{fontSize:'12px',color:e.type==='buy'?'var(--red)':'var(--green)',fontWeight:'600'}}>{e.type==='buy'?'-':'+'}{fmtMoney(toEUR(e.amount,e.currency,rates))}</div>
                         </div>
                       )):<div style={{color:'var(--text3)',fontSize:'12px'}}>Aucune transaction.</div>:<div style={{color:'var(--text3)',fontSize:'12px'}}>Cliquez sur un jour.</div>}
                     </div>
@@ -735,7 +735,7 @@ export default function Home() {
                         <div key={i} style={{display:'flex',gap:'8px',padding:'7px 0',borderBottom:'0.5px solid var(--border)'}}>
                           <div style={{width:'6px',height:'6px',borderRadius:'50%',background:e.type==='buy'?'var(--red)':'var(--green)',marginTop:'4px',flexShrink:0}} />
                           <div style={{flex:1}}><div style={{fontSize:'12px',fontWeight:'500'}}>{e.firm}</div><div style={{fontSize:'10px',color:'var(--text3)'}}>{e.date} · {e.type==='buy'?'Achat':'Payout'}</div></div>
-                          <div style={{fontSize:'12px',fontWeight:'600',color:e.type==='buy'?'var(--red)':'var(--green)'}}>{e.type==='buy'?'-':'+'}{toEUR(e.amount,e.currency,rates).toFixed(2)} €</div>
+                          <div style={{fontSize:'12px',fontWeight:'600',color:e.type==='buy'?'var(--red)':'var(--green)'}}>{e.type==='buy'?'-':'+'}{fmtMoney(toEUR(e.amount,e.currency,rates))}</div>
                         </div>
                       ))}
                     </div>
