@@ -138,12 +138,23 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
         ddLine.push(planSize - ddMax)
       }
     })
-    // Jours uniques tradés (sur ce compte) — uniquement trades, pas payouts
-    const tradeDates = eligibleTrades.map(e => e.date)
+    // === Reset des compteurs après chaque payout ===
+    // PropFirms exigent N jours de trading entre CHAQUE payout (pas en cumulé sur toute la vie du compte).
+    // → on filtre les trades pour ne garder que ceux à partir de la date du dernier payout (inclus, pour
+    //   permettre que le jour du payout compte si l'user a aussi tradé ce jour-là).
+    const sortedPayoutDates = eligiblePayouts.map(p => p.date).sort()
+    const lastPayoutDate = sortedPayoutDates.length > 0
+      ? sortedPayoutDates[sortedPayoutDates.length - 1]
+      : null
+    const tradesForCounter = lastPayoutDate
+      ? eligibleTrades.filter(e => e.date >= lastPayoutDate)
+      : eligibleTrades
+    // Jours uniques tradés depuis le dernier payout (ou depuis le passage en Financé s'il n'y a pas eu de payout)
+    const tradeDates = tradesForCounter.map(e => e.date)
     const tradingDays = new Set(tradeDates).size
-    // Jours "validés" = jours dont le PnL net est >= seuil minDailyProfit
+    // Jours "validés" depuis le dernier payout = jours dont le PnL net est >= seuil minDailyProfit
     const dailyPnL = {}
-    eligibleTrades.forEach(e => {
+    tradesForCounter.forEach(e => {
       dailyPnL[e.date] = (dailyPnL[e.date] || 0) + (Number(e.pnl) || 0)
     })
     const validatedDays = Object.values(dailyPnL).filter(v => v >= minDailyProfit && v > 0).length
@@ -159,6 +170,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       totalPayoutsNet,
       totalPayoutsGross,
       payoutCount: eligiblePayouts.length,
+      lastPayoutDate, // exposé pour afficher "depuis le payout du XX/XX" dans le compteur
     }
   },[entries, accountPayouts, planSize, ddMax, isTrailing, isEod, fundedDate, minDailyProfit, profitSplit])
 
@@ -393,6 +405,11 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
                 {useValidated && data.tradingDays > data.validatedDays && (
                   <div style={{fontSize:'9px',color:'var(--text3)',marginTop:'2px',fontStyle:'italic'}}>
                     {`${data.tradingDays - data.validatedDays} jour${(data.tradingDays - data.validatedDays)>1?'s':''} traités mais <$${minDailyProfit}`}
+                  </div>
+                )}
+                {data.lastPayoutDate && (
+                  <div style={{fontSize:'9px',color:'#4d8fff',marginTop:'2px',fontStyle:'italic',display:'flex',alignItems:'center',gap:'4px'}} title="Le compteur est reset après chaque payout — la plupart des PropFirms exigent N jours de trading entre chaque payout, pas en cumulé.">
+                    🔄 Compteur reset depuis le payout du {data.lastPayoutDate}
                   </div>
                 )}
                 <div style={{height:'4px',background:'var(--surface3)',borderRadius:'99px',marginTop:'6px',overflow:'hidden'}}>
