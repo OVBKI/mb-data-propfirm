@@ -31,8 +31,11 @@ const C = {
 
 const NAV_ITEMS = [
   { href: '/admin',               label: 'Dashboard',     icon: '📊' },
+  { href: '/admin/activity',      label: 'Activité',      icon: '🔔' },
+  { href: '/admin/stats',         label: 'Statistiques',  icon: '📈' },
   { href: '/admin/users',         label: 'Utilisateurs',  icon: '👥' },
   { href: '/admin/announcements', label: 'Annonces',      icon: '📢' },
+  { href: '/admin/system',        label: 'Système',       icon: '🛠' },
 ]
 
 export default function AdminLayout({ children }) {
