@@ -71,7 +71,7 @@ function generateDemoTrades() {
   return trades.sort((a, b) => a.date.localeCompare(b.date))
 }
 
-export default function OnboardingModal({ user, onComplete, onAddFirm, showToast }) {
+export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTutorial, showToast }) {
   const [creating, setCreating] = useState(false)
   const [step, setStep] = useState('welcome') // welcome | demo-loading
 
@@ -85,6 +85,11 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, showToast
     onComplete()
     // Ouvre le firmModal du parent
     onAddFirm()
+  }
+
+  function handleTutorial() {
+    localStorage.setItem('quantara_onboarding_dismissed', '1')
+    onStartTutorial?.()
   }
 
   // Crée une firme Topstep + un compte 50K + 30 trades démo
@@ -248,6 +253,36 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, showToast
                   </div>
                   <div style={{ fontSize: 12, color: C.text2 }}>
                     Topstep 50K + 30 trades fictifs pour explorer toutes les fonctionnalités
+                  </div>
+                </div>
+                <span style={{ fontSize: 18, color: C.text3 }}>→</span>
+              </button>
+
+              {/* Option 3 : Tutoriel guidé */}
+              <button
+                onClick={handleTutorial}
+                disabled={creating}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '20px 24px', borderRadius: 12,
+                  background: C.surface2, border: `1px solid ${C.border2}`,
+                  color: C.text, cursor: creating ? 'wait' : 'pointer',
+                  textAlign: 'left', fontFamily: 'inherit',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if(!creating){ e.currentTarget.style.borderColor = C.blueLight; e.currentTarget.style.background = C.surface3 } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border2; e.currentTarget.style.background = C.surface2 }}
+              >
+                <div style={{
+                  width: 48, height: 48, borderRadius: 10, flexShrink: 0,
+                  background: 'rgba(45,111,255,0.12)', border: `1px solid ${C.blueLight}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 24,
+                }}>🎓</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3 }}>Suivre le tutoriel guidé</div>
+                  <div style={{ fontSize: 12, color: C.text2 }}>
+                    9 étapes en 2 min — découvre toutes les sections avec un guide animé pas à pas
                   </div>
                 </div>
                 <span style={{ fontSize: 18, color: C.text3 }}>→</span>

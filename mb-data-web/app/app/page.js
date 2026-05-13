@@ -23,6 +23,7 @@ import Skeleton from '../../components/Skeleton'
 import Tooltip, { TooltipIcon } from '../../components/Tooltip'
 import PropfirmComparator from '../../components/PropfirmComparator'
 import AnnouncementBanner from '../../components/AnnouncementBanner'
+import Tutorial from '../../components/Tutorial'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
 
 
@@ -134,6 +135,7 @@ export default function Home() {
   const [firmDrawer,setFirmDrawer]=useState(null)
   const [certsFirm,setCertsFirm]=useState(null) // firme dont on affiche les diplômes
   const [showOnboarding,setShowOnboarding]=useState(false) // modal d'accueil pour nouveau user
+  const [showTutorial,setShowTutorial]=useState(false) // tutoriel guidé spotlight
   const [acctDrawer,setAcctDrawer]=useState(null)
   const [payoutForm,setPayoutForm]=useState(false)
   const [newFirmName,setNewFirmName]=useState('')
@@ -437,12 +439,12 @@ export default function Home() {
       </div>
 
       <div style={{display:'flex',minHeight:'calc(100vh - 50px)'}}>
-        <nav className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'200px',flexShrink:0,background:'var(--surface)',borderRight:'0.5px solid var(--border)',padding:'16px 0',position:'sticky',top:'48px',height:'calc(100vh - 48px)',overflowY:'auto'}}>
+        <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'200px',flexShrink:0,background:'var(--surface)',borderRight:'0.5px solid var(--border)',padding:'16px 0',position:'sticky',top:'48px',height:'calc(100vh - 48px)',overflowY:'auto'}}>
           {['Principal','Live Data','PropFirm'].map(section=>(
             <div key={section}>
               <div className="nav-section-label" style={{padding:'8px 16px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.8px',marginTop:'8px'}}>{section}</div>
               {navItems.filter(i=>i.section===section).map(item=>(
-                <button key={item.key} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 16px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue)':'var(--text2)',fontSize:'13px',fontWeight:'500',cursor:'pointer',textAlign:'left'}}>
+                <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 16px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue)':'var(--text2)',fontSize:'13px',fontWeight:'500',cursor:'pointer',textAlign:'left'}}>
                   <span>{item.icon}</span>{item.label}
                   {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'1px 6px',borderRadius:'99px'}}>{item.badge}</span>}
                 </button>
@@ -457,6 +459,11 @@ export default function Home() {
               </a>
             </div>
           )}
+          <div style={{padding:'8px 12px',marginTop:'12px'}}>
+            <button onClick={()=>setShowTutorial(true)} style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',width:'100%',background:'rgba(45,111,255,0.08)',border:'1px solid rgba(45,111,255,0.22)',borderRadius:'8px',color:'var(--blue-light)',fontSize:'12px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.14)';e.currentTarget.style.borderColor='rgba(45,111,255,0.4)'}} onMouseLeave={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.22)'}}>
+              <span>🎓</span> Lancer le tutoriel
+            </button>
+          </div>
           <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 14px'}}>
             <div style={{fontSize:'11px',color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
           </div>
@@ -474,11 +481,11 @@ export default function Home() {
                     {['native','eur'].map(c=><button key={c} onClick={()=>setCurrencyMode(c)} style={{padding:'6px 14px',fontSize:'12px',border:'none',background:currency===c?'var(--blue)':'transparent',color:currency===c?'#fff':'var(--text2)',cursor:'pointer',fontWeight:'500'}}>{c==='native'?'USD natif':'EUR'}</button>)}
                   </div>
                   <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 Rechercher..." style={{...S.input,width:'160px'}} />
-                  <button onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>+ Ajouter PropFirm</button>
+                  <button data-tour="add-firm-btn" onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>+ Ajouter PropFirm</button>
                 </div>
               </div>
 
-              <div className="stats-5" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'24px'}}>
+              <div className="stats-5" data-tour="stats-cards" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'24px'}}>
                 {[
                   {label:'PropFirms',value:`${firms.length} firme${firms.length>1?'s':''} · ${accts.length} compte${accts.length>1?'s':''}`,small:true},
                   {label:'Total dépensé',value:currency==='eur'?fmtE(totalSpentEUR):(totalSpentEUR/rates.USD).toFixed(2)+' $',color:'var(--red)'},
@@ -493,7 +500,7 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="firms-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))',gap:'16px',marginBottom:'24px'}}>
+              <div className="firms-grid" data-tour="firms-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))',gap:'16px',marginBottom:'24px'}}>
                 {firms.filter(f=>f.name.toLowerCase().includes(searchQ.toLowerCase())).map(firm=>{
                   const ts=firmTotalSpent(firm),tp=firmTotalPayouts(firm),net=tp-ts,roi=ts>0?net/ts*100:0
                   const al=firm.accounts||[]
@@ -786,6 +793,15 @@ export default function Home() {
           showToast={showToast}
           onComplete={()=>setShowOnboarding(false)}
           onAddFirm={()=>{setFirmModal(true);setNewFirmName('')}}
+          onStartTutorial={()=>{setShowOnboarding(false);setShowTutorial(true)}}
+        />
+      )}
+
+      {/* Tutoriel guidé — spotlight + tooltip animé */}
+      {showTutorial && (
+        <Tutorial
+          onClose={()=>setShowTutorial(false)}
+          onPageChange={setPage}
         />
       )}
 
