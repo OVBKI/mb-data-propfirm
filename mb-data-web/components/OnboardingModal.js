@@ -280,9 +280,12 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   fontSize: 24,
                 }}>🎓</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3 }}>Suivre le tutoriel guidé</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3 }}>
+                    Suivre le tutoriel interactif
+                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(45,111,255,0.18)', color: C.blueLight, marginLeft: 8, verticalAlign: 'middle' }}>NOUVEAU</span>
+                  </div>
                   <div style={{ fontSize: 12, color: C.text2 }}>
-                    9 étapes en 2 min — découvre toutes les sections avec un guide animé pas à pas
+                    11 étapes en ~5 min — tu crées RÉELLEMENT ta firme, un compte, un trade, un payout (guidé pas à pas)
                   </div>
                 </div>
                 <span style={{ fontSize: 18, color: C.text3 }}>→</span>

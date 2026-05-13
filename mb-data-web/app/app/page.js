@@ -136,6 +136,7 @@ export default function Home() {
   const [certsFirm,setCertsFirm]=useState(null) // firme dont on affiche les diplômes
   const [showOnboarding,setShowOnboarding]=useState(false) // modal d'accueil pour nouveau user
   const [showTutorial,setShowTutorial]=useState(false) // tutoriel guidé spotlight
+  const [tradesCount,setTradesCount]=useState(0) // total trades user, pour détecter l'ajout dans le tutoriel
   const [acctDrawer,setAcctDrawer]=useState(null)
   const [payoutForm,setPayoutForm]=useState(false)
   const [newFirmName,setNewFirmName]=useState('')
@@ -193,6 +194,11 @@ export default function Home() {
     const {data:ad}=await supabase.from('accounts').select('*').order('buy_date')
     const {data:pd}=await supabase.from('payouts').select('*').order('date')
     setFirms(fd.map((f,i)=>({...f,color:f.color||FIRM_COLORS[i%FIRM_COLORS.length],accounts:(ad||[]).filter(a=>a.firm_id===f.id).map(a=>({...a,payouts:(pd||[]).filter(p=>p.account_id===a.id)}))})))
+    // Count des trades pour le tutoriel interactif (pas de data, juste count en head)
+    try {
+      const {count:tc}=await supabase.from('journal_entries').select('*',{count:'exact',head:true})
+      setTradesCount(tc||0)
+    } catch {}
   }
 
   function showToast(msg){setToast(msg);setTimeout(()=>setToast(''),2200)}
@@ -797,11 +803,24 @@ export default function Home() {
         />
       )}
 
-      {/* Tutoriel guidé — spotlight + tooltip animé */}
+      {/* Tutoriel interactif — détecte automatiquement les actions de l'user */}
       {showTutorial && (
         <Tutorial
           onClose={()=>setShowTutorial(false)}
           onPageChange={setPage}
+          state={{
+            page,
+            firmsCount: firms.length,
+            accountsCount: accts.length,
+            tradesCount,
+            payoutsCount: firms.reduce((s,f)=>s+(f.accounts||[]).reduce((ss,a)=>ss+(a.payouts||[]).length,0),0),
+            financedCount: accts.filter(a=>a.status==='Financé').length,
+            firmDrawerOpen: !!firmDrawer,
+            acctDrawerOpen: !!acctDrawer,
+            acctModalOpen: !!acctModal,
+            firmModalOpen: !!firmModal,
+            payoutFormOpen: !!payoutForm,
+          }}
         />
       )}
 

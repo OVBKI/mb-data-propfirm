@@ -1,18 +1,24 @@
 'use client'
-// Tutoriel guidé "spotlight" pour les nouveaux users de Quantara.
-// Affiche une zone éclairée autour d'un élément clé (data-tour="<key>") avec un
-// tooltip à côté + animation pulse. Navigation pas à pas via boutons.
+// Tutoriel INTERACTIF pour Quantara — guide l'user pas à pas en attendant qu'il
+// effectue réellement chaque action (créer firme, ajouter compte, logger trade,
+// passer en Financé, faire payout).
 //
-// Déclenché par :
+// Déclenchement :
 //   - OnboardingModal (3ème option pour les nouveaux users)
 //   - Bouton "🎓 Lancer le tutoriel" en bas de la sidebar
 //
-// Persistance : localStorage 'quantara_tutorial_done' (info uniquement, pas de gating).
+// 2 modes d'étapes :
+//   - mode = (rien)  → étape passive : user clique "Suivant" pour avancer
+//   - mode = 'action' → étape interactive : user doit RÉELLEMENT faire l'action,
+//                       le tutoriel détecte la complétion via la fonction waitFor(state, initialState)
+//                       et auto-advance avec une petite animation "✓ Validé".
 //
-// Steps :
-//   - type='modal' → carte centrée plein écran (intro / outro)
-//   - type='spot'  → spotlight sur un élément ciblé via querySelector(target)
-//                    + tooltip positionné selon placement (top/bottom/left/right)
+// 3 visuels selon le contexte :
+//   - 'modal' passif      → backdrop full-screen + carte centrée
+//   - 'spot' passif       → 4 rectangles dim + pulse ring + tooltip
+//   - mode='action'       → mini panneau flottant bottom-right + pulse ring sur target (clics autorisés)
+//
+// Persistance : localStorage 'quantara_tutorial_done'
 
 import { useState, useEffect, useRef } from 'react'
 
@@ -28,102 +34,185 @@ const C = {
   blue: '#2d6fff',
   blueLight: '#4d8fff',
   green: '#1db87a',
+  amber: '#fac775',
 }
 
 const TOUR_DONE_KEY = 'quantara_tutorial_done'
 
 const STEPS = [
+  // ============================ INTRO ============================
   {
+    id: 'welcome',
     type: 'modal',
     icon: '🎯',
-    title: 'Démarrons ensemble',
-    desc: "Quantara est ton journal de trading PropFirm. Je vais te montrer les fonctionnalités principales en 9 étapes rapides — moins de 2 minutes.",
+    title: 'Tutoriel interactif Quantara',
+    desc: "Je vais te guider pas à pas. Tu vas RÉELLEMENT créer ta firme, ajouter un compte, logger un trade, faire passer ton compte en Financé et enregistrer un payout. Au total ~5 min.",
     cta: "C'est parti !",
   },
+  // ============================ SIDEBAR ============================
   {
+    id: 'sidebar',
     type: 'spot',
     target: '[data-tour="sidebar"]',
     page: 'dashboard',
     placement: 'right',
     icon: '🧭',
     title: 'Navigation principale',
-    desc: "Sur la gauche se trouvent toutes les sections : Tableau de bord, Journal de trading, Analytics, Calendrier économique, Règles des firmes…",
+    desc: "À gauche se trouvent toutes les sections : Tableau de bord, Journal de trading, Analytics, Calendrier économique, Règles des firmes…",
   },
+  // ============================ ACTION 1 : ADD FIRM ============================
   {
-    type: 'spot',
-    target: '[data-tour="stats-cards"]',
-    page: 'dashboard',
-    placement: 'bottom',
-    icon: '📊',
-    title: "Vue d'ensemble en un coup d'œil",
-    desc: "Total dépensé en challenges, payouts reçus, résultat net : tout est calculé automatiquement à partir de tes comptes et de tes payouts.",
-  },
-  {
+    id: 'add-firm',
     type: 'spot',
     target: '[data-tour="add-firm-btn"]',
     page: 'dashboard',
     placement: 'bottom',
+    mode: 'action',
     icon: '🏢',
-    title: 'Ajouter une PropFirm',
-    desc: "Clique sur ce bouton pour ajouter une firme (Topstep, Apex, Lucid…). Les règles drawdown, payout target et profit split sont pré-remplies pour 10 firmes.",
+    badge: 'Étape 1/5',
+    title: 'Ajoute ta 1ère PropFirm',
+    desc: "👆 Clique sur ce bouton. Tape ou choisis une firme dans les suggestions (ex : Topstep) puis valide.",
+    actionHint: "En attente que tu crées une firme…",
+    waitFor: (s, i) => s.firmsCount > i.firmsCount,
   },
+  // ============================ ACTION 2 : ADD ACCOUNT ============================
+  // Note : après createFirm(), l'app ouvre automatiquement le modal "Nouveau compte"
+  // → on enchaîne directement sur la création du compte
   {
-    type: 'spot',
-    target: '[data-tour="firms-grid"]',
-    page: 'dashboard',
-    placement: 'top',
-    icon: '🗂',
-    title: 'Tes PropFirms',
-    desc: "Chaque carte affiche tes comptes (Challenge / Financé / Échoué) avec leur statut et profit net. Clique sur une carte pour gérer comptes, payouts et certificats.",
+    id: 'add-account',
+    type: 'modal',
+    mode: 'action',
+    icon: '📂',
+    badge: 'Étape 2/5',
+    title: 'Configure ton 1er compte',
+    desc: "Quantara t'a ouvert automatiquement le formulaire \"Nouveau compte\". Les règles (drawdown, profit split, payout target, prix du challenge) sont déjà pré-remplies selon ta firme. Garde le statut \"Challenge\" et clique sur \"Enregistrer\".",
+    actionHint: "En attente que tu crées le compte…",
+    waitFor: (s, i) => s.accountsCount > i.accountsCount,
   },
+  // ============================ ACTION 4 : GO TO JOURNAL ============================
   {
+    id: 'goto-journal',
     type: 'spot',
     target: '[data-tour="nav-journal"]',
     page: 'dashboard',
     placement: 'right',
+    mode: 'action',
     icon: '📔',
-    title: 'Journal de trading',
-    desc: "Ici tu logges chaque trade : PnL, prix entry/exit, side, screenshot. La courbe d'equity et la ligne de drawdown s'affichent en temps réel selon le type de DD de ta firme.",
+    title: 'Direction le Journal',
+    desc: "👆 Clique sur \"Journal trading\" dans la sidebar pour logger ton premier trade.",
+    actionHint: "En attente que tu cliques sur Journal trading…",
+    waitFor: (s) => s.page === 'journal',
   },
+  // ============================ ACTION 5 : ADD TRADE ============================
   {
+    id: 'add-trade',
+    type: 'modal',
+    mode: 'action',
+    icon: '📝',
+    badge: 'Étape 3/5',
+    title: 'Logge ton 1er trade',
+    desc: "Si tu as plusieurs comptes, sélectionne celui que tu viens de créer en haut. Puis clique sur \"+ Ajouter trade\". Entre une date, un PnL (ex : +250 pour un gain, -120 pour une perte), un instrument optionnel, et valide.",
+    actionHint: "En attente que tu ajoutes un trade…",
+    waitFor: (s, i) => s.tradesCount > i.tradesCount,
+  },
+  // ============================ INFO : EQUITY CURVE ============================
+  {
+    id: 'equity-info',
+    type: 'modal',
+    icon: '📈',
+    title: "Ta courbe d'equity est née",
+    desc: "Bravo ! Ta courbe de balance et la ligne de drawdown apparaissent maintenant en temps réel. Plus tu logges de trades, plus le graph se précise. Le DD est calculé selon le type de ta firme (Static / EOD / Trailing intraday).",
+  },
+  // ============================ ACTION 6 : BACK TO DASHBOARD ============================
+  {
+    id: 'back-dashboard',
     type: 'spot',
-    target: '[data-tour="nav-calendar"]',
-    page: 'dashboard',
+    target: '[data-tour="nav-dashboard"]',
+    page: 'journal',
     placement: 'right',
-    icon: '📅',
-    title: 'Calendrier économique',
-    desc: "Toutes les news macro à fort impact (NFP, FOMC, CPI…) filtrées par devise. Indispensable pour éviter de trader pendant un événement à risque.",
+    mode: 'action',
+    icon: '⬅️',
+    title: 'Retour au tableau de bord',
+    desc: "👆 Clique sur \"Tableau de bord\" pour gérer le statut de ton compte (passage Challenge → Financé).",
+    actionHint: "En attente que tu reviennes au dashboard…",
+    waitFor: (s) => s.page === 'dashboard',
   },
+  // ============================ ACTION 7 : PROMOTE TO FINANCÉ ============================
   {
-    type: 'spot',
-    target: '[data-tour="nav-rules"]',
-    page: 'dashboard',
-    placement: 'right',
-    icon: '⚖️',
-    title: 'Comparateur de firmes',
-    desc: "Compare les règles et prix des 10 PropFirms (drawdown, profit split, payout target, prix du challenge) pour choisir celle qui colle à ton style.",
+    id: 'promote-financed',
+    type: 'modal',
+    mode: 'action',
+    icon: '🚀',
+    badge: 'Étape 4/5',
+    title: 'Passe ton compte en Financé',
+    desc: "Ouvre ta firme → clique sur ton compte → bouton \"✏ Modifier\" → change le statut de \"Challenge\" en \"Financé\" → sauvegarde. Quantara reset automatiquement le PnL du journal à partir de la date de financement.",
+    actionHint: "En attente que ton compte passe en Financé…",
+    waitFor: (s, i) => s.financedCount > i.financedCount,
   },
+  // ============================ ACTION 8 : ADD PAYOUT ============================
   {
+    id: 'add-payout',
+    type: 'modal',
+    mode: 'action',
+    icon: '💰',
+    badge: 'Étape 5/5',
+    title: 'Enregistre ton 1er payout',
+    desc: "Toujours dans le panneau du compte (maintenant en Financé), clique sur \"+ Ajouter payout\". Entre le montant BRUT demandé (ex : 2000). Quantara calcule le NET reçu (brut × profit split) et déduit le BRUT du compte.",
+    actionHint: "En attente que tu enregistres un payout…",
+    waitFor: (s, i) => s.payoutsCount > i.payoutsCount,
+  },
+  // ============================ DONE ============================
+  {
+    id: 'done',
     type: 'modal',
     icon: '🎉',
-    title: 'Tu es prêt !',
-    desc: "Tu connais maintenant les bases de Quantara. Tu peux relancer ce tutoriel à tout moment via le bouton « 🎓 Lancer le tutoriel » en bas du menu de gauche. Bon trading !",
-    cta: 'Commencer à trader',
+    title: "Bravo ! Tu maîtrises Quantara",
+    desc: "Tu as créé une firme, ajouté un compte, loggé un trade, fait passer ton compte en Financé et enregistré un payout. Tu connais maintenant les bases. Tu peux relancer ce tutoriel à tout moment via le bouton « 🎓 Lancer le tutoriel » en bas du menu de gauche. Bon trading !",
+    cta: 'Terminer',
   },
 ]
 
-export default function Tutorial({ onClose, onPageChange }) {
+export default function Tutorial({ onClose, onPageChange, state }) {
   const [idx, setIdx] = useState(0)
   const [rect, setRect] = useState(null)
   const [ready, setReady] = useState(false)
+  const [actionValidated, setActionValidated] = useState(false) // flash "✓ Validé"
+  const initialStateRef = useRef(null)
+  const advanceTimerRef = useRef(null)
   const step = STEPS[idx]
 
-  // Switch page when step requires it
+  // Snapshot l'état initial au changement d'étape
+  useEffect(() => {
+    initialStateRef.current = { ...state }
+    setActionValidated(false)
+    return () => {
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current)
+        advanceTimerRef.current = null
+      }
+    }
+  }, [idx])
+
+  // Switch page si l'étape l'exige
   useEffect(() => {
     if (step.page) onPageChange?.(step.page)
   }, [idx])
 
-  // Measure target element position — with retry for elements not yet mounted
+  // Auto-advance pour les étapes 'action' quand waitFor(state, initial) est vrai
+  useEffect(() => {
+    if (step.mode !== 'action' || !step.waitFor) return
+    if (!initialStateRef.current) return
+    if (actionValidated) return
+    if (step.waitFor(state, initialStateRef.current)) {
+      setActionValidated(true)
+      // Petit délai pour montrer le "✓ Validé" avant d'avancer
+      advanceTimerRef.current = setTimeout(() => {
+        setIdx(i => Math.min(STEPS.length - 1, i + 1))
+      }, 1100)
+    }
+  }, [state, idx, actionValidated])
+
+  // Mesure la position de l'élément cible (avec retry pour les éléments pas encore montés)
   useEffect(() => {
     setReady(false)
     if (step.type !== 'spot') {
@@ -140,16 +229,20 @@ export default function Tutorial({ onClose, onPageChange }) {
       const el = document.querySelector(step.target)
       if (!el) {
         attempts++
-        if (attempts < 20) setTimeout(measure, 100) // retry up to 2s
+        if (attempts < 30) setTimeout(measure, 100) // retry jusqu'à 3s
         return
       }
       const r = el.getBoundingClientRect()
+      // L'élément existe mais est masqué (ex: sidebar mobile en display:none) → retry
+      if (r.width === 0 && r.height === 0) {
+        attempts++
+        if (attempts < 30) setTimeout(measure, 100)
+        return
+      }
       setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
       setReady(true)
-      // Scroll target into view if off-screen
       if (r.top < 60 || r.bottom > window.innerHeight - 60) {
         el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-        // Re-measure after scroll
         setTimeout(() => {
           if (cancelled) return
           const r2 = el.getBoundingClientRect()
@@ -158,7 +251,7 @@ export default function Tutorial({ onClose, onPageChange }) {
       }
     }
 
-    const timer = setTimeout(measure, 250) // wait for page transition
+    const timer = setTimeout(measure, 250)
     function onResize() { measure() }
     function onScroll() { measure() }
     window.addEventListener('resize', onResize)
@@ -183,14 +276,21 @@ export default function Tutorial({ onClose, onPageChange }) {
 
   const isLast = idx === STEPS.length - 1
   const isFirst = idx === 0
+  const isAction = step.mode === 'action'
   const TT_W = 380
-  const TT_H_EST = 240
 
-  // Compute tooltip position
+  // Position du tooltip
   function tooltipStyle() {
+    // Mode action : panneau flottant bottom-right (toujours visible, n'interfère pas avec l'UI)
+    if (isAction) {
+      return { bottom: '20px', right: '20px' }
+    }
+    // Mode modal passif : centré
     if (step.type !== 'spot' || !rect) {
       return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     }
+    // Mode spot passif : à côté de la cible
+    const TT_H_EST = 240
     const vw = window.innerWidth, vh = window.innerHeight
     const gap = 18
     let top, left
@@ -204,20 +304,15 @@ export default function Tutorial({ onClose, onPageChange }) {
     } else if (step.placement === 'top') {
       top = rect.top - TT_H_EST - gap
       left = rect.left + rect.width / 2 - TT_W / 2
-    } else { // bottom
+    } else {
       top = rect.top + rect.height + gap
       left = rect.left + rect.width / 2 - TT_W / 2
     }
 
-    // Clamp to viewport with 20px margin
     if (left < 20) left = 20
     if (left + TT_W > vw - 20) left = vw - TT_W - 20
-    if (top < 20) {
-      // Flip from top → bottom if no room above
-      top = rect.top + rect.height + gap
-    }
+    if (top < 20) top = rect.top + rect.height + gap
     if (top + TT_H_EST > vh - 20) {
-      // Flip from bottom → top if no room below
       const alt = rect.top - TT_H_EST - gap
       if (alt >= 20) top = alt
       else top = vh - TT_H_EST - 20
@@ -229,67 +324,78 @@ export default function Tutorial({ onClose, onPageChange }) {
 
   return (
     <>
-      {/* === Spotlight (mode 'spot') === */}
-      {step.type === 'spot' && rect && (
-        <>
-          {/* 4 rectangles autour de la cible — bloquent les clics partout sauf sur la cible */}
-          <div style={{ position:'fixed', top:0, left:0, right:0, height: Math.max(0, rect.top - 8), background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
-          <div style={{ position:'fixed', top: rect.top + rect.height + 8, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
-          <div style={{ position:'fixed', top: rect.top - 8, left:0, width: Math.max(0, rect.left - 8), height: rect.height + 16, background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
-          <div style={{ position:'fixed', top: rect.top - 8, left: rect.left + rect.width + 8, right:0, height: rect.height + 16, background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
-
-          {/* Click-blocker transparent sur la cible — empêche d'interagir directement */}
-          <div style={{ position:'fixed', top: rect.top - 8, left: rect.left - 8, width: rect.width + 16, height: rect.height + 16, background:'transparent', cursor:'help', zIndex: 9998 }} />
-
-          {/* Pulse ring (visuel uniquement) */}
-          <div style={{
-            position:'fixed',
-            top: rect.top - 8, left: rect.left - 8,
-            width: rect.width + 16, height: rect.height + 16,
-            borderRadius: 12,
-            border: `2px solid ${C.blueLight}`,
-            pointerEvents: 'none',
-            animation: 'qtPulse 2s ease-in-out infinite',
-            zIndex: 9999,
-            transition: 'all 0.3s ease',
-          }} />
-        </>
-      )}
-
-      {/* === Modal full-screen (mode 'modal') === */}
-      {step.type === 'modal' && (
+      {/* === Backdrop modal passif uniquement === */}
+      {step.type === 'modal' && !isAction && (
         <div style={{
-          position:'fixed', inset:0,
-          background:'rgba(0,0,0,0.82)',
-          backdropFilter:'blur(8px)',
-          pointerEvents:'auto',
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.82)',
+          backdropFilter: 'blur(8px)',
+          pointerEvents: 'auto',
           zIndex: 9998,
         }} />
       )}
 
-      {/* === Tooltip / Carte === */}
+      {/* === Spotlight passif (4 rectangles sombres + click blocker) === */}
+      {step.type === 'spot' && !isAction && rect && (
+        <>
+          <div style={{ position:'fixed', top:0, left:0, right:0, height: Math.max(0, rect.top - 8), background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
+          <div style={{ position:'fixed', top: rect.top + rect.height + 8, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
+          <div style={{ position:'fixed', top: rect.top - 8, left:0, width: Math.max(0, rect.left - 8), height: rect.height + 16, background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
+          <div style={{ position:'fixed', top: rect.top - 8, left: rect.left + rect.width + 8, right:0, height: rect.height + 16, background:'rgba(0,0,0,0.78)', backdropFilter:'blur(2px)', zIndex: 9998, transition:'all 0.3s ease' }} />
+          <div style={{ position:'fixed', top: rect.top - 8, left: rect.left - 8, width: rect.width + 16, height: rect.height + 16, background:'transparent', cursor:'help', zIndex: 9998 }} />
+        </>
+      )}
+
+      {/* === Pulse ring (toujours présent quand on a une target) === */}
+      {rect && (step.type === 'spot' || isAction) && (
+        <div style={{
+          position: 'fixed',
+          top: rect.top - 8, left: rect.left - 8,
+          width: rect.width + 16, height: rect.height + 16,
+          borderRadius: 12,
+          border: `2px solid ${actionValidated ? C.green : C.blueLight}`,
+          pointerEvents: 'none',
+          animation: actionValidated ? 'qtSuccess 1s ease-in-out' : 'qtPulse 2s ease-in-out infinite',
+          zIndex: 9999,
+          transition: 'all 0.3s ease',
+        }} />
+      )}
+
+      {/* === Tooltip / Panneau === */}
       <div style={{
         position: 'fixed',
         width: TT_W,
         maxWidth: 'calc(100vw - 40px)',
         background: C.surface,
-        border: `1px solid ${C.border2}`,
+        border: `1px solid ${actionValidated ? C.green : C.border2}`,
         borderRadius: 14,
         padding: 22,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(45,111,255,0.2)',
+        boxShadow: isAction
+          ? '0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(45,111,255,0.2)'
+          : '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(45,111,255,0.2)',
         zIndex: 10000,
         color: C.text,
         fontFamily: 'inherit',
+        transition: 'all 0.3s ease',
         ...tooltipStyle(),
       }}>
-        {/* Header: étape + skip */}
+        {/* Header : étape + skip */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           fontSize: 10, fontWeight: 700, color: C.text3,
           textTransform: 'uppercase', letterSpacing: '0.6px',
           marginBottom: 14,
         }}>
-          <span>Étape {idx + 1} / {STEPS.length}</span>
+          <span style={{ display:'flex', gap:6, alignItems:'center' }}>
+            <span>Étape {idx + 1} / {STEPS.length}</span>
+            {step.badge && (
+              <span style={{
+                padding:'2px 8px', borderRadius: 99,
+                background:'rgba(45,111,255,0.16)', color: C.blueLight,
+                fontSize: 9, fontWeight: 700,
+              }}>{step.badge}</span>
+            )}
+          </span>
           <button
             onClick={finish}
             style={{
@@ -302,11 +408,11 @@ export default function Tutorial({ onClose, onPageChange }) {
           >Passer le tutoriel</button>
         </div>
 
-        {/* Title row */}
+        {/* Titre */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <span style={{ fontSize: 30, lineHeight: 1, flexShrink: 0 }}>{step.icon}</span>
           <h3 style={{
-            fontSize: 18, fontWeight: 700, color: C.text,
+            fontSize: 17, fontWeight: 700, color: C.text,
             lineHeight: 1.3, margin: 0,
           }}>{step.title}</h3>
         </div>
@@ -314,13 +420,34 @@ export default function Tutorial({ onClose, onPageChange }) {
         {/* Description */}
         <p style={{
           fontSize: 13, color: C.text2, lineHeight: 1.65,
-          marginBottom: 20,
+          marginBottom: 18,
         }}>{step.desc}</p>
 
-        {/* Progress bar */}
+        {/* Bandeau "Action attendue" pour les étapes interactives */}
+        {isAction && (
+          <div style={{
+            padding: '10px 12px',
+            background: actionValidated ? 'rgba(29,184,122,0.12)' : 'rgba(250,199,117,0.08)',
+            border: `1px solid ${actionValidated ? C.green : 'rgba(250,199,117,0.3)'}`,
+            borderRadius: 8,
+            fontSize: 12, fontWeight: 600,
+            color: actionValidated ? C.green : C.amber,
+            marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 8,
+            transition: 'all 0.3s ease',
+          }}>
+            <span style={{
+              fontSize: 14,
+              animation: actionValidated ? 'none' : 'qtBlink 1.4s ease-in-out infinite',
+            }}>{actionValidated ? '✓' : '⏳'}</span>
+            <span>{actionValidated ? 'Action validée ! Étape suivante…' : (step.actionHint || 'En attente de ton action…')}</span>
+          </div>
+        )}
+
+        {/* Barre de progression */}
         <div style={{
           height: 4, background: C.surface2, borderRadius: 99,
-          marginBottom: 18, overflow: 'hidden',
+          marginBottom: 16, overflow: 'hidden',
         }}>
           <div style={{
             height: '100%',
@@ -332,41 +459,60 @@ export default function Tutorial({ onClose, onPageChange }) {
         </div>
 
         {/* Boutons navigation */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
-          {!isFirst && (
-            <button
-              onClick={prev}
-              style={{
-                padding: '9px 16px', fontSize: 13, fontWeight: 500,
-                background: 'transparent', border: `1px solid ${C.border2}`,
-                color: C.text2, borderRadius: 8, cursor: 'pointer',
-                fontFamily: 'inherit', transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = C.surface2; e.currentTarget.style.color = C.text }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.text2 }}
-            >← Retour</button>
-          )}
-          <button
-            onClick={next}
-            style={{
-              padding: '10px 20px', fontSize: 13, fontWeight: 600,
-              background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
-              border: 'none', color: '#fff', borderRadius: 8, cursor: 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: '0 6px 18px rgba(45,111,255,0.4)',
-              display: 'flex', alignItems: 'center', gap: 6,
-              transition: 'transform 0.15s, box-shadow 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 22px rgba(45,111,255,0.5)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(45,111,255,0.4)' }}
-          >
-            {isLast ? (step.cta || 'Terminer') : (step.cta || 'Suivant')}
-            {!isLast && <span style={{ fontSize: 14 }}>→</span>}
-          </button>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            {!isFirst && (
+              <button
+                onClick={prev}
+                style={{
+                  padding: '8px 14px', fontSize: 12, fontWeight: 500,
+                  background: 'transparent', border: `1px solid ${C.border2}`,
+                  color: C.text2, borderRadius: 8, cursor: 'pointer',
+                  fontFamily: 'inherit', transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.surface2; e.currentTarget.style.color = C.text }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.text2 }}
+              >← Retour</button>
+            )}
+          </div>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            {isAction && !actionValidated && (
+              <button
+                onClick={next}
+                title="Passer cette étape (si tu l'as déjà fait)"
+                style={{
+                  background: 'transparent', border: 'none', color: C.text3,
+                  fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
+                  fontFamily: 'inherit', padding: '8px 4px',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = C.text2}
+                onMouseLeave={e => e.currentTarget.style.color = C.text3}
+              >Sauter l'étape →</button>
+            )}
+            {!isAction && (
+              <button
+                onClick={next}
+                style={{
+                  padding: '10px 20px', fontSize: 13, fontWeight: 600,
+                  background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
+                  border: 'none', color: '#fff', borderRadius: 8, cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  boxShadow: '0 6px 18px rgba(45,111,255,0.4)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 22px rgba(45,111,255,0.5)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(45,111,255,0.4)' }}
+              >
+                {isLast ? (step.cta || 'Terminer') : (step.cta || 'Suivant')}
+                {!isLast && <span style={{ fontSize: 14 }}>→</span>}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Keyframes pulse */}
+      {/* Keyframes */}
       <style>{`
         @keyframes qtPulse {
           0%, 100% {
@@ -377,6 +523,15 @@ export default function Tutorial({ onClose, onPageChange }) {
             box-shadow: 0 0 0 16px rgba(77,143,255,0), 0 0 30px rgba(77,143,255,0.2);
             border-color: ${C.blue};
           }
+        }
+        @keyframes qtSuccess {
+          0% { box-shadow: 0 0 0 0 rgba(29,184,122,0.6), 0 0 20px rgba(29,184,122,0.5); transform: scale(1); }
+          50% { box-shadow: 0 0 0 24px rgba(29,184,122,0), 0 0 40px rgba(29,184,122,0.3); transform: scale(1.02); }
+          100% { box-shadow: 0 0 0 0 rgba(29,184,122,0), 0 0 20px rgba(29,184,122,0.4); transform: scale(1); }
+        }
+        @keyframes qtBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
         }
       `}</style>
     </>
