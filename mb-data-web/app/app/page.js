@@ -245,9 +245,13 @@ export default function Home() {
   }
 
   async function loadFirms(){
-    const {data:fd}=await supabase.from('firms').select('*').order('created_at')
+    // ⚠ Filtre explicite par user_id sur toutes les queries.
+    // Les RLS admin (lecture all) override le filtrage RLS classique → sans ce filtre,
+    // un admin verrait TOUTES les firmes/comptes de TOUS les users sur son /app.
+    if(!user) return
+    const {data:fd}=await supabase.from('firms').select('*').eq('user_id',user.id).order('created_at')
     if(!fd)return
-    let {data:ad}=await supabase.from('accounts').select('*').order('buy_date')
+    let {data:ad}=await supabase.from('accounts').select('*').eq('user_id',user.id).order('buy_date')
 
     // === Auto-billing mensualités ===
     // Pour chaque compte Challenge en mode 'monthly' : calcule combien de mois se sont
@@ -270,15 +274,15 @@ export default function Home() {
     }
     // Refetch si des mensualités ont été appliquées
     if(billedAny){
-      const refetch=await supabase.from('accounts').select('*').order('buy_date')
+      const refetch=await supabase.from('accounts').select('*').eq('user_id',user.id).order('buy_date')
       if(refetch.data) ad=refetch.data
     }
 
-    const {data:pd}=await supabase.from('payouts').select('*').order('date')
+    const {data:pd}=await supabase.from('payouts').select('*').eq('user_id',user.id).order('date')
     setFirms(fd.map((f,i)=>({...f,color:f.color||FIRM_COLORS[i%FIRM_COLORS.length],accounts:(ad||[]).filter(a=>a.firm_id===f.id).map(a=>({...a,payouts:(pd||[]).filter(p=>p.account_id===a.id)}))})))
-    // Count des trades pour le tutoriel interactif (pas de data, juste count en head)
+    // Count des trades de l'user (pour le tutoriel interactif + détection ajout de trade)
     try {
-      const {count:tc}=await supabase.from('journal_entries').select('*',{count:'exact',head:true})
+      const {count:tc}=await supabase.from('journal_entries').select('*',{count:'exact',head:true}).eq('user_id',user.id)
       setTradesCount(tc||0)
     } catch {}
   }
