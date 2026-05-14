@@ -59,6 +59,10 @@ export default function AdminDashboardPage() {
         const day7 = new Date(now); day7.setDate(now.getDate() - 7)
         const day30 = new Date(now); day30.setDate(now.getDate() - 30)
 
+        // Récupère le token d'auth pour appeler l'API admin avec Bearer
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session ? { Authorization: `Bearer ${session.access_token}` } : {}
+
         // ⚠ On ne peut pas requêter auth.users en direct (RLS limit), on passe par /api/admin/users
         const [firmsRes, accountsRes, tradesRes, payoutsRes, certsRes,
                tradesWeek, tradesMonth, accountsByFirm, signupsRes] = await Promise.all([
@@ -70,8 +74,8 @@ export default function AdminDashboardPage() {
           supabase.from('journal_entries').select('id', { count: 'exact', head: true }).gte('created_at', day7.toISOString()),
           supabase.from('journal_entries').select('id', { count: 'exact', head: true }).gte('created_at', day30.toISOString()),
           supabase.from('firms').select('name'),
-          // Try to fetch users via admin API (might fail if not configured yet)
-          fetch('/api/admin/users?summary=1').then(r => r.ok ? r.json() : null).catch(() => null),
+          // Appel API admin avec Bearer token (sinon 401 → users stats vides)
+          fetch('/api/admin/users?summary=1', { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null),
         ])
 
         // Top 3 firmes par usage
