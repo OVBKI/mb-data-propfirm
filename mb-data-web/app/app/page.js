@@ -25,6 +25,7 @@ import PropfirmComparator from '../../components/PropfirmComparator'
 import AnnouncementBanner from '../../components/AnnouncementBanner'
 import Tutorial from '../../components/Tutorial'
 import PushNotificationToggle from '../../components/PushNotificationToggle'
+import SpaceBackground from '../../components/dashboard/SpaceBackground'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
 
 
@@ -670,10 +671,12 @@ export default function Home() {
   ]
 
   return(
-    <div style={{minHeight:'100vh',background:'var(--bg)'}}>
-      <div style={{height:'2px',background:'linear-gradient(90deg,var(--blue) 0%,transparent 100%)'}} />
+    <div style={{minHeight:'100vh',background:'transparent',position:'relative'}}>
+      {/* Space background — couche atmosphérique fixed derrière tout (zero impact UX) */}
+      <SpaceBackground />
+      <div style={{height:'2px',background:'linear-gradient(90deg,var(--blue) 0%,transparent 100%)',position:'relative',zIndex:1}} />
       <AnnouncementBanner />
-      <div className="top-bar" style={{height:'48px',background:'var(--surface)',borderBottom:'0.5px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 20px',position:'sticky',top:0,zIndex:200}}>
+      <div className="top-bar" style={{height:'48px',background:'rgba(20,23,32,0.72)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 20px',position:'sticky',top:0,zIndex:200}}>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
           <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
           <Logo size={38} glow="strong" />
@@ -687,7 +690,7 @@ export default function Home() {
       </div>
 
       <div style={{display:'flex',minHeight:'calc(100vh - 50px)'}}>
-        <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'200px',flexShrink:0,background:'var(--surface)',borderRight:'0.5px solid var(--border)',padding:'16px 0',position:'sticky',top:'48px',height:'calc(100vh - 48px)',overflowY:'auto'}}>
+        <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'200px',flexShrink:0,background:'rgba(20,23,32,0.55)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderRight:'1px solid rgba(255,255,255,0.05)',padding:'16px 0',position:'sticky',top:'48px',height:'calc(100vh - 48px)',overflowY:'auto'}}>
           {['Principal','Live Data','PropFirm'].map(section=>(
             <div key={section}>
               <div className="nav-section-label" style={{padding:'8px 16px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.8px',marginTop:'8px'}}>{section}</div>
