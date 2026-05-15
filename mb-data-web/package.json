@@ -15,6 +15,7 @@
     "chart.js": "^4.4.1",
     "react-chartjs-2": "^5.2.0",
     "web-push": "^3.6.7",
-    "resend": "^4.0.0"
+    "resend": "^4.0.0",
+    "framer-motion": "^11.5.4"
   }
 }

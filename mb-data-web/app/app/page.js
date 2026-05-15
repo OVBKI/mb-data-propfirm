@@ -614,10 +614,12 @@ export default function Home() {
         const days=Math.floor((new Date()-new Date(a.buy_date+'T00:00:00'))/86400000)
         if(days>30)alerts.push({icon:'⏰',title:`Challenge depuis ${days} jours — ${f.name}`,sub:'Vérifiez votre progression',type:'warn'})
         // 🆕 Rappel renouvellement mensuel — 2 jours avant prélèvement
+        // ⚠ Comparaison date-only (00h UTC) pour éviter les décalages dus à l'heure
         if(a.payment_mode==='monthly'&&a.buy_date){
-          const buyD=new Date(a.buy_date+'T00:00:00')
-          const nextB=new Date(buyD); nextB.setDate(buyD.getDate()+(a.months_count||1)*30)
-          const dLeft=Math.floor((nextB-new Date())/86400000)
+          const buyD=new Date(a.buy_date+'T00:00:00Z')
+          const nextB=new Date(buyD); nextB.setUTCDate(buyD.getUTCDate()+(a.months_count||1)*30); nextB.setUTCHours(0,0,0,0)
+          const todayMid=new Date(); todayMid.setUTCHours(0,0,0,0)
+          const dLeft=Math.round((nextB-todayMid)/86400000)
           const acctName=a.name||`Compte du ${a.buy_date}`
           const sym=a.currency==='EUR'?'€':a.currency==='GBP'?'£':'$'
           const dStr=nextB.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})

@@ -42,13 +42,17 @@ export async function GET(req) {
   const firmMap = Object.fromEntries((firms || []).map(f => [f.id, f.name]))
 
   // Filtre : ne garde que ceux dont prochain prélèvement = dans 2 jours
-  const now = new Date()
+  // ⚠ Important : on compare en JOURS uniquement (pas en heures) pour éviter les
+  // décalages dus à l'heure d'exécution du cron. On normalize aujourd'hui à 00h00 UTC.
+  const todayMidnight = new Date()
+  todayMidnight.setUTCHours(0, 0, 0, 0)
   const targets = []
   for (const a of (accounts || [])) {
     const buyDate = new Date(a.buy_date + 'T00:00:00Z')
     const nextBilling = new Date(buyDate)
     nextBilling.setUTCDate(buyDate.getUTCDate() + (a.months_count || 1) * 30)
-    const daysUntilBilling = Math.floor((nextBilling - now) / 86400000)
+    nextBilling.setUTCHours(0, 0, 0, 0) // also normalize to midnight
+    const daysUntilBilling = Math.round((nextBilling - todayMidnight) / 86400000)
     if (daysUntilBilling === 2) {
       targets.push({
         userId: a.user_id,
