@@ -66,7 +66,7 @@ function FeatureItem({ feature, index, size = 'normal' }) {
 
       {/* Title with serif italic accent */}
       <h3 style={{
-        fontFamily: 'var(--font-geist)',
+        fontFamily: 'var(--font-geist-sans)',
         fontWeight: 500,
         fontSize: titleSize,
         lineHeight: 1.2,
@@ -76,7 +76,7 @@ function FeatureItem({ feature, index, size = 'normal' }) {
       }}>{feature.title}</h3>
 
       <p style={{
-        fontFamily: 'var(--font-geist)',
+        fontFamily: 'var(--font-geist-sans)',
         fontSize: size === 'large' ? 15 : 13.5,
         lineHeight: 1.65,
         color: C.text2,
@@ -138,7 +138,7 @@ export default function AsymFeatures({ features }) {
           Tout, sauf le superflu.
         </h2>
         <p style={{
-          fontFamily: 'var(--font-geist)',
+          fontFamily: 'var(--font-geist-sans)',
           fontSize: 'clamp(15px, 1.4vw, 18px)',
           color: C.text2,
           lineHeight: 1.6,

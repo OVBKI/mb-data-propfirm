@@ -120,7 +120,7 @@ export default function GiantStat({ value, label, sublabel, align = 'left', acce
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 1, delay: 0.4, ease: LUXURY_EASE }}
               style={{
-                fontFamily: 'var(--font-geist)',
+                fontFamily: 'var(--font-geist-sans)',
                 fontSize: 'clamp(16px, 1.4vw, 20px)',
                 lineHeight: 1.5,
                 color: C.text2,

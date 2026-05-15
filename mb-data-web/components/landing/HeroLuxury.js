@@ -188,7 +188,7 @@ export default function HeroLuxury({ children }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 1.1, ease: LUXURY_EASE }}
             style={{
-              fontFamily: 'var(--font-geist)',
+              fontFamily: 'var(--font-geist-sans)',
               fontSize: 'clamp(15px, 1.4vw, 18px)',
               lineHeight: 1.6,
               color: C.text2,

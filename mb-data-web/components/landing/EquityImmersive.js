@@ -109,7 +109,7 @@ export default function EquityImmersive() {
           </div>
           <div style={{ maxWidth: 380 }}>
             <p style={{
-              fontFamily: 'var(--font-geist)',
+              fontFamily: 'var(--font-geist-sans)',
               fontSize: 'clamp(15px, 1.3vw, 17px)',
               color: C.text2,
               lineHeight: 1.7,

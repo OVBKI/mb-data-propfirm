@@ -46,7 +46,7 @@ export default function QuietCTA({ href, children, primary = false, large = fals
         padding,
         fontSize,
         fontWeight: 500,
-        fontFamily: 'var(--font-geist)',
+        fontFamily: 'var(--font-geist-sans)',
         letterSpacing,
         borderRadius: 99,
         textDecoration: 'none',

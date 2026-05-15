@@ -1,21 +1,12 @@
-import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google'
+// Typographie distinctive (frontend-design skill : éviter Inter / Roboto / Arial)
+// Geist (sans + mono) via package officiel Vercel — distinctif, modern
+// Instrument Serif (italic) pour headlines luxury via Google Fonts
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
+import { Instrument_Serif } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-// === Typographie distinctive (frontend-design : éviter Inter / Roboto / Arial) ===
-// Geist : sans moderne par Vercel — bien plus distinctif qu'Inter
-// Geist Mono : monospace pour chiffres et data (cohérent avec body)
-// Instrument Serif : italic display utilisé en headlines — signal luxury, éditorial
-const geist = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist',
-  display: 'swap',
-})
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono',
-  display: 'swap',
-})
 const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
   weight: '400',
@@ -39,8 +30,8 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr" className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`}>
-      <body className={geist.className}>
+    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable} ${instrumentSerif.variable}`}>
+      <body className={GeistSans.className}>
         {children}
         {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script

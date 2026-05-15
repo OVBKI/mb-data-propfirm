@@ -89,7 +89,7 @@ export default function EditorialFooter() {
               Une autre façon de tracker.
             </h2>
             <p style={{
-              fontFamily: 'var(--font-geist)',
+              fontFamily: 'var(--font-geist-sans)',
               fontSize: 'clamp(14px, 1.2vw, 16px)',
               color: C.text2,
               lineHeight: 1.7,
@@ -153,7 +153,7 @@ export default function EditorialFooter() {
                     href={link.href}
                     style={{
                       display: 'block',
-                      fontFamily: 'var(--font-geist)',
+                      fontFamily: 'var(--font-geist-sans)',
                       fontSize: 14,
                       color: C.text2,
                       marginBottom: 10,

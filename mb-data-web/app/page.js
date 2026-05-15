@@ -70,7 +70,7 @@ export default function LandingPage() {
       minHeight: '100vh',
       background: C.bg,
       color: C.text,
-      fontFamily: 'var(--font-geist)',
+      fontFamily: 'var(--font-geist-sans)',
       overflowX: 'hidden',
     }}>
       {/* === Atmosphere background (fixed, derrière tout) === */}
@@ -104,7 +104,7 @@ export default function LandingPage() {
             fontSize: 13,
             color: C.text2,
             textDecoration: 'none',
-            fontFamily: 'var(--font-geist)',
+            fontFamily: 'var(--font-geist-sans)',
             transition: 'color 0.2s',
           }}>Se connecter</Link>
           <QuietCTA href="/app" primary>Démarrer</QuietCTA>
@@ -212,7 +212,7 @@ export default function LandingPage() {
                   marginBottom: 12,
                 }}>{step.title}</h3>
                 <p style={{
-                  fontFamily: 'var(--font-geist)',
+                  fontFamily: 'var(--font-geist-sans)',
                   fontSize: 'clamp(14px, 1.2vw, 16px)',
                   color: C.text2,
                   lineHeight: 1.65,
@@ -266,7 +266,7 @@ export default function LandingPage() {
               }}>Analyze.</span> Grow.
             </h2>
             <p style={{
-              fontFamily: 'var(--font-geist)',
+              fontFamily: 'var(--font-geist-sans)',
               fontSize: 'clamp(16px, 1.5vw, 20px)',
               color: C.text2,
               lineHeight: 1.6,
