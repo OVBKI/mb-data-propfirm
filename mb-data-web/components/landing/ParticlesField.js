@@ -58,6 +58,9 @@ export default function ParticlesField({ density = 80, color = '77,143,255' }) {
       ctx.clearRect(0, 0, width, height)
       const mouse = mouseRef.current
 
+      // Use additive blending pour un glow naturel sans banding
+      ctx.globalCompositeOperation = 'lighter'
+
       // Update + draw particles
       particles.forEach(p => {
         // Attraction vers la souris (subtle)
@@ -82,12 +85,18 @@ export default function ParticlesField({ density = 80, color = '77,143,255' }) {
         if (p.y < 0) p.y = height
         if (p.y > height) p.y = 0
 
-        // Draw particule (avec glow)
+        // Draw particule avec glow naturel (shadowBlur = ambient light)
+        ctx.shadowBlur = 8
+        ctx.shadowColor = `rgba(${color},0.8)`
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(${color},${p.opacity})`
         ctx.fill()
       })
+
+      // Reset blending pour les liens (ne pas additionner)
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.shadowBlur = 0
 
       // Liens entre particules proches
       for (let i = 0; i < particles.length; i++) {
@@ -109,13 +118,17 @@ export default function ParticlesField({ density = 80, color = '77,143,255' }) {
         }
       }
 
-      // Halo autour de la souris
+      // Halo autour de la souris — gradient avec multiples stops pour éviter le banding
       if (mouse.x > -9000) {
-        const grd = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 180)
-        grd.addColorStop(0, `rgba(${color},0.10)`)
-        grd.addColorStop(1, `rgba(${color},0)`)
+        const grd = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 200)
+        grd.addColorStop(0,    `rgba(${color},0.12)`)
+        grd.addColorStop(0.15, `rgba(${color},0.09)`)
+        grd.addColorStop(0.35, `rgba(${color},0.05)`)
+        grd.addColorStop(0.55, `rgba(${color},0.02)`)
+        grd.addColorStop(0.75, `rgba(${color},0.005)`)
+        grd.addColorStop(1,    `rgba(${color},0)`)
         ctx.fillStyle = grd
-        ctx.fillRect(mouse.x - 200, mouse.y - 200, 400, 400)
+        ctx.fillRect(mouse.x - 220, mouse.y - 220, 440, 440)
       }
 
       animationRef.current = requestAnimationFrame(draw)

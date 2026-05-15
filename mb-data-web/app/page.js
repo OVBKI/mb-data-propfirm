@@ -146,7 +146,7 @@ export default function LandingPage() {
       <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {/* Particles canvas en arrière-plan */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <ParticlesField density={70} color="77,143,255" />
+          <ParticlesField density={130} color="77,143,255" />
         </div>
 
         {/* Vignette pour adoucir les bords */}
@@ -159,10 +159,10 @@ export default function LandingPage() {
         <HeroSection>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
             <MagneticButton href="/app" primary large>
-              🚀 Démarrer gratuitement
+              Démarrer gratuitement
             </MagneticButton>
             <MagneticButton href="#features" large>
-              Voir les features ↓
+              Voir les features
             </MagneticButton>
           </div>
         </HeroSection>
@@ -278,7 +278,7 @@ export default function LandingPage() {
             Inscription gratuite. Pas de carte bancaire. Configure ta 1ère PropFirm en 90 secondes.
           </p>
           <MagneticButton href="/app" primary large>
-            🚀 Démarrer maintenant
+            Démarrer maintenant
           </MagneticButton>
           <p style={{ marginTop: 20, fontSize: 12, color: colors.text3 }}>
             🔒 Tes données t'appartiennent · 🇺🇸 Quantara LLC Texas · 🛡 RGPD compliant

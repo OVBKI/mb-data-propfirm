@@ -50,24 +50,34 @@ export default function HeroSection({ children }) {
         whileHover={{ scale: 1.05 }}
         style={{ position: 'relative', marginBottom: 28, cursor: 'pointer' }}
       >
-        {/* Halo qui suit la souris (le grand, principal) */}
+        {/* Halo qui suit la souris — gradient avec MANY stops pour smooth (no banding rays) */}
         <motion.div
           animate={{ x: glowX, y: glowY }}
           transition={{ type: 'spring', stiffness: 80, damping: 20 }}
           style={{
             position: 'absolute', inset: 0,
-            width: 120, height: 120, marginLeft: 'auto', marginRight: 'auto',
-            background: `radial-gradient(circle, ${C.blueLight}55, ${C.blue}20 40%, transparent 70%)`,
-            filter: 'blur(30px)',
+            width: 180, height: 180,
+            marginLeft: 'auto', marginRight: 'auto',
+            top: -30, left: -30,
+            background: `radial-gradient(circle,
+              rgba(77,143,255,0.35) 0%,
+              rgba(77,143,255,0.28) 12%,
+              rgba(77,143,255,0.20) 25%,
+              rgba(77,143,255,0.13) 38%,
+              rgba(77,143,255,0.07) 52%,
+              rgba(77,143,255,0.03) 68%,
+              rgba(77,143,255,0.01) 82%,
+              transparent 100%)`,
+            filter: 'blur(20px)',
             zIndex: -1,
             pointerEvents: 'none',
           }}
         />
-        {/* Idle pulse — second halo qui pulse doucement quand l'user bouge pas la souris */}
+        {/* Idle pulse — second halo plus large, smooth gradient */}
         <motion.div
           animate={{
-            scale: [1, 1.25, 1],
-            opacity: [0.3, 0.6, 0.3],
+            scale: [1, 1.18, 1],
+            opacity: [0.4, 0.7, 0.4],
           }}
           transition={{
             duration: 4,
@@ -76,11 +86,17 @@ export default function HeroSection({ children }) {
           }}
           style={{
             position: 'absolute', inset: 0,
-            width: 140, height: 140,
+            width: 220, height: 220,
             marginLeft: 'auto', marginRight: 'auto',
-            top: -10, left: -10,
-            background: `radial-gradient(circle, ${C.blueLight}30, transparent 60%)`,
-            filter: 'blur(40px)',
+            top: -50, left: -50,
+            background: `radial-gradient(circle,
+              rgba(77,143,255,0.18) 0%,
+              rgba(77,143,255,0.13) 15%,
+              rgba(77,143,255,0.08) 30%,
+              rgba(77,143,255,0.04) 50%,
+              rgba(77,143,255,0.015) 70%,
+              transparent 90%)`,
+            filter: 'blur(30px)',
             zIndex: -2,
             pointerEvents: 'none',
           }}

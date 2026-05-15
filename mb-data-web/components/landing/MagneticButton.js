@@ -57,19 +57,24 @@ export default function MagneticButton({
     setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 700)
   }
 
-  const padding = large ? '16px 36px' : '11px 22px'
-  const fontSize = large ? 16 : 13
+  const padding = large ? '15px 30px' : '11px 22px'
+  const fontSize = large ? 14 : 12.5
+  const radius = 10 // square-ish, pas de pill — moins AI-default
 
+  // Primary : INVERSÉ (off-white sur fond sombre) — plus premium, casse le pattern AI "blue gradient pill"
   const primaryStyle = {
-    background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,
-    color: '#fff',
-    boxShadow: '0 8px 24px rgba(45,111,255,0.4), 0 0 0 1px rgba(77,143,255,0.3)',
+    background: C.text, // #f0ede8 (off-white)
+    color: '#0a0c10',
+    border: '1px solid transparent',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 24px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.2)',
   }
+  // Secondary : ghost subtle avec border 0.5px
   const secondaryStyle = {
-    background: 'rgba(255,255,255,0.04)',
+    background: 'rgba(255,255,255,0.025)',
     color: C.text,
-    border: `1px solid ${C.border2}`,
-    backdropFilter: 'blur(10px)',
+    border: '0.5px solid rgba(255,255,255,0.18)',
+    backdropFilter: 'blur(12px)',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
   }
 
   const Wrapper = href ? Link : 'button'
@@ -85,44 +90,37 @@ export default function MagneticButton({
         ref={ref}
         {...wrapperProps}
         onClick={(e) => { onClick(e); wrapperProps.onClick?.(e) }}
+        className="qt-mag-btn"
         style={{
           position: 'relative',
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 10,
           padding,
           fontSize,
-          fontWeight: 600,
-          borderRadius: 99,
+          fontWeight: 500,
+          letterSpacing: '0.005em',
+          borderRadius: radius,
           cursor: 'pointer',
           fontFamily: 'inherit',
           textDecoration: 'none',
           overflow: 'hidden',
-          transition: 'box-shadow 0.2s',
+          transition: 'transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s, background 0.25s',
           ...(primary ? primaryStyle : secondaryStyle),
         }}
       >
-        {/* Glow pulse en arrière-plan pour bouton primaire */}
+        {/* Subtle highlight top — mimétisme matière (premium feel) */}
         {primary && (
-          <motion.div
-            animate={{
-              opacity: [0.4, 0.7, 0.4],
-              scale: [1, 1.03, 1],
-            }}
-            transition={{
-              duration: 2.5,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            style={{
-              position: 'absolute',
-              inset: -2,
-              background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight}, ${C.blue})`,
-              filter: 'blur(8px)',
-              zIndex: -1,
-              borderRadius: 99,
-            }}
-          />
+          <span style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0,
+            height: '50%',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.5), transparent)',
+            opacity: 0.35,
+            borderRadius: `${radius}px ${radius}px 0 0`,
+            pointerEvents: 'none',
+            zIndex: 0,
+          }} />
         )}
         {/* Ripples au clic */}
         {ripples.map(r => (
@@ -135,7 +133,7 @@ export default function MagneticButton({
               width: 0,
               height: 0,
               borderRadius: '50%',
-              background: primary ? 'rgba(255,255,255,0.4)' : 'rgba(77,143,255,0.3)',
+              background: primary ? 'rgba(45,111,255,0.5)' : 'rgba(77,143,255,0.4)',
               transform: 'translate(-50%, -50%)',
               animation: 'qtRipple 0.7s ease-out',
               pointerEvents: 'none',
@@ -143,12 +141,26 @@ export default function MagneticButton({
           />
         ))}
         <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
+        {/* Arrow qui glisse au hover (plus lisible qu'un emoji) */}
+        <span className="qt-mag-arrow" style={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'inline-block',
+          transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
+          fontFamily: 'monospace',
+          fontWeight: 400,
+          fontSize: fontSize - 1,
+          opacity: 0.85,
+        }}>→</span>
       </Wrapper>
       <style>{`
         @keyframes qtRipple {
-          0% { width: 0; height: 0; opacity: 0.6; }
+          0% { width: 0; height: 0; opacity: 0.5; }
           100% { width: 400px; height: 400px; opacity: 0; }
         }
+        .qt-mag-btn:hover { transform: translateY(-1px); }
+        .qt-mag-btn:hover .qt-mag-arrow { transform: translateX(3px); }
+        .qt-mag-btn:active { transform: translateY(0); }
       `}</style>
     </motion.div>
   )
