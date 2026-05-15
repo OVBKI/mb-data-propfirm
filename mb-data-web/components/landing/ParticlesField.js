@@ -58,7 +58,8 @@ export default function ParticlesField({ density = 80, color = '77,143,255' }) {
       ctx.clearRect(0, 0, width, height)
       const mouse = mouseRef.current
 
-      // Use additive blending pour un glow naturel sans banding
+      // Additive blending — quand 2 particules se chevauchent, l'effet glow se crée
+      // naturellement (somme des couleurs). PAS BESOIN de shadowBlur (qui est BRUTAL pour le GPU).
       ctx.globalCompositeOperation = 'lighter'
 
       // Update + draw particles
@@ -85,18 +86,16 @@ export default function ParticlesField({ density = 80, color = '77,143,255' }) {
         if (p.y < 0) p.y = height
         if (p.y > height) p.y = 0
 
-        // Draw particule avec glow naturel (shadowBlur = ambient light)
-        ctx.shadowBlur = 8
-        ctx.shadowColor = `rgba(${color},0.8)`
+        // Draw particule : 1 cercle solide simple. Le glow vient du blending 'lighter'
+        // quand les particules se chevauchent (hyper léger pour le GPU vs shadowBlur).
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(${color},${p.opacity})`
         ctx.fill()
       })
 
-      // Reset blending + shadow pour le halo souris
+      // Reset blending pour le halo souris
       ctx.globalCompositeOperation = 'source-over'
-      ctx.shadowBlur = 0
 
       // PAS de lignes entre particules — elles créent un effet "toile d'araignée" / "rayons"
       // qui parasite le halo du logo. Particules seules = bien plus refined.

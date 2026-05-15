@@ -1,9 +1,10 @@
 'use client'
 // Hero animé : logo Quantara avec glow qui suit la souris + tagline en spring sequence.
-// Utilise framer-motion pour les ressorts physiques (pas des CSS transitions plates).
+// PERF : useMotionValue au lieu de useState pour le mouse tracking → 0 re-render React
+// (les motion values updatent le DOM directement, sans repasser par React)
 
-import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import Logo from '../Logo'
 
 const C = {
@@ -15,23 +16,45 @@ const C = {
 
 export default function HeroSection({ children }) {
   const ref = useRef(null)
-  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 }) // normalisé 0-1
+
+  // PERF : motion values évitent les re-renders à chaque mousemove
+  const mouseX = useMotionValue(0.5)
+  const mouseY = useMotionValue(0.5)
+  // Spring smoothing direct côté framer-motion (pas de re-render React)
+  const glowX = useSpring(useTransform(mouseX, v => (v - 0.5) * 40), { stiffness: 80, damping: 20 })
+  const glowY = useSpring(useTransform(mouseY, v => (v - 0.5) * 40), { stiffness: 80, damping: 20 })
 
   useEffect(() => {
+    let rafId
+    let pendingX = 0.5
+    let pendingY = 0.5
+    let needsUpdate = false
+
     function onMove(e) {
       if (!ref.current) return
       const rect = ref.current.getBoundingClientRect()
-      const x = (e.clientX - rect.left) / rect.width
-      const y = (e.clientY - rect.top) / rect.height
-      setMouse({ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) })
+      pendingX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+      pendingY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height))
+      needsUpdate = true
     }
-    window.addEventListener('mousemove', onMove)
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [])
 
-  // Glow position calculée depuis la souris (offset par rapport au centre)
-  const glowX = (mouse.x - 0.5) * 40 // ±20px max
-  const glowY = (mouse.y - 0.5) * 40
+    // Throttle via rAF → max 60 updates/sec au lieu de 1000+ events/sec
+    function tick() {
+      if (needsUpdate) {
+        mouseX.set(pendingX)
+        mouseY.set(pendingY)
+        needsUpdate = false
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+    window.addEventListener('mousemove', onMove, { passive: true })
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('mousemove', onMove)
+    }
+  }, [mouseX, mouseY])
 
   const words = ['Track.', 'Analyze.', 'Grow.']
   const wordColors = [C.blue, C.blueLight, '#7ba9ff']
@@ -50,11 +73,11 @@ export default function HeroSection({ children }) {
         whileHover={{ scale: 1.05 }}
         style={{ position: 'relative', marginBottom: 28, cursor: 'pointer' }}
       >
-        {/* Halo qui suit la souris — gradient avec MANY stops pour smooth (no banding rays) */}
+        {/* Halo qui suit la souris — motion values directes (pas de re-render React) */}
         <motion.div
-          animate={{ x: glowX, y: glowY }}
-          transition={{ type: 'spring', stiffness: 80, damping: 20 }}
           style={{
+            x: glowX,
+            y: glowY,
             position: 'absolute', inset: 0,
             width: 180, height: 180,
             marginLeft: 'auto', marginRight: 'auto',

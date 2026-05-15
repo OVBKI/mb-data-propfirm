@@ -109,12 +109,11 @@ export default function LandingPage() {
       <SmoothScrollProvider />
       <ScrollProgress />
 
-      {/* Grain noise très subtil sur tout le body — détail "non-AI", ajoute du caractère */}
+      {/* Grain noise très subtil — sans mix-blend-mode pour éviter coût GPU compositing */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none',
-        opacity: 0.025,
+        opacity: 0.018,
         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")`,
-        mixBlendMode: 'overlay',
       }} />
 
       {/* Top bar minimaliste — style refined cohérent avec MagneticButton */}
@@ -174,7 +173,7 @@ export default function LandingPage() {
       <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {/* Particles canvas en arrière-plan */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <ParticlesField density={130} color="77,143,255" />
+          <ParticlesField density={90} color="77,143,255" />
         </div>
 
         {/* Vignette pour adoucir les bords */}
