@@ -94,29 +94,12 @@ export default function ParticlesField({ density = 80, color = '77,143,255' }) {
         ctx.fill()
       })
 
-      // Reset blending pour les liens (ne pas additionner)
+      // Reset blending + shadow pour le halo souris
       ctx.globalCompositeOperation = 'source-over'
       ctx.shadowBlur = 0
 
-      // Liens entre particules proches
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i]
-          const b = particles[j]
-          const dx = a.x - b.x
-          const dy = a.y - b.y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 120) {
-            const opacity = (1 - dist / 120) * 0.15
-            ctx.strokeStyle = `rgba(${color},${opacity})`
-            ctx.lineWidth = 0.5
-            ctx.beginPath()
-            ctx.moveTo(a.x, a.y)
-            ctx.lineTo(b.x, b.y)
-            ctx.stroke()
-          }
-        }
-      }
+      // PAS de lignes entre particules — elles créent un effet "toile d'araignée" / "rayons"
+      // qui parasite le halo du logo. Particules seules = bien plus refined.
 
       // Halo autour de la souris — gradient avec multiples stops pour éviter le banding
       if (mouse.x > -9000) {

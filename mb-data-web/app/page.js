@@ -117,29 +117,57 @@ export default function LandingPage() {
         mixBlendMode: 'overlay',
       }} />
 
-      {/* Top bar minimaliste */}
+      {/* Top bar minimaliste — style refined cohérent avec MagneticButton */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
         padding: '14px 24px',
-        background: 'rgba(13,15,20,0.6)',
+        background: 'rgba(13,15,20,0.65)',
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${colors.border}`,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <div style={{ fontWeight: 800, letterSpacing: '0.1em', fontSize: 14 }}>QUANTARA</div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Link href="/app" style={{
-            padding: '8px 16px', fontSize: 13, fontWeight: 600,
-            borderRadius: 99, color: colors.text2,
-            textDecoration: 'none', border: `1px solid ${colors.border2}`,
+        <div style={{ fontWeight: 800, letterSpacing: '0.12em', fontSize: 13, color: colors.text }}>QUANTARA</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Se connecter — ghost subtle */}
+          <Link href="/app" className="qt-topbtn-ghost" style={{
+            padding: '8px 16px', fontSize: 12.5, fontWeight: 500,
+            borderRadius: 8,
+            color: colors.text2,
+            textDecoration: 'none',
+            border: '0.5px solid rgba(255,255,255,0.10)',
+            background: 'rgba(255,255,255,0.02)',
+            transition: 'color 0.2s, border-color 0.2s, background 0.2s',
+            letterSpacing: '0.005em',
           }}>Se connecter</Link>
-          <Link href="/app" style={{
-            padding: '8px 16px', fontSize: 13, fontWeight: 600,
-            borderRadius: 99,
-            background: `linear-gradient(135deg, ${colors.blue}, ${colors.blueLight})`,
-            color: '#fff', textDecoration: 'none',
-          }}>Démarrer</Link>
+          {/* Démarrer — INVERSÉ premium (off-white sur sombre) */}
+          <Link href="/app" className="qt-topbtn-primary" style={{
+            padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
+            borderRadius: 8,
+            background: colors.text,
+            color: '#0a0c10',
+            textDecoration: 'none',
+            border: '1px solid transparent',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.3)',
+            transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s',
+            letterSpacing: '0.005em',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}>
+            Démarrer
+            <span style={{
+              fontFamily: 'monospace', fontSize: 11, opacity: 0.7,
+              transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
+            }} className="qt-topbtn-arrow">→</span>
+          </Link>
         </div>
+        <style>{`
+          .qt-topbtn-ghost:hover {
+            color: ${colors.text} !important;
+            border-color: rgba(255,255,255,0.18) !important;
+            background: rgba(255,255,255,0.05) !important;
+          }
+          .qt-topbtn-primary:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 6px 18px rgba(0,0,0,0.4) !important; }
+          .qt-topbtn-primary:hover .qt-topbtn-arrow { transform: translateX(2px); }
+        `}</style>
       </div>
 
       {/* === HERO avec particles background === */}
