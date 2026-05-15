@@ -32,7 +32,11 @@ export async function GET(req) {
   const users = usersData.users || []
 
   // Récupère toutes les données du mois en parallèle
-  const [tradesRes, payoutsRes, firmsRes, accountsRes] = await Promise.all([
+  // + tous les comptes monthly (peu importe création) pour calculer le recurring qui a hit dans le mois
+  // + tous les comptes activés dans le mois (pour les frais d'activation)
+  const startMonthStr = startOfMonth.toISOString().slice(0, 10)
+  const endMonthStr = endOfMonth.toISOString().slice(0, 10)
+  const [tradesRes, payoutsRes, firmsRes, accountsRes, allMonthlyRes, activatedRes] = await Promise.all([
     supabase.from('journal_entries').select('user_id, pnl, date, created_at')
       .gte('created_at', startOfMonth.toISOString())
       .lte('created_at', endOfMonth.toISOString()),
@@ -42,15 +46,25 @@ export async function GET(req) {
     supabase.from('firms').select('id, user_id, created_at')
       .gte('created_at', startOfMonth.toISOString())
       .lte('created_at', endOfMonth.toISOString()),
-    supabase.from('accounts').select('user_id, status, spent, currency, created_at')
+    supabase.from('accounts').select('user_id, status, spent, currency, activation_fee, created_at')
       .gte('created_at', startOfMonth.toISOString())
       .lte('created_at', endOfMonth.toISOString()),
+    // Tous les comptes monthly (pour recurring qui a frappé dans le mois)
+    supabase.from('accounts').select('user_id, spent, buy_date, months_count, payment_mode')
+      .eq('payment_mode', 'monthly'),
+    // Comptes activés dans le mois (frais d'activation payés)
+    supabase.from('accounts').select('user_id, activation_fee, activation_date')
+      .gte('activation_date', startMonthStr)
+      .lte('activation_date', endMonthStr)
+      .gt('activation_fee', 0),
   ])
 
   const trades = tradesRes.data || []
   const payouts = payoutsRes.data || []
   const newFirms = firmsRes.data || []
   const newAccounts = accountsRes.data || []
+  const allMonthlyAccounts = allMonthlyRes.data || []
+  const activatedInMonth = activatedRes.data || []
 
   let sent = 0
   const failures = []
@@ -76,6 +90,34 @@ export async function GET(req) {
     const winRate = (wins + losses) > 0 ? Math.round((wins / (wins + losses)) * 100) : 0
     const totalPayoutsAmount = userPayouts.reduce((s, p) => s + (Number(p.amount) || 0), 0)
 
+    // === Calcul des dépenses totales du mois pour cet user ===
+    // 1) Achat de nouveaux challenges dans le mois (spent de chaque compte créé)
+    let totalSpentMonth = 0
+    userAccounts.forEach(a => {
+      totalSpentMonth += Number(a.spent) || 0
+      // Si le compte a été créé ET activé dans le mois, on compte aussi l'activation
+      // (sinon les activations hors-mois sont gérées par activatedInMonth ci-dessous)
+    })
+    // 2) Frais d'activation payés dans le mois (toutes activations, pas seulement comptes créés dans le mois)
+    activatedInMonth.filter(a => a.user_id === user.id).forEach(a => {
+      totalSpentMonth += Number(a.activation_fee) || 0
+    })
+    // 3) Mensualités récurrentes : comptes monthly créés AVANT le mois mais dont un cycle de facturation
+    // est tombé dans le mois (ex: compte acheté en mars, le 2ème prélèvement tombe en avril)
+    allMonthlyAccounts.filter(a => a.user_id === user.id).forEach(a => {
+      if (!a.buy_date) return
+      const buy = new Date(a.buy_date + 'T00:00:00Z')
+      if (buy >= startOfMonth) return // déjà compté dans #1 (création dans le mois)
+      const cycles = (a.months_count || 1)
+      for (let i = 1; i < cycles; i++) {
+        const billDate = new Date(buy)
+        billDate.setUTCDate(buy.getUTCDate() + i * 30)
+        if (billDate >= startOfMonth && billDate <= endOfMonth) {
+          totalSpentMonth += Number(a.spent) || 0
+        }
+      }
+    })
+
     // Génère HTML
     const html = generateRecapHTML({
       monthLabel,
@@ -88,6 +130,7 @@ export async function GET(req) {
       totalPayoutsAmount,
       newFirmsCount: userFirms.length,
       newAccountsCount: userAccounts.length,
+      totalSpentMonth,
     })
 
     try {
@@ -121,9 +164,14 @@ function generateRecapHTML(data) {
     tradeCount, totalPnL, winRate, wins, losses,
     payoutCount, totalPayoutsAmount,
     newFirmsCount, newAccountsCount,
+    totalSpentMonth = 0,
   } = data
   const pnlColor = totalPnL >= 0 ? '#1db87a' : '#e8504a'
   const pnlSign = totalPnL >= 0 ? '+' : ''
+  // Bilan net = payouts - dépenses (le vrai cash flow du mois)
+  const netCashFlow = totalPayoutsAmount - totalSpentMonth
+  const netColor = netCashFlow >= 0 ? '#1db87a' : '#e8504a'
+  const netSign = netCashFlow >= 0 ? '+' : ''
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -147,8 +195,8 @@ function generateRecapHTML(data) {
           <p style="font-size:13px;color:#9098b0;margin:0;line-height:1.5;">Voici ce que tu as accompli sur Quantara ce mois-ci.</p>
         </td></tr>
 
-        <!-- Stats principales -->
-        <tr><td style="padding:0 32px 24px;">
+        <!-- Stats principales : Trades + PnL -->
+        <tr><td style="padding:0 32px 14px;">
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
@@ -158,34 +206,53 @@ function generateRecapHTML(data) {
               </td>
               <td width="8"></td>
               <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💰 PnL net</div>
+                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💰 PnL trading</div>
                 <div style="font-size:28px;font-weight:700;color:${pnlColor};">${pnlSign}${totalPnL.toFixed(0)} $</div>
-                <div style="font-size:11px;color:#9098b0;margin-top:4px;">Performance trading</div>
+                <div style="font-size:11px;color:#9098b0;margin-top:4px;">Performance journal</div>
               </td>
             </tr>
           </table>
         </td></tr>
 
-        <!-- Payouts + activité -->
-        <tr><td style="padding:0 32px 24px;">
+        <!-- Cash flow : Dépenses + Payouts + Net -->
+        <tr><td style="padding:0 32px 14px;">
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td width="33%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💸 Payouts</div>
-                <div style="font-size:20px;font-weight:700;color:#1db87a;">${payoutCount}</div>
-                <div style="font-size:11px;color:#9098b0;margin-top:4px;">+${totalPayoutsAmount.toFixed(0)} $ net</div>
+                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📉 Dépenses</div>
+                <div style="font-size:20px;font-weight:700;color:#e8504a;">-${totalSpentMonth.toFixed(0)} $</div>
+                <div style="font-size:11px;color:#9098b0;margin-top:4px;">challenges + activations + mensualités</div>
               </td>
               <td width="8"></td>
               <td width="33%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
+                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💸 Payouts</div>
+                <div style="font-size:20px;font-weight:700;color:#1db87a;">+${totalPayoutsAmount.toFixed(0)} $</div>
+                <div style="font-size:11px;color:#9098b0;margin-top:4px;">${payoutCount} payout${payoutCount > 1 ? 's' : ''} net reçu${payoutCount > 1 ? 's' : ''}</div>
+              </td>
+              <td width="8"></td>
+              <td width="33%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;border:1px solid ${netCashFlow >= 0 ? 'rgba(29,184,122,0.3)' : 'rgba(232,80,74,0.3)'};" valign="top">
+                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⚖️ Bilan du mois</div>
+                <div style="font-size:20px;font-weight:700;color:${netColor};">${netSign}${netCashFlow.toFixed(0)} $</div>
+                <div style="font-size:11px;color:#9098b0;margin-top:4px;">cash flow réel</div>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <!-- Activité : Firmes + Comptes -->
+        <tr><td style="padding:0 32px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
                 <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🏢 Firmes</div>
                 <div style="font-size:20px;font-weight:700;color:#4d8fff;">${newFirmsCount}</div>
-                <div style="font-size:11px;color:#9098b0;margin-top:4px;">ajoutée${newFirmsCount > 1 ? 's' : ''}</div>
+                <div style="font-size:11px;color:#9098b0;margin-top:4px;">ajoutée${newFirmsCount > 1 ? 's' : ''} ce mois</div>
               </td>
               <td width="8"></td>
-              <td width="33%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
+              <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
                 <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💼 Comptes</div>
                 <div style="font-size:20px;font-weight:700;color:#fac775;">${newAccountsCount}</div>
-                <div style="font-size:11px;color:#9098b0;margin-top:4px;">créé${newAccountsCount > 1 ? 's' : ''}</div>
+                <div style="font-size:11px;color:#9098b0;margin-top:4px;">créé${newAccountsCount > 1 ? 's' : ''} ce mois</div>
               </td>
             </tr>
           </table>
