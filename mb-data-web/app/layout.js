@@ -1,19 +1,8 @@
-// Typographie distinctive (frontend-design skill : éviter Inter / Roboto / Arial)
-// Geist (sans + mono) via package officiel Vercel — distinctif, modern
-// Instrument Serif (italic) pour headlines luxury via Google Fonts
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import { Instrument_Serif } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  variable: '--font-serif',
-  display: 'swap',
-})
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
@@ -30,8 +19,8 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable} ${instrumentSerif.variable}`}>
-      <body className={GeistSans.className}>
+    <html lang="fr">
+      <body className={inter.className}>
         {children}
         {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script
