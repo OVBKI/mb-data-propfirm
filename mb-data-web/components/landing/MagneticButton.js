@@ -6,6 +6,7 @@
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { useClickSound } from './useClickSound'
 
 const C = {
   text: '#f0ede8',
@@ -20,6 +21,8 @@ export default function MagneticButton({
   const ref = useRef(null)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [ripples, setRipples] = useState([])
+  // Sound : pop subtle au clic (frequency selon primary/secondary pour différencier)
+  const playPop = useClickSound({ frequency: primary ? 720 : 540, volume: 0.06 })
 
   useEffect(() => {
     function onMove(e) {
@@ -44,6 +47,8 @@ export default function MagneticButton({
 
   function onClick(e) {
     if (!ref.current) return
+    // Sound effect (subtle pop)
+    playPop()
     const rect = ref.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top

@@ -21,14 +21,20 @@ function FeatureCard({ feature, index }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-50px' })
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const [spotlight, setSpotlight] = useState({ x: -200, y: -200, active: false })
 
   function onMove(e) {
     const rect = ref.current.getBoundingClientRect()
     const x = (e.clientX - rect.left) / rect.width - 0.5
     const y = (e.clientY - rect.top) / rect.height - 0.5
     setTilt({ x: y * -8, y: x * 8 }) // inversion intentionnelle pour effet naturel
+    // Spotlight position en pixels (pas normalisée) pour radial-gradient
+    setSpotlight({ x: e.clientX - rect.left, y: e.clientY - rect.top, active: true })
   }
-  function onLeave() { setTilt({ x: 0, y: 0 }) }
+  function onLeave() {
+    setTilt({ x: 0, y: 0 })
+    setSpotlight(prev => ({ ...prev, active: false }))
+  }
 
   return (
     <motion.div
@@ -70,6 +76,32 @@ function FeatureCard({ feature, index }) {
           background: `radial-gradient(circle, ${C.blue}20, transparent 70%)`,
           filter: 'blur(40px)',
           opacity: 0.6,
+          pointerEvents: 'none',
+        }} />
+
+        {/* SPOTLIGHT — curseur lumineux qui suit la souris dans la card (effet premium) */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: spotlight.active ? 1 : 0,
+          transition: 'opacity 0.4s cubic-bezier(0.16,1,0.3,1)',
+          background: `radial-gradient(280px circle at ${spotlight.x}px ${spotlight.y}px, ${C.blueLight}25, transparent 60%)`,
+          pointerEvents: 'none',
+          borderRadius: 16,
+        }} />
+
+        {/* Border glow accent qui apparait au hover */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: spotlight.active ? 1 : 0,
+          transition: 'opacity 0.4s cubic-bezier(0.16,1,0.3,1)',
+          borderRadius: 16,
+          padding: 1,
+          background: `radial-gradient(280px circle at ${spotlight.x}px ${spotlight.y}px, ${C.blueLight}60, transparent 50%)`,
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          maskComposite: 'exclude',
           pointerEvents: 'none',
         }} />
 

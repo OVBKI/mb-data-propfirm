@@ -42,14 +42,15 @@ export default function HeroSection({ children }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: '120px 24px 80px', textAlign: 'center',
     }}>
-      {/* Logo + glow réactif souris */}
+      {/* Logo + glow réactif souris + idle pulse + scale au hover */}
       <motion.div
         initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 160, damping: 14, delay: 0.1 }}
-        style={{ position: 'relative', marginBottom: 28 }}
+        whileHover={{ scale: 1.05 }}
+        style={{ position: 'relative', marginBottom: 28, cursor: 'pointer' }}
       >
-        {/* Halo qui suit la souris */}
+        {/* Halo qui suit la souris (le grand, principal) */}
         <motion.div
           animate={{ x: glowX, y: glowY }}
           transition={{ type: 'spring', stiffness: 80, damping: 20 }}
@@ -59,6 +60,28 @@ export default function HeroSection({ children }) {
             background: `radial-gradient(circle, ${C.blueLight}55, ${C.blue}20 40%, transparent 70%)`,
             filter: 'blur(30px)',
             zIndex: -1,
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Idle pulse — second halo qui pulse doucement quand l'user bouge pas la souris */}
+        <motion.div
+          animate={{
+            scale: [1, 1.25, 1],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          style={{
+            position: 'absolute', inset: 0,
+            width: 140, height: 140,
+            marginLeft: 'auto', marginRight: 'auto',
+            top: -10, left: -10,
+            background: `radial-gradient(circle, ${C.blueLight}30, transparent 60%)`,
+            filter: 'blur(40px)',
+            zIndex: -2,
             pointerEvents: 'none',
           }}
         />

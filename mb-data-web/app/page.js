@@ -11,6 +11,11 @@ import FlipFeatureCards from '../components/landing/FlipFeatureCards'
 import EquityCurveSelfDraw from '../components/landing/EquityCurveSelfDraw'
 import MeshGradientFooter from '../components/landing/MeshGradientFooter'
 import LandingScrollEffects from '../components/landing/LandingScrollEffects'
+// Polish layers (A-F + grain non-AI)
+import ScrollProgress from '../components/landing/ScrollProgress'
+import SmoothScrollProvider from '../components/landing/SmoothScrollProvider'
+import AnimatedStats from '../components/landing/AnimatedStats'
+import EnhancedSteps from '../components/landing/EnhancedSteps'
 
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
@@ -98,7 +103,20 @@ export default function LandingPage() {
       background: colors.bg,
       color: colors.text,
       overflowX: 'hidden',
+      position: 'relative',
     }}>
+      {/* Polish layers — invisible mais cassent le côté "AI-default" */}
+      <SmoothScrollProvider />
+      <ScrollProgress />
+
+      {/* Grain noise très subtil sur tout le body — détail "non-AI", ajoute du caractère */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none',
+        opacity: 0.025,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")`,
+        mixBlendMode: 'overlay',
+      }} />
+
       {/* Top bar minimaliste */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
@@ -162,37 +180,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* === STATS strip === */}
-      <section style={{
-        padding: '60px 24px',
-        position: 'relative',
-        background: `linear-gradient(180deg, transparent, ${colors.surface}40, transparent)`,
-      }}>
-        <div style={{
-          maxWidth: 1100, margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: 24,
-        }}>
-          {STATS.map((s, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: 'clamp(28px, 4vw, 42px)',
-                fontWeight: 800,
-                background: `linear-gradient(135deg, ${colors.blue}, ${colors.blueLight})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                marginBottom: 6,
-                letterSpacing: '-0.02em',
-              }}>{s.v}</div>
-              <div style={{ fontSize: 12, color: colors.text3, textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600 }}>
-                {s.l}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* === STATS strip avec compteurs animés au scroll === */}
+      <AnimatedStats stats={STATS} />
 
       {/* === DASHBOARD PREVIEW === */}
       <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
@@ -257,48 +246,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* === HOW IT WORKS (3 steps) === */}
-      <section style={{ padding: '80px 24px', position: 'relative', background: `linear-gradient(180deg, transparent, ${colors.surface}30, transparent)` }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 60 }}>
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: colors.amber,
-              textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12,
-            }}>🚀 Comment ça marche</div>
-            <h2 style={{
-              fontSize: 'clamp(28px, 4vw, 40px)',
-              fontWeight: 800, marginBottom: 14,
-              letterSpacing: '-0.02em',
-            }}>3 étapes. 90 secondes. Démarre maintenant.</h2>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 28 }}>
-            {STEPS.map(step => (
-              <div key={step.n} style={{
-                background: 'rgba(20,23,32,0.5)',
-                border: `1px solid ${colors.border}`,
-                borderRadius: 14,
-                padding: 28,
-                position: 'relative',
-                backdropFilter: 'blur(20px)',
-              }}>
-                <div style={{
-                  position: 'absolute', top: -16, left: 28,
-                  width: 36, height: 36,
-                  background: `linear-gradient(135deg, ${colors.blue}, ${colors.blueLight})`,
-                  borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 14, color: '#fff',
-                  boxShadow: `0 6px 16px ${colors.blue}66`,
-                }}>{step.n}</div>
-                <div style={{ height: 16 }} />
-                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>{step.title}</h3>
-                <p style={{ fontSize: 13, color: colors.text2, lineHeight: 1.65 }}>{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* === HOW IT WORKS (steps avec ligne lumineuse + hover) === */}
+      <EnhancedSteps steps={STEPS} />
 
       {/* === FINAL CTA === */}
       <section style={{ padding: '100px 24px', textAlign: 'center', position: 'relative' }}>

@@ -10,10 +10,8 @@ export default function LandingScrollEffects() {
         50%      { transform: translate(-50%, 6px); opacity: 1; }
       }
 
-      /* Smooth scroll natif */
-      html {
-        scroll-behavior: smooth;
-      }
+      /* Pas de scroll-behavior CSS — Lenis gère le smooth scroll
+         (sinon conflit qui rend le scroll saccadé) */
 
       /* Custom scrollbar — fine et élégante */
       ::-webkit-scrollbar {
