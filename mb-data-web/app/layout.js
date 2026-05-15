@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
   description: 'Le journal de trading des PropFirms futures. Track. Analyze. Grow.',
+  manifest: '/manifest.json',
 }
 
 export const viewport = {
@@ -28,6 +29,14 @@ export default function RootLayout({ children }) {
           async
           defer
         />
+        {/* Service Worker pour push notifications — enregistré côté client */}
+        <Script id="sw-register" strategy="afterInteractive">{`
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+              navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err))
+            })
+          }
+        `}</Script>
       </body>
     </html>
   )

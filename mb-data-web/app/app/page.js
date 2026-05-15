@@ -24,6 +24,7 @@ import Tooltip, { TooltipIcon } from '../../components/Tooltip'
 import PropfirmComparator from '../../components/PropfirmComparator'
 import AnnouncementBanner from '../../components/AnnouncementBanner'
 import Tutorial from '../../components/Tutorial'
+import PushNotificationToggle from '../../components/PushNotificationToggle'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
 
 
@@ -601,15 +602,44 @@ export default function Home() {
   const mLabels=mSlice.map(ym=>{const p=ym.split('-');return MONTHS_FR[parseInt(p[1])-1]+' '+p[0].slice(2)})
   const mSpent=mSlice.map(ym=>+byMonth[ym].spent.toFixed(2)),mPayout=mSlice.map(ym=>+byMonth[ym].payout.toFixed(2)),mNet=mSlice.map(ym=>+(byMonth[ym].payout-byMonth[ym].spent).toFixed(2))
 
+  // === Calcul des alertes globales (affichées sur la page /alertes + badge sidebar) ===
   const alerts=[]
+  // Liste des prochains prélèvements mensuels (sur 30 jours) — affichée en bas de la page alertes
+  const upcomingBills=[]
   firms.forEach(f=>{
     ;(f.accounts||[]).forEach(a=>{
       const tp=totalPayoutsEUR(a),sp=totalSpentForAccount(a)
       if(a.status==='Financé'&&(a.payouts||[]).length===0)alerts.push({icon:'💰',title:`Payout disponible — ${f.name}`,sub:'Compte financé sans payout',type:'success'})
-      if(a.status==='Challenge'){const days=Math.floor((new Date()-new Date(a.buy_date+'T00:00:00'))/86400000);if(days>30)alerts.push({icon:'⏰',title:`Challenge depuis ${days} jours — ${f.name}`,sub:'Vérifiez votre progression',type:'warn'})}
+      if(a.status==='Challenge'){
+        const days=Math.floor((new Date()-new Date(a.buy_date+'T00:00:00'))/86400000)
+        if(days>30)alerts.push({icon:'⏰',title:`Challenge depuis ${days} jours — ${f.name}`,sub:'Vérifiez votre progression',type:'warn'})
+        // 🆕 Rappel renouvellement mensuel — 2 jours avant prélèvement
+        if(a.payment_mode==='monthly'&&a.buy_date){
+          const buyD=new Date(a.buy_date+'T00:00:00')
+          const nextB=new Date(buyD); nextB.setDate(buyD.getDate()+(a.months_count||1)*30)
+          const dLeft=Math.floor((nextB-new Date())/86400000)
+          const acctName=a.name||`Compte du ${a.buy_date}`
+          const sym=a.currency==='EUR'?'€':a.currency==='GBP'?'£':'$'
+          const dStr=nextB.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})
+          const cost=Number(a.spent)||0
+          // Alerte le jour J du prélèvement
+          if(dLeft===0){
+            alerts.push({icon:'🚨',title:`Paiement mensuel AUJOURD'HUI — ${f.name} · ${acctName}`,sub:`Prélèvement de ${cost} ${sym} prévu dans la journée`,type:'warn'})
+          }
+          // Alerte 1-2 jours avant
+          else if(dLeft>0&&dLeft<=2){
+            alerts.push({icon:'📅',title:`Paiement mensuel imminent — ${f.name} · ${acctName}`,sub:`Prochain prélèvement ${dLeft===1?'demain':`dans ${dLeft} jours`} (${dStr}) · ${cost} ${sym}`,type:'warn'})
+          }
+          // Ajoute aux prochains prélèvements (vue 30 jours), tri à la fin
+          if(dLeft>=0&&dLeft<=30){
+            upcomingBills.push({date:nextB,dateStr:dStr,daysLeft:dLeft,firm:f.name,firmColor:f.color,account:acctName,cost,sym})
+          }
+        }
+      }
       if(tp>sp*2)alerts.push({icon:'🏆',title:`Excellent ROI — ${f.name}`,sub:`${(tp/sp).toFixed(1)}x votre investissement`,type:'success'})
     })
   })
+  upcomingBills.sort((a,b)=>a.date-b.date)
   if(!alerts.length&&firms.length)alerts.push({icon:'✅',title:'Tout est en ordre',sub:'Aucune alerte pour le moment.',type:'ok'})
 
   const S={
@@ -917,8 +947,16 @@ export default function Home() {
 
           {page==='alerts'&&(
             <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
-              <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'24px'}}>Alertes</h1>
-              <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+              <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'6px'}}>Alertes</h1>
+              <p style={{fontSize:'13px',color:'var(--text3)',marginBottom:'22px'}}>Notifications importantes et rappels de prélèvements mensuels.</p>
+
+              {/* Toggle Push notifications */}
+              <div style={{marginBottom:'24px'}}>
+                <PushNotificationToggle />
+              </div>
+
+              {/* Liste des alertes */}
+              <div style={{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'32px'}}>
                 {alerts.map((alert,i)=>(
                   <div key={i} style={{...S.card,padding:'14px 18px',display:'flex',alignItems:'center',gap:'14px',background:alert.type==='success'?'var(--green-bg)':alert.type==='warn'?'var(--amber-bg)':'var(--surface)',borderColor:alert.type==='success'?'var(--green)':alert.type==='warn'?'var(--amber-text)':'rgba(255,255,255,0.07)'}}>
                     <div style={{fontSize:'22px'}}>{alert.icon}</div>
@@ -926,6 +964,65 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+
+              {/* Prochains prélèvements (30 jours) */}
+              {upcomingBills.length>0 && (() => {
+                const totalCost=upcomingBills.reduce((s,b)=>s+(b.cost||0),0)
+                // Group by currency for display
+                const byCur={}
+                upcomingBills.forEach(b=>{byCur[b.sym]=(byCur[b.sym]||0)+b.cost})
+                const totalsStr=Object.entries(byCur).map(([s,t])=>`${t.toFixed(0)} ${s}`).join(' + ')
+                return (
+                  <div>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px',gap:'14px',flexWrap:'wrap'}}>
+                      <div>
+                        <div style={{fontSize:'15px',fontWeight:'600',marginBottom:'2px'}}>📅 Prochains prélèvements (30 prochains jours)</div>
+                        <div style={{fontSize:'12px',color:'var(--text3)'}}>{upcomingBills.length} prélèvement{upcomingBills.length>1?'s':''} à venir · Total : <strong style={{color:'var(--red)'}}>{totalsStr}</strong></div>
+                      </div>
+                    </div>
+                    <div style={{...S.card,overflow:'hidden'}}>
+                      {upcomingBills.map((b,i)=>{
+                        const isImminent=b.daysLeft<=2
+                        return (
+                          <div key={i} style={{
+                            display:'flex',alignItems:'center',gap:'14px',
+                            padding:'12px 16px',
+                            borderBottom:i<upcomingBills.length-1?'0.5px solid var(--border)':'none',
+                            background:isImminent?'rgba(250,199,117,0.05)':'transparent',
+                          }}>
+                            <div style={{
+                              width:'44px',textAlign:'center',flexShrink:0,
+                              fontSize:'10px',color:'var(--text3)',fontWeight:'600',letterSpacing:'0.4px',
+                            }}>
+                              <div style={{fontSize:'18px',fontWeight:'700',color:isImminent?'var(--amber-text)':'var(--text)'}}>{b.date.getDate()}</div>
+                              <div style={{textTransform:'uppercase'}}>{b.date.toLocaleDateString('fr-FR',{month:'short'}).replace('.','')}</div>
+                            </div>
+                            <div style={{width:'2px',alignSelf:'stretch',background:b.firmColor||'var(--blue)',borderRadius:'2px',flexShrink:0}} />
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:'13px',fontWeight:'600',marginBottom:'2px'}}>{b.firm} · {b.account}</div>
+                              <div style={{fontSize:'11px',color:'var(--text3)'}}>
+                                {b.daysLeft===0?'Aujourd\'hui':b.daysLeft===1?'Demain':`Dans ${b.daysLeft} jours`}
+                                {isImminent&&<span style={{marginLeft:'8px',padding:'1px 7px',borderRadius:'99px',background:'rgba(250,199,117,0.15)',color:'var(--amber-text)',fontWeight:'700',fontSize:'9px',textTransform:'uppercase',letterSpacing:'0.5px'}}>⚠ Imminent</span>}
+                              </div>
+                            </div>
+                            <div style={{fontSize:'14px',fontWeight:'700',color:'var(--red)',flexShrink:0}}>-{b.cost} {b.sym}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div style={{marginTop:'12px',padding:'10px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',fontSize:'11px',color:'var(--text3)',lineHeight:1.5}}>
+                      💡 Les prélèvements s'arrêtent automatiquement quand tu passes le compte en <strong style={{color:'var(--green)'}}>Financé</strong> via le bouton 🚀 dans le drawer du compte.
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Si aucun prélèvement à venir */}
+              {upcomingBills.length===0 && firms.some(f=>(f.accounts||[]).some(a=>a.status==='Challenge'&&a.payment_mode==='monthly')) && (
+                <div style={{padding:'14px 18px',background:'var(--surface2)',borderRadius:'var(--radius)',fontSize:'12px',color:'var(--text3)'}}>
+                  ✓ Aucun prélèvement prévu dans les 30 prochains jours.
+                </div>
+              )}
             </div>
           )}
 
