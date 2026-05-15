@@ -384,6 +384,44 @@ html, body { overflow-x: hidden; }
   }
 }
 
+/* === Dashboard refined polish (touche les boutons/inputs/cards via S styles inline) === */
+@media (hover: hover) {
+  /* Inputs : focus ring subtil bleu */
+  input:focus, select:focus, textarea:focus {
+    border-color: rgba(77,143,255,0.45) !important;
+    background: rgba(255,255,255,0.04) !important;
+    box-shadow: 0 0 0 3px rgba(45,111,255,0.10);
+  }
+  /* btnPrimary (off-white inverted) — lift + shadow accentuée au hover */
+  button[style*="background: var(--text)"]:not(:disabled):hover,
+  button[style*="background:var(--text)"]:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 20px rgba(0,0,0,0.35) !important;
+  }
+  /* btnGhost — border et fond plus visibles au hover */
+  button[style*="background: rgba(255,255,255,0.025)"]:not(:disabled):hover,
+  button[style*="background:rgba(255,255,255,0.025)"]:not(:disabled):hover {
+    color: var(--text) !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    background: rgba(255,255,255,0.05) !important;
+  }
+  /* Active state — léger appui */
+  button:not(:disabled):active {
+    transform: translateY(0) !important;
+  }
+  /* Cards firmes — lift + glow plus prononcé au hover (préserve le comportement existant) */
+  .firms-grid > div:hover {
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 32px rgba(0,0,0,0.30), 0 0 0 1px rgba(77,143,255,0.20) !important;
+  }
+}
+
+/* Smooth transitions sur les éléments interactifs */
+button, a, input, select, textarea {
+  transition-property: color, background, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Respect du prefers-reduced-motion (accessibilité) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -645,12 +645,18 @@ export default function Home() {
   if(!alerts.length&&firms.length)alerts.push({icon:'✅',title:'Tout est en ordre',sub:'Aucune alerte pour le moment.',type:'ok'})
 
   const S={
-    card:{background:'var(--surface)',border:'0.5px solid var(--border)',borderRadius:'var(--radius-lg)'},
-    input:{width:'100%',padding:'9px 11px',fontSize:'13px',border:'0.5px solid var(--border2)',borderRadius:'var(--radius)',background:'var(--surface2)',color:'var(--text)',outline:'none'},
-    label:{fontSize:'11px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:'5px'},
-    btnPrimary:{padding:'8px 18px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',border:'none',borderRadius:'var(--radius)',cursor:'pointer'},
-    btnGhost:{padding:'7px 14px',fontSize:'12px',background:'transparent',border:'0.5px solid var(--border2)',color:'var(--text2)',borderRadius:'var(--radius)',cursor:'pointer'},
-    badge:(status)=>({display:'inline-block',fontSize:'11px',fontWeight:'600',padding:'3px 9px',borderRadius:'99px',background:status==='Financé'?'var(--green-bg)':status==='Challenge'?'var(--amber-bg)':'var(--red-bg)',color:status==='Financé'?'var(--green-text)':status==='Challenge'?'var(--amber-text)':'var(--red-text)'})
+    // Card : border subtil + soft shadow (au lieu de juste un border plat)
+    card:{background:'var(--surface)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'10px',boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)'},
+    // Input : focus ring subtil quand utilisé
+    input:{width:'100%',padding:'10px 12px',fontSize:'13px',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',background:'rgba(255,255,255,0.02)',color:'var(--text)',outline:'none',transition:'border-color 0.2s, background 0.2s',fontFamily:'inherit'},
+    // Label : tighter letter-spacing, plus refined
+    label:{fontSize:'10.5px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.7px',display:'block',marginBottom:'6px'},
+    // btnPrimary : INVERSÉ (off-white sur sombre) — cohérent avec landing, casse le pattern AI "blue gradient"
+    btnPrimary:{padding:'9px 18px',fontSize:'12.5px',fontWeight:'500',background:'var(--text)',color:'#0a0c10',border:'1px solid transparent',borderRadius:'8px',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.005em',boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',transition:'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s'},
+    // btnGhost : ghost subtil
+    btnGhost:{padding:'8px 14px',fontSize:'12px',fontWeight:'500',background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.10)',color:'var(--text2)',borderRadius:'8px',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.005em',transition:'color 0.2s, border-color 0.2s, background 0.2s'},
+    // Badge : pareil mais letter-spacing affinée
+    badge:(status)=>({display:'inline-block',fontSize:'10.5px',fontWeight:'600',padding:'3px 9px',borderRadius:'99px',letterSpacing:'0.3px',background:status==='Financé'?'var(--green-bg)':status==='Challenge'?'var(--amber-bg)':'var(--red-bg)',color:status==='Financé'?'var(--green-text)':status==='Challenge'?'var(--amber-text)':'var(--red-text)'})
   }
 
   const navItems=[
