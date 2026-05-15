@@ -1,8 +1,28 @@
-import { Inter } from 'next/font/google'
+import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+// === Typographie distinctive (frontend-design : éviter Inter / Roboto / Arial) ===
+// Geist : sans moderne par Vercel — bien plus distinctif qu'Inter
+// Geist Mono : monospace pour chiffres et data (cohérent avec body)
+// Instrument Serif : italic display utilisé en headlines — signal luxury, éditorial
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist',
+  display: 'swap',
+})
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+  display: 'swap',
+})
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
+  display: 'swap',
+})
 
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
@@ -19,8 +39,8 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>
+    <html lang="fr" className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`}>
+      <body className={geist.className}>
         {children}
         {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script

@@ -1,13 +1,13 @@
 'use client'
-// Composant invisible qui injecte les keyframes CSS globales utilisées par la landing.
-// Aussi : respecte prefers-reduced-motion en désactivant les animations si demandé.
+// Globals luxury : smooth scroll, custom scrollbar fine, selection couleur Quantara,
+// reduced-motion respect, et keyframes utilitaires.
 
 export default function LandingScrollEffects() {
   return (
     <style>{`
       @keyframes qtFloat {
         0%, 100% { transform: translate(-50%, 0); opacity: 0.6; }
-        50%      { transform: translate(-50%, 8px); opacity: 1; }
+        50%      { transform: translate(-50%, 6px); opacity: 1; }
       }
 
       /* Smooth scroll natif */
@@ -15,29 +15,34 @@ export default function LandingScrollEffects() {
         scroll-behavior: smooth;
       }
 
-      /* Custom scrollbar pour un look pro */
+      /* Custom scrollbar — fine et élégante */
       ::-webkit-scrollbar {
-        width: 10px;
+        width: 8px;
       }
       ::-webkit-scrollbar-track {
         background: #0d0f14;
       }
       ::-webkit-scrollbar-thumb {
-        background: rgba(45, 111, 255, 0.25);
-        border-radius: 5px;
+        background: rgba(45, 111, 255, 0.2);
+        border-radius: 4px;
         border: 2px solid #0d0f14;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: rgba(45, 111, 255, 0.5);
+        background: rgba(45, 111, 255, 0.4);
       }
 
-      /* Sélection de texte aux couleurs Quantara */
+      /* Sélection texte aux couleurs Quantara */
       ::selection {
-        background: rgba(45, 111, 255, 0.4);
+        background: rgba(77, 143, 255, 0.35);
         color: #fff;
       }
 
-      /* Reduced motion : désactive les animations infinies pour l'accessibilité */
+      /* Bord-à-bord en cas de débordement horizontal */
+      body {
+        overflow-x: hidden;
+      }
+
+      /* Accessibilité : respecte prefers-reduced-motion */
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
