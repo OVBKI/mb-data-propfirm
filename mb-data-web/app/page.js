@@ -197,7 +197,9 @@ export default function LandingPage() {
           pointerEvents: 'none',
         }} />
 
-        <HeroSection>
+        {/* hideLogo : le logo 2D est remplacé par la planète 3D rendue dans StarField3D.
+            HeroSection insère à la place un spacer vertical pour réserver l'espace. */}
+        <HeroSection hideLogo>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
             <MagneticButton href="/app" primary large>
               Démarrer gratuitement

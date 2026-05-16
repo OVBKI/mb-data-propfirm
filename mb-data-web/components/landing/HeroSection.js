@@ -14,7 +14,11 @@ const C = {
   blueLight: '#4d8fff',
 }
 
-export default function HeroSection({ children }) {
+// Props:
+//   - children : CTA buttons (passés depuis page.js)
+//   - hideLogo : si true, le logo 2D + ses halos sont remplacés par un simple
+//     spacer (utilisé quand on affiche un logo/planète 3D via StarField3D).
+export default function HeroSection({ children, hideLogo = false }) {
   const ref = useRef(null)
 
   // PERF : motion values évitent les re-renders à chaque mousemove
@@ -65,7 +69,11 @@ export default function HeroSection({ children }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: '120px 24px 80px', textAlign: 'center',
     }}>
-      {/* Logo + glow réactif souris + idle pulse + scale au hover */}
+      {/* Logo 2D + halos — caché quand on utilise une planète 3D (StarField3D).
+          Quand caché, on remplace par un spacer pour réserver l'espace vertical. */}
+      {hideLogo ? (
+        <div style={{ height: 280, marginBottom: 28 }} aria-hidden="true" />
+      ) : (
       <motion.div
         initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -126,6 +134,7 @@ export default function HeroSection({ children }) {
         />
         <Logo size={120} glow="strong" />
       </motion.div>
+      )}
 
       {/* QUANTARA wordmark */}
       <motion.div

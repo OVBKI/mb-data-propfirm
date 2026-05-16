@@ -1,31 +1,31 @@
 'use client'
-// Champ d'étoiles 3D interactif avec parallax souris.
-// Utilise React Three Fiber (R3F) + drei pour le rendu WebGL.
+// Scène 3D du hero Quantara : champ d'étoiles parallax + planète centrale avec logo.
 //
-// COMPORTEMENT :
-//   - 1500 étoiles distribuées dans une sphère 3D
-//   - Mix de 2 teintes : ~70% bleu clair Quantara + 30% blanc cassé pour la profondeur
-//   - Caméra dérive très lentement (rotation idle)
-//   - Mouvement souris → la caméra translate très subtilement → parallax 3D naturel
-//   - Les étoiles proches bougent plus que les étoiles lointaines (vraie 3D)
+// COMPOSITION :
+//   1. Champ d'étoiles 3D (1500 points en sphère, mix bleu/blanc)
+//   2. Planète centrale : sphère sombre + 2 halos atmosphériques + logo Q en façade
+//   3. Caméra qui parallax avec la souris (vraie 3D = étoiles proches bougent plus)
+//   4. Rotation idle continue de la planète + du champ d'étoiles
 //
 // PERF :
-//   - Points + PointMaterial : la façon la plus efficace de render 1000+ particules en WebGL
-//   - dpr capé à 1.5 (full retina sur 4K = trop lourd pour zéro gain visuel)
-//   - antialiasing OFF (les étoiles sont si petites que l'AA n'apporte rien)
-//   - alpha: true pour fond transparent (laisse passer les blobs CSS dessous)
-//   - frameloop 'always' pour l'idle rotation mais R3F est ultra-optimisé
+//   - Une seule WebGL Canvas pour tout (étoiles + planète) = un seul context GPU
+//   - dpr capé à 1.5 (pas besoin de 4K natif sur du rendu spatial)
+//   - antialias off (étoiles trop petites pour bénéficier)
+//   - Sphères avec 32-64 segments (smooth sans excès)
 //
 // ACCESSIBILITÉ :
-//   - prefers-reduced-motion : composant rend null → fallback CSS via parent
+//   - prefers-reduced-motion : rend null → fallback au logo 2D standard
 
-import { useRef, useMemo, useEffect, Suspense } from 'react'
+import { useRef, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Points, PointMaterial } from '@react-three/drei'
+import { Points, PointMaterial, useTexture } from '@react-three/drei'
+import * as THREE from 'three'
 
-// Tracker souris au niveau window — fonctionne même si une couche au-dessus
-// (comme ParticlesField avec pointerEvents auto) capture les événements souris.
-// Coordonnées normalisées [-1, 1] comme R3F state.mouse.
+// ============================================================================
+// MOUSE TRACKER (window-level pour fonctionner même si une couche au-dessus
+// capture les events, ex: ParticlesField 2D)
+// ============================================================================
+
 const mouseRef = { x: 0, y: 0 }
 if (typeof window !== 'undefined') {
   window.addEventListener('mousemove', (e) => {
@@ -35,13 +35,12 @@ if (typeof window !== 'undefined') {
 }
 
 // ============================================================================
-// GROUPE D'ÉTOILES (réutilisable pour deux teintes)
+// ÉTOILES (deux groupes pour donner de la profondeur)
 // ============================================================================
 
 function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
   const ref = useRef()
 
-  // Génère les positions UNE seule fois (pas de re-render à chaque frame)
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
@@ -57,7 +56,6 @@ function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
     return arr
   }, [count, radiusInner, radiusOuter])
 
-  // Rotation idle subtle (rend la scène vivante sans souris)
   useFrame((state, delta) => {
     if (!ref.current) return
     ref.current.rotation.y += delta * rotSpeed
@@ -79,19 +77,97 @@ function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
 }
 
 // ============================================================================
-// PARALLAX CAMÉRA (souris bouge la caméra → vraie profondeur 3D)
+// PLANÈTE CENTRALE — sphère sombre + 2 halos atmosphériques + logo Q en façade
+// ============================================================================
+
+function Planet() {
+  // useTexture est suspense-compatible (suspends jusqu'au chargement)
+  const logoTexture = useTexture('/quantara-logo.png')
+
+  const planetRef = useRef()
+  const haloInnerRef = useRef()
+  const haloOuterRef = useRef()
+
+  useFrame((state, delta) => {
+    // Rotation continue lente de la planète (effet "planète qui tourne sur elle-même")
+    if (planetRef.current) {
+      planetRef.current.rotation.y += delta * 0.12
+    }
+    // Halos respirent doucement (scale 1.0 ↔ 1.05 sur 4 secondes)
+    const t = state.clock.elapsedTime
+    const breathe = 1 + Math.sin(t * 1.5) * 0.025
+    if (haloInnerRef.current) {
+      haloInnerRef.current.scale.setScalar(breathe)
+    }
+    if (haloOuterRef.current) {
+      haloOuterRef.current.scale.setScalar(1 + Math.sin(t * 1.0 + 1.2) * 0.04)
+    }
+  })
+
+  return (
+    <group position={[0, 0.35, 0]}>
+      {/* HALO EXTERNE — atmosphère lointaine, très subtil */}
+      <mesh ref={haloOuterRef}>
+        <sphereGeometry args={[0.52, 32, 32]} />
+        <meshBasicMaterial
+          color="#4d8fff"
+          transparent
+          opacity={0.04}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* HALO INTERNE — atmosphère proche, plus intense */}
+      <mesh ref={haloInnerRef}>
+        <sphereGeometry args={[0.42, 32, 32]} />
+        <meshBasicMaterial
+          color="#4d8fff"
+          transparent
+          opacity={0.10}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* PLANÈTE — sphère sombre métallique qui tourne */}
+      <mesh ref={planetRef}>
+        <sphereGeometry args={[0.32, 64, 64]} />
+        <meshStandardMaterial
+          color="#0a1428"
+          metalness={0.55}
+          roughness={0.35}
+          emissive="#1a3060"
+          emissiveIntensity={0.45}
+        />
+      </mesh>
+
+      {/* LOGO Q — plan en façade, ne tourne PAS avec la planète, blending additif
+          pour que le fond sombre du PNG disparaisse (seul le Q lumineux apparaît).
+          depthWrite false pour que le logo se compose proprement par-dessus la sphère. */}
+      <mesh position={[0, 0, 0.33]}>
+        <planeGeometry args={[0.55, 0.55]} />
+        <meshBasicMaterial
+          map={logoTexture}
+          transparent
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          opacity={1}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+// ============================================================================
+// PARALLAX CAMÉRA — translate la caméra avec la souris pour effet de profondeur
 // ============================================================================
 
 function ParallaxCamera() {
   useFrame((state) => {
-    // On utilise mouseRef (tracker window-level) au lieu de state.mouse
-    // pour fonctionner même si une couche au-dessus capture les events souris.
-    // Lerp = smoothing : la caméra rattrape la souris en douceur.
-    const targetX = mouseRef.x * 0.8
-    const targetY = mouseRef.y * 0.5
+    const targetX = mouseRef.x * 0.6
+    const targetY = mouseRef.y * 0.4
     state.camera.position.x += (targetX - state.camera.position.x) * 0.04
     state.camera.position.y += (targetY - state.camera.position.y) * 0.04
-    state.camera.lookAt(0, 0, 0)
+    state.camera.lookAt(0, 0.35, 0) // regarde vers le centre de la planète
   })
   return null
 }
@@ -101,7 +177,7 @@ function ParallaxCamera() {
 // ============================================================================
 
 export default function StarField3D() {
-  // Bail out si l'user a "reduced motion" — pas de fond 3D animé
+  // Respecte prefers-reduced-motion → pas de rendu 3D animé
   if (typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     return null
@@ -111,11 +187,11 @@ export default function StarField3D() {
     <div style={{
       position: 'absolute',
       inset: 0,
-      pointerEvents: 'none', // jamais bloquer les clics du contenu
+      pointerEvents: 'none',
       zIndex: 0,
     }}>
       <Canvas
-        camera={{ position: [0, 0, 1], fov: 75, near: 0.1, far: 100 }}
+        camera={{ position: [0, 0.35, 1.5], fov: 60, near: 0.1, far: 100 }}
         dpr={[1, 1.5]}
         gl={{
           antialias: false,
@@ -125,7 +201,13 @@ export default function StarField3D() {
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          {/* Étoiles bleues Quantara — plus nombreuses, profondes */}
+          {/* Lumières : ambient pour visibilité globale + directionnelle pour modeler
+              la planète + point bleue pour rim light côté gauche */}
+          <ambientLight intensity={0.4} />
+          <directionalLight position={[3, 2, 4]} intensity={1.1} color="#ffffff" />
+          <pointLight position={[-2.5, -1, 1.5]} intensity={0.6} color="#4d8fff" />
+
+          {/* Champ d'étoiles bleues (profondes, nombreuses) */}
           <StarGroup
             count={1100}
             color="#4d8fff"
@@ -134,7 +216,7 @@ export default function StarField3D() {
             radiusOuter={9}
             rotSpeed={0.015}
           />
-          {/* Étoiles blanches — moins nombreuses, plus proches → pop visuel */}
+          {/* Étoiles blanches plus proches (pop visuel) */}
           <StarGroup
             count={400}
             color="#e8f0ff"
@@ -143,6 +225,10 @@ export default function StarField3D() {
             radiusOuter={5}
             rotSpeed={0.025}
           />
+
+          {/* Planète centrale Quantara */}
+          <Planet />
+
           <ParallaxCamera />
         </Suspense>
       </Canvas>
