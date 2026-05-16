@@ -16,8 +16,12 @@ import SmoothScrollProvider from '../components/landing/SmoothScrollProvider'
 import AnimatedStats from '../components/landing/AnimatedStats'
 import EnhancedSteps from '../components/landing/EnhancedSteps'
 // === Démos visuelles features (nouvelle vague — moins look-IA) ===
-import LiveAccountsGrid from '../components/landing/LiveAccountsGrid'
-import CalendarPnL from '../components/landing/CalendarPnL'
+// 5 vraies pages produit affichées dans un frame 3D incliné (Tilted3DFrame)
+// pour donner de la profondeur et de la spatialisation type Stripe/Linear/Apple.
+import Tilted3DFrame from '../components/landing/Tilted3DFrame'
+import DashboardMockup from '../components/landing/DashboardMockup'
+import JournalMockup from '../components/landing/JournalMockup'
+import EconomicCalendarMockup from '../components/landing/EconomicCalendarMockup'
 import EquityCurveDemo from '../components/landing/EquityCurveDemo'
 import NotificationMockup from '../components/landing/NotificationMockup'
 
@@ -106,6 +110,46 @@ const STATS = [
   { v: '3', l: 'Langues (FR/EN/ES)' },
   { v: '100%', l: 'Tes données t\'appartiennent' },
 ]
+
+// ============================================================================
+// Helper layout pour chaque section "vraie page produit" :
+// label monospace + titre + sous-titre + mockup 3D tilt en dessous.
+// Utilisé par les 3 premières pages (Dashboard, Journal, Calendrier éco).
+// ============================================================================
+function ProductSection({ label, labelColor, title, subtitle, children }) {
+  return (
+    <section style={{ padding: '80px 24px 60px', position: 'relative' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {/* Intro text centrée */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: labelColor,
+            textTransform: 'uppercase', letterSpacing: '0.12em',
+            marginBottom: 14, fontFamily: 'ui-monospace, monospace',
+          }}>
+            {label}
+          </div>
+          <h2 style={{
+            fontSize: 'clamp(28px, 4vw, 42px)',
+            fontWeight: 800, letterSpacing: '-0.025em',
+            marginBottom: 16, color: colors.text, lineHeight: 1.15,
+          }}>
+            {title}
+          </h2>
+          <p style={{
+            fontSize: 16, color: colors.text2, lineHeight: 1.55,
+            maxWidth: 700, margin: '0 auto',
+          }}>
+            {subtitle}
+          </p>
+        </div>
+
+        {/* Mockup 3D tilted en dessous */}
+        {children}
+      </div>
+    </section>
+  )
+}
 
 export default function LandingPage() {
   return (
@@ -229,22 +273,54 @@ export default function LandingPage() {
       {/* === STATS strip avec compteurs animés au scroll === */}
       <AnimatedStats stats={STATS} />
 
-      {/* === DÉMO A : Live Accounts Grid — montre 4 comptes en live === */}
-      <section style={{ padding: '80px 24px 60px', position: 'relative' }}>
-        <LiveAccountsGrid />
-      </section>
+      {/* ============================================================
+          5 VRAIES PAGES PRODUIT en 3D incliné (Tilted3DFrame).
+          Chaque section : intro text au-dessus + mockup tilted en dessous.
+          Le `flip` alterne le sens du tilt pour rythmer visuellement.
+          ============================================================ */}
 
-      {/* === DÉMO D : Calendar PnL — visuel mois coloré vert/rouge === */}
-      <section style={{ padding: '60px 24px', position: 'relative' }}>
-        <CalendarPnL />
-      </section>
+      {/* === PAGE 1 : TABLEAU DE BORD === */}
+      <ProductSection
+        label="TABLEAU DE BORD"
+        labelColor={colors.blueLight}
+        title="Tous tes comptes PropFirm en un coup d'œil."
+        subtitle="Balance, drawdown, consistency, status. Sur 8+ PropFirms. Mis à jour en temps réel."
+      >
+        <Tilted3DFrame title="quantara.tech/app">
+          <DashboardMockup />
+        </Tilted3DFrame>
+      </ProductSection>
 
-      {/* === DÉMO B : Equity Curve animée — chart trailing DD === */}
+      {/* === PAGE 2 : JOURNAL DE TRADING === */}
+      <ProductSection
+        label="JOURNAL DE TRADING"
+        labelColor={colors.green}
+        title="Chaque trade. Tracké. Filtré. Analysé."
+        subtitle="Date, instrument, side, PnL, notes. Filtre par firm, par date, par instrument. Export CSV à tout moment."
+      >
+        <Tilted3DFrame title="quantara.tech/app/journal" flip>
+          <JournalMockup />
+        </Tilted3DFrame>
+      </ProductSection>
+
+      {/* === PAGE 3 : CALENDRIER ÉCONOMIQUE === */}
+      <ProductSection
+        label="CALENDRIER ÉCONOMIQUE"
+        labelColor={colors.amber}
+        title="Anticipe les news macro qui bougent les futures."
+        subtitle="NFP, FOMC, CPI, jobless claims, Powell speeches. Impact code couleur. Filtre par devise et sévérité. Source ForexFactory en live."
+      >
+        <Tilted3DFrame title="quantara.tech/app/calendar">
+          <EconomicCalendarMockup />
+        </Tilted3DFrame>
+      </ProductSection>
+
+      {/* === PAGE 4 : EQUITY CURVE === */}
       <section style={{ padding: '60px 24px', position: 'relative' }}>
         <EquityCurveDemo />
       </section>
 
-      {/* === DÉMO F : Notification mockup — push 48h avant billing === */}
+      {/* === PAGE 5 : NOTIFICATIONS PUSH === */}
       <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
         <NotificationMockup />
       </section>
