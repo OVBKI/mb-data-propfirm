@@ -27,10 +27,11 @@ export const PROPFIRM_RULES = {
       // Contrats
       'Contrats max (mini)':      {'50k':'5','100k':'10','150k':'15'},
       'Contrats max (micro)':     {'50k':'50','100k':'100','150k':'150'},
-      // Tarifs
-      'Prix mensuel':             {'50k':'$49','100k':'$99','150k':'$149'},
-      'Frais activation funded':  {'50k':'$149 (Standard) · $0 (No-Activation-Fee path)','100k':'$149 · $0','150k':'$149 · $0'},
-      'Reset cost':               {'50k':'Inclus (renouvellement mensuel = reset)','100k':'Inclus','150k':'Inclus'},
+      // Tarifs — 2 paths au choix au checkout
+      'Prix mensuel Standard':    {'50k':'$49','100k':'$99','150k':'$149'},
+      'Prix mensuel No-Fee path': {'50k':'$95','100k':'$149','150k':'$229'},
+      'Frais activation funded':  {'50k':'$149 (Standard) · $0 (No-Activation-Fee)','100k':'$149 · $0','150k':'$149 · $0'},
+      'Reset cost':               {'50k':'Inclus dans rebill mensuel (rebill = reset)','100k':'Inclus','150k':'Inclus'},
       // Payouts (POST 12 JAN 2026)
       'Répartition gains':        {'50k':'90% / 10% dès le $1 (depuis 12 jan 2026)','100k':'90% / 10%','150k':'90% / 10%'},
       'Payout minimum':           {'50k':'$125 min withdrawal','100k':'$125','150k':'$125'},
@@ -81,14 +82,19 @@ export const PROPFIRM_RULES = {
       'Frais activation PA':      {'25k':'$99 EOD / $79 Intraday — NON discountable','50k':'$99 / $79','75k':'$99 / $79','100k':'$99 / $79','150k':'$99 / $79','250k':'$99 / $79','300k':'$99 / $79'},
       'Reset cost':               {'25k':'Supprimés en 4.0 (rachat éval avec code = de facto reset)','50k':'Supprimés','75k':'Supprimés','100k':'Supprimés','150k':'Supprimés','250k':'Supprimés','300k':'Supprimés'},
       'Codes promo permanents':   {'25k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
-      // Payouts
-      'Répartition gains':        {'25k':'100% TRADER (Apex 4.0) — le plus généreux du marché','50k':'100%','75k':'100%','100k':'100%','150k':'100%','250k':'100%','300k':'100%'},
+      // Payouts (Apex 4.0 — 100% cappé par ladder progressive lifetime 6 payouts)
+      'Répartition gains':        {'25k':'100% du payout (Apex 4.0) — MAIS cappé par ladder lifetime 6 payouts','50k':'100% cappé ladder','75k':'100% cappé ladder','100k':'100% cappé ladder','150k':'100% cappé ladder','250k':'100% (legacy)','300k':'100% (legacy)'},
       'Payout minimum':           {'25k':'$500','50k':'$500','75k':'$500','100k':'$500','150k':'$500','250k':'$500','300k':'$500'},
-      'Payout ladder':            {'25k':'Cap progressif par payout (ex 100K: $2K → $2.5K → $3K → $4K)','50k':'idem','75k':'idem','100k':'$2K → $2.5K → $2.5K → $3K → $4K → $4K','150k':'idem progressive','250k':'idem','300k':'idem'},
-      'Délai payout':             {'25k':'5-11 jours ouvrés (review 2j + envoi 3-4j + banque 3-7j)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
-      'Méthodes payout':          {'25k':'ACH (US) · Plane/Deel (international)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Payout ladder lifetime':   {'25k':'6 payouts lifetime · scale ~½ du 100K','50k':'6 payouts lifetime · scale du 100K','75k':'(legacy)','100k':'$2K → $2.5K → $2.5K → $3K → $3.5K → $4K (~$17K total, compte ferme)','150k':'Scale proportionnel du 100K','250k':'(legacy)','300k':'(legacy)'},
+      'Qualifying days/payout':   {'25k':'5 jours · min $100/jour','50k':'5 jours · min $250 EOD / $200 Intraday','75k':'(legacy)','100k':'5 jours · min $300 EOD / $250 Intraday','150k':'5 jours · min $350 EOD / $300 Intraday','250k':'(legacy)','300k':'(legacy)'},
+      'Safety Net (PA)':          {'25k':'$26,100 = starting + DD + $100','50k':'$52,100','75k':'(legacy)','100k':'$103,100','150k':'$154,100','250k':'(legacy)','300k':'(legacy)'},
+      'Délai payout':             {'25k':'24-48h processing (Plane/ACH)','50k':'24-48h','75k':'24-48h','100k':'24-48h','150k':'24-48h','250k':'24-48h','300k':'24-48h'},
+      'Méthodes payout':          {'25k':'ACH (US) · Plane (international) — Deel supprimé','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      // Restrictions instruments
+      'Metals HALT (depuis 14 mars 2026)':{'25k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Auto-flat':                {'25k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
       // Multi-comptes
-      'Comptes simul.':           {'25k':'Eval: illimité · PA: 20 max par foyer','50k':'20 PA','75k':'20 PA','100k':'20 PA','150k':'20 PA','250k':'20 PA','300k':'20 PA'},
+      'Comptes simul.':           {'25k':'Eval: illimité · PA: 20 max par foyer (copy-trading OK)','50k':'20 PA','75k':'20 PA','100k':'20 PA','150k':'20 PA','250k':'20 PA','300k':'20 PA'},
     }
   },
   'Bulenox': {
@@ -121,7 +127,7 @@ export const PROPFIRM_RULES = {
       'Contrats max (micro)':     {'25k':'40','50k':'70','100k':'120','150k':'150-200','250k':'250'},
       // Tarifs (codes promo permanents -45/-89%)
       'Prix mensuel (list)':      {'25k':'~$145','50k':'$175 (discount $125)','100k':'$215 ($155 discount)','150k':'~$325','250k':'~$535'},
-      'Frais activation Master':  {'25k':'$143','50k':'$148','100k':'$248','150k':'$498','250k':'$898'},
+      'Frais activation Master':  {'25k':'$130 (tradingfinder) — $98 selon quantvps · DISPUTÉ à vérifier au checkout','50k':'$150-220 selon source','100k':'$220','150k':'$260-490 selon source · DISPUTÉ','250k':'$300-490 selon source · DISPUTÉ'},
       'Reset cost':               {'25k':'$78 (gratuit le jour de facturation)','50k':'$78','100k':'$78','150k':'$78','250k':'$78'},
       'Data fee Pro':             {'25k':'$116/mo si Professional','50k':'$116/mo','100k':'$116/mo','150k':'$116/mo','250k':'$116/mo'},
       'Codes promo':              {'25k':'VIBES (~45%), LUMI (89%), TRADINGSTRATEGY89 (89%)','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
@@ -164,7 +170,7 @@ export const PROPFIRM_RULES = {
       // === Évaluation LucidPro (one-time, pas de mensuel) ===
       'Objectif de profit':       {'25k':'$1,500 (6%)','50k':'$3,000 (6%)','100k':'$6,000 (6%)','150k':'$9,000 (6%)'},
       'Drawdown trailing max':    {'25k':'$1,000 (EOD trailing)','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
-      'Drawdown journalier max':  {'25k':'Aucun (25K)','50k':'Ajouté fév 2026 (soft breach, halt journée) — montant non public','100k':'idem','150k':'idem'},
+      'Drawdown journalier max':  {'25k':'Aucun (25K)','50k':'$1,200 (~2.4%, ajouté fév 2026, soft breach halt journée)','100k':'~$2,400 (extrapolation 2.4%)','150k':'~$3,600 (extrapolation 2.4%)'},
       'Jours de trading min':     {'25k':'1 jour suffit (5j min supprimé fév 2026)','50k':'1 jour','100k':'1 jour','150k':'1 jour'},
       'Profit min jour valide':   {'25k':'$0 (pas de seuil par jour en éval)','50k':'$0','100k':'$0','150k':'$0'},
       'Règle de cohérence':       {'25k':'AUCUNE en éval Pro · 50% en Flex','50k':'AUCUNE Pro · 50% Flex','100k':'idem','150k':'idem'},
@@ -178,11 +184,13 @@ export const PROPFIRM_RULES = {
       // === Contrats max ===
       'Contrats max (mini)':      {'25k':'2','50k':'4','100k':'6','150k':'10'},
       'Contrats max (micro)':     {'25k':'20','50k':'40','100k':'60','150k':'100'},
-      // === Tarifs (one-time, prix mai 2026 post-restructuration fév) ===
-      'Prix évaluation LucidPro': {'25k':'$94.50','50k':'$129.50','100k':'$199.50','150k':'$259.00'},
-      'Prix LucidDirect (instant)':{'25k':'$199','50k':'$549','100k':'$799','150k':'$899'},
+      // === Tarifs (one-time, retail / discount avec code VIBES -40%) ===
+      'Prix LucidPro (retail)':   {'25k':'~$157','50k':'$215','100k':'$299','150k':'~$432'},
+      'Prix LucidPro (VIBES -40%)':{'25k':'$94.50','50k':'$129.50','100k':'$199.50','150k':'$259.00'},
+      'Prix LucidFlex':           {'25k':'$164 retail (~$98.50 avec VIBES)','50k':'~$245 retail','100k':'$295 retail','150k':'~$415 retail'},
+      'Prix LucidDirect (instant)':{'25k':'$197','50k':'$549','100k':'$799 (ajouté fév 2026)','150k':'$899'},
       'Frais activation':         {'25k':'$0 (aucun)','50k':'$0','100k':'$0','150k':'$0'},
-      'Codes promo':              {'25k':'VIBES ~35%, NINJA, SOPF, DGT (35-50% courant)','50k':'idem','100k':'idem','150k':'idem'},
+      'Codes promo':              {'25k':'VIBES -40%, NINJA, SOPF, DGT (35-50% courant)','50k':'idem','100k':'idem','150k':'idem'},
       'Reset compte':             {'25k':'Non documenté précisément','50k':'idem','100k':'idem','150k':'idem'},
       // === Payouts ===
       'Répartition gains':        {'25k':'90% / 10% (depuis mars 2026) · grandfathered avant 28/11/2025 = 100% premiers $10K','50k':'90% / 10%','100k':'90% / 10%','150k':'90% / 10%'},
@@ -229,11 +237,11 @@ export const PROPFIRM_RULES = {
       'Prix Lightning Funded':    {'25k':'$244 one-time','50k':'$299','100k':'$425','150k':'$510'},
       'Frais activation':         {'25k':'$0 (waived sur tous plans)','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'$95 toutes tailles','50k':'$95','100k':'$95','150k':'$95'},
-      // Payouts
-      'Répartition gains':        {'25k':'90% trader / 10% firme dès le 1er payout','50k':'90% / 10%','100k':'90% / 10%','150k':'90% / 10%'},
-      'Payout minimum':           {'25k':'~$100 (Select Daily) / cap $3K-$4K par payout','50k':'idem','100k':'idem','150k':'idem'},
-      'Délai payout':             {'25k':'Windows FIXES : 1-4 et 15-18 de chaque mois (pas on-demand)','50k':'idem','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'25k':'Bank wire, Wise, Crypto (BTC/ETH/USDT bonus). PAS de PayPal/ACH','50k':'idem','100k':'idem','150k':'idem'},
+      // Payouts (correction agent : split différent par famille)
+      'Répartition gains':        {'25k':'Lightning : 100% premier $15K cumulé puis 90/10','50k':'Select : 90/10 dès $1 · Growth/Lightning : 100% premier $15K puis 90/10','100k':'idem','150k':'idem'},
+      'Payout minimum':           {'25k':'$1,500 above starting (Growth/Lightning) · varies (Select)','50k':'idem · cap progressif $1,000 → $1,250 → $3,000','100k':'idem','150k':'idem'},
+      'Délai payout':             {'25k':'Windows FIXES : 1-4 et 15-18 de chaque mois (sauf Select Daily option)','50k':'idem','100k':'idem','150k':'idem'},
+      'Méthodes payout':          {'25k':'Rise (primaire) + Plane (backup) — PAS de PayPal direct ni ACH/Wire/Wise','50k':'idem','100k':'idem','150k':'idem'},
       // Multi-comptes
       'Comptes simul.':           {'25k':'Funded: 5 max par foyer (toutes familles) · Eval: 15 max sur 30j','50k':'5 funded max','100k':'5 funded max','150k':'5 funded max'},
     }
@@ -256,9 +264,9 @@ export const PROPFIRM_RULES = {
       'Objectif de profit':       {'25k':'$1,500 (6%)','50k':'$3,000 (6%)','75k':'$4,500 (6%)','100k':'$6,000 (6%)','150k':'$9,000 (6%)'},
       'Drawdown trailing max':    {'25k':'$1,500 EOD (Test) → INTRADAY (PRO) → EOD (PRO+)','50k':'$2,500 idem','75k':'$3,000','100k':'$3,500','150k':'$5,000'},
       'Drawdown journalier max':  {'25k':'🚨 AUCUN (DLL supprimée jan 2025) — seul trailing','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
-      'Jours de trading min':     {'25k':'5 jours (au moins 1 trade/jour)','50k':'5 jours','75k':'5 jours','100k':'5 jours','150k':'5 jours'},
-      'Profit min jour valide':   {'25k':'$50 (Test)','50k':'$100','75k':'$150','100k':'$200','150k':'$300'},
-      'Règle de cohérence':       {'25k':'≤ 50% / jour (Test seulement)','50k':'≤ 50% / jour','75k':'≤ 50%','100k':'≤ 50%','150k':'≤ 50%'},
+      'Jours de trading min':     {'25k':'5 jours (au moins 1 trade/jour, pas de seuil profit)','50k':'5 jours','75k':'5 jours','100k':'5 jours','150k':'5 jours'},
+      'Profit min jour valide':   {'25k':'AUCUN seuil — TPT impose juste ≥1 trade/jour','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
+      'Règle de cohérence':       {'25k':'Best day ≤ 50% du profit total (Test seulement)','50k':'≤ 50%','75k':'≤ 50%','100k':'≤ 50%','150k':'≤ 50%'},
       // === Trading restrictions ===
       'Positions overnight':      {'25k':'INTERDIT (flat 17h ET toutes phases)','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       'DCA (renforcement)':       {'25k':'Pas de règle spécifique','50k':'Pas de règle','75k':'Pas de règle','100k':'Pas de règle','150k':'Pas de règle'},
@@ -277,11 +285,11 @@ export const PROPFIRM_RULES = {
       'Reset PRO (max 3)':        {'25k':'$399','50k':'$649','75k':'$799','100k':'$999','150k':'$1,499'},
       'Reset PRO+':               {'25k':'INTERDIT (pas de reset)','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       // === Payouts ===
-      'Payout minimum':           {'25k':'< $250 = fee $50 · > $250 gratuit','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
+      'Payout minimum':           {'25k':'Pas de minimum strict documenté à 3 sources','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
       'Délai payout':             {'25k':'~4-9h (max ~24h)','50k':'~4-9h','75k':'~4-9h','100k':'~4-9h','150k':'~4-9h'},
       'Mode de retrait':          {'25k':'Plaid ACH, Wise','50k':'Plaid ACH, Wise','75k':'Plaid ACH, Wise','100k':'Plaid ACH, Wise','150k':'Plaid ACH, Wise'},
       'Répartition gains':        {'25k':'80% trader (PRO) → 90% (PRO+)','50k':'80% → 90%','75k':'80% → 90%','100k':'80% → 90%','150k':'80% → 90%'},
-      'Buffer payout PRO':        {'25k':'< 60 jours actifs : 50% buffer · > 60 jours : 80% buffer','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
+      'Buffer payout PRO':        {'25k':'Buffer = starting balance + trailing DD (formulation officielle TPT)','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
       'Min entre payouts':        {'25k':'7 jours (PRO) · 0 (PRO+)','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
       'Comptes financés simul.':  {'25k':'5 max (PRO + PRO+ combinés)','50k':'5 max','75k':'5 max','100k':'5 max','150k':'5 max'},
     }
@@ -317,35 +325,38 @@ export const PROPFIRM_RULES = {
       'Règle de cohérence (eval)':{'25k':'50% en éval · Rapid funded: AUCUNE · Core/Pro funded: 40%','50k':'idem','100k':'idem','150k':'idem'},
       // Trading
       'Positions overnight':      {'25k':'INTERDIT (sauf Pro qui permet)','50k':'INTERDIT (sauf Pro)','100k':'INTERDIT (sauf Pro)','150k':'INTERDIT (sauf Pro)'},
-      'Trading des news':         {'25k':'🚨 Flat 2 MIN avant ET 2 MIN après Tier-1 (CPI/NFP/FOMC/GDP/PPI) — violation = ban','50k':'idem','100k':'idem','150k':'idem'},
+      'Trading des news':         {'25k':'🚨 Flat 2 MIN avant ET 2 MIN après Tier-1 (Core/Rapid/Pro) — ban si violation · Flex/Builder PERMETTENT T1 news sur funded','50k':'idem','100k':'idem','150k':'idem'},
       'DCA (renforcement)':       {'25k':'Autorisé · scaling micro requis','50k':'idem','100k':'idem','150k':'idem'},
       'Algos / automation':       {'25k':'Full auto INTERDIT · semi-auto OK si manual oversight','50k':'idem','100k':'idem','150k':'idem'},
       // Contrats Rapid
       'Contrats max éval (mini)': {'25k':'2','50k':'5','100k':'10','150k':'15'},
       'Contrats max éval (micro)':{'25k':'20','50k':'50','100k':'100','150k':'150'},
       'Contrats LIVE':            {'25k':'Divisé par 2 vs éval','50k':'÷2','100k':'÷2','150k':'÷2'},
-      // Tarifs (m = mensuel · o = one-time)
-      'Prix Rapid (m / o)':       {'25k':'~$67 / $87','50k':'~$109 / $157','100k':'~$229 / $267','150k':'~$329 / $347'},
-      'Prix Pro (m / o)':         {'25k':'n/a','50k':'~$219 / $629','100k':'~$329 / $829','150k':'~$477 / $1,127'},
-      'Prix Flex (mars 2026)':    {'25k':'~$49/mo avec code STEADY','50k':'~$49/mo idem','100k':'n/a','150k':'n/a'},
-      'Prix Builder (1-day pass)':{'25k':'n/a','50k':'Variable','100k':'n/a','150k':'n/a'},
+      // Tarifs (corrigés via re-vérification mai 2026)
+      'Prix Core (m / o)':        {'25k':'n/a (50K only)','50k':'$77/mo · $229 OTP','100k':'n/a','150k':'n/a'},
+      'Prix Rapid (m)':           {'25k':'~$67/mo (disputé)','50k':'$129/mo','100k':'$229/mo','150k':'$329/mo'},
+      'Prix Pro (m / o)':         {'25k':'n/a','50k':'~$219-229/mo · $629 OTP (disputé entre sources)','100k':'~$329/mo · $829 OTP','150k':'~$477/mo · $1,127 OTP'},
+      'Prix Flex (mars 2026)':    {'25k':'$84/mo','50k':'$107/mo','100k':'n/a (25K/50K only)','150k':'n/a'},
+      'Prix Builder (50K only)':  {'25k':'n/a','50k':'Pricing non documenté publiquement','100k':'n/a','150k':'n/a'},
       'Frais activation':         {'25k':'$0 (waived firm-wide juillet 2025)','50k':'$0','100k':'$0','150k':'$0'},
-      'Reset cost':               {'25k':'$87','50k':'$157','100k':'$267','150k':'$347'},
+      'Reset cost':               {'25k':'~$87 (à vérifier au checkout)','50k':'~$157 (Rapid)','100k':'~$267 (Rapid)','150k':'~$347 (Rapid)'},
       'Data fee (Pro classifié)': {'25k':'$0 retail · $130/mo si Professional','50k':'idem','100k':'idem','150k':'idem'},
-      'Codes promo permanents':   {'25k':'SAVE40, IMAN, GOLD30, FUNDED30, PFDF (jusqu\'à 50%)','50k':'idem','100k':'idem','150k':'idem'},
-      // Payouts
-      'Répartition gains':        {'25k':'Rapid 90/10 · Core/Pro 80/20 · Flex 80/20 · Builder 80/20','50k':'idem','100k':'idem','150k':'idem'},
+      'Codes promo permanents':   {'25k':'SAVE40 (-40%), IMAN (20% Rapid · 30% Pro · 50% Flex)','50k':'idem','100k':'idem','150k':'idem'},
+      // Payouts (correction agent : Rapid = DAILY 24h, pas 5 winning days)
+      'Répartition gains':        {'25k':'Rapid 90/10 · Core/Pro 80/20 · Flex disputé (80/20 ou 90/10) · Builder 80/20','50k':'idem','100k':'idem','150k':'idem'},
       'Payout minimum':           {'25k':'Rapid/Core/Flex: $250 · Pro: $1,000','50k':'idem','100k':'idem','150k':'idem'},
-      'Cadence payout':           {'25k':'Rapid/Core/Flex: tous les 5 winning days · Pro: bi-weekly (14j) · Builder: 48h','50k':'idem','100k':'idem','150k':'idem'},
+      'Cadence payout':           {'25k':'Rapid: DAILY 24h après 1er trade · Core: 5 winning days · Pro: bi-weekly · Builder: 48h · Flex: 5 winning days','50k':'idem','100k':'idem','150k':'idem'},
       // Multi-comptes
       'Comptes funded simul.':    {'25k':'5 si que 25K/50K · 3 si au moins un 100K/150K','50k':'5 si que 25/50K','100k':'3 max','150k':'3 max'},
       'Évaluations simul.':       {'25k':'10 max actives','50k':'10 max','100k':'10 max','150k':'10 max'},
     }
   },
   'Phidias Propfirm': {
-    // VÉRIFIÉ MAI 2026 — 3 familles : Static/E2L, Fundamental, Premium/Swing
-    // Sources : phidiaspropfirm.com + helpcenter.phidiaspropfirm.com + Trustpilot + proptradingvibes
-    // Équipe française · Entity légale : Gibraltar (Phidias Propfirm Limited, LEI 2549002ZYS0FYA2RB617)
+    // RE-VÉRIFIÉ MAI 2026 — 3 familles : Static/E2L, Fundamental, Premium/Swing
+    // Sources : phidiaspropfirm.com + helpcenter.phidiaspropfirm.com + Trustpilot + LEI Register
+    // HQ : GIBRALTAR — Eurotowers Suite 4.3.02 Block 4 (entity légale unique)
+    // Pas France ni Italie · Fondateurs français mais aucune entité légale FR
+    // LEI : 2549002ZYS0FYA2RB617 · Registration: 12401448
     //
     // ⚠ ALERTE TRUSTPILOT 3.9/5 (mai 2026) — POLARISÉ :
     //   - 68% 5★ (payouts <24h confirmés)
@@ -376,14 +387,14 @@ export const PROPFIRM_RULES = {
       // Contrats
       'Contrats max (mini)':      {'25k':'2','50k':'5 (E2L) / 10 (Fundamental)','100k':'7 (E2L) / 14 (Fundamental)','150k':'9 (E2L) / 17 (Fundamental)'},
       'Contrats max (micro)':     {'25k':'20','50k':'50 / 100','100k':'70 / 140','150k':'90 / 170'},
-      // Tarifs (USD / EUR — variables selon promos courantes)
-      'Prix mensuel Fundamental': {'25k':'n/a','50k':'$116 / €106','100k':'$145 / €133','150k':'$173 / €159'},
-      'Prix one-time E2L':        {'25k':'$277 / €267','50k':'(variable)','100k':'(variable)','150k':'(variable)'},
-      'Prix one-time Fundamental':{'25k':'n/a','50k':'$580 / €530','100k':'$723 / €663','150k':'$863 / €776'},
-      'Prix one-time Premium':    {'25k':'n/a','50k':'$723 / €663','100k':'$900 / €830','150k':'$1,123 / €1,013'},
+      // Tarifs (USD officiel — corrigé : pas de tarif EUR officiel, juste USD)
+      'Prix mensuel Fundamental': {'25k':'n/a','50k':'$116/mo','100k':'$144-164/mo (disputé entre sources)','150k':'$173/mo'},
+      'Prix one-time E2L (Static)':{'25k':'$277 USD (régulier) · $55.40 avec discount','50k':'(varies)','100k':'(varies)','150k':'(varies)'},
+      'Prix one-time Fundamental':{'25k':'n/a','50k':'$580','100k':'$723','150k':'$863'},
+      'Prix one-time Premium':    {'25k':'n/a','50k':'(non documenté publiquement)','100k':'$180 (selon source) · $900 (autre) — DISPUTÉ','150k':'(non documenté)'},
       'Frais activation':         {'25k':'$0','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'Renouvellement','50k':'Renouvellement','100k':'Renouvellement','150k':'Renouvellement'},
-      'Codes promo':              {'25k':'TAKEOFF99 (60%), NOW (70%), MLKSPIRIT26 (80%)','50k':'idem','100k':'idem','150k':'idem'},
+      'Codes promo':              {'25k':'LASTCHANCE (-60% éval / -80% OTP) — autres codes circulants non vérifiés à 3 sources','50k':'idem','100k':'idem','150k':'idem'},
       // Payouts
       'Répartition gains':        {'25k':'E2L 80/20 fixe','50k':'Fundamental 80/20 fixe · 🌟 Premium PROGRESSIF: 75→80→85→90→100% (payout 5+)','100k':'idem','150k':'idem'},
       'Cadence payout':           {'25k':'48h post-éval → LIVE','50k':'CASH bi-weekly (1-14 et 15-fin mois) · Premium tous les 5 jours · LIVE quotidien possible','100k':'idem','150k':'idem'},
@@ -410,8 +421,8 @@ export const PROPFIRM_RULES = {
       'Drawdown trailing max':    {'25k':'$1,500 EOD (no lock en éval, STATIC en Funded post-Exhibition)','50k':'$2,000','100k':'$3,600','250k':'$6,000'},
       'Drawdown journalier max':  {'25k':'AUCUN','50k':'AUCUN','100k':'AUCUN','250k':'AUCUN'},
       'Jours de trading min':     {'25k':'15 (Standard) / 7 (Express, 4 réalisables)','50k':'15 / 7','100k':'15 / 7','250k':'15 / 7'},
-      'Profit min jour valide':   {'25k':'$50','50k':'$100','100k':'$200','250k':'$500'},
-      'Règle de cohérence (eval)':{'25k':'40% (Standard, $600/j) · 15% (Express, $225/j) — excès NE TUE PAS, ajoute au target','50k':'40% / 15% ($1,200/j vs $450/j)','100k':'40% / 15% ($2,400/j vs $900/j)','250k':'40% / 15%'},
+      'Profit min jour valide':   {'25k':'AUCUN — FFN n\'impose pas de seuil journalier','50k':'AUCUN','100k':'AUCUN','250k':'AUCUN'},
+      'Règle de cohérence (eval)':{'25k':'40% du target (Standard) · 15% (Express) — excès NE TUE PAS, ajoute au target','50k':'40% / 15%','100k':'40% / 15%','250k':'40% / 15%'},
       'Limite de temps Eval':     {'25k':'Aucune (sub mensuel récurrent)','50k':'Aucune','100k':'Aucune','250k':'Aucune'},
       // Trading
       'Positions overnight':      {'25k':'INTERDIT (flat 16:50 EST) · weekends INTERDITS','50k':'INTERDIT','100k':'INTERDIT','250k':'INTERDIT'},
@@ -440,9 +451,10 @@ export const PROPFIRM_RULES = {
   'FuturesELites': {
     // ⚠ NOM CONSERVÉ pour compat avec comptes existants — nom officiel = "FuturesElite" (singulier, futureselite.com)
     //    L'UI affichera "FuturesElite" mais la clé reste 'FuturesELites'
-    // VÉRIFIÉ MAI 2026 — 3 familles : Starter (mensuel), Pro (mensuel ++), Instant Funded (one-time)
-    // Sources : futureselite.com + propfirmplus + Companies House UK + Trustpilot
-    // CEO Christian Habibi · HQ Italie (Latina, Lazio) · Entity UK : Futures Elite Ltd #16864791
+    // RE-VÉRIFIÉ MAI 2026 — 3 familles : Starter (mensuel), Pro (mensuel ++), Instant Funded (one-time)
+    // Sources : futureselite.com + propfirmplus + Trustpilot + LinkedIn Habibi
+    // Parent : Quantum SRL (Italie, Latina/Lazio) — UK Ltd #16864791 NON CONFIRMÉ à 3 sources
+    // CEO Christian Habibi · COO Artur S. Deshko · HQ Corso G. Matteotti 61, Latina 04100, Italie
     //
     // 🌟 KILLER FEATURE : profit split SCALING 80% → 90% → 100% sur sustained performance
     //    (UNIQUE avec Apex pour atteindre 100% split sur le marché futures)
@@ -451,12 +463,12 @@ export const PROPFIRM_RULES = {
     // ⚠ 2 comptes max simultanés (fair-play rule très restrictive)
     plans: ['50k','100k','150k'],
     rules: {
-      'Objectif de profit':       {'50k':'$3,000 (Starter) / $4,000 (Pro) / 5% buffer (Instant)','100k':'$6,000 / $7,500','150k':'$9,000 / $11,000'},
-      'Drawdown trailing max':    {'50k':'$2,000 EOD (locks au starting post-1er payout en Instant)','100k':'$3,000 EOD','150k':'$5,000 EOD'},
-      'Drawdown journalier max':  {'50k':'$1,100 (Starter) · AUCUN (Pro) · AUCUN (Instant)','100k':'$2,000 / AUCUN / AUCUN','150k':'$3,000 / AUCUN / AUCUN'},
+      'Objectif de profit':       {'50k':'~$3,000 (Starter) · ~$4,000 (Pro) · 5% buffer (Instant) — décompo Starter vs Pro NON DOCUMENTÉE à 3 sources','100k':'~$6,000 / ~$7,500','150k':'~$9,000 / ~$11,000'},
+      'Drawdown trailing max':    {'50k':'$2,000 EOD (Starter/Pro) · Instant : 5% du current balance (trailing dynamique) — DISPUTÉ','100k':'$3,000 EOD','150k':'$5,000 EOD'},
+      'Drawdown journalier max':  {'50k':'$1,100 (Starter) · AUCUN (Pro) · DLL Instant DISPUTÉ entre sources','100k':'$2,000 / AUCUN','150k':'$3,000 / AUCUN'},
       'Jours de trading min':     {'50k':'≥5 profitable days en ≥14 calendar (Starter/Pro) · 7 sur 14 (Instant)','100k':'idem','150k':'idem'},
-      'Profit min jour valide':   {'50k':'~$100 (estimé Tier-1)','100k':'~$200','150k':'~$300'},
-      'Règle de cohérence':       {'50k':'40% (Starter/Pro) · 25% (Instant Funded — plus strict)','100k':'idem','150k':'idem'},
+      'Profit min jour valide':   {'50k':'Non documenté précisément à 3 sources','100k':'Non documenté','150k':'Non documenté'},
+      'Règle de cohérence':       {'50k':'40% (Starter/Pro) · Instant : 20% (FAQ officielle) ou 25% (PTV) — DISPUTÉ','100k':'idem','150k':'idem'},
       // Trading
       'Positions overnight':      {'50k':'Exchange hours seulement (modèle EOD)','100k':'idem','150k':'idem'},
       'Trading des news':         {'50k':'Tier-1 windows enforcées (flat) · add-on PAYANT pour unlock','100k':'idem','150k':'idem'},
@@ -465,10 +477,10 @@ export const PROPFIRM_RULES = {
       'Hedging cross-comptes':    {'50k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       // Contrats
       'Contrats max (mini)':      {'50k':'4 (Starter) / 5 (Pro) / 5 (Instant)','100k':'7 / 10 / 10','150k':'10 / 15 / —'},
-      // Tarifs (avec codes BLACK40 / -40-50%)
-      'Prix mensuel Starter':     {'50k':'$99 list → $49.50','100k':'$189 → $94.50','150k':'$299 → $149.50'},
-      'Prix mensuel Pro':         {'50k':'$189 list → $94.50','100k':'$230 → $115','150k':'$429 → $214.50'},
-      'Prix Instant Funded':      {'50k':'$499 one-time → $299.40 (-40%)','100k':'$699 → $419.40','150k':'non confirmé'},
+      // Tarifs (DISPUTÉ entre sources — 3 grilles différentes circulent. À vérifier sur futureselite.com au checkout)
+      'Prix mensuel Starter':     {'50k':'~$49-99/mo selon source','100k':'~$94-189/mo','150k':'~$129-299/mo'},
+      'Prix mensuel Pro':         {'50k':'~$94-189/mo','100k':'~$115-230/mo','150k':'~$214-429/mo'},
+      'Prix Instant Funded':      {'50k':'$499 list → $299.40 (-40% BLACK40)','100k':'$699 → $419.40','150k':'non documenté à 3 sources'},
       'Frais activation':         {'50k':'Non publié explicitement','100k':'Non publié','150k':'Non publié'},
       'Codes promo':              {'50k':'BLACK40 (40-50%)','100k':'BLACK40','150k':'BLACK40'},
       // Payouts

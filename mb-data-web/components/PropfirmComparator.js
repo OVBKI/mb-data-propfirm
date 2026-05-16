@@ -454,22 +454,15 @@ export default function PropfirmComparator({ user }) {
         />
       )}
 
-      {/* Disclaimer + footer info */}
-      <div style={{
-        marginTop: 40, padding: 16,
-        background: C.surface, border: `1px solid ${C.border}`,
-        borderRadius: 10, fontSize: 12, color: C.text3, lineHeight: 1.6,
-      }}>
-        ⚠ <strong>Disclaimer :</strong> les règles PropFirm évoluent régulièrement.
-        Ces données ont été vérifiées en mai 2026 via les sites officiels + cross-référence
-        avec proptradingvibes, saveonpropfirms, tradecovex, propfirmapp et h2tfunding.
-        Toujours <strong>vérifier sur le site officiel de la firme</strong> avant achat.
-        {isAdmin && !loadingOverrides && (
-          <span style={{ display: 'block', marginTop: 8, color: C.blueLight }}>
-            🔧 Mode admin actif — overrides Supabase chargés ({Object.keys(overrides).length} firmes)
-          </span>
-        )}
-      </div>
+      {isAdmin && !loadingOverrides && Object.keys(overrides).length > 0 && (
+        <div style={{
+          marginTop: 32, padding: '10px 14px',
+          background: 'rgba(45,111,255,0.08)', border: `1px solid rgba(45,111,255,0.25)`,
+          borderRadius: 8, fontSize: 11, color: C.blueLight,
+        }}>
+          🔧 Mode admin · {Object.keys(overrides).length} firmes avec overrides Supabase
+        </div>
+      )}
     </div>
   )
 }
