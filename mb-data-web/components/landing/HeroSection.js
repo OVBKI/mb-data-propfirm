@@ -6,6 +6,7 @@
 import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import Logo from '../Logo'
+import AnimatedQLogo from './AnimatedQLogo'
 
 const C = {
   text: '#f0ede8',
@@ -132,11 +133,16 @@ export default function HeroSection({ children, hideLogo = false }) {
             pointerEvents: 'none',
           }}
         />
-        <Logo size={120} glow="strong" />
+        {/* Remplacé : avant <Logo size={120} glow="strong" /> (PNG statique).
+            Maintenant : AnimatedQLogo SVG avec 4 effets (draw + glow + gradient + tilt 3D).
+            Le SVG contient déjà le wordmark QUANTARA donc on retire le wordmark texte en dessous. */}
+        <AnimatedQLogo size={360} />
       </motion.div>
       )}
 
-      {/* QUANTARA wordmark */}
+      {/* QUANTARA wordmark — RETIRÉ : le mot QUANTARA est maintenant inclus dans
+          AnimatedQLogo (SVG complet). Si on veut le réactiver un jour : juste
+          dupliquer ce bloc commenté.
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -149,6 +155,7 @@ export default function HeroSection({ children, hideLogo = false }) {
           marginBottom: 14,
         }}
       >QUANTARA</motion.div>
+      */}
 
       {/* Tagline 3 mots avec spring sequence */}
       <div style={{
