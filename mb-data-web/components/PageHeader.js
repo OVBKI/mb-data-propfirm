@@ -37,7 +37,7 @@ export default function PageHeader({ active }) {
           display: 'flex', alignItems: 'center', gap: 12,
           textDecoration: 'none', color: C.text, flexShrink: 0,
         }}>
-          <QLogoIcon size={34} color="#4d8fff" />
+          <QLogoIcon size={50} color="#4d8fff" />
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1, letterSpacing: '0.08em' }}>QUANTARA</div>
             <div style={{ fontSize: 9, color: C.text3, marginTop: 3, letterSpacing: '0.05em' }}>TRACK · ANALYZE · GROW</div>

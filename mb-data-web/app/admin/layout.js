@@ -142,7 +142,7 @@ export default function AdminLayout({ children }) {
           padding: '0 20px 20px', textDecoration: 'none', color: C.text,
           borderBottom: `1px solid ${C.border}`, marginBottom: 14,
         }}>
-          <QLogoIcon size={28} color="#e8504a" />
+          <QLogoIcon size={42} color="#e8504a" />
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em' }}>QUANTARA</div>
             <div style={{ fontSize: 9, color: C.red, fontWeight: 700, letterSpacing: '0.14em', marginTop: 2 }}>ADMIN PANEL</div>

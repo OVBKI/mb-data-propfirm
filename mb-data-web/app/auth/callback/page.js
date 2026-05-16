@@ -237,7 +237,7 @@ function CallbackInner() {
     }}>
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
-          <QLogoIcon size={56} color="gradient" />
+          <QLogoIcon size={84} color="gradient" />
         </div>
 
         {/* === LOADING === */}

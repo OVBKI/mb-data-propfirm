@@ -169,7 +169,7 @@ export default function AuthPage({ onAuth }) {
       }}>
         {/* Logo SVG Q + wordmark texte */}
         <div style={{ textAlign: 'center', marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <QLogoIcon size={68} color="gradient" />
+          <QLogoIcon size={100} color="gradient" />
           <div style={{
             fontSize: '20px', fontWeight: '700', letterSpacing: '0.15em',
           }}>QUANTARA</div>

@@ -16,7 +16,11 @@
 
 import { useRef, useState, useEffect } from 'react'
 
-const VB = '340 160 410 410'
+// viewBox élargi pour contenir TOUT le Q (cercle + bars + queue/tail qui descend
+// vers le bas-droit). Avec l'ancien crop trop serré, la tail dépassait du wrapper
+// (overflow: visible) et venait écraser le wordmark QUANTARA en dessous.
+// 620×620 square : padding ~80px autour du contenu pour rendu propre à toutes tailles.
+const VB = '200 130 620 620'
 
 export default function AnimatedQLogo({ size = 220 }) {
   const wrapRef = useRef(null)

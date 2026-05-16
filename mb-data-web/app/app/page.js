@@ -681,7 +681,7 @@ export default function Home() {
       <div className="top-bar" style={{height:'52px',background:'rgba(13,15,20,0.78)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px',position:'sticky',top:0,zIndex:200}}>
         <div style={{display:'flex',alignItems:'center',gap:'14px'}}>
           <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
-          <QLogoIcon size={30} color="#4d8fff" />
+          <QLogoIcon size={44} color="#4d8fff" />
           <div style={{display:'flex',alignItems:'baseline',gap:'10px'}}>
             <div style={{fontWeight:'700',fontSize:'14px',letterSpacing:'0.14em',color:'var(--text)'}}>QUANTARA</div>
             <span className="top-bar-brand-sub" style={{fontSize:'10px',color:'var(--text3)',letterSpacing:'0.18em'}}>TRACK · ANALYZE · GROW</span>

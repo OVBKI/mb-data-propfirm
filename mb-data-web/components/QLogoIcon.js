@@ -8,7 +8,9 @@
 //   - color : couleur du Q (défaut bleu clair Quantara).
 //             Accepte aussi 'gradient' pour un gradient bleu statique.
 
-const VB = '340 160 410 410' // viewBox cropped sur le Q icon uniquement
+// viewBox élargi pour contenir tout le Q : cercle outer + bars + tail/queue qui
+// descend vers le bas-droit. Le crop précédent était trop serré et coupait la tail.
+const VB = '200 130 620 620'
 
 export default function QLogoIcon({ size = 32, color = '#4d8fff' }) {
   const useGradient = color === 'gradient'

@@ -134,7 +134,7 @@ export default function HeroSection({ children, hideLogo = false }) {
         />
         {/* Logo Q SVG animé (Q icon seul, sans wordmark).
             Le wordmark QUANTARA est rendu en texte juste en dessous (spring framer-motion). */}
-        <AnimatedQLogo size={220} />
+        <AnimatedQLogo size={320} />
       </motion.div>
       )}
 
