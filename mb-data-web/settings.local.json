@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk 'NR<=20 {print NR\": \"length\\($0\\)\" chars\"}' \"C:/Users/bakka/Downloads/mb-data-web_10/mb-data-web/app/page.js\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const f=fs.readFileSync\\('app/page.js','utf8'\\);console.log\\('Lines:',f.split\\('\\\\n'\\).length,'Chars:',f.length\\)\")"
+    ]
+  }
+}
