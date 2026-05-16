@@ -80,7 +80,7 @@ export default function HeroSection({ children, hideLogo = false }) {
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 160, damping: 14, delay: 0.1 }}
         whileHover={{ scale: 1.05 }}
-        style={{ position: 'relative', marginBottom: 28, cursor: 'pointer' }}
+        style={{ position: 'relative', marginBottom: 8, cursor: 'pointer' }}
       >
         {/* Halo qui suit la souris — motion values directes (pas de re-render React) */}
         <motion.div
@@ -136,7 +136,7 @@ export default function HeroSection({ children, hideLogo = false }) {
         {/* Remplacé : avant <Logo size={120} glow="strong" /> (PNG statique).
             Maintenant : AnimatedQLogo SVG avec 4 effets (draw + glow + gradient + tilt 3D).
             Le SVG contient déjà le wordmark QUANTARA donc on retire le wordmark texte en dessous. */}
-        <AnimatedQLogo size={360} />
+        <AnimatedQLogo width={440} />
       </motion.div>
       )}
 

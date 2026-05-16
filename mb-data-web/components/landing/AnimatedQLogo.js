@@ -26,10 +26,20 @@
 
 import { useRef, useState, useEffect } from 'react'
 
-export default function AnimatedQLogo({ size = 380 }) {
+// viewBox cropped : le SVG original 1024x1024 a ~30% de vide en bas.
+// On crop pour que le bloc Q + QUANTARA remplisse le wrapper sans gap.
+// Le contenu réel vit entre y=130 (haut du Q) et y=730 (bas du wordmark).
+const VB_X = 0
+const VB_Y = 130
+const VB_W = 1024
+const VB_H = 620
+const ASPECT = VB_H / VB_W // ratio hauteur/largeur réel du logo
+
+export default function AnimatedQLogo({ width = 440 }) {
   const wrapRef = useRef(null)
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const [reduced, setReduced] = useState(false)
+  const height = width * ASPECT
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -54,8 +64,8 @@ export default function AnimatedQLogo({ size = 380 }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
-        width: size,
-        height: size,
+        width: width,
+        height: height,
         perspective: 800,
         cursor: 'pointer',
         display: 'inline-block',
@@ -69,10 +79,11 @@ export default function AnimatedQLogo({ size = 380 }) {
         transformStyle: 'preserve-3d',
       }}>
         <svg
-          viewBox="0 0 1024 1024"
+          viewBox={`${VB_X} ${VB_Y} ${VB_W} ${VB_H}`}
           width="100%"
           height="100%"
           xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMidYMid meet"
           style={{ overflow: 'visible' }}
         >
           <defs>

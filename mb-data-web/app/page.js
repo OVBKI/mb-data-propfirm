@@ -4,12 +4,10 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import DashboardPreview from '../components/DashboardPreview'
 import ParticlesField from '../components/landing/ParticlesField'
 import HeroSection from '../components/landing/HeroSection'
 import MagneticButton from '../components/landing/MagneticButton'
 import FlipFeatureCards from '../components/landing/FlipFeatureCards'
-import EquityCurveSelfDraw from '../components/landing/EquityCurveSelfDraw'
 import MeshGradientFooter from '../components/landing/MeshGradientFooter'
 import LandingScrollEffects from '../components/landing/LandingScrollEffects'
 // Polish layers (A-F + grain non-AI)
@@ -17,6 +15,11 @@ import ScrollProgress from '../components/landing/ScrollProgress'
 import SmoothScrollProvider from '../components/landing/SmoothScrollProvider'
 import AnimatedStats from '../components/landing/AnimatedStats'
 import EnhancedSteps from '../components/landing/EnhancedSteps'
+// === Démos visuelles features (nouvelle vague — moins look-IA) ===
+import LiveAccountsGrid from '../components/landing/LiveAccountsGrid'
+import CalendarPnL from '../components/landing/CalendarPnL'
+import EquityCurveDemo from '../components/landing/EquityCurveDemo'
+import NotificationMockup from '../components/landing/NotificationMockup'
 
 // 3D stars — lazy-loaded côté client uniquement (Three.js ~600KB, on évite le SSR + on
 // retire ce poids du first paint pour ne pas dégrader le LCP).
@@ -226,46 +229,24 @@ export default function LandingPage() {
       {/* === STATS strip avec compteurs animés au scroll === */}
       <AnimatedStats stats={STATS} />
 
-      {/* === DASHBOARD PREVIEW === */}
-      <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: colors.blueLight,
-              textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12,
-            }}>👀 Aperçu</div>
-            <h2 style={{
-              fontSize: 'clamp(28px, 4vw, 40px)',
-              fontWeight: 800, marginBottom: 14,
-              letterSpacing: '-0.02em',
-            }}>Le dashboard pensé pour les traders sérieux</h2>
-            <p style={{ fontSize: 16, color: colors.text2, maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
-              Stats globales, top firms, calendrier de transactions, et beaucoup plus.
-            </p>
-          </div>
-          <DashboardPreview />
-        </div>
+      {/* === DÉMO A : Live Accounts Grid — montre 4 comptes en live === */}
+      <section style={{ padding: '80px 24px 60px', position: 'relative' }}>
+        <LiveAccountsGrid />
       </section>
 
-      {/* === EQUITY CURVE SELF-DRAW === */}
+      {/* === DÉMO D : Calendar PnL — visuel mois coloré vert/rouge === */}
       <section style={{ padding: '60px 24px', position: 'relative' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: colors.green,
-              textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12,
-            }}>📈 Visualisation</div>
-            <h2 style={{
-              fontSize: 'clamp(26px, 3.5vw, 36px)',
-              fontWeight: 800, marginBottom: 14,
-              letterSpacing: '-0.02em',
-            }}>Equity curve & drawdown en temps réel</h2>
-            <p style={{ fontSize: 15, color: colors.text2, maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
-              La ligne de DD trailing suit ton balance peak et se fige automatiquement au balance initial.
-            </p>
-          </div>
-          <EquityCurveSelfDraw />
-        </div>
+        <CalendarPnL />
+      </section>
+
+      {/* === DÉMO B : Equity Curve animée — chart trailing DD === */}
+      <section style={{ padding: '60px 24px', position: 'relative' }}>
+        <EquityCurveDemo />
+      </section>
+
+      {/* === DÉMO F : Notification mockup — push 48h avant billing === */}
+      <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
+        <NotificationMockup />
       </section>
 
       {/* === FEATURES === */}
