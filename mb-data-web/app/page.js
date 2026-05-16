@@ -4,10 +4,15 @@ import Reveal from '../components/Reveal'
 import Counter from '../components/Counter'
 import DashboardPreview from '../components/DashboardPreview'
 import Footer from '../components/Footer'
+import JsonLd, { LANDING_SCHEMAS } from '../components/JsonLd'
 
+// Note: title et description héritent de app/layout.js (metadata complète).
+// Override ici uniquement si on veut un title/description spécifique à la landing.
+// On garde ici un override de description avec keywords explicites pour le SEO.
 export const metadata = {
-  title: 'Quantara — Track. Analyze. Grow.',
-  description: 'Suis tes PropFirms, journalise tes trades, garde l\'œil sur ton drawdown trailing et ta consistency. Quantara : Track. Analyze. Grow.',
+  title: 'Quantara — Journal de Trading PropFirm Futures (Topstep, Apex, Lucid)',
+  description: 'Suis tes PropFirms, journalise tes trades, garde l\'œil sur ton drawdown trailing et ta consistency. Topstep, Apex, Lucid, MFFU. Beta gratuite.',
+  alternates: { canonical: 'https://quantara.tech' },
 }
 
 // Styles inline pour rester cohérent avec le reste de l'app
@@ -115,6 +120,11 @@ function Btn({ href, primary, children, large }) {
 export default function Landing() {
   return (
     <div style={{ background: colors.bg, color: colors.text, minHeight: '100vh', overflow: 'hidden' }}>
+      {/* JSON-LD Schema.org : Organization + WebSite + SoftwareApplication + FAQPage.
+          Critique pour rich results Google + citations par AI search (ChatGPT/Claude/Perplexity). */}
+      {LANDING_SCHEMAS.map((schema, i) => (
+        <JsonLd key={i} data={schema} />
+      ))}
       {/* === Top nav === */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
