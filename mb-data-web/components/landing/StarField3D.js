@@ -1,32 +1,29 @@
 'use client'
-// Scène 3D du hero Quantara : champ d'étoiles parallax + planète Earth NASA.
+// Champ d'étoiles 3D interactif avec parallax souris.
+// React Three Fiber (R3F) + drei pour le rendu WebGL.
 //
-// COMPOSITION :
-//   1. Champ d'étoiles 3D (1500 points en sphère, mix bleu/blanc)
-//   2. Planète Earth (texture jour + lumières villes de nuit en emissive)
-//      → positionnée en bas pour effet "vue depuis l'orbite"
-//   3. Atmosphère : 2 sphères concentriques en additive blending = rim glow bleu
-//   4. Caméra parallax souris (vraie 3D = étoiles proches bougent plus)
-//
-// TEXTURES :
-//   - threejs.org/examples/textures/planets/ : textures officielles Three.js
-//     stables depuis 10+ ans, CORS OK. NASA Visible Earth en source.
+// COMPORTEMENT :
+//   - 1500 étoiles distribuées dans une sphère 3D
+//   - Mix bleu Quantara (1100) + blanc cassé (400) pour la profondeur
+//   - Caméra dérive très lentement (rotation idle)
+//   - Mouvement souris → caméra translate subtilement → parallax 3D naturel
+//   - Étoiles proches bougent plus que lointaines (vraie 3D)
 //
 // PERF :
-//   - Une seule WebGL Canvas pour tout
+//   - Points + PointMaterial = render le plus efficace pour 1000+ particules WebGL
 //   - dpr capé à 1.5
-//   - antialias off
+//   - antialias off (étoiles trop petites pour bénéficier)
 //
 // ACCESSIBILITÉ :
-//   - prefers-reduced-motion : rend null → fallback au logo 2D standard
+//   - prefers-reduced-motion : rend null → fallback CSS via parent
 
 import { useRef, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Points, PointMaterial, useTexture } from '@react-three/drei'
-import * as THREE from 'three'
+import { Points, PointMaterial } from '@react-three/drei'
 
 // ============================================================================
-// MOUSE TRACKER (window-level)
+// MOUSE TRACKER (window-level pour fonctionner même si couche au-dessus
+// capture les events, ex: ParticlesField 2D)
 // ============================================================================
 
 const mouseRef = { x: 0, y: 0 }
@@ -38,7 +35,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ============================================================================
-// ÉTOILES (deux groupes pour profondeur)
+// GROUPE D'ÉTOILES (réutilisable pour deux teintes)
 // ============================================================================
 
 function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
@@ -47,6 +44,7 @@ function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
+      // Distribution sphérique uniforme (Marsaglia)
       const u = Math.random() * 2 - 1
       const theta = Math.random() * Math.PI * 2
       const r = radiusInner + Math.random() * (radiusOuter - radiusInner)
@@ -79,83 +77,13 @@ function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
 }
 
 // ============================================================================
-// PLANÈTE EARTH — texture jour + emissive nuit + atmosphère
-// ============================================================================
-
-// URLs des textures NASA hébergées sur threejs.org (CORS OK, stable depuis des années)
-const EARTH_DAY_URL    = 'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
-const EARTH_LIGHTS_URL = 'https://threejs.org/examples/textures/planets/earth_lights_2048.png'
-const EARTH_SPEC_URL   = 'https://threejs.org/examples/textures/planets/earth_specular_2048.jpg'
-
-function Planet() {
-  // useTexture est suspense-compatible (suspend jusqu'au chargement complet)
-  const [dayMap, lightsMap, specMap] = useTexture([
-    EARTH_DAY_URL,
-    EARTH_LIGHTS_URL,
-    EARTH_SPEC_URL,
-  ])
-
-  const planetRef = useRef()
-
-  useFrame((state, delta) => {
-    // Rotation continue très lente (Earth fait 1 tour en ~24h IRL, ici en ~2min)
-    if (planetRef.current) {
-      planetRef.current.rotation.y += delta * 0.04
-    }
-  })
-
-  return (
-    // Position basse + légère inclinaison axiale (comme la Terre, 23°)
-    <group position={[0, -1.1, 0]} rotation={[0.15, 0, -0.4]}>
-      {/* ATMOSPHÈRE EXTERNE — rim glow bleu profond, très subtil */}
-      <mesh>
-        <sphereGeometry args={[1.05, 64, 64]} />
-        <meshBasicMaterial
-          color="#3b82f6"
-          transparent
-          opacity={0.05}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* ATMOSPHÈRE INTERNE — rim glow plus intense près de la surface */}
-      <mesh>
-        <sphereGeometry args={[0.98, 64, 64]} />
-        <meshBasicMaterial
-          color="#88baff"
-          transparent
-          opacity={0.10}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* TERRE — sphère avec texture jour + lumières des villes en emissive */}
-      <mesh ref={planetRef}>
-        <sphereGeometry args={[0.9, 128, 128]} />
-        <meshStandardMaterial
-          map={dayMap}
-          emissiveMap={lightsMap}
-          emissive="#ffb86b"
-          emissiveIntensity={1.4}
-          roughnessMap={specMap}
-          roughness={0.85}
-          metalness={0.05}
-        />
-      </mesh>
-    </group>
-  )
-}
-
-// ============================================================================
-// PARALLAX CAMÉRA
+// PARALLAX CAMÉRA (souris bouge la caméra → vraie profondeur 3D)
 // ============================================================================
 
 function ParallaxCamera() {
   useFrame((state) => {
-    const targetX = mouseRef.x * 0.5
-    const targetY = mouseRef.y * 0.3
+    const targetX = mouseRef.x * 0.8
+    const targetY = mouseRef.y * 0.5
     state.camera.position.x += (targetX - state.camera.position.x) * 0.04
     state.camera.position.y += (targetY - state.camera.position.y) * 0.04
     state.camera.lookAt(0, 0, 0)
@@ -168,6 +96,7 @@ function ParallaxCamera() {
 // ============================================================================
 
 export default function StarField3D() {
+  // Respecte prefers-reduced-motion → pas de rendu 3D animé
   if (typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     return null
@@ -181,48 +110,34 @@ export default function StarField3D() {
       zIndex: 0,
     }}>
       <Canvas
-        camera={{ position: [0, 0, 2.5], fov: 55, near: 0.1, far: 100 }}
+        camera={{ position: [0, 0, 1], fov: 75, near: 0.1, far: 100 }}
         dpr={[1, 1.5]}
         gl={{
-          antialias: true, // important pour la silhouette de la planète
+          antialias: false,
           alpha: true,
           powerPreference: 'high-performance',
         }}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          {/* Lumières : soleil directionnel (côté droit, comme un sun-from-east) */}
-          <ambientLight intensity={0.15} />
-          <directionalLight
-            position={[5, 2, 3]}
-            intensity={1.8}
-            color="#fff5e1"
-          />
-          {/* Légère rim light bleue côté gauche pour faire ressortir la silhouette */}
-          <pointLight position={[-3, 0.5, 2]} intensity={0.4} color="#4d8fff" />
-
-          {/* Champ d'étoiles bleues (profondes, nombreuses) */}
+          {/* Étoiles bleues Quantara — profondes, nombreuses */}
           <StarGroup
             count={1100}
             color="#4d8fff"
             size={0.013}
-            radiusInner={3}
-            radiusOuter={12}
-            rotSpeed={0.012}
+            radiusInner={2}
+            radiusOuter={9}
+            rotSpeed={0.015}
           />
-          {/* Étoiles blanches plus proches (pop visuel) */}
+          {/* Étoiles blanches — moins nombreuses, plus proches → pop visuel */}
           <StarGroup
             count={400}
             color="#e8f0ff"
             size={0.018}
-            radiusInner={2}
-            radiusOuter={7}
-            rotSpeed={0.020}
+            radiusInner={1.2}
+            radiusOuter={5}
+            rotSpeed={0.025}
           />
-
-          {/* Planète Earth en bas */}
-          <Planet />
-
           <ParallaxCamera />
         </Suspense>
       </Canvas>
