@@ -197,9 +197,9 @@ export default function LandingPage() {
           pointerEvents: 'none',
         }} />
 
-        {/* hideLogo : le logo 2D est remplacé par la planète 3D rendue dans StarField3D.
-            HeroSection insère à la place un spacer vertical pour réserver l'espace. */}
-        <HeroSection hideLogo>
+        {/* Logo Q 2D + halos repris (l'utilisateur adore). La planète Earth 3D rendue
+            dans StarField3D apparaît en bas, derrière, comme vue depuis l'orbite. */}
+        <HeroSection>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
             <MagneticButton href="/app" primary large>
               Démarrer gratuitement

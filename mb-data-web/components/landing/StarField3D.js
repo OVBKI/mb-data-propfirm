@@ -1,17 +1,21 @@
 'use client'
-// Scène 3D du hero Quantara : champ d'étoiles parallax + planète centrale avec logo.
+// Scène 3D du hero Quantara : champ d'étoiles parallax + planète Earth NASA.
 //
 // COMPOSITION :
 //   1. Champ d'étoiles 3D (1500 points en sphère, mix bleu/blanc)
-//   2. Planète centrale : sphère sombre + 2 halos atmosphériques + logo Q en façade
-//   3. Caméra qui parallax avec la souris (vraie 3D = étoiles proches bougent plus)
-//   4. Rotation idle continue de la planète + du champ d'étoiles
+//   2. Planète Earth (texture jour + lumières villes de nuit en emissive)
+//      → positionnée en bas pour effet "vue depuis l'orbite"
+//   3. Atmosphère : 2 sphères concentriques en additive blending = rim glow bleu
+//   4. Caméra parallax souris (vraie 3D = étoiles proches bougent plus)
+//
+// TEXTURES :
+//   - threejs.org/examples/textures/planets/ : textures officielles Three.js
+//     stables depuis 10+ ans, CORS OK. NASA Visible Earth en source.
 //
 // PERF :
-//   - Une seule WebGL Canvas pour tout (étoiles + planète) = un seul context GPU
-//   - dpr capé à 1.5 (pas besoin de 4K natif sur du rendu spatial)
-//   - antialias off (étoiles trop petites pour bénéficier)
-//   - Sphères avec 32-64 segments (smooth sans excès)
+//   - Une seule WebGL Canvas pour tout
+//   - dpr capé à 1.5
+//   - antialias off
 //
 // ACCESSIBILITÉ :
 //   - prefers-reduced-motion : rend null → fallback au logo 2D standard
@@ -22,8 +26,7 @@ import { Points, PointMaterial, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 
 // ============================================================================
-// MOUSE TRACKER (window-level pour fonctionner même si une couche au-dessus
-// capture les events, ex: ParticlesField 2D)
+// MOUSE TRACKER (window-level)
 // ============================================================================
 
 const mouseRef = { x: 0, y: 0 }
@@ -35,7 +38,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ============================================================================
-// ÉTOILES (deux groupes pour donner de la profondeur)
+// ÉTOILES (deux groupes pour profondeur)
 // ============================================================================
 
 function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
@@ -44,7 +47,6 @@ function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
-      // Distribution sphérique uniforme (méthode Marsaglia)
       const u = Math.random() * 2 - 1
       const theta = Math.random() * Math.PI * 2
       const r = radiusInner + Math.random() * (radiusOuter - radiusInner)
@@ -77,80 +79,69 @@ function StarGroup({ count, color, size, radiusInner, radiusOuter, rotSpeed }) {
 }
 
 // ============================================================================
-// PLANÈTE CENTRALE — sphère sombre + 2 halos atmosphériques + logo Q en façade
+// PLANÈTE EARTH — texture jour + emissive nuit + atmosphère
 // ============================================================================
 
+// URLs des textures NASA hébergées sur threejs.org (CORS OK, stable depuis des années)
+const EARTH_DAY_URL    = 'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
+const EARTH_LIGHTS_URL = 'https://threejs.org/examples/textures/planets/earth_lights_2048.png'
+const EARTH_SPEC_URL   = 'https://threejs.org/examples/textures/planets/earth_specular_2048.jpg'
+
 function Planet() {
-  // useTexture est suspense-compatible (suspends jusqu'au chargement)
-  const logoTexture = useTexture('/quantara-logo.png')
+  // useTexture est suspense-compatible (suspend jusqu'au chargement complet)
+  const [dayMap, lightsMap, specMap] = useTexture([
+    EARTH_DAY_URL,
+    EARTH_LIGHTS_URL,
+    EARTH_SPEC_URL,
+  ])
 
   const planetRef = useRef()
-  const haloInnerRef = useRef()
-  const haloOuterRef = useRef()
 
   useFrame((state, delta) => {
-    // Rotation continue lente de la planète (effet "planète qui tourne sur elle-même")
+    // Rotation continue très lente (Earth fait 1 tour en ~24h IRL, ici en ~2min)
     if (planetRef.current) {
-      planetRef.current.rotation.y += delta * 0.12
-    }
-    // Halos respirent doucement (scale 1.0 ↔ 1.05 sur 4 secondes)
-    const t = state.clock.elapsedTime
-    const breathe = 1 + Math.sin(t * 1.5) * 0.025
-    if (haloInnerRef.current) {
-      haloInnerRef.current.scale.setScalar(breathe)
-    }
-    if (haloOuterRef.current) {
-      haloOuterRef.current.scale.setScalar(1 + Math.sin(t * 1.0 + 1.2) * 0.04)
+      planetRef.current.rotation.y += delta * 0.04
     }
   })
 
   return (
-    <group position={[0, 0.35, 0]}>
-      {/* HALO EXTERNE — atmosphère lointaine, très subtil */}
-      <mesh ref={haloOuterRef}>
-        <sphereGeometry args={[0.52, 32, 32]} />
+    // Position basse + légère inclinaison axiale (comme la Terre, 23°)
+    <group position={[0, -1.1, 0]} rotation={[0.15, 0, -0.4]}>
+      {/* ATMOSPHÈRE EXTERNE — rim glow bleu profond, très subtil */}
+      <mesh>
+        <sphereGeometry args={[1.05, 64, 64]} />
         <meshBasicMaterial
-          color="#4d8fff"
+          color="#3b82f6"
           transparent
-          opacity={0.04}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* HALO INTERNE — atmosphère proche, plus intense */}
-      <mesh ref={haloInnerRef}>
-        <sphereGeometry args={[0.42, 32, 32]} />
-        <meshBasicMaterial
-          color="#4d8fff"
-          transparent
-          opacity={0.10}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* PLANÈTE — sphère sombre métallique qui tourne */}
-      <mesh ref={planetRef}>
-        <sphereGeometry args={[0.32, 64, 64]} />
-        <meshStandardMaterial
-          color="#0a1428"
-          metalness={0.55}
-          roughness={0.35}
-          emissive="#1a3060"
-          emissiveIntensity={0.45}
-        />
-      </mesh>
-
-      {/* LOGO Q — plan en façade, ne tourne PAS avec la planète, blending additif
-          pour que le fond sombre du PNG disparaisse (seul le Q lumineux apparaît).
-          depthWrite false pour que le logo se compose proprement par-dessus la sphère. */}
-      <mesh position={[0, 0, 0.33]}>
-        <planeGeometry args={[0.55, 0.55]} />
-        <meshBasicMaterial
-          map={logoTexture}
-          transparent
+          opacity={0.05}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
-          opacity={1}
+        />
+      </mesh>
+
+      {/* ATMOSPHÈRE INTERNE — rim glow plus intense près de la surface */}
+      <mesh>
+        <sphereGeometry args={[0.98, 64, 64]} />
+        <meshBasicMaterial
+          color="#88baff"
+          transparent
+          opacity={0.10}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* TERRE — sphère avec texture jour + lumières des villes en emissive */}
+      <mesh ref={planetRef}>
+        <sphereGeometry args={[0.9, 128, 128]} />
+        <meshStandardMaterial
+          map={dayMap}
+          emissiveMap={lightsMap}
+          emissive="#ffb86b"
+          emissiveIntensity={1.4}
+          roughnessMap={specMap}
+          roughness={0.85}
+          metalness={0.05}
         />
       </mesh>
     </group>
@@ -158,16 +149,16 @@ function Planet() {
 }
 
 // ============================================================================
-// PARALLAX CAMÉRA — translate la caméra avec la souris pour effet de profondeur
+// PARALLAX CAMÉRA
 // ============================================================================
 
 function ParallaxCamera() {
   useFrame((state) => {
-    const targetX = mouseRef.x * 0.6
-    const targetY = mouseRef.y * 0.4
+    const targetX = mouseRef.x * 0.5
+    const targetY = mouseRef.y * 0.3
     state.camera.position.x += (targetX - state.camera.position.x) * 0.04
     state.camera.position.y += (targetY - state.camera.position.y) * 0.04
-    state.camera.lookAt(0, 0.35, 0) // regarde vers le centre de la planète
+    state.camera.lookAt(0, 0, 0)
   })
   return null
 }
@@ -177,7 +168,6 @@ function ParallaxCamera() {
 // ============================================================================
 
 export default function StarField3D() {
-  // Respecte prefers-reduced-motion → pas de rendu 3D animé
   if (typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     return null
@@ -191,42 +181,46 @@ export default function StarField3D() {
       zIndex: 0,
     }}>
       <Canvas
-        camera={{ position: [0, 0.35, 1.5], fov: 60, near: 0.1, far: 100 }}
+        camera={{ position: [0, 0, 2.5], fov: 55, near: 0.1, far: 100 }}
         dpr={[1, 1.5]}
         gl={{
-          antialias: false,
+          antialias: true, // important pour la silhouette de la planète
           alpha: true,
           powerPreference: 'high-performance',
         }}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          {/* Lumières : ambient pour visibilité globale + directionnelle pour modeler
-              la planète + point bleue pour rim light côté gauche */}
-          <ambientLight intensity={0.4} />
-          <directionalLight position={[3, 2, 4]} intensity={1.1} color="#ffffff" />
-          <pointLight position={[-2.5, -1, 1.5]} intensity={0.6} color="#4d8fff" />
+          {/* Lumières : soleil directionnel (côté droit, comme un sun-from-east) */}
+          <ambientLight intensity={0.15} />
+          <directionalLight
+            position={[5, 2, 3]}
+            intensity={1.8}
+            color="#fff5e1"
+          />
+          {/* Légère rim light bleue côté gauche pour faire ressortir la silhouette */}
+          <pointLight position={[-3, 0.5, 2]} intensity={0.4} color="#4d8fff" />
 
           {/* Champ d'étoiles bleues (profondes, nombreuses) */}
           <StarGroup
             count={1100}
             color="#4d8fff"
             size={0.013}
-            radiusInner={2}
-            radiusOuter={9}
-            rotSpeed={0.015}
+            radiusInner={3}
+            radiusOuter={12}
+            rotSpeed={0.012}
           />
           {/* Étoiles blanches plus proches (pop visuel) */}
           <StarGroup
             count={400}
             color="#e8f0ff"
             size={0.018}
-            radiusInner={1.2}
-            radiusOuter={5}
-            rotSpeed={0.025}
+            radiusInner={2}
+            radiusOuter={7}
+            rotSpeed={0.020}
           />
 
-          {/* Planète centrale Quantara */}
+          {/* Planète Earth en bas */}
           <Planet />
 
           <ParallaxCamera />
