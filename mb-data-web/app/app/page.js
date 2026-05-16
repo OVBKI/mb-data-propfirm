@@ -17,6 +17,7 @@ function suggestProfitSplit(firmName, plan){
 import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
 import Logo from '../../components/Logo'
+import QLogoIcon from '../../components/QLogoIcon'
 import CertificatesModal from '../../components/CertificatesModal'
 import OnboardingModal from '../../components/OnboardingModal'
 import Skeleton from '../../components/Skeleton'
@@ -660,14 +661,16 @@ export default function Home() {
     badge:(status)=>({display:'inline-block',fontSize:'10.5px',fontWeight:'600',padding:'3px 9px',borderRadius:'99px',letterSpacing:'0.3px',background:status==='Financé'?'var(--green-bg)':status==='Challenge'?'var(--amber-bg)':'var(--red-bg)',color:status==='Financé'?'var(--green-text)':status==='Challenge'?'var(--amber-text)':'var(--red-text)'})
   }
 
+  // Icônes minimalistes géométriques (style mockup landing) — pas d'emoji.
+  // ◫ dashboard / ◐ analytics / ☰ journal / ◊ rules / ◉ alerts / ◳ calendar / ◯ sync
   const navItems=[
-    {key:'dashboard',icon:'📊',label:'Tableau de bord',section:'Principal'},
-    {key:'analytics',icon:'📈',label:'Analytics',section:'Principal'},
-    {key:'journal',icon:'📔',label:'Journal trading',section:'Principal'},
-    {key:'rules',icon:'📋',label:'Règles firmes',section:'PropFirm'},
-    {key:'alerts',icon:'🔔',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
-    {key:'calendar',icon:'📅',label:'Calendrier Éco.',section:'Live Data'},
-    {key:'sync',icon:'🔌',label:'Sync auto (bientôt)',section:'Live Data'},
+    {key:'dashboard',icon:'◫',label:'Tableau de bord',section:'Principal'},
+    {key:'analytics',icon:'◐',label:'Analytics',section:'Principal'},
+    {key:'journal',icon:'☰',label:'Journal trading',section:'Principal'},
+    {key:'rules',icon:'◊',label:'Règles firmes',section:'PropFirm'},
+    {key:'alerts',icon:'◉',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
+    {key:'calendar',icon:'◳',label:'Calendrier Éco.',section:'Live Data'},
+    {key:'sync',icon:'◯',label:'Sync auto (bientôt)',section:'Live Data'},
   ]
 
   return(
@@ -679,10 +682,10 @@ export default function Home() {
       <div className="top-bar" style={{height:'52px',background:'rgba(13,15,20,0.78)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px',position:'sticky',top:0,zIndex:200}}>
         <div style={{display:'flex',alignItems:'center',gap:'14px'}}>
           <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
-          <Logo size={32} glow="strong" />
+          <QLogoIcon size={30} color="#4d8fff" />
           <div style={{display:'flex',alignItems:'baseline',gap:'10px'}}>
             <div style={{fontWeight:'700',fontSize:'14px',letterSpacing:'0.14em',color:'var(--text)'}}>QUANTARA</div>
-            <span className="top-bar-brand-sub" style={{fontSize:'10px',color:'var(--text3)',letterSpacing:'0.18em',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'}}>TRACK · ANALYZE · GROW</span>
+            <span className="top-bar-brand-sub" style={{fontSize:'10px',color:'var(--text3)',letterSpacing:'0.18em'}}>TRACK · ANALYZE · GROW</span>
           </div>
         </div>
         <div className="top-bar-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
@@ -695,11 +698,11 @@ export default function Home() {
         <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'210px',flexShrink:0,background:'rgba(13,15,20,0.65)',backdropFilter:'blur(26px)',WebkitBackdropFilter:'blur(26px)',borderRight:'1px solid rgba(255,255,255,0.05)',padding:'18px 0',position:'sticky',top:'52px',height:'calc(100vh - 52px)',overflowY:'auto'}}>
           {['Principal','Live Data','PropFirm'].map(section=>(
             <div key={section}>
-              <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'9.5px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.16em',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'}}>{section}</div>
+              <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em'}}>{section}</div>
               {navItems.filter(i=>i.section===section).map(item=>(
                 <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue-light)':'var(--text2)',fontSize:'13px',fontWeight:page===item.key?'600':'500',cursor:'pointer',textAlign:'left',borderLeft:`2px solid ${page===item.key?'var(--blue)':'transparent'}`,transition:'all 0.15s',fontFamily:'inherit'}}>
-                  <span style={{fontSize:'13px'}}>{item.icon}</span>{item.label}
-                  {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'9.5px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'}}>{item.badge}</span>}
+                  <span style={{fontSize:'14px',color:page===item.key?'var(--blue-light)':'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
+                  {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px'}}>{item.badge}</span>}
                 </button>
               ))}
             </div>
@@ -729,17 +732,17 @@ export default function Home() {
             <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'32px 24px 60px'}}>
               <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'32px',gap:'24px',flexWrap:'wrap'}}>
                 <div>
-                  <div style={{fontSize:'10.5px',color:'var(--blue-light)',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
+                  <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
                     Tableau de bord
                   </div>
                   <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>
                     Bonjour {user?.email?.split('@')[0] || 'Trader'} 👋
                   </h1>
-                  <div style={{fontSize:'13px',color:'var(--text3)',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',letterSpacing:'0.02em'}}>{rateInfo}</div>
+                  <div style={{fontSize:'13px',color:'var(--text3)'}}>{rateInfo}</div>
                 </div>
                 <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
                   <div style={{display:'flex',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'8px',overflow:'hidden',background:'rgba(255,255,255,0.02)'}}>
-                    {['native','eur'].map(c=><button key={c} onClick={()=>setCurrencyMode(c)} style={{padding:'7px 14px',fontSize:'11.5px',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',border:'none',background:currency===c?'var(--blue)':'transparent',color:currency===c?'#fff':'var(--text2)',cursor:'pointer',fontWeight:'600',letterSpacing:'0.05em'}}>{c==='native'?'USD':'EUR'}</button>)}
+                    {['native','eur'].map(c=><button key={c} onClick={()=>setCurrencyMode(c)} style={{padding:'7px 14px',fontSize:'12px',border:'none',background:currency===c?'var(--blue)':'transparent',color:currency===c?'#fff':'var(--text2)',cursor:'pointer',fontWeight:'600',letterSpacing:'0.05em'}}>{c==='native'?'USD':'EUR'}</button>)}
                   </div>
                   <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 Rechercher..." style={{...S.input,width:'180px'}} />
                   <button data-tour="add-firm-btn" onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>+ Ajouter PropFirm</button>
@@ -755,8 +758,8 @@ export default function Home() {
                   {label:'Payouts',value:totalPayoutCount},
                 ].map((k,i)=>(
                   <div key={i} className="qt-stat-card" style={{...S.card,padding:'18px 18px',transition:'border-color 0.2s, transform 0.2s'}}>
-                    <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:'12px',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',fontWeight:'600'}}>{k.label}</div>
-                    <div style={{fontSize:k.small?'15px':'24px',fontWeight:'700',color:k.color||'var(--text)',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',letterSpacing:'-0.02em'}}>{k.value}</div>
+                    <div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'12px',fontWeight:'600'}}>{k.label}</div>
+                    <div style={{fontSize:k.small?'15px':'24px',fontWeight:'700',color:k.color||'var(--text)',letterSpacing:'-0.015em'}}>{k.value}</div>
                   </div>
                 ))}
               </div>
@@ -773,12 +776,12 @@ export default function Home() {
                   return(
                     <div key={firm.id} onClick={()=>setFirmDrawer(firm.id)} className="qt-firm-card" style={{...S.card,padding:'20px',cursor:'pointer',transition:'border-color 0.2s, transform 0.2s, box-shadow 0.2s'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(45,111,255,0.4)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 12px 30px rgba(0,0,0,0.25), 0 0 24px rgba(45,111,255,0.08)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.06)';e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)'}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:'12px'}}>{getFirmLogo(firm.name,firm.color,36)}<div><div style={{fontSize:'15px',fontWeight:'700',letterSpacing:'-0.005em'}}>{firm.name}</div><div style={{fontSize:'10.5px',color:'var(--text3)',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',letterSpacing:'0.04em',marginTop:'2px'}}>{al.length} compte{al.length>1?'s':''} · {payoutCount} payout{payoutCount>1?'s':''}</div></div></div>
-                        <div style={{textAlign:'right'}}><div style={{fontSize:'19px',fontWeight:'700',color:net>=0?'var(--green)':'var(--red)',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',letterSpacing:'-0.02em'}}>{currency==='eur'?fmtENet(net,0):(net>=0?'+':'')+(net/rates.USD).toFixed(0)+' $'}</div><div style={{fontSize:'10.5px',color:'var(--text3)',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',letterSpacing:'0.05em',marginTop:'2px'}}>ROI {roi>=0?'+':''}{roi.toFixed(0)}%</div></div>
+                        <div style={{display:'flex',alignItems:'center',gap:'12px'}}>{getFirmLogo(firm.name,firm.color,36)}<div><div style={{fontSize:'15px',fontWeight:'700',letterSpacing:'-0.005em'}}>{firm.name}</div><div style={{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}}>{al.length} compte{al.length>1?'s':''} · {payoutCount} payout{payoutCount>1?'s':''}</div></div></div>
+                        <div style={{textAlign:'right'}}><div style={{fontSize:'19px',fontWeight:'700',color:net>=0?'var(--green)':'var(--red)',letterSpacing:'-0.015em'}}>{currency==='eur'?fmtENet(net,0):(net>=0?'+':'')+(net/rates.USD).toFixed(0)+' $'}</div><div style={{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}}>ROI {roi>=0?'+':''}{roi.toFixed(0)}%</div></div>
                       </div>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'14px'}}>
                         {[{l:'Dépensé',v:currency==='eur'?fmtE(ts,0):(ts/rates.USD).toFixed(0)+' $',c:'var(--red)'},{l:'Payouts',v:currency==='eur'?fmtE(tp,0):(tp/rates.USD).toFixed(0)+' $',c:'var(--green)'},{l:'Actifs',v:financedCount+challengeCount}].map((s,i)=>(
-                          <div key={i} style={{background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.04)',borderRadius:'7px',padding:'10px 8px',textAlign:'center'}}><div style={{fontSize:'9px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'4px',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',fontWeight:'600'}}>{s.l}</div><div style={{fontSize:'14px',fontWeight:'700',color:s.c||'var(--text)',fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',letterSpacing:'-0.01em'}}>{s.v}</div></div>
+                          <div key={i} style={{background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.04)',borderRadius:'7px',padding:'10px 8px',textAlign:'center'}}><div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'4px',fontWeight:'600'}}>{s.l}</div><div style={{fontSize:'14px',fontWeight:'700',color:s.c||'var(--text)',letterSpacing:'-0.005em'}}>{s.v}</div></div>
                         ))}
                       </div>
                       {activeAccts.slice(0,3).map(a=>{
