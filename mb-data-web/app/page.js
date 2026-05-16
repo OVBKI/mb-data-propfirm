@@ -3,6 +3,7 @@
 // Tous les composants V1 sont actifs et utilisés.
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import DashboardPreview from '../components/DashboardPreview'
 import ParticlesField from '../components/landing/ParticlesField'
 import HeroSection from '../components/landing/HeroSection'
@@ -16,6 +17,13 @@ import ScrollProgress from '../components/landing/ScrollProgress'
 import SmoothScrollProvider from '../components/landing/SmoothScrollProvider'
 import AnimatedStats from '../components/landing/AnimatedStats'
 import EnhancedSteps from '../components/landing/EnhancedSteps'
+
+// 3D stars — lazy-loaded côté client uniquement (Three.js ~600KB, on évite le SSR + on
+// retire ce poids du first paint pour ne pas dégrader le LCP).
+const StarField3D = dynamic(() => import('../components/landing/StarField3D'), {
+  ssr: false,
+  loading: () => null, // pas de loader visible — le fond reste juste noir le temps que ça charge
+})
 
 export const metadata = {
   title: 'Quantara — Track. Analyze. Grow.',
@@ -169,11 +177,17 @@ export default function LandingPage() {
         `}</style>
       </div>
 
-      {/* === HERO avec particles background === */}
+      {/* === HERO avec fond 3D parallax + particules 2D légères au-dessus === */}
       <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Particles canvas en arrière-plan */}
+        {/* COUCHE 1 (profonde) — Champ d'étoiles 3D avec parallax souris */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <ParticlesField density={90} color="77,143,255" />
+          <StarField3D />
+        </div>
+
+        {/* COUCHE 2 (proche) — Particules 2D pour halo souris et interaction directe.
+            Densité réduite (40 vs 90 avant) pour ne pas saturer visuellement le 3D dessous. */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+          <ParticlesField density={40} color="77,143,255" />
         </div>
 
         {/* Vignette pour adoucir les bords */}
