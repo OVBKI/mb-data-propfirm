@@ -37,6 +37,49 @@ button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; }
 a { color: inherit; text-decoration: none; }
 
+/* ============================================================================
+   FIX dropdowns natifs (<select> + <option>) sur Windows/Linux
+   ----------------------------------------------------------------------------
+   Sur Chrome/Edge/Firefox sous Windows et Linux, les <option> d'un <select>
+   sont rendues par l'OS et IGNORENT les styles inline mis sur le parent. Sans
+   override, on se retrouve avec un fond blanc + texte clair → illisible.
+   On force ici un fond sombre + texte clair sur toutes les options du site.
+   (Sur macOS et iOS, le rendu vient déjà du système et ne pose pas problème,
+    mais ces règles ne cassent rien.)
+   ============================================================================ */
+select option,
+select optgroup {
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+select option:checked,
+select option:hover {
+  background-color: var(--surface2) !important;
+  color: var(--text) !important;
+}
+/* Couleur du texte du select fermé (la valeur sélectionnée affichée) */
+select {
+  color: var(--text);
+}
+/* Caret personnalisée pour rester cohérent avec le thème dark */
+select:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%239098b0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px !important;
+}
+
+/* Inputs date/time : force la palette dark sur la pop-up native (limité mais aide) */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  color-scheme: dark;
+}
+/* Idem pour les <select> — color-scheme dark force le picker en sombre */
+select { color-scheme: dark; }
+
 /* Burger menu, desktop par défaut: caché */
 .nav-burger {
   display: none;
