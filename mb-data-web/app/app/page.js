@@ -661,15 +661,18 @@ export default function Home() {
   }
 
   // Icônes minimalistes géométriques (style mockup landing) — pas d'emoji.
-  // ◫ dashboard / ◐ analytics / ☰ journal / ◊ rules / ◉ alerts / ◳ calendar / ◯ sync
+  // ◫ dashboard / ◐ analytics / ☰ journal / ◊ rules / ◉ alerts / ◳ calendar / ↓ import / ◰ journal sync
+  // Items avec `key` = navigation interne (setPage). Items avec `href` = navigation
+  // externe vers une autre route Next.js (Link).
   const navItems=[
     {key:'dashboard',icon:'◫',label:'Tableau de bord',section:'Principal'},
     {key:'analytics',icon:'◐',label:'Analytics',section:'Principal'},
-    {key:'journal',icon:'☰',label:'Journal trading',section:'Principal'},
+    {key:'journal',icon:'☰',label:'Journal manuel',section:'Principal'},
     {key:'rules',icon:'◊',label:'Règles firmes',section:'PropFirm'},
     {key:'alerts',icon:'◉',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
     {key:'calendar',icon:'◳',label:'Calendrier Éco.',section:'Live Data'},
-    {key:'sync',icon:'◯',label:'Sync auto (bientôt)',section:'Live Data'},
+    {href:'/app/import-lab',  icon:'↓',label:'Import CSV',   section:'Sync',badgeLabel:'BETA'},
+    {href:'/app/journal-sync',icon:'◰',label:'Journal Sync', section:'Sync'},
   ]
 
   return(
@@ -695,15 +698,27 @@ export default function Home() {
 
       <div style={{display:'flex',minHeight:'calc(100vh - 50px)'}}>
         <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'210px',flexShrink:0,background:'rgba(13,15,20,0.65)',backdropFilter:'blur(26px)',WebkitBackdropFilter:'blur(26px)',borderRight:'1px solid rgba(255,255,255,0.05)',padding:'18px 0',position:'sticky',top:'52px',height:'calc(100vh - 52px)',overflowY:'auto'}}>
-          {['Principal','Live Data','PropFirm'].map(section=>(
+          {['Principal','Live Data','PropFirm','Sync'].map(section=>(
             <div key={section}>
               <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em'}}>{section}</div>
-              {navItems.filter(i=>i.section===section).map(item=>(
-                <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue-light)':'var(--text2)',fontSize:'13px',fontWeight:page===item.key?'600':'500',cursor:'pointer',textAlign:'left',borderLeft:`2px solid ${page===item.key?'var(--blue)':'transparent'}`,transition:'all 0.15s',fontFamily:'inherit'}}>
-                  <span style={{fontSize:'14px',color:page===item.key?'var(--blue-light)':'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
-                  {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px'}}>{item.badge}</span>}
-                </button>
-              ))}
+              {navItems.filter(i=>i.section===section).map(item=>{
+                // Navigation externe (autre route Next.js) → <a href> client-side via Next Link
+                if(item.href){
+                  return(
+                    <a key={item.href} href={item.href} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',background:'transparent',color:'var(--text2)',fontSize:'13px',fontWeight:'500',textDecoration:'none',borderLeft:'2px solid transparent',transition:'all 0.15s',fontFamily:'inherit'}}>
+                      <span style={{fontSize:'14px',color:'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
+                      {item.badgeLabel&&<span style={{marginLeft:'auto',background:'rgba(45,111,255,0.15)',color:'var(--blue-light)',fontSize:'9px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px',letterSpacing:'0.08em'}}>{item.badgeLabel}</span>}
+                    </a>
+                  )
+                }
+                // Navigation interne (setPage) — comportement existant
+                return(
+                  <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue-light)':'var(--text2)',fontSize:'13px',fontWeight:page===item.key?'600':'500',cursor:'pointer',textAlign:'left',borderLeft:`2px solid ${page===item.key?'var(--blue)':'transparent'}`,transition:'all 0.15s',fontFamily:'inherit'}}>
+                    <span style={{fontSize:'14px',color:page===item.key?'var(--blue-light)':'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
+                    {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px'}}>{item.badge}</span>}
+                  </button>
+                )
+              })}
             </div>
           ))}
           {/* Lien admin — visible uniquement pour les emails admin */}
