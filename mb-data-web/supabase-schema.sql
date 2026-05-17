@@ -255,3 +255,18 @@ $$;
 -- Permet aux users anonymes (login form) ET authentifiés d'appeler ces RPCs
 grant execute on function public.resolve_username_to_email(text) to anon, authenticated;
 grant execute on function public.username_available(text)       to anon, authenticated;
+
+-- ============================================================================
+-- PROFILES — Extensions pour la page profil + base future réseau social
+-- ============================================================================
+alter table profiles add column if not exists is_public      boolean default false;  -- opt-in public view
+alter table profiles add column if not exists country        text;                   -- code ISO ex: 'FR', 'US'
+alter table profiles add column if not exists banner_url     text;                   -- image de bannière (hero)
+alter table profiles add column if not exists trading_styles text[];                 -- ex: ['scalper','day_trader']
+alter table profiles add column if not exists instruments    text[];                 -- ex: ['MNQ','MES','CL']
+alter table profiles add column if not exists followers_count int default 0;         -- compteurs cached (future social)
+alter table profiles add column if not exists following_count int default 0;
+alter table profiles add column if not exists verified       boolean default false;  -- badge vérifié (admin only)
+
+create index if not exists profiles_username_idx
+  on profiles(username) where username is not null;

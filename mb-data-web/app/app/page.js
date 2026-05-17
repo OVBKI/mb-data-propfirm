@@ -758,21 +758,20 @@ export default function Home() {
               <span>🎓</span> Lancer le tutoriel
             </button>
           </div>
-          {/* Footer sidebar : carte profil cliquable (ouvre ProfileModal).
-              Affiche pseudo si défini, sinon "Définir un pseudo".
-              Email toujours visible en dessous (smaller). */}
-          <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 12px'}}>
-            <button
-              onClick={()=>setShowProfileModal(true)}
+          {/* Footer sidebar : carte profil split — clic sur la zone principale = page profil complète,
+              clic sur la mini icône = ProfileModal (édition rapide). */}
+          <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 12px',display:'flex',gap:6}}>
+            <a
+              href="/app/profile"
               className="qt-profile-btn"
               style={{
-                width:'100%',padding:'9px 11px',
+                flex:1,padding:'9px 11px',
                 background:'rgba(255,255,255,0.025)',
                 border:'1px solid rgba(255,255,255,0.07)',
                 borderRadius:'8px',cursor:'pointer',
                 textAlign:'left',color:'var(--text)',
                 fontFamily:'inherit',transition:'all 0.15s',
-                overflow:'hidden',
+                overflow:'hidden',textDecoration:'none',display:'block',
               }}
               onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)'}}
               onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}}
@@ -789,7 +788,21 @@ export default function Home() {
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
                 fontFamily:'ui-monospace, SFMono-Regular, Menlo, monospace',
               }}>{user?.email}</div>
-            </button>
+            </a>
+            <button
+              onClick={()=>setShowProfileModal(true)}
+              title="Édition rapide (pseudo, bio)"
+              style={{
+                width:36,padding:'9px 0',
+                background:'rgba(255,255,255,0.025)',
+                border:'1px solid rgba(255,255,255,0.07)',
+                borderRadius:'8px',cursor:'pointer',
+                color:'var(--text2)',fontFamily:'inherit',
+                fontSize:14,flexShrink:0,
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)';e.currentTarget.style.color='var(--blue-light)'}}
+              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='var(--text2)'}}
+            >✎</button>
           </div>
         </nav>
         {mobileNavOpen&&<div className="nav-backdrop" onClick={()=>setMobileNavOpen(false)} />}
@@ -855,7 +868,7 @@ export default function Home() {
                       {activeAccts.slice(0,3).map(a=>{
                         const aNet=totalPayoutsEUR(a)-totalSpentForAccount(a)
                         return<div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid var(--border)',fontSize:'12px'}}>
-                          <div style={{display:'flex',alignItems:'center',gap:'6px'}}><div style={{width:'6px',height:'6px',borderRadius:'50%',background:STATUS_COLORS[a.status]||'var(--text3)',flexShrink:0}} /><span style={{color:'var(--text2)'}}>{a.buy_date}</span><span style={{...S.badge(a.status),fontSize:'9px',padding:'1px 6px'}}>{a.status}</span>{a.liquidated_at&&<span title={`Auto-liquidé le ${new Date(a.liquidated_at).toLocaleString('fr-FR')}`} style={{fontSize:'10px',cursor:'help',marginLeft:'2px'}}>🔥</span>}</div>
+                          <div style={{display:'flex',alignItems:'center',gap:'6px',minWidth:0,flex:1}}><div style={{width:'6px',height:'6px',borderRadius:'50%',background:STATUS_COLORS[a.status]||'var(--text3)',flexShrink:0}} /><span title={`Acheté le ${a.buy_date}`} style={{color:'var(--text2)',fontWeight:'500',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{accountLabel(a)}</span><span style={{...S.badge(a.status),fontSize:'9px',padding:'1px 6px',flexShrink:0}}>{a.status}</span>{a.liquidated_at&&<span title={`Auto-liquidé le ${new Date(a.liquidated_at).toLocaleString('fr-FR')}`} style={{fontSize:'10px',cursor:'help',marginLeft:'2px',flexShrink:0}}>🔥</span>}</div>
                           <span style={{fontWeight:'600',color:aNet>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(aNet,0)}</span>
                         </div>
                       })}
