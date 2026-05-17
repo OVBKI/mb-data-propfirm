@@ -100,14 +100,16 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 8, gap: 14, flexWrap: 'wrap',
-      }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>👥 Utilisateurs</h1>
-        <div style={{ fontSize: 12, color: C.text3 }}>
-          {loading ? '⏳ Chargement...' : `${users.length} user${users.length > 1 ? 's' : ''} affichés`}
+    <div style={{ padding: '32px 32px' }}>
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>
+          Admin
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>Utilisateurs</h1>
+          <div style={{ fontSize: 12, color: C.text3 }}>
+            {loading ? '⏳ Chargement...' : `${users.length} user${users.length > 1 ? 's' : ''} affichés`}
+          </div>
         </div>
       </div>
       <p style={{ fontSize: 13, color: C.text3, marginBottom: 22 }}>

@@ -173,12 +173,17 @@ export default function AdminActivityPage() {
   }
 
   return (
-    <div style={{ padding: '28px 32px' }}>
+    <div style={{ padding: '32px 32px' }}>
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>
+          Admin · Live
+        </div>
+      </div>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 8, gap: 14, flexWrap: 'wrap',
       }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>🔔 Activité en temps réel</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>Activité en temps réel</h1>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.text2, cursor: 'pointer' }}>
             <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />

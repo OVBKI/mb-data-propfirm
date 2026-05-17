@@ -2,7 +2,7 @@
 // (security, docs, integrations, legal). Mobile : se stack en vertical via lp-footer-cols.
 
 import Link from 'next/link'
-import Logo from './Logo'
+import QLogoIcon from './QLogoIcon'
 
 const C = {
   surface: '#141720',
@@ -77,7 +77,7 @@ export default function Footer() {
               display: 'flex', alignItems: 'center', gap: 10,
               textDecoration: 'none', color: C.text, marginBottom: 14,
             }}>
-              <Logo size={36} glow="normal" />
+              <QLogoIcon size={44} color="#4d8fff" />
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1, letterSpacing: '0.08em' }}>QUANTARA</div>
                 <div style={{ fontSize: 9, color: C.text3, marginTop: 3, letterSpacing: '0.05em' }}>TRACK · ANALYZE · GROW</div>

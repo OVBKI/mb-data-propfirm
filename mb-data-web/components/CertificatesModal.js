@@ -150,8 +150,10 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
           </div>
           <div style={{display:'flex', gap:'8px'}}>
             <button onClick={()=>setUploadOpen(o=>!o)} style={{
-              padding:'9px 16px', fontSize:'13px', fontWeight:'600', cursor:'pointer',
-              borderRadius:'8px', border:'none', background:'var(--blue)', color:'#fff',
+              padding:'9px 18px', fontSize:'12.5px', fontWeight:'500', cursor:'pointer',
+              borderRadius:'8px', border:'1px solid transparent', background:'var(--text)', color:'#0a0c10',
+              boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
+              fontFamily:'inherit', letterSpacing:'0.005em',
             }}>{uploadOpen ? '✕ Annuler' : '+ Ajouter un diplôme'}</button>
             <button onClick={onClose} style={{
               width:'32px', height:'32px', borderRadius:'8px', border:'1px solid var(--border2)',

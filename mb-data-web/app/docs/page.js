@@ -143,17 +143,14 @@ export default function DocsPage() {
         }} />
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '72px 24px 32px', textAlign: 'center', position: 'relative' }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '6px 14px', borderRadius: 99,
-            background: 'rgba(77,143,255,0.10)', border: `1px solid ${C.blueLight}`,
-            fontSize: 12, fontWeight: 600, color: C.blueLight,
-            marginBottom: 24,
+            fontSize: 11, color: C.blueLight, letterSpacing: '0.16em',
+            marginBottom: 20, textTransform: 'uppercase', fontWeight: 600,
           }}>
-            📘 Documentation
+            Documentation
           </div>
           <h1 className="lp-h1" style={{
-            fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, lineHeight: 1.1,
-            marginBottom: 16, letterSpacing: '-0.02em',
+            fontSize: 'clamp(32px, 5.5vw, 52px)', fontWeight: 700, lineHeight: 1.05,
+            marginBottom: 16, letterSpacing: '-0.025em',
           }}>
             Tout ce qu'il faut savoir<br />
             sur <span className="lp-gradient-text">Quantara</span>

@@ -93,7 +93,10 @@ export default function AdminSystemPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 8, gap: 14, flexWrap: 'wrap',
       }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>🛠 Système</h1>
+        <div>
+          <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>Admin</div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>Système</h1>
+        </div>
         <button onClick={loadHealth} disabled={loading} style={{
           padding: '8px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8,
           background: C.blue, color: '#fff', border: 'none',

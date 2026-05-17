@@ -233,7 +233,8 @@ export default function AdminStatsPage() {
   if (loading) {
     return (
       <div style={{ padding: '28px 32px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>📈 Statistiques</h1>
+        <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>Admin</div>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 6 }}>Statistiques</h1>
         <div style={{ padding: 60, textAlign: 'center', color: C.text3 }}>⏳ Calcul des statistiques...</div>
       </div>
     )
@@ -242,7 +243,8 @@ export default function AdminStatsPage() {
   if (error || !data) {
     return (
       <div style={{ padding: '28px 32px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>📈 Statistiques</h1>
+        <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>Admin</div>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 6 }}>Statistiques</h1>
         <div style={{
           padding: 16, background: 'rgba(232,80,74,0.08)',
           border: `1px solid ${C.red}`, borderRadius: 10, color: C.red,

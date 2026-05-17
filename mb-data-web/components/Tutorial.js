@@ -493,15 +493,15 @@ export default function Tutorial({ onClose, onPageChange, state }) {
               <button
                 onClick={next}
                 style={{
-                  padding: '10px 20px', fontSize: 13, fontWeight: 600,
-                  background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
-                  border: 'none', color: '#fff', borderRadius: 8, cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  boxShadow: '0 6px 18px rgba(45,111,255,0.4)',
+                  padding: '10px 20px', fontSize: 13, fontWeight: 500,
+                  background: C.text,
+                  border: '1px solid transparent', color: '#0a0c10', borderRadius: 8, cursor: 'pointer',
+                  fontFamily: 'inherit', letterSpacing: '0.005em',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
                   display: 'flex', alignItems: 'center', gap: 6,
                   transition: 'transform 0.15s, box-shadow 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 22px rgba(45,111,255,0.5)' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.5) inset, 0 8px 20px rgba(0,0,0,0.3)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(45,111,255,0.4)' }}
               >
                 {isLast ? (step.cta || 'Terminer') : (step.cta || 'Suivant')}

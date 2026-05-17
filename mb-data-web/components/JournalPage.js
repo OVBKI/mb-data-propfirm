@@ -14,15 +14,17 @@ function fmtMoney(n, dec=2){
 }
 function todayISO(){ return new Date().toISOString().slice(0,10) }
 
-const card = { background:'var(--surface)', border:'0.5px solid var(--border)', borderRadius:'var(--radius-lg)' }
-const inputS = { width:'100%', padding:'9px 11px', fontSize:'13px', border:'0.5px solid var(--border2)', borderRadius:'var(--radius)', background:'var(--surface2)', color:'var(--text)', outline:'none' }
-const labelS = { fontSize:'11px', fontWeight:'600', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.5px', display:'block', marginBottom:'5px' }
-const btnPrimary = { padding:'8px 18px', fontSize:'13px', fontWeight:'600', background:'var(--blue)', color:'#fff', border:'none', borderRadius:'var(--radius)', cursor:'pointer' }
-const btnGhost = { padding:'7px 14px', fontSize:'12px', background:'transparent', border:'0.5px solid var(--border2)', color:'var(--text2)', borderRadius:'var(--radius)', cursor:'pointer' }
-const chipBtn = (active)=>({ padding:'6px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:'0.5px solid var(--border2)', fontFamily:'inherit', fontWeight:'500', background:active?'var(--blue)':'transparent', color:active?'#fff':'var(--text2)' })
+// Styles harmonisés avec le Dashboard cosmic theme (cohérence visuelle)
+const card = { background:'var(--surface)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }
+const inputS = { width:'100%', padding:'10px 12px', fontSize:'13px', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'8px', background:'rgba(255,255,255,0.02)', color:'var(--text)', outline:'none', transition:'border-color 0.2s, background 0.2s', fontFamily:'inherit' }
+const labelS = { fontSize:'10.5px', fontWeight:'600', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.12em', display:'block', marginBottom:'6px' }
+// btnPrimary : off-white inverted (matching Dashboard et landing — pas de gradient bleu vif AI-looking)
+const btnPrimary = { padding:'9px 18px', fontSize:'12.5px', fontWeight:'500', background:'var(--text)', color:'#0a0c10', border:'1px solid transparent', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em', boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)', transition:'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s' }
+const btnGhost = { padding:'8px 14px', fontSize:'12px', fontWeight:'500', background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.10)', color:'var(--text2)', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em', transition:'color 0.2s, border-color 0.2s, background 0.2s' }
+const chipBtn = (active)=>({ padding:'7px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:`1px solid ${active?'rgba(45,111,255,0.4)':'rgba(255,255,255,0.10)'}`, fontFamily:'inherit', fontWeight:active?'600':'500', background:active?'rgba(45,111,255,0.15)':'transparent', color:active?'var(--blue-light)':'var(--text2)', transition:'all 0.15s' })
 
 // Carte avec courbe de balance pour un compte donné
-function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade }){
+function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade, addTradeHref=null }){
   const ref = useRef(null)
   const chart = useRef(null)
 
@@ -284,7 +286,18 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-          {onAddTrade && (
+          {addTradeHref ? (
+            <a
+              href={addTradeHref}
+              title="Importer un CSV pour ajouter des trades"
+              style={{
+                fontSize:'11px',padding:'7px 11px',borderRadius:'8px',
+                background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
+                color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',whiteSpace:'nowrap',
+                textDecoration:'none',display:'inline-block',
+              }}
+            >+ Importer</a>
+          ) : onAddTrade && (
             <button
               onClick={()=>onAddTrade(account.id)}
               title="Ajouter un trade pour ce compte"
@@ -465,7 +478,24 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   )
 }
 
-export default function JournalPage({ firms, user, getFirmLogo, showToast, onReload }){
+// Props :
+//   firms, user, getFirmLogo, showToast, onReload     → comme avant
+//   hideRithmicEntries (bool)   → mode journal manuel : exclut les trades CSV
+//   onlyRithmicEntries (bool)   → mode journal sync : N'AFFICHE QUE les trades CSV
+//   addTradeHref (string|null)  → si set, remplace le modal d'ajout par un Link vers cette URL
+//   addTradeLabel (string)      → label du bouton (défaut "+ Ajouter trade")
+//   pageEyebrow / pageTitle / pageSubtitleSuffix → personnalisation du header
+export default function JournalPage({
+  firms, user, getFirmLogo, showToast, onReload,
+  hideRithmicEntries = false,
+  onlyRithmicEntries = false,
+  addTradeHref = null,
+  addTradeLabel = '+ Ajouter trade',
+  pageEyebrow = 'Journal de trading',
+  pageTitle = 'Chaque trade. Tracké. Analysé.',
+  pageSubtitleSuffix = 'saisie manuelle',
+  renderExtraSection = null,  // (ctx) => JSX — appelé avant le footer. ctx = { filteredEntries, decoratedEntries, allAccounts, firms }
+}){
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
@@ -515,27 +545,46 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
         setLoadError(error.message || 'Erreur chargement journal')
       }
     } else {
-      setEntries(data || [])
+      // Filtre selon le mode :
+      //   - hideRithmicEntries (manuel) : exclut les trades CSV (marker [rithmic:])
+      //   - onlyRithmicEntries (sync)   : N'INCLUT QUE les trades CSV
+      // Le filtre par comptes visibles est appliqué dans decoratedEntries (useMemo)
+      // pour éviter un refetch SQL à chaque fois que la liste des firms change.
+      let filtered = data || []
+      if (onlyRithmicEntries) {
+        filtered = filtered.filter(e => e.notes && e.notes.includes('[rithmic:'))
+      } else if (hideRithmicEntries) {
+        filtered = filtered.filter(e => !e.notes || !e.notes.includes('[rithmic:'))
+      }
+      setEntries(filtered)
     }
     setLoading(false)
   }
 
   useEffect(()=>{
     if(user?.id) loadEntries()
-  },[user?.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user?.id, hideRithmicEntries, onlyRithmicEntries])
 
   // Décore les entries avec les infos firme/compte
+  // FIX BUG : on EXCLUT aussi les entries dont le account_id n'est pas dans les
+  // accounts visibles (passés via firms). Cas typique : un trade manuel sur un
+  // compte qui est devenu synced (rithmic_account_id rempli) → ce compte est
+  // exclu du journal manuel par le parent, donc le trade doit l'être aussi pour
+  // ne pas apparaître comme "Compte supprimé" dans le calendrier/stats.
   const decoratedEntries = useMemo(()=>{
-    return entries.map(e=>{
-      const acc = allAccounts.find(a => a.id === e.account_id)
-      return {
-        ...e,
-        _firmId: acc?.firmId,
-        _firmName: acc?.firmName || 'Compte supprimé',
-        _firmColor: acc?.firmColor || '#565e78',
-        _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
-      }
-    })
+    return entries
+      .filter(e => allAccounts.some(a => a.id === e.account_id))
+      .map(e=>{
+        const acc = allAccounts.find(a => a.id === e.account_id)
+        return {
+          ...e,
+          _firmId: acc?.firmId,
+          _firmName: acc?.firmName || 'Compte supprimé',
+          _firmColor: acc?.firmColor || '#565e78',
+          _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
+        }
+      })
   },[entries, allAccounts])
 
   // Helper : un compte passe-t-il le filtre de statut ?
@@ -782,36 +831,55 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
   return (
     <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
 
-      {/* Header */}
-      <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'20px',flexWrap:'wrap',gap:'12px'}}>
+      {/* Header — eyebrow mono + grand titre cohérent avec Dashboard cosmic */}
+      <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'28px',flexWrap:'wrap',gap:'18px'}}>
         <div>
-          <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'4px'}}>📔 Journal de trading</h1>
-          <div style={{fontSize:'12px',color:'var(--text3)'}}>
-            Saisie manuelle de tes trades · {entries.length} trade{entries.length>1?'s':''} enregistré{entries.length>1?'s':''}
+          <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
+            {pageEyebrow}
+          </div>
+          <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{pageTitle}</h1>
+          <div style={{fontSize:'13px',color:'var(--text3)'}}>
+            {decoratedEntries.length} trade{decoratedEntries.length>1?'s':''} enregistré{decoratedEntries.length>1?'s':''} · {pageSubtitleSuffix}
           </div>
         </div>
         <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
           <button onClick={exportJournalCSV} disabled={!filteredEntries.length} style={{...btnGhost,opacity:filteredEntries.length?1:0.5}}>↓ CSV</button>
-          {/* Si un compte spécifique est sélectionné dans le filtre, on l'affiche dans le bouton */}
-          {(() => {
-            const filteredAcct = scope.includes(':') ? allAccounts.find(a => a.id === scope.split(':')[1]) : null
-            return (
-              <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>
-                + Ajouter trade{filteredAcct ? ` · ${accountLabel(filteredAcct)}` : ''}
-              </button>
-            )
-          })()}
+          {/* Bouton + Trade :
+                - Mode SYNC (addTradeHref défini) : <a href> vers l'import-lab
+                - Mode MANUEL : ouvre le modal d'ajout, désactivé si pas de compte */}
+          {addTradeHref ? (
+            <a href={addTradeHref} style={{...btnPrimary,textDecoration:'none',display:'inline-block'}}>
+              {addTradeLabel}
+            </a>
+          ) : (
+            (() => {
+              const filteredAcct = scope.includes(':') ? allAccounts.find(a => a.id === scope.split(':')[1]) : null
+              return (
+                <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>
+                  {addTradeLabel}{filteredAcct ? ` · ${accountLabel(filteredAcct)}` : ''}
+                </button>
+              )
+            })()
+          )}
         </div>
       </div>
 
       {noAccounts && (
         <div style={{...card,padding:'40px 24px',marginBottom:'16px',background:'var(--surface2)',borderStyle:'dashed',borderColor:'var(--border2)',textAlign:'center'}}>
-          <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>📔</div>
-          <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'8px'}}>Aucun compte à journaliser</div>
-          <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',maxWidth:'460px',margin:'0 auto 20px',lineHeight:1.6}}>
-            Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.
+          <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>{onlyRithmicEntries?'⟲':'📔'}</div>
+          <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'8px'}}>
+            {onlyRithmicEntries ? 'Aucun compte synchronisé' : 'Aucun compte à journaliser'}
           </div>
-          <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
+          <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',maxWidth:'460px',margin:'0 auto 20px',lineHeight:1.6}}>
+            {onlyRithmicEntries
+              ? `Importe ton premier CSV Rithmic depuis l'Import Lab. Les comptes créés via l'import apparaîtront ici automatiquement, séparés de tes comptes manuels.`
+              : `Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.`}
+          </div>
+          {onlyRithmicEntries ? (
+            <a href="/app/import-lab" style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>→ Aller à l'Import Lab</a>
+          ) : (
+            <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
+          )}
         </div>
       )}
 
@@ -1049,7 +1117,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   ? new Date(selDay+'T00:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})
                   : 'Sélectionnez un jour'}
               </div>
-              {selDay && !noAccounts && (
+              {selDay && !noAccounts && !addTradeHref && (
                 <button onClick={()=>openNewEntry(selDay)} style={{...btnGhost,padding:'4px 10px',fontSize:'11px'}}>+ Trade</button>
               )}
             </div>
@@ -1186,6 +1254,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                       getFirmLogo={getFirmLogo}
                       onResetBalance={resetAccountBalance}
                       onAddTrade={(acctId) => openNewEntry({ accountId: acctId })}
+                      addTradeHref={addTradeHref}
                     />
                   )
                 })}
@@ -1193,6 +1262,9 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
             </div>
           )
         })()}
+
+        {/* === Section extra (injection par le parent — ex: historique trades sync) === */}
+        {renderExtraSection && renderExtraSection({ filteredEntries, decoratedEntries, allAccounts, firms })}
       </>
       )}
 

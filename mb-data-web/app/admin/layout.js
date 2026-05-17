@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
-import Logo from '../../components/Logo'
+import QLogoIcon from '../../components/QLogoIcon'
 
 // Emails admins autorisés (doivent matcher les RLS policies Supabase)
 const ADMIN_EMAILS = [
@@ -29,13 +29,14 @@ const C = {
   red: '#e8504a',
 }
 
+// Icônes minimalistes géométriques (style admin pro, pas d'emoji)
 const NAV_ITEMS = [
-  { href: '/admin',               label: 'Dashboard',     icon: '📊' },
-  { href: '/admin/activity',      label: 'Activité',      icon: '🔔' },
-  { href: '/admin/stats',         label: 'Statistiques',  icon: '📈' },
-  { href: '/admin/users',         label: 'Utilisateurs',  icon: '👥' },
-  { href: '/admin/announcements', label: 'Annonces',      icon: '📢' },
-  { href: '/admin/system',        label: 'Système',       icon: '🛠' },
+  { href: '/admin',               label: 'Dashboard',     icon: '◫' },
+  { href: '/admin/activity',      label: 'Activité',      icon: '◉' },
+  { href: '/admin/stats',         label: 'Statistiques',  icon: '◐' },
+  { href: '/admin/users',         label: 'Utilisateurs',  icon: '◊' },
+  { href: '/admin/announcements', label: 'Annonces',      icon: '◬' },
+  { href: '/admin/system',        label: 'Système',       icon: '◇' },
 ]
 
 export default function AdminLayout({ children }) {
@@ -141,10 +142,10 @@ export default function AdminLayout({ children }) {
           padding: '0 20px 20px', textDecoration: 'none', color: C.text,
           borderBottom: `1px solid ${C.border}`, marginBottom: 14,
         }}>
-          <Logo size={32} glow="normal" />
+          <QLogoIcon size={42} color="#e8504a" />
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em' }}>QUANTARA</div>
-            <div style={{ fontSize: 9, color: C.red, fontWeight: 700, letterSpacing: '0.08em', marginTop: 2 }}>ADMIN PANEL</div>
+            <div style={{ fontSize: 9, color: C.red, fontWeight: 700, letterSpacing: '0.14em', marginTop: 2 }}>ADMIN PANEL</div>
           </div>
         </Link>
 
@@ -162,7 +163,7 @@ export default function AdminLayout({ children }) {
                 borderLeft: active ? `2px solid ${C.blue}` : '2px solid transparent',
                 textDecoration: 'none', transition: 'background 0.15s',
               }}>
-                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                <span style={{ fontSize: 14, color: active ? C.blueLight : C.text3, width: 18, display: 'inline-block', textAlign: 'center', lineHeight: 1 }}>{item.icon}</span>
                 {item.label}
               </Link>
             )

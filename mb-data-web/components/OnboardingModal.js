@@ -194,35 +194,36 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
 
             {/* Les 3 chemins */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-              {/* Option 1 : Ajouter ma vraie firme */}
+              {/* Option 1 : Ajouter ma vraie firme — off-white inverted (cohérent landing/dashboard) */}
               <button
                 onClick={handleAddFirm}
                 disabled={creating}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 16,
                   padding: '20px 24px', borderRadius: 12,
-                  background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,
-                  border: 'none', color: '#fff', cursor: creating ? 'wait' : 'pointer',
+                  background: C.text,
+                  border: '1px solid transparent', color: '#0a0c10', cursor: creating ? 'wait' : 'pointer',
                   textAlign: 'left', fontFamily: 'inherit',
-                  boxShadow: '0 8px 24px rgba(45,111,255,0.3)',
-                  transition: 'transform 0.15s',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 12px 28px rgba(0,0,0,0.3)',
+                  transition: 'transform 0.15s, box-shadow 0.2s',
                 }}
                 onMouseEnter={e => { if(!creating) e.currentTarget.style.transform = 'translateY(-2px)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
               >
                 <div style={{
                   width: 48, height: 48, borderRadius: 10, flexShrink: 0,
-                  background: 'rgba(255,255,255,0.18)',
+                  background: 'rgba(45,111,255,0.15)',
+                  border: '1px solid rgba(45,111,255,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24,
-                }}>🚀</div>
+                  fontSize: 22, color: '#2d6fff',
+                }}>→</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3 }}>Ajouter ma 1ère PropFirm</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
+                  <div style={{ fontSize: 12, color: 'rgba(10,12,16,0.75)' }}>
                     Configuration en 30 sec — règles drawdown/payout pré-remplies
                   </div>
                 </div>
-                <span style={{ fontSize: 18 }}>→</span>
+                <span style={{ fontSize: 18, color: 'rgba(10,12,16,0.6)' }}>↗</span>
               </button>
 
               {/* Option 2 : Voir avec données démo */}

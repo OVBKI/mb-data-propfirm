@@ -169,16 +169,21 @@ export default function AdminAnnouncementsPage() {
   }
 
   return (
-    <div style={{ padding: '28px 32px' }}>
+    <div style={{ padding: '32px 32px' }}>
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>
+          Admin
+        </div>
+      </div>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 8, gap: 14, flexWrap: 'wrap',
       }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>📢 Annonces / Bannières</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>Annonces / Bannières</h1>
         <button onClick={openNew} style={{
-          padding: '10px 18px', fontSize: 13, fontWeight: 600, borderRadius: 8,
-          background: C.blue, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-          boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
+          padding: '10px 18px', fontSize: 13, fontWeight: 500, borderRadius: 8,
+          background: '#f0ede8', color: '#0a0c10', border: '1px solid transparent', cursor: 'pointer', fontFamily: 'inherit',
+          boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
         }}>+ Nouvelle annonce</button>
       </div>
       <p style={{ fontSize: 13, color: C.text3, marginBottom: 22 }}>

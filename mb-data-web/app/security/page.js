@@ -92,17 +92,14 @@ export default function SecurityPage() {
         }} />
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '72px 24px 40px', textAlign: 'center', position: 'relative' }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '6px 14px', borderRadius: 99,
-            background: 'rgba(29,184,122,0.10)', border: `1px solid ${C.green}`,
-            fontSize: 12, fontWeight: 600, color: C.green,
-            marginBottom: 24,
+            fontSize: 11, color: C.green, letterSpacing: '0.16em',
+            marginBottom: 20, textTransform: 'uppercase', fontWeight: 600,
           }}>
-            🛡️ Sécurité
+            Sécurité
           </div>
           <h1 className="lp-h1" style={{
-            fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, lineHeight: 1.1,
-            marginBottom: 16, letterSpacing: '-0.02em',
+            fontSize: 'clamp(32px, 5.5vw, 52px)', fontWeight: 700, lineHeight: 1.05,
+            marginBottom: 16, letterSpacing: '-0.025em',
           }}>
             Tes <span className="lp-gradient-text">données de trading</span><br />
             méritent une vraie sécurité.

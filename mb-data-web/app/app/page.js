@@ -16,7 +16,7 @@ function suggestProfitSplit(firmName, plan){
 }
 import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
-import Logo from '../../components/Logo'
+import QLogoIcon from '../../components/QLogoIcon'
 import CertificatesModal from '../../components/CertificatesModal'
 import OnboardingModal from '../../components/OnboardingModal'
 import Skeleton from '../../components/Skeleton'
@@ -25,6 +25,8 @@ import PropfirmComparator from '../../components/PropfirmComparator'
 import AnnouncementBanner from '../../components/AnnouncementBanner'
 import Tutorial from '../../components/Tutorial'
 import PushNotificationToggle from '../../components/PushNotificationToggle'
+import SpaceBackground from '../../components/dashboard/SpaceBackground'
+import ProfileModal from '../../components/ProfileModal'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
 
 
@@ -178,7 +180,15 @@ export default function Home() {
   const [firms,setFirms]=useState([])
   const [rates,setRates]=useState({USD:0.9259,GBP:1.163,CHF:1.032,EUR:1})
   const [rateInfo,setRateInfo]=useState('Chargement...')
-  const [page,setPage]=useState('dashboard')
+  // Page courante : lue depuis ?p= au mount pour permettre le deep-linking depuis
+  // les pages externes (ex: sidebar de /app/journal-sync → /app?p=journal).
+  // Valeurs valides : 'dashboard' | 'analytics' | 'journal' | 'rules' | 'alerts' | 'calendar' | 'sync'
+  const [page,setPage]=useState(()=>{
+    if(typeof window==='undefined') return 'dashboard'
+    const p=new URLSearchParams(window.location.search).get('p')
+    const valid=['dashboard','analytics','journal','rules','alerts','calendar','sync']
+    return valid.includes(p) ? p : 'dashboard'
+  })
   const [currency,setCurrencyMode]=useState('native')
   const [searchQ,setSearchQ]=useState('')
   const [toast,setToast]=useState('')
@@ -191,6 +201,9 @@ export default function Home() {
   const [tradesCount,setTradesCount]=useState(0) // total trades user, pour détecter l'ajout dans le tutoriel
   const [acctDrawer,setAcctDrawer]=useState(null)
   const [payoutForm,setPayoutForm]=useState(false)
+  // === Profil user (pseudo + display_name) ===
+  const [profile,setProfile]=useState(null) // { username, display_name } | null
+  const [showProfileModal,setShowProfileModal]=useState(false)
   const [newFirmName,setNewFirmName]=useState('')
   const [acctForm,setAcctForm]=useState({buyDate:'',currency:'USD',spent:'',activationFee:'',activationDate:'',status:'Challenge',notes:'',planSize:'50k',name:'',ddType:'static',payoutTarget:'',minTradingDays:'',minDailyProfit:'',profitSplit:'90',paymentMode:'monthly',quantity:'1'})
   const [payoutFD,setPayoutFD]=useState({date:'',amount:'',note:''})
@@ -219,7 +232,19 @@ export default function Home() {
     return ()=>subscription.unsubscribe()
   },[])
 
-  useEffect(()=>{if(user){loadFirms();fetchRates()}},[user])
+  useEffect(()=>{if(user){loadFirms();fetchRates();loadProfile()}},[user])
+
+  // Charge le profil (pseudo + display_name) de l'user pour l'afficher dans la sidebar
+  async function loadProfile(){
+    if(!user) return
+    const {data,error}=await supabase
+      .from('profiles')
+      .select('username,display_name,avatar_url')
+      .eq('user_id',user.id)
+      .single()
+    if(error && error.code!=='PGRST116') console.warn('[profile load]',error)
+    setProfile(data||{username:null,display_name:null,avatar_url:null})
+  }
 
   // Détecte si on doit afficher le modal d'onboarding (nouveau user, 0 firmes, pas dismissed)
   // Se déclenche quand `firms` est chargé et qu'un user est présent
@@ -645,52 +670,79 @@ export default function Home() {
   if(!alerts.length&&firms.length)alerts.push({icon:'✅',title:'Tout est en ordre',sub:'Aucune alerte pour le moment.',type:'ok'})
 
   const S={
-    card:{background:'var(--surface)',border:'0.5px solid var(--border)',borderRadius:'var(--radius-lg)'},
-    input:{width:'100%',padding:'9px 11px',fontSize:'13px',border:'0.5px solid var(--border2)',borderRadius:'var(--radius)',background:'var(--surface2)',color:'var(--text)',outline:'none'},
-    label:{fontSize:'11px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:'5px'},
-    btnPrimary:{padding:'8px 18px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',border:'none',borderRadius:'var(--radius)',cursor:'pointer'},
-    btnGhost:{padding:'7px 14px',fontSize:'12px',background:'transparent',border:'0.5px solid var(--border2)',color:'var(--text2)',borderRadius:'var(--radius)',cursor:'pointer'},
-    badge:(status)=>({display:'inline-block',fontSize:'11px',fontWeight:'600',padding:'3px 9px',borderRadius:'99px',background:status==='Financé'?'var(--green-bg)':status==='Challenge'?'var(--amber-bg)':'var(--red-bg)',color:status==='Financé'?'var(--green-text)':status==='Challenge'?'var(--amber-text)':'var(--red-text)'})
+    // Card : border subtil + soft shadow (au lieu de juste un border plat)
+    card:{background:'var(--surface)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'10px',boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)'},
+    // Input : focus ring subtil quand utilisé
+    input:{width:'100%',padding:'10px 12px',fontSize:'13px',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',background:'rgba(255,255,255,0.02)',color:'var(--text)',outline:'none',transition:'border-color 0.2s, background 0.2s',fontFamily:'inherit'},
+    // Label : tighter letter-spacing, plus refined
+    label:{fontSize:'10.5px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.7px',display:'block',marginBottom:'6px'},
+    // btnPrimary : INVERSÉ (off-white sur sombre) — cohérent avec landing, casse le pattern AI "blue gradient"
+    btnPrimary:{padding:'9px 18px',fontSize:'12.5px',fontWeight:'500',background:'var(--text)',color:'#0a0c10',border:'1px solid transparent',borderRadius:'8px',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.005em',boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',transition:'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s'},
+    // btnGhost : ghost subtil
+    btnGhost:{padding:'8px 14px',fontSize:'12px',fontWeight:'500',background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.10)',color:'var(--text2)',borderRadius:'8px',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.005em',transition:'color 0.2s, border-color 0.2s, background 0.2s'},
+    // Badge : pareil mais letter-spacing affinée
+    badge:(status)=>({display:'inline-block',fontSize:'10.5px',fontWeight:'600',padding:'3px 9px',borderRadius:'99px',letterSpacing:'0.3px',background:status==='Financé'?'var(--green-bg)':status==='Challenge'?'var(--amber-bg)':'var(--red-bg)',color:status==='Financé'?'var(--green-text)':status==='Challenge'?'var(--amber-text)':'var(--red-text)'})
   }
 
+  // Icônes minimalistes géométriques (style mockup landing) — pas d'emoji.
+  // ◫ dashboard / ◐ analytics / ☰ journal / ◊ rules / ◉ alerts / ◳ calendar / ↓ import / ◰ journal sync
+  // Items avec `key` = navigation interne (setPage). Items avec `href` = navigation
+  // externe vers une autre route Next.js (Link).
   const navItems=[
-    {key:'dashboard',icon:'📊',label:'Tableau de bord',section:'Principal'},
-    {key:'analytics',icon:'📈',label:'Analytics',section:'Principal'},
-    {key:'journal',icon:'📔',label:'Journal trading',section:'Principal'},
-    {key:'rules',icon:'📋',label:'Règles firmes',section:'PropFirm'},
-    {key:'alerts',icon:'🔔',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
-    {key:'calendar',icon:'📅',label:'Calendrier Éco.',section:'Live Data'},
-    {key:'sync',icon:'🔌',label:'Sync auto (bientôt)',section:'Live Data'},
+    {key:'dashboard',icon:'◫',label:'Tableau de bord',section:'Principal'},
+    {key:'analytics',icon:'◐',label:'Analytics',section:'Principal'},
+    {key:'journal',icon:'☰',label:'Journal manuel',section:'Principal'},
+    {key:'rules',icon:'◊',label:'Règles firmes',section:'PropFirm'},
+    {key:'alerts',icon:'◉',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
+    {key:'calendar',icon:'◳',label:'Calendrier Éco.',section:'Live Data'},
+    {href:'/app/import-lab',  icon:'↓',label:'Import CSV',   section:'Sync',badgeLabel:'BETA'},
+    {href:'/app/journal-sync',icon:'◰',label:'Journal Sync', section:'Sync'},
   ]
 
   return(
-    <div style={{minHeight:'100vh',background:'var(--bg)'}}>
-      <div style={{height:'2px',background:'linear-gradient(90deg,var(--blue) 0%,transparent 100%)'}} />
+    <div style={{minHeight:'100vh',background:'transparent',position:'relative'}}>
+      {/* Space background — couche atmosphérique fixed derrière tout (zero impact UX) */}
+      <SpaceBackground />
+      <div style={{height:'2px',background:'linear-gradient(90deg,var(--blue) 0%,transparent 100%)',position:'relative',zIndex:1}} />
       <AnnouncementBanner />
-      <div className="top-bar" style={{height:'48px',background:'var(--surface)',borderBottom:'0.5px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 20px',position:'sticky',top:0,zIndex:200}}>
-        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+      <div className="top-bar" style={{height:'52px',background:'rgba(13,15,20,0.78)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px',position:'sticky',top:0,zIndex:200}}>
+        <div style={{display:'flex',alignItems:'center',gap:'14px'}}>
           <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
-          <Logo size={38} glow="strong" />
-          <div style={{fontWeight:'700',fontSize:'15px',letterSpacing:'0.12em'}}>QUANTARA</div>
-          <span className="top-bar-brand-sub" style={{fontSize:'11px',color:'var(--text3)',letterSpacing:'0.05em'}}>· TRACK · ANALYZE · GROW</span>
+          <QLogoIcon size={44} color="#4d8fff" />
+          <div style={{display:'flex',alignItems:'baseline',gap:'10px'}}>
+            <div style={{fontWeight:'700',fontSize:'14px',letterSpacing:'0.14em',color:'var(--text)'}}>QUANTARA</div>
+            <span className="top-bar-brand-sub" style={{fontSize:'10px',color:'var(--text3)',letterSpacing:'0.18em'}}>TRACK · ANALYZE · GROW</span>
+          </div>
         </div>
-        <div className="top-bar-actions" style={{display:'flex',gap:'6px'}}>
-          <button onClick={exportCSV} style={{...S.btnGhost,fontSize:'12px',padding:'7px 12px'}}>↓ CSV</button>
-          <button onClick={signOut} style={{...S.btnGhost,fontSize:'12px',padding:'7px 12px'}}>Déconnexion</button>
+        <div className="top-bar-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
+          <button onClick={exportCSV} style={{...S.btnGhost,fontSize:'12px',padding:'7px 14px'}}>↓ CSV</button>
+          <button onClick={signOut} style={{...S.btnGhost,fontSize:'12px',padding:'7px 14px'}}>Déconnexion</button>
         </div>
       </div>
 
       <div style={{display:'flex',minHeight:'calc(100vh - 50px)'}}>
-        <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'200px',flexShrink:0,background:'var(--surface)',borderRight:'0.5px solid var(--border)',padding:'16px 0',position:'sticky',top:'48px',height:'calc(100vh - 48px)',overflowY:'auto'}}>
-          {['Principal','Live Data','PropFirm'].map(section=>(
+        <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'210px',flexShrink:0,background:'rgba(13,15,20,0.65)',backdropFilter:'blur(26px)',WebkitBackdropFilter:'blur(26px)',borderRight:'1px solid rgba(255,255,255,0.05)',padding:'18px 0',position:'sticky',top:'52px',height:'calc(100vh - 52px)',overflowY:'auto'}}>
+          {['Principal','Live Data','PropFirm','Sync'].map(section=>(
             <div key={section}>
-              <div className="nav-section-label" style={{padding:'8px 16px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.8px',marginTop:'8px'}}>{section}</div>
-              {navItems.filter(i=>i.section===section).map(item=>(
-                <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 16px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue)':'var(--text2)',fontSize:'13px',fontWeight:'500',cursor:'pointer',textAlign:'left'}}>
-                  <span>{item.icon}</span>{item.label}
-                  {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'1px 6px',borderRadius:'99px'}}>{item.badge}</span>}
-                </button>
-              ))}
+              <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em'}}>{section}</div>
+              {navItems.filter(i=>i.section===section).map(item=>{
+                // Navigation externe (autre route Next.js) → <a href> client-side via Next Link
+                if(item.href){
+                  return(
+                    <a key={item.href} href={item.href} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',background:'transparent',color:'var(--text2)',fontSize:'13px',fontWeight:'500',textDecoration:'none',borderLeft:'2px solid transparent',transition:'all 0.15s',fontFamily:'inherit'}}>
+                      <span style={{fontSize:'14px',color:'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
+                      {item.badgeLabel&&<span style={{marginLeft:'auto',background:'rgba(45,111,255,0.15)',color:'var(--blue-light)',fontSize:'9px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px',letterSpacing:'0.08em'}}>{item.badgeLabel}</span>}
+                    </a>
+                  )
+                }
+                // Navigation interne (setPage) — comportement existant
+                return(
+                  <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue-light)':'var(--text2)',fontSize:'13px',fontWeight:page===item.key?'600':'500',cursor:'pointer',textAlign:'left',borderLeft:`2px solid ${page===item.key?'var(--blue)':'transparent'}`,transition:'all 0.15s',fontFamily:'inherit'}}>
+                    <span style={{fontSize:'14px',color:page===item.key?'var(--blue-light)':'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
+                    {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px'}}>{item.badge}</span>}
+                  </button>
+                )
+              })}
             </div>
           ))}
           {/* Lien admin — visible uniquement pour les emails admin */}
@@ -706,8 +758,51 @@ export default function Home() {
               <span>🎓</span> Lancer le tutoriel
             </button>
           </div>
-          <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 14px'}}>
-            <div style={{fontSize:'11px',color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
+          {/* Footer sidebar : carte profil split — clic sur la zone principale = page profil complète,
+              clic sur la mini icône = ProfileModal (édition rapide). */}
+          <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 12px',display:'flex',gap:6}}>
+            <a
+              href="/app/profile"
+              className="qt-profile-btn"
+              style={{
+                flex:1,padding:'9px 11px',
+                background:'rgba(255,255,255,0.025)',
+                border:'1px solid rgba(255,255,255,0.07)',
+                borderRadius:'8px',cursor:'pointer',
+                textAlign:'left',color:'var(--text)',
+                fontFamily:'inherit',transition:'all 0.15s',
+                overflow:'hidden',textDecoration:'none',display:'block',
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)'}}
+              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}}
+            >
+              <div style={{
+                fontSize:'12px',fontWeight:600,
+                color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+              }}>
+                {profile?.display_name || (profile?.username ? `@${profile.username}` : '⊕ Définir un pseudo')}
+              </div>
+              <div style={{
+                fontSize:'10px',color:'var(--text3)',marginTop:'2px',
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+                fontFamily:'ui-monospace, SFMono-Regular, Menlo, monospace',
+              }}>{user?.email}</div>
+            </a>
+            <button
+              onClick={()=>setShowProfileModal(true)}
+              title="Édition rapide (pseudo, bio)"
+              style={{
+                width:36,padding:'9px 0',
+                background:'rgba(255,255,255,0.025)',
+                border:'1px solid rgba(255,255,255,0.07)',
+                borderRadius:'8px',cursor:'pointer',
+                color:'var(--text2)',fontFamily:'inherit',
+                fontSize:14,flexShrink:0,
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)';e.currentTarget.style.color='var(--blue-light)'}}
+              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='var(--text2)'}}
+            >✎</button>
           </div>
         </nav>
         {mobileNavOpen&&<div className="nav-backdrop" onClick={()=>setMobileNavOpen(false)} />}
@@ -715,29 +810,37 @@ export default function Home() {
         <div style={{flex:1,overflow:'auto'}}>
 
           {page==='dashboard'&&(
-            <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
-              <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'28px'}}>
-                <div><h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'4px'}}>Tableau de bord</h1><div style={{fontSize:'12px',color:'var(--text3)'}}>{rateInfo}</div></div>
-                <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
-                  <div style={{display:'flex',border:'0.5px solid var(--border2)',borderRadius:'99px',overflow:'hidden',background:'var(--surface)'}}>
-                    {['native','eur'].map(c=><button key={c} onClick={()=>setCurrencyMode(c)} style={{padding:'6px 14px',fontSize:'12px',border:'none',background:currency===c?'var(--blue)':'transparent',color:currency===c?'#fff':'var(--text2)',cursor:'pointer',fontWeight:'500'}}>{c==='native'?'USD natif':'EUR'}</button>)}
+            <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'32px 24px 60px'}}>
+              <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'32px',gap:'24px',flexWrap:'wrap'}}>
+                <div>
+                  <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
+                    Tableau de bord
                   </div>
-                  <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 Rechercher..." style={{...S.input,width:'160px'}} />
+                  <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>
+                    Bonjour {profile?.display_name || profile?.username || user?.email?.split('@')[0] || 'Trader'} 👋
+                  </h1>
+                  <div style={{fontSize:'13px',color:'var(--text3)'}}>{rateInfo}</div>
+                </div>
+                <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
+                  <div style={{display:'flex',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'8px',overflow:'hidden',background:'rgba(255,255,255,0.02)'}}>
+                    {['native','eur'].map(c=><button key={c} onClick={()=>setCurrencyMode(c)} style={{padding:'7px 14px',fontSize:'12px',border:'none',background:currency===c?'var(--blue)':'transparent',color:currency===c?'#fff':'var(--text2)',cursor:'pointer',fontWeight:'600',letterSpacing:'0.05em'}}>{c==='native'?'USD':'EUR'}</button>)}
+                  </div>
+                  <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 Rechercher..." style={{...S.input,width:'180px'}} />
                   <button data-tour="add-firm-btn" onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>+ Ajouter PropFirm</button>
                 </div>
               </div>
 
-              <div className="stats-5" data-tour="stats-cards" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'24px'}}>
+              <div className="stats-5" data-tour="stats-cards" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'28px'}}>
                 {[
-                  {label:'PropFirms',value:`${firms.length} firme${firms.length>1?'s':''} · ${accts.length} compte${accts.length>1?'s':''}`,small:true},
+                  {label:'PropFirms',value:`${firms.length} · ${accts.length} comptes`,small:true},
                   {label:'Total dépensé',value:currency==='eur'?fmtE(totalSpentEUR):(totalSpentEUR/rates.USD).toFixed(2)+' $',color:'var(--red)'},
                   {label:'Total payouts',value:currency==='eur'?fmtE(totalPayoutsEUR2):(totalPayoutsEUR2/rates.USD).toFixed(2)+' $',color:'var(--green)'},
                   {label:'Résultat net',value:currency==='eur'?fmtENet(totalNet):(totalNet>=0?'+':'')+(totalNet/rates.USD).toFixed(2)+' $',color:totalNet>=0?'var(--green)':'var(--red)'},
-                  {label:'Nb payouts',value:totalPayoutCount},
+                  {label:'Payouts',value:totalPayoutCount},
                 ].map((k,i)=>(
-                  <div key={i} style={{...S.card,padding:'18px 16px'}}>
-                    <div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'10px'}}>{k.label}</div>
-                    <div style={{fontSize:k.small?'14px':'22px',fontWeight:'600',color:k.color||'var(--text)'}}>{k.value}</div>
+                  <div key={i} className="qt-stat-card" style={{...S.card,padding:'18px 18px',transition:'border-color 0.2s, transform 0.2s'}}>
+                    <div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'12px',fontWeight:'600'}}>{k.label}</div>
+                    <div style={{fontSize:k.small?'15px':'24px',fontWeight:'700',color:k.color||'var(--text)',letterSpacing:'-0.015em'}}>{k.value}</div>
                   </div>
                 ))}
               </div>
@@ -752,20 +855,20 @@ export default function Home() {
                   const payoutCount=al.reduce((s,a)=>s+(a.payouts||[]).length,0)
                   const activeAccts=al.filter(a=>a.status!=='Échoué')
                   return(
-                    <div key={firm.id} onClick={()=>setFirmDrawer(firm.id)} style={{...S.card,padding:'18px',cursor:'pointer',transition:'all 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--blue)';e.currentTarget.style.transform='translateY(-1px)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.transform='none'}}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>{getFirmLogo(firm.name,firm.color,36)}<div><div style={{fontSize:'15px',fontWeight:'700'}}>{firm.name}</div><div style={{fontSize:'11px',color:'var(--text3)'}}>{al.length} compte{al.length>1?'s':''} · {payoutCount} payout{payoutCount>1?'s':''}</div></div></div>
-                        <div style={{textAlign:'right'}}><div style={{fontSize:'18px',fontWeight:'700',color:net>=0?'var(--green)':'var(--red)'}}>{currency==='eur'?fmtENet(net,0):(net>=0?'+':'')+(net/rates.USD).toFixed(0)+' $'}</div><div style={{fontSize:'11px',color:'var(--text3)'}}>ROI {roi>=0?'+':''}{roi.toFixed(0)}%</div></div>
+                    <div key={firm.id} onClick={()=>setFirmDrawer(firm.id)} className="qt-firm-card" style={{...S.card,padding:'20px',cursor:'pointer',transition:'border-color 0.2s, transform 0.2s, box-shadow 0.2s'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(45,111,255,0.4)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 12px 30px rgba(0,0,0,0.25), 0 0 24px rgba(45,111,255,0.08)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.06)';e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)'}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'12px'}}>{getFirmLogo(firm.name,firm.color,36)}<div><div style={{fontSize:'15px',fontWeight:'700',letterSpacing:'-0.005em'}}>{firm.name}</div><div style={{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}}>{al.length} compte{al.length>1?'s':''} · {payoutCount} payout{payoutCount>1?'s':''}</div></div></div>
+                        <div style={{textAlign:'right'}}><div style={{fontSize:'19px',fontWeight:'700',color:net>=0?'var(--green)':'var(--red)',letterSpacing:'-0.015em'}}>{currency==='eur'?fmtENet(net,0):(net>=0?'+':'')+(net/rates.USD).toFixed(0)+' $'}</div><div style={{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}}>ROI {roi>=0?'+':''}{roi.toFixed(0)}%</div></div>
                       </div>
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'12px'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'14px'}}>
                         {[{l:'Dépensé',v:currency==='eur'?fmtE(ts,0):(ts/rates.USD).toFixed(0)+' $',c:'var(--red)'},{l:'Payouts',v:currency==='eur'?fmtE(tp,0):(tp/rates.USD).toFixed(0)+' $',c:'var(--green)'},{l:'Actifs',v:financedCount+challengeCount}].map((s,i)=>(
-                          <div key={i} style={{background:'var(--surface3)',borderRadius:'6px',padding:'8px',textAlign:'center'}}><div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.4px',marginBottom:'2px'}}>{s.l}</div><div style={{fontSize:'14px',fontWeight:'600',color:s.c||'var(--text)'}}>{s.v}</div></div>
+                          <div key={i} style={{background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.04)',borderRadius:'7px',padding:'10px 8px',textAlign:'center'}}><div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'4px',fontWeight:'600'}}>{s.l}</div><div style={{fontSize:'14px',fontWeight:'700',color:s.c||'var(--text)',letterSpacing:'-0.005em'}}>{s.v}</div></div>
                         ))}
                       </div>
                       {activeAccts.slice(0,3).map(a=>{
                         const aNet=totalPayoutsEUR(a)-totalSpentForAccount(a)
                         return<div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid var(--border)',fontSize:'12px'}}>
-                          <div style={{display:'flex',alignItems:'center',gap:'6px'}}><div style={{width:'6px',height:'6px',borderRadius:'50%',background:STATUS_COLORS[a.status]||'var(--text3)',flexShrink:0}} /><span style={{color:'var(--text2)'}}>{a.buy_date}</span><span style={{...S.badge(a.status),fontSize:'9px',padding:'1px 6px'}}>{a.status}</span></div>
+                          <div style={{display:'flex',alignItems:'center',gap:'6px',minWidth:0,flex:1}}><div style={{width:'6px',height:'6px',borderRadius:'50%',background:STATUS_COLORS[a.status]||'var(--text3)',flexShrink:0}} /><span title={`Acheté le ${a.buy_date}`} style={{color:'var(--text2)',fontWeight:'500',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{accountLabel(a)}</span><span style={{...S.badge(a.status),fontSize:'9px',padding:'1px 6px',flexShrink:0}}>{a.status}</span>{a.liquidated_at&&<span title={`Auto-liquidé le ${new Date(a.liquidated_at).toLocaleString('fr-FR')}`} style={{fontSize:'10px',cursor:'help',marginLeft:'2px',flexShrink:0}}>🔥</span>}</div>
                           <span style={{fontWeight:'600',color:aNet>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(aNet,0)}</span>
                         </div>
                       })}
@@ -929,11 +1032,15 @@ export default function Home() {
           )}
 
           {page==='analytics'&&(
-            <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
-              <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'24px'}}>Analytics</h1>
-              <div className="stats-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px',marginBottom:'20px'}}>
+            <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'32px 24px 60px'}}>
+              <div style={{marginBottom:'28px'}}>
+                <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>Performance</div>
+                <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>Analytics</h1>
+                <div style={{fontSize:'13px',color:'var(--text3)'}}>Vue agrégée de tes performances trading propfirm</div>
+              </div>
+              <div className="stats-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px',marginBottom:'24px'}}>
                 {[{l:'Net global',v:fmtMoneyNet(totalNet),c:totalNet>=0?'var(--green)':'var(--red)'},{l:'Total dépensé',v:fmtMoney(totalSpentEUR),c:'var(--red)'},{l:'Total payouts',v:fmtMoney(totalPayoutsEUR2),c:'var(--green)'},{l:'Payout moyen',v:totalPayoutCount>0?fmtMoney(totalPayoutsEUR2/totalPayoutCount):'—',c:'var(--green)'}].map((k,i)=>(
-                  <div key={i} style={{...S.card,padding:'16px'}}><div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>{k.l}</div><div style={{fontSize:'20px',fontWeight:'600',color:k.c}}>{k.v}</div></div>
+                  <div key={i} style={{...S.card,padding:'18px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'12px',fontWeight:'600'}}>{k.l}</div><div style={{fontSize:'22px',fontWeight:'700',color:k.c,letterSpacing:'-0.015em'}}>{k.v}</div></div>
                 ))}
               </div>
               {!cLabels.length
@@ -948,9 +1055,12 @@ export default function Home() {
           )}
 
           {page==='alerts'&&(
-            <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
-              <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'6px'}}>Alertes</h1>
-              <p style={{fontSize:'13px',color:'var(--text3)',marginBottom:'22px'}}>Notifications importantes et rappels de prélèvements mensuels.</p>
+            <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'32px 24px 60px'}}>
+              <div style={{marginBottom:'28px'}}>
+                <div style={{fontSize:'11px',color:'var(--amber)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>Notifications</div>
+                <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>Alertes</h1>
+                <p style={{fontSize:'13px',color:'var(--text3)',margin:0}}>Rappels de prélèvements mensuels, milestones et opportunités de payout</p>
+              </div>
 
               {/* Toggle Push notifications */}
               <div style={{marginBottom:'24px'}}>
@@ -1029,7 +1139,19 @@ export default function Home() {
           )}
 
           {page==='journal'&&(
-            <JournalPage firms={firms} user={user} getFirmLogo={getFirmLogo} showToast={showToast} onReload={loadFirms} />
+            // Journal MANUEL : on filtre les comptes ayant un rithmic_account_id (= comptes synchronisés
+            // via CSV import qui apparaissent dans /app/journal-sync). Les firmes qui n'ont plus de comptes
+            // manuels après filtrage sont également exclues pour éviter de polluer le dropdown.
+            <JournalPage
+              firms={firms
+                .map(f=>({...f,accounts:(f.accounts||[]).filter(a=>!a.rithmic_account_id)}))
+                .filter(f=>(f.accounts||[]).length>0)}
+              user={user}
+              getFirmLogo={getFirmLogo}
+              showToast={showToast}
+              onReload={loadFirms}
+              hideRithmicEntries={true}
+            />
           )}
 
           {page==='calendar'&&(
@@ -1120,9 +1242,9 @@ export default function Home() {
                   </>
                 )}</div><div style={{gridColumn:'1/-1'}}><label style={S.label}>Type de drawdown<TooltipIcon text="3 types : Static = ligne fixe (balance initial − DD max). End of Day (EOD) = trailing basé sur la balance de FIN DE JOURNÉE (les pics intraday ne lockent pas le DD). Trailing intraday = trailing temps réel, le moindre pic intraday update le DD. La plupart des firmes utilisent EOD ou Trailing." maxWidth={360} /></label><select value={acctForm.ddType} onChange={e=>setAcctForm(p=>({...p,ddType:e.target.value}))} style={S.input}><option value="static">Static (ligne fixe : balance initial − DD max)</option><option value="eod">End of Day (trailing en fin de journée, ignore les pics intraday)</option><option value="trailing">Trailing intraday (suit le peak temps réel)</option></select></div>{acctForm.status==='Financé'&&<><div><label style={S.label}>Objectif payout ($)</label><input type="number" step="0.01" value={acctForm.payoutTarget} onChange={e=>setAcctForm(p=>({...p,payoutTarget:e.target.value}))} placeholder="ex : 53000 (= 50k + 3k profit)" style={S.input} /></div><div><label style={S.label}>Jours de trading min</label><input type="number" min="0" value={acctForm.minTradingDays} onChange={e=>setAcctForm(p=>({...p,minTradingDays:e.target.value}))} placeholder="ex : 10" style={S.input} /></div><div><label style={S.label}>Profit split<TooltipIcon text="Pourcentage du profit que TU touches lors d'un payout. Le reste va à la PropFirm. La plupart des firmes proposent 90/10 (90% trader, 10% firme), mais ça varie : Apex débute à 100/0 sur les premiers $25K, certains plans Pro de MFFU/Topstep sont 80/20. Choisis le split correspondant exactement à ton compte." maxWidth={340} /></label><select value={acctForm.profitSplit} onChange={e=>setAcctForm(p=>({...p,profitSplit:e.target.value}))} style={S.input}><option value="100">100 / 0 (tu prends tout — Apex 1ers $25K, etc.)</option><option value="90">90 / 10 (le plus courant — Topstep, Lucid, Tradeify…)</option><option value="80">80 / 20 (MFFU Core/Pro, TPT PRO…)</option><option value="70">70 / 30 (rare — plans débutants)</option></select></div><div><label style={S.label}>Profit min / jour valide ($)<TooltipIcon text="Profit minimum sur 1 journée pour qu'elle compte comme jour validé dans le décompte des jours de trading min. Ex Lucid : 150$ par jour." /></label><input type="number" min="0" step="1" value={acctForm.minDailyProfit} onChange={e=>setAcctForm(p=>({...p,minDailyProfit:e.target.value}))} placeholder="ex : 150" style={S.input} /></div></>}{acctForm.status==='Challenge'&&<div style={{gridColumn:'1/-1',padding:'12px',background:'rgba(45,111,255,0.06)',border:'0.5px solid rgba(45,111,255,0.22)',borderRadius:'var(--radius)',fontSize:'12px',color:'var(--text2)',lineHeight:1.5}}>💡 Les règles funded (objectif payout, jours min, profit split, profit min/jour) seront configurées <strong>quand tu passeras en Financé</strong> via le bouton « 🚀 Passer en Financé » dans le drawer du compte.</div>}<div style={{gridColumn:'1/-1'}}><label style={S.label}>Notes</label><input value={acctForm.notes} onChange={e=>setAcctForm(p=>({...p,notes:e.target.value}))} placeholder="Commentaire..." style={S.input} /></div></div><div style={{display:'flex',gap:'8px',justifyContent:'flex-end',marginTop:'20px'}}><button onClick={()=>setAcctModal(null)} style={S.btnGhost}>Annuler</button><button onClick={saveAccount} style={S.btnPrimary}>Enregistrer</button></div></div></div>}
 
-      {firmDrawer&&currentFirm&&<div onClick={()=>setFirmDrawer(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:400,display:'flex',alignItems:'flex-start',justifyContent:'flex-end'}}><div className="drawer" onClick={e=>e.stopPropagation()} style={{width:'520px',maxWidth:'95vw',height:'100vh',background:'var(--surface)',borderLeft:'0.5px solid var(--border2)',overflowY:'auto',padding:'28px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}}><div style={{display:'flex',alignItems:'center',gap:'10px'}}>{getFirmLogo(currentFirm.name,currentFirm.color,32)}<div style={{fontSize:'18px',fontWeight:'600'}}>{currentFirm.name}</div></div><div style={{display:'flex',gap:'8px'}}><button onClick={()=>renameFirm(currentFirm.id)} style={S.btnGhost}>✏ Renommer</button><button onClick={()=>setFirmDrawer(null)} style={S.btnGhost}>✕</button></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'20px'}}>{[['Total comptes',(currentFirm.accounts||[]).length],['Total dépensé',<span style={{color:'var(--red)'}}>{ fmtMoney(firmTotalSpent(currentFirm))}</span>],['Total payouts',<span style={{color:'var(--green)'}}>{fmtMoney(firmTotalPayouts(currentFirm))}</span>],['Net',<span style={{color:(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))}</span>]].map(([l,v],i)=>(<div key={i} style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'12px 14px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'5px'}}>{l}</div><div style={{fontSize:'16px',fontWeight:'600'}}>{v}</div></div>))}</div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}><div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px'}}>Comptes ({(currentFirm.accounts||[]).length})</div><button onClick={()=>{setAcctModal({firmId:currentFirm.id});(()=>{const fn=firms.find(f=>f.id===(acctModal?.firmId||currentFirm?.id))?.name;const tg=defaultPayoutTarget(fn,'50k');const md=defaultMinTradingDays(fn,'50k');const pr=defaultChallengePrice(fn,'50k');const mdp=defaultMinDailyProfit(fn,'50k');const ps=suggestProfitSplit(fn,'50k');setAcctForm({buyDate:new Date().toISOString().slice(0,10),currency:'USD',spent:pr!==null?String(pr):'',activationFee:'',activationDate:'',status:'Challenge',notes:'',planSize:'50k',name:'',ddType:defaultDdType(fn),payoutTarget:tg!==null?String(tg):'',minTradingDays:md!==null?String(md):'',minDailyProfit:mdp!==null?String(mdp):'',profitSplit:String(ps),paymentMode:'monthly',quantity:'1'})})()}} style={S.btnPrimary}>+ Ajouter compte</button></div>{(currentFirm.accounts||[]).slice().sort((a,b)=>{const o={'Financé':0,'Challenge':1,'Échoué':2};return (o[a.status]??3)-(o[b.status]??3)}).map(a=>{const tp=totalPayoutsEUR(a),net=tp-totalSpentForAccount(a);const isFailed=a.status==='Échoué';return<div key={a.id} onClick={()=>setAcctDrawer({firmId:currentFirm.id,acctId:a.id})} style={{padding:'12px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'8px',cursor:'pointer',opacity:isFailed?0.55:1,filter:isFailed?'grayscale(0.4)':'none',transition:'opacity 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='var(--surface3)';e.currentTarget.style.opacity=1}} onMouseLeave={e=>{e.currentTarget.style.background='var(--surface2)';e.currentTarget.style.opacity=isFailed?0.55:1}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'8px'}}><div style={{display:'flex',alignItems:'center',gap:'8px',flex:1,minWidth:0}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:STATUS_COLORS[a.status],flexShrink:0}} /><span style={{fontWeight:'600',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{accountLabel(a)}</span><button onClick={(e)=>{e.stopPropagation();renameAccount(a.id, a.name, a.buy_date)}} title="Renommer" style={{background:'transparent',border:'none',color:'var(--text3)',cursor:'pointer',padding:'2px 6px',fontSize:'13px',flexShrink:0}}>✏</button></div><span style={S.badge(a.status)}>{a.status}</span></div><div style={{display:'flex',justifyContent:'space-between',fontSize:'12px'}}><span style={{color:'var(--green)'}}>Payouts : {fmtMoney(tp)}</span><span style={{color:net>=0?'var(--green)':'var(--red)'}}>Net : {fmtMoneyNet(net)}</span><span style={{color:'var(--text3)'}}>{(a.payouts||[]).length} payout{(a.payouts||[]).length>1?'s':''}</span></div></div>})}<div style={{marginTop:'28px',paddingTop:'20px',borderTop:'0.5px solid var(--border)'}}><button onClick={()=>deleteFirm(currentFirm.id)} style={{background:'var(--red-bg)',color:'var(--red-text)',border:'0.5px solid var(--red-bg)',padding:'8px 16px',borderRadius:'var(--radius)',fontSize:'13px',cursor:'pointer',fontWeight:'500'}}>Supprimer cette firme</button></div></div></div>}
+      {firmDrawer&&currentFirm&&<div onClick={()=>setFirmDrawer(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:400,display:'flex',alignItems:'flex-start',justifyContent:'flex-end'}}><div className="drawer" onClick={e=>e.stopPropagation()} style={{width:'520px',maxWidth:'95vw',height:'100vh',background:'var(--surface)',borderLeft:'0.5px solid var(--border2)',overflowY:'auto',padding:'28px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}}><div style={{display:'flex',alignItems:'center',gap:'10px'}}>{getFirmLogo(currentFirm.name,currentFirm.color,32)}<div style={{fontSize:'18px',fontWeight:'600'}}>{currentFirm.name}</div></div><div style={{display:'flex',gap:'8px'}}><button onClick={()=>renameFirm(currentFirm.id)} style={S.btnGhost}>✏ Renommer</button><button onClick={()=>setFirmDrawer(null)} style={S.btnGhost}>✕</button></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'20px'}}>{[['Total comptes',(currentFirm.accounts||[]).length],['Total dépensé',<span style={{color:'var(--red)'}}>{ fmtMoney(firmTotalSpent(currentFirm))}</span>],['Total payouts',<span style={{color:'var(--green)'}}>{fmtMoney(firmTotalPayouts(currentFirm))}</span>],['Net',<span style={{color:(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))}</span>]].map(([l,v],i)=>(<div key={i} style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'12px 14px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'5px'}}>{l}</div><div style={{fontSize:'16px',fontWeight:'600'}}>{v}</div></div>))}</div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}><div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px'}}>Comptes ({(currentFirm.accounts||[]).length})</div><button onClick={()=>{setAcctModal({firmId:currentFirm.id});(()=>{const fn=firms.find(f=>f.id===(acctModal?.firmId||currentFirm?.id))?.name;const tg=defaultPayoutTarget(fn,'50k');const md=defaultMinTradingDays(fn,'50k');const pr=defaultChallengePrice(fn,'50k');const mdp=defaultMinDailyProfit(fn,'50k');const ps=suggestProfitSplit(fn,'50k');setAcctForm({buyDate:new Date().toISOString().slice(0,10),currency:'USD',spent:pr!==null?String(pr):'',activationFee:'',activationDate:'',status:'Challenge',notes:'',planSize:'50k',name:'',ddType:defaultDdType(fn),payoutTarget:tg!==null?String(tg):'',minTradingDays:md!==null?String(md):'',minDailyProfit:mdp!==null?String(mdp):'',profitSplit:String(ps),paymentMode:'monthly',quantity:'1'})})()}} style={S.btnPrimary}>+ Ajouter compte</button></div>{(currentFirm.accounts||[]).slice().sort((a,b)=>{const o={'Financé':0,'Challenge':1,'Échoué':2};return (o[a.status]??3)-(o[b.status]??3)}).map(a=>{const tp=totalPayoutsEUR(a),net=tp-totalSpentForAccount(a);const isFailed=a.status==='Échoué';return<div key={a.id} onClick={()=>setAcctDrawer({firmId:currentFirm.id,acctId:a.id})} style={{padding:'12px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'8px',cursor:'pointer',opacity:isFailed?0.55:1,filter:isFailed?'grayscale(0.4)':'none',transition:'opacity 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='var(--surface3)';e.currentTarget.style.opacity=1}} onMouseLeave={e=>{e.currentTarget.style.background='var(--surface2)';e.currentTarget.style.opacity=isFailed?0.55:1}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'8px'}}><div style={{display:'flex',alignItems:'center',gap:'8px',flex:1,minWidth:0}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:STATUS_COLORS[a.status],flexShrink:0}} /><span style={{fontWeight:'600',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{accountLabel(a)}</span><button onClick={(e)=>{e.stopPropagation();renameAccount(a.id, a.name, a.buy_date)}} title="Renommer" style={{background:'transparent',border:'none',color:'var(--text3)',cursor:'pointer',padding:'2px 6px',fontSize:'13px',flexShrink:0}}>✏</button></div><span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><span style={S.badge(a.status)}>{a.status}</span>{a.liquidated_at&&<span title={`Auto-liquidé le ${new Date(a.liquidated_at).toLocaleString('fr-FR')} (par la propfirm)`} style={{fontSize:'12px',cursor:'help'}}>🔥</span>}</span></div><div style={{display:'flex',justifyContent:'space-between',fontSize:'12px'}}><span style={{color:'var(--green)'}}>Payouts : {fmtMoney(tp)}</span><span style={{color:net>=0?'var(--green)':'var(--red)'}}>Net : {fmtMoneyNet(net)}</span><span style={{color:'var(--text3)'}}>{(a.payouts||[]).length} payout{(a.payouts||[]).length>1?'s':''}</span></div></div>})}<div style={{marginTop:'28px',paddingTop:'20px',borderTop:'0.5px solid var(--border)'}}><button onClick={()=>deleteFirm(currentFirm.id)} style={{background:'var(--red-bg)',color:'var(--red-text)',border:'0.5px solid var(--red-bg)',padding:'8px 16px',borderRadius:'var(--radius)',fontSize:'13px',cursor:'pointer',fontWeight:'500'}}>Supprimer cette firme</button></div></div></div>}
 
-      {acctDrawer&&currentAcct&&<div onClick={()=>setAcctDrawer(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:450,display:'flex',alignItems:'flex-start',justifyContent:'flex-end'}}><div className="drawer" onClick={e=>e.stopPropagation()} style={{width:'500px',maxWidth:'95vw',height:'100vh',background:'var(--surface)',borderLeft:'0.5px solid var(--border2)',overflowY:'auto',padding:'28px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}}><div style={{fontSize:'17px',fontWeight:'600'}}>{currentAcctFirm?.name} — {accountLabel(currentAcct)}</div><div style={{display:'flex',gap:'8px'}}><button onClick={()=>{setAcctModal({firmId:acctDrawer.firmId,acct:currentAcct});setAcctForm({buyDate:currentAcct.buy_date,currency:currentAcct.currency,spent:currentAcct.spent,activationFee:currentAcct.activation_fee||'',activationDate:currentAcct.activation_date||'',status:currentAcct.status,notes:currentAcct.notes||'',planSize:currentAcct.plan_size||'50k',name:currentAcct.name||'',ddType:currentAcct.dd_type||defaultDdType(currentAcctFirm?.name),payoutTarget:currentAcct.payout_target!=null?String(currentAcct.payout_target):'',minTradingDays:currentAcct.min_trading_days!=null?String(currentAcct.min_trading_days):'',minDailyProfit:currentAcct.min_daily_profit!=null?String(currentAcct.min_daily_profit):'',profitSplit:currentAcct.profit_split!=null?String(currentAcct.profit_split):'90',paymentMode:currentAcct.payment_mode||'monthly',quantity:'1'})}} style={S.btnGhost}>✏ Modifier</button><button onClick={()=>setAcctDrawer(null)} style={S.btnGhost}>✕</button></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'20px'}}>{[['Firme',currentAcctFirm?.name],['Date achat',currentAcct.buy_date],['Challenge',<span style={{color:'var(--red)',display:'inline-flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>{currentAcct.spent} {currentAcct.currency}<span style={{padding:'2px 8px',borderRadius:99,fontSize:10,fontWeight:600,background:currentAcct.payment_mode==='onetime'?'rgba(45,111,255,0.15)':'rgba(250,199,117,0.15)',color:currentAcct.payment_mode==='onetime'?'var(--blue-light)':'var(--amber)'}}>{currentAcct.payment_mode==='onetime'?'💎 One-time':'📅 Mensuel'}</span></span>],...(currentAcct.payment_mode==='monthly'?[['Mensualités payées',<span style={{color:'var(--red)'}}>{currentAcct.months_count||1} × {currentAcct.spent} {currentAcct.currency} = {((currentAcct.months_count||1)*(parseFloat(currentAcct.spent)||0)).toFixed(2)} {currentAcct.currency}{currentAcct.status==='Challenge'?<span style={{marginLeft:6,fontSize:9,padding:'1px 6px',borderRadius:99,background:'rgba(250,199,117,0.15)',color:'var(--amber)'}}>⏱ en cours</span>:<span style={{marginLeft:6,fontSize:9,padding:'1px 6px',borderRadius:99,background:'rgba(29,184,122,0.15)',color:'var(--green)'}}>✓ figé</span>}</span>]]:[]),...(currentAcct.activation_fee>0?[['Date activation',currentAcct.activation_date||'—'],['Frais activation',<span style={{color:'var(--red)'}}>{currentAcct.activation_fee} {currentAcct.currency}</span>]]:[]),['Total dépensé',<span style={{color:'var(--red)'}}>{fmtMoney(totalSpentForAccount(currentAcct))}</span>],['Net',<span style={{color:(totalPayoutsEUR(currentAcct)-totalSpentForAccount(currentAcct))>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(totalPayoutsEUR(currentAcct)-totalSpentForAccount(currentAcct))}</span>],['Statut',<span style={S.badge(currentAcct.status)}>{currentAcct.status}</span>]].map(([l,v],i)=>(<div key={i} style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'12px 14px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'5px'}}>{l}</div><div style={{fontSize:'15px',fontWeight:'600'}}>{v}</div></div>))}</div>{currentAcct.status!=='Échoué'&&<div style={{display:'flex',gap:'8px',marginBottom:'14px'}}>{currentAcct.status==='Challenge'&&<button onClick={()=>openPromoteModal(currentAcctFirm,currentAcct)} style={{flex:1,padding:'10px 14px',background:'linear-gradient(135deg, #1db87a 0%, #2ed694 100%)',border:'none',color:'#fff',borderRadius:'var(--radius)',fontSize:'12px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(29,184,122,0.3)',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',transition:'transform 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}><span style={{fontSize:'15px'}}>🚀</span><span>Passer en Financé</span></button>}<button onClick={()=>openFailModal(currentAcctFirm,currentAcct)} style={{flex:1,padding:'10px 14px',background:'transparent',border:'1px solid rgba(232,80,74,0.4)',color:'#e8504a',borderRadius:'var(--radius)',fontSize:'12px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',transition:'all 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(232,80,74,0.10)';e.currentTarget.style.borderColor='#e8504a'}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.borderColor='rgba(232,80,74,0.4)'}}><span style={{fontSize:'15px'}}>💔</span><span>{currentAcct.status==='Challenge'?'J\'ai échoué':'Compte blown (DD touché)'}</span></button></div>}<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}><div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px'}}>Payouts reçus</div><button onClick={()=>{setPayoutForm(true);setPayoutFD({date:new Date().toISOString().slice(0,10),amount:'',note:''})}} style={S.btnPrimary}>+ Ajouter payout</button></div>{payoutForm&&<div style={{background:'var(--surface3)',borderRadius:'var(--radius)',padding:'14px',marginBottom:'14px'}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'8px'}}><div><div style={S.label}>Date</div><input type="date" value={payoutFD.date} onChange={e=>setPayoutFD(p=>({...p,date:e.target.value}))} style={{...S.input,background:'var(--surface2)'}} /></div><div><div style={S.label}>Montant brut demandé<TooltipIcon text="Le BRUT est le montant retiré du compte (avant split). Le NET = ce que tu reçois réellement = brut × ton profit split. Ex : tu demandes 2 000 $ brut avec un split 90/10 → tu reçois 1 800 $, la firme garde 200 $." maxWidth={320} /></div><input type="number" value={payoutFD.amount} onChange={e=>setPayoutFD(p=>({...p,amount:e.target.value}))} placeholder="ex : 2000" style={{...S.input,background:'var(--surface2)'}} /></div></div>{(()=>{const split=currentAcct?.profit_split||suggestProfitSplit(currentAcctFirm?.name,currentAcct?.plan_size);const brut=parseFloat(payoutFD.amount)||0;if(brut<=0||!split)return null;const net=brut*(split/100);const firmCut=brut-net;return(<div style={{marginBottom:'10px',padding:'10px 12px',background:'rgba(45,111,255,0.08)',border:'0.5px solid rgba(45,111,255,0.3)',borderRadius:'var(--radius)',fontSize:'12px'}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}><span style={{color:'var(--text2)'}}>Profit split {split}/{100-split}</span><span style={{color:'var(--text3)',fontSize:'10px'}}>{currentAcctFirm?.name} · Plan {(currentAcct?.plan_size||'').toUpperCase()}</span></div><div style={{display:'flex',justifyContent:'space-between',fontSize:'13px',fontWeight:'600',marginBottom:'4px'}}><span style={{color:'var(--green)'}}>💰 Net reçu (dans ta poche) : {net.toFixed(2)} {currentAcct?.currency||'$'}</span><span style={{color:'var(--text3)',fontSize:'11px'}}>Part firme : {firmCut.toFixed(2)}</span></div><div style={{fontSize:'11px',color:'var(--text3)'}}>📉 Brut déduit du compte : {brut.toFixed(2)} {currentAcct?.currency||'$'}</div></div>)})()}<div style={{marginBottom:'10px'}}><div style={S.label}>Note</div><input value={payoutFD.note} onChange={e=>setPayoutFD(p=>({...p,note:e.target.value}))} placeholder="ex: 1er payout..." style={{...S.input,background:'var(--surface2)'}} /></div><div style={{display:'flex',gap:'8px',justifyContent:'flex-end'}}><button onClick={()=>setPayoutForm(false)} style={S.btnGhost}>Annuler</button><button onClick={savePayout} style={S.btnPrimary}>OK</button></div></div>}{(currentAcct.payouts||[]).length>0&&<div style={{marginBottom:'14px',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:'var(--surface3)',borderRadius:'var(--radius)'}}><span style={{fontSize:'12px',color:'var(--text2)'}}>Total payouts</span><span style={{fontSize:'16px',fontWeight:'600',color:'var(--green)'}}>{fmtMoney(totalPayoutsEUR(currentAcct))}</span></div>}{(currentAcct.payouts||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).map(p=>(<div key={p.id} style={{display:'flex',alignItems:'center',gap:'10px',padding:'12px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'8px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:'var(--green)',flexShrink:0}} /><div style={{flex:1}}><div style={{fontWeight:'500',fontSize:'13px'}}>Payout — {p.date}</div>{p.note&&<div style={{fontSize:'11px',color:'var(--text3)'}}>{p.note}</div>}</div><div style={{fontSize:'15px',fontWeight:'600',color:'var(--green)'}}>+{fmtMoney(toEUR(p.amount,currentAcct.currency,rates))}</div><button onClick={()=>deletePayout(p.id)} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',padding:'2px 6px',fontSize:'14px'}}>✕</button></div>))}{!(currentAcct.payouts||[]).length&&!payoutForm&&<div style={{color:'var(--text3)',fontSize:'13px',padding:'12px 0'}}>Aucun payout enregistré.</div>}<div style={{marginTop:'28px',paddingTop:'20px',borderTop:'0.5px solid var(--border)'}}><button onClick={()=>deleteAccount(currentAcct.id)} style={{background:'var(--red-bg)',color:'var(--red-text)',border:'0.5px solid var(--red-bg)',padding:'8px 16px',borderRadius:'var(--radius)',fontSize:'13px',cursor:'pointer',fontWeight:'500'}}>Supprimer ce compte</button></div></div></div>}
+      {acctDrawer&&currentAcct&&<div onClick={()=>setAcctDrawer(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:450,display:'flex',alignItems:'flex-start',justifyContent:'flex-end'}}><div className="drawer" onClick={e=>e.stopPropagation()} style={{width:'500px',maxWidth:'95vw',height:'100vh',background:'var(--surface)',borderLeft:'0.5px solid var(--border2)',overflowY:'auto',padding:'28px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}}><div style={{fontSize:'17px',fontWeight:'600'}}>{currentAcctFirm?.name} — {accountLabel(currentAcct)}</div><div style={{display:'flex',gap:'8px'}}><button onClick={()=>{setAcctModal({firmId:acctDrawer.firmId,acct:currentAcct});setAcctForm({buyDate:currentAcct.buy_date,currency:currentAcct.currency,spent:currentAcct.spent,activationFee:currentAcct.activation_fee||'',activationDate:currentAcct.activation_date||'',status:currentAcct.status,notes:currentAcct.notes||'',planSize:currentAcct.plan_size||'50k',name:currentAcct.name||'',ddType:currentAcct.dd_type||defaultDdType(currentAcctFirm?.name),payoutTarget:currentAcct.payout_target!=null?String(currentAcct.payout_target):'',minTradingDays:currentAcct.min_trading_days!=null?String(currentAcct.min_trading_days):'',minDailyProfit:currentAcct.min_daily_profit!=null?String(currentAcct.min_daily_profit):'',profitSplit:currentAcct.profit_split!=null?String(currentAcct.profit_split):'90',paymentMode:currentAcct.payment_mode||'monthly',quantity:'1'})}} style={S.btnGhost}>✏ Modifier</button><button onClick={()=>setAcctDrawer(null)} style={S.btnGhost}>✕</button></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'20px'}}>{[['Firme',currentAcctFirm?.name],['Date achat',currentAcct.buy_date],['Challenge',<span style={{color:'var(--red)',display:'inline-flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>{currentAcct.spent} {currentAcct.currency}<span style={{padding:'2px 8px',borderRadius:99,fontSize:10,fontWeight:600,background:currentAcct.payment_mode==='onetime'?'rgba(45,111,255,0.15)':'rgba(250,199,117,0.15)',color:currentAcct.payment_mode==='onetime'?'var(--blue-light)':'var(--amber)'}}>{currentAcct.payment_mode==='onetime'?'💎 One-time':'📅 Mensuel'}</span></span>],...(currentAcct.payment_mode==='monthly'?[['Mensualités payées',<span style={{color:'var(--red)'}}>{currentAcct.months_count||1} × {currentAcct.spent} {currentAcct.currency} = {((currentAcct.months_count||1)*(parseFloat(currentAcct.spent)||0)).toFixed(2)} {currentAcct.currency}{currentAcct.status==='Challenge'?<span style={{marginLeft:6,fontSize:9,padding:'1px 6px',borderRadius:99,background:'rgba(250,199,117,0.15)',color:'var(--amber)'}}>⏱ en cours</span>:<span style={{marginLeft:6,fontSize:9,padding:'1px 6px',borderRadius:99,background:'rgba(29,184,122,0.15)',color:'var(--green)'}}>✓ figé</span>}</span>]]:[]),...(currentAcct.activation_fee>0?[['Date activation',currentAcct.activation_date||'—'],['Frais activation',<span style={{color:'var(--red)'}}>{currentAcct.activation_fee} {currentAcct.currency}</span>]]:[]),['Total dépensé',<span style={{color:'var(--red)'}}>{fmtMoney(totalSpentForAccount(currentAcct))}</span>],['Net',<span style={{color:(totalPayoutsEUR(currentAcct)-totalSpentForAccount(currentAcct))>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(totalPayoutsEUR(currentAcct)-totalSpentForAccount(currentAcct))}</span>],['Statut',<span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><span style={S.badge(currentAcct.status)}>{currentAcct.status}</span>{currentAcct.liquidated_at&&<span title={`Auto-liquidé le ${new Date(currentAcct.liquidated_at).toLocaleString('fr-FR')} (par la propfirm)`} style={{fontSize:'13px',cursor:'help'}}>🔥</span>}</span>]].map(([l,v],i)=>(<div key={i} style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'12px 14px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'5px'}}>{l}</div><div style={{fontSize:'15px',fontWeight:'600'}}>{v}</div></div>))}</div>{currentAcct.status!=='Échoué'&&<div style={{display:'flex',gap:'8px',marginBottom:'14px'}}>{currentAcct.status==='Challenge'&&<button onClick={()=>openPromoteModal(currentAcctFirm,currentAcct)} style={{flex:1,padding:'10px 14px',background:'linear-gradient(135deg, #1db87a 0%, #2ed694 100%)',border:'none',color:'#fff',borderRadius:'var(--radius)',fontSize:'12px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(29,184,122,0.3)',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',transition:'transform 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}><span style={{fontSize:'15px'}}>🚀</span><span>Passer en Financé</span></button>}<button onClick={()=>openFailModal(currentAcctFirm,currentAcct)} style={{flex:1,padding:'10px 14px',background:'transparent',border:'1px solid rgba(232,80,74,0.4)',color:'#e8504a',borderRadius:'var(--radius)',fontSize:'12px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',transition:'all 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(232,80,74,0.10)';e.currentTarget.style.borderColor='#e8504a'}} onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.borderColor='rgba(232,80,74,0.4)'}}><span style={{fontSize:'15px'}}>💔</span><span>{currentAcct.status==='Challenge'?'J\'ai échoué':'Compte blown (DD touché)'}</span></button></div>}<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}><div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px'}}>Payouts reçus</div><button onClick={()=>{setPayoutForm(true);setPayoutFD({date:new Date().toISOString().slice(0,10),amount:'',note:''})}} style={S.btnPrimary}>+ Ajouter payout</button></div>{payoutForm&&<div style={{background:'var(--surface3)',borderRadius:'var(--radius)',padding:'14px',marginBottom:'14px'}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'8px'}}><div><div style={S.label}>Date</div><input type="date" value={payoutFD.date} onChange={e=>setPayoutFD(p=>({...p,date:e.target.value}))} style={{...S.input,background:'var(--surface2)'}} /></div><div><div style={S.label}>Montant brut demandé<TooltipIcon text="Le BRUT est le montant retiré du compte (avant split). Le NET = ce que tu reçois réellement = brut × ton profit split. Ex : tu demandes 2 000 $ brut avec un split 90/10 → tu reçois 1 800 $, la firme garde 200 $." maxWidth={320} /></div><input type="number" value={payoutFD.amount} onChange={e=>setPayoutFD(p=>({...p,amount:e.target.value}))} placeholder="ex : 2000" style={{...S.input,background:'var(--surface2)'}} /></div></div>{(()=>{const split=currentAcct?.profit_split||suggestProfitSplit(currentAcctFirm?.name,currentAcct?.plan_size);const brut=parseFloat(payoutFD.amount)||0;if(brut<=0||!split)return null;const net=brut*(split/100);const firmCut=brut-net;return(<div style={{marginBottom:'10px',padding:'10px 12px',background:'rgba(45,111,255,0.08)',border:'0.5px solid rgba(45,111,255,0.3)',borderRadius:'var(--radius)',fontSize:'12px'}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}><span style={{color:'var(--text2)'}}>Profit split {split}/{100-split}</span><span style={{color:'var(--text3)',fontSize:'10px'}}>{currentAcctFirm?.name} · Plan {(currentAcct?.plan_size||'').toUpperCase()}</span></div><div style={{display:'flex',justifyContent:'space-between',fontSize:'13px',fontWeight:'600',marginBottom:'4px'}}><span style={{color:'var(--green)'}}>💰 Net reçu (dans ta poche) : {net.toFixed(2)} {currentAcct?.currency||'$'}</span><span style={{color:'var(--text3)',fontSize:'11px'}}>Part firme : {firmCut.toFixed(2)}</span></div><div style={{fontSize:'11px',color:'var(--text3)'}}>📉 Brut déduit du compte : {brut.toFixed(2)} {currentAcct?.currency||'$'}</div></div>)})()}<div style={{marginBottom:'10px'}}><div style={S.label}>Note</div><input value={payoutFD.note} onChange={e=>setPayoutFD(p=>({...p,note:e.target.value}))} placeholder="ex: 1er payout..." style={{...S.input,background:'var(--surface2)'}} /></div><div style={{display:'flex',gap:'8px',justifyContent:'flex-end'}}><button onClick={()=>setPayoutForm(false)} style={S.btnGhost}>Annuler</button><button onClick={savePayout} style={S.btnPrimary}>OK</button></div></div>}{(currentAcct.payouts||[]).length>0&&<div style={{marginBottom:'14px',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:'var(--surface3)',borderRadius:'var(--radius)'}}><span style={{fontSize:'12px',color:'var(--text2)'}}>Total payouts</span><span style={{fontSize:'16px',fontWeight:'600',color:'var(--green)'}}>{fmtMoney(totalPayoutsEUR(currentAcct))}</span></div>}{(currentAcct.payouts||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).map(p=>(<div key={p.id} style={{display:'flex',alignItems:'center',gap:'10px',padding:'12px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'8px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:'var(--green)',flexShrink:0}} /><div style={{flex:1}}><div style={{fontWeight:'500',fontSize:'13px'}}>Payout — {p.date}</div>{p.note&&<div style={{fontSize:'11px',color:'var(--text3)'}}>{p.note}</div>}</div><div style={{fontSize:'15px',fontWeight:'600',color:'var(--green)'}}>+{fmtMoney(toEUR(p.amount,currentAcct.currency,rates))}</div><button onClick={()=>deletePayout(p.id)} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',padding:'2px 6px',fontSize:'14px'}}>✕</button></div>))}{!(currentAcct.payouts||[]).length&&!payoutForm&&<div style={{color:'var(--text3)',fontSize:'13px',padding:'12px 0'}}>Aucun payout enregistré.</div>}<div style={{marginTop:'28px',paddingTop:'20px',borderTop:'0.5px solid var(--border)'}}><button onClick={()=>deleteAccount(currentAcct.id)} style={{background:'var(--red-bg)',color:'var(--red-text)',border:'0.5px solid var(--red-bg)',padding:'8px 16px',borderRadius:'var(--radius)',fontSize:'13px',cursor:'pointer',fontWeight:'500'}}>Supprimer ce compte</button></div></div></div>}
 
       {/* Modal célébration "Passer en Financé" — saisie unique des règles funded */}
       {promoteModal && (() => {
@@ -1284,6 +1406,15 @@ export default function Home() {
           onClose={()=>setCertsFirm(null)}
           showToast={showToast}
           getFirmLogo={getFirmLogo}
+        />
+      )}
+
+      {/* Modal Profil — édition pseudo + display name + bio */}
+      {showProfileModal && user && (
+        <ProfileModal
+          user={user}
+          onClose={()=>setShowProfileModal(false)}
+          onUpdated={loadProfile}
         />
       )}
 

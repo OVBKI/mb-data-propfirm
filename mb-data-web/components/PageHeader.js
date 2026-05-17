@@ -2,7 +2,7 @@
 // Sticky avec backdrop blur, logo Quantara à gauche, retour landing + CTA à droite.
 
 import Link from 'next/link'
-import Logo from './Logo'
+import QLogoIcon from './QLogoIcon'
 
 const C = {
   border: 'rgba(255,255,255,0.07)',
@@ -37,7 +37,7 @@ export default function PageHeader({ active }) {
           display: 'flex', alignItems: 'center', gap: 12,
           textDecoration: 'none', color: C.text, flexShrink: 0,
         }}>
-          <Logo size={42} glow="strong" />
+          <QLogoIcon size={50} color="#4d8fff" />
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1, letterSpacing: '0.08em' }}>QUANTARA</div>
             <div style={{ fontSize: 9, color: C.text3, marginTop: 3, letterSpacing: '0.05em' }}>TRACK · ANALYZE · GROW</div>
@@ -61,19 +61,18 @@ export default function PageHeader({ active }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <Link href="/app" style={{
             display: 'inline-block', padding: '8px 16px',
-            fontSize: 13, fontWeight: 600, borderRadius: 99,
+            fontSize: 13, fontWeight: 500, borderRadius: 8,
             textDecoration: 'none',
             background: 'transparent', color: C.text,
             border: `1px solid ${C.border2}`,
           }}>Se connecter</Link>
           <Link href="/app" style={{
             display: 'inline-block', padding: '8px 16px',
-            fontSize: 13, fontWeight: 600, borderRadius: 99,
+            fontSize: 13, fontWeight: 500, borderRadius: 8,
             textDecoration: 'none',
-            background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,
-            color: '#fff',
-            boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
-          }}>Commencer →</Link>
+            background: C.text, color: '#0a0c10',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
+          }}>Démarrer →</Link>
         </div>
       </div>
     </header>

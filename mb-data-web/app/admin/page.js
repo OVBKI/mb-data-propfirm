@@ -109,11 +109,16 @@ export default function AdminDashboardPage() {
   }, [])
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>📊 Dashboard</h1>
-      <p style={{ fontSize: 13, color: C.text3, marginBottom: 28 }}>
-        Vue d'ensemble de l'activité Quantara — données live depuis Supabase.
-      </p>
+    <div style={{ padding: '32px 32px' }}>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>
+          Admin
+        </div>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, marginBottom: 6 }}>Dashboard</h1>
+        <p style={{ fontSize: 13, color: C.text3, margin: 0 }}>
+          Vue d'ensemble de l'activité Quantara — données live depuis Supabase.
+        </p>
+      </div>
 
       {error && (
         <div style={{

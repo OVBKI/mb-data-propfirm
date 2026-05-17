@@ -295,18 +295,21 @@ export default function CalendarPage({lang='fr',onLangChange}){
   }
   function selectAllCurrencies(){ setFCurrencies([]) }
 
-  const btn=(active)=>({padding:'6px 14px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',fontFamily:'inherit',fontWeight:'500',background:active?'var(--blue)':'transparent',color:active?'#fff':'var(--text2)',transition:'all 0.15s'})
+  const btn=(active)=>({padding:'7px 14px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:`1px solid ${active?'rgba(45,111,255,0.4)':'rgba(255,255,255,0.10)'}`,fontFamily:'inherit',fontWeight:active?'600':'500',background:active?'rgba(45,111,255,0.15)':'transparent',color:active?'var(--blue-light)':'var(--text2)',transition:'all 0.15s'})
   const chipBtn=(active)=>({padding:'6px 12px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',fontFamily:'inherit',fontWeight:'600',background:active?'var(--blue)':'var(--surface2)',color:active?'#fff':'var(--text2)',transition:'all 0.15s',display:'inline-flex',alignItems:'center',gap:'5px'})
-  const card={background:'var(--surface)',border:'0.5px solid var(--border)',borderRadius:'var(--radius-lg)'}
+  const card={background:'var(--surface)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'10px',boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)'}
 
   return(
-    <div className="cal-wrap" style={{maxWidth:'1100px',margin:'0 auto',padding:'28px 24px 60px'}}>
+    <div className="cal-wrap" style={{maxWidth:'1100px',margin:'0 auto',padding:'32px 24px 60px'}}>
 
-      {/* Header */}
-      <div className="cal-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'20px',flexWrap:'wrap',gap:'12px'}}>
+      {/* Header — eyebrow mono + grand titre cohérent avec Dashboard cosmic */}
+      <div className="cal-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'28px',flexWrap:'wrap',gap:'18px'}}>
         <div>
-          <h1 style={{fontSize:'22px',fontWeight:'600',marginBottom:'4px'}}>{t.title}</h1>
-          <div style={{fontSize:'12px',color:'var(--text3)'}}>{t.subtitle}{lastUpd&&` · ${t.lastUpdate} : ${lastUpd}`}</div>
+          <div style={{fontSize:'11px',color:'var(--amber)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
+            Live Data
+          </div>
+          <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{t.title}</h1>
+          <div style={{fontSize:'13px',color:'var(--text3)'}}>{t.subtitle}{lastUpd&&` · ${t.lastUpdate} : ${lastUpd}`}</div>
         </div>
         <div style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
           <div style={{display:'flex',border:'0.5px solid var(--border2)',borderRadius:'99px',overflow:'hidden',background:'var(--surface)'}}>
