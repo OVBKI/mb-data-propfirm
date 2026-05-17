@@ -34,6 +34,54 @@ function generateAccountName(rithmicId) {
   return type.toUpperCase() === 'TEST' ? `EVAL ${cleanNum}` : `PRO ${cleanNum}`
 }
 
+// Cherche un compte Quantara qui correspond au rithmicId via plusieurs stratégies :
+//   1. rithmic_account_id (exact, le plus fiable — set par les imports récents)
+//   2. name = nom auto-généré (ex: "PRO 7" pour LFF...-PRO007)
+//   3. name = derniers 11 chars du rithmicId (ex: "OYD5-PRO007" — convention old PnL importer)
+//   4. name contient le suffix type+num (ex: "PRO 007", "PRO-7", "PRO_7", etc.)
+// Retourne { account, strategy } ou null.
+function findMatchingExistingAccount(rithmicId, existingAccounts) {
+  if (!rithmicId || !existingAccounts?.length) return null
+
+  // 1. Match exact via rithmic_account_id
+  const byId = existingAccounts.find(ea => ea.rithmic_account_id === rithmicId)
+  if (byId) return { account: byId, strategy: 'rithmic_id' }
+
+  const norm = (s) => String(s || '').trim().toLowerCase()
+
+  // 2. Match par nom auto-généré ("PRO 7", "EVAL 17")
+  const generated = norm(generateAccountName(rithmicId))
+  if (generated) {
+    const byGen = existingAccounts.find(ea => norm(ea.name) === generated)
+    if (byGen) return { account: byGen, strategy: 'generated_name' }
+  }
+
+  // 3. Match par derniers 11 chars (legacy old PnL importer)
+  const last11 = norm(rithmicId.slice(-11))
+  if (last11) {
+    const byLegacy = existingAccounts.find(ea => norm(ea.name) === last11)
+    if (byLegacy) return { account: byLegacy, strategy: 'legacy_name' }
+  }
+
+  // 4. Match approximatif sur le suffix type+num (PRO007, PRO 7, PRO-7…)
+  const sufMatch = rithmicId.match(/-(TEST|PRO)(\d+)$/i)
+  if (sufMatch) {
+    const [, type, num] = sufMatch
+    const cleanNum = parseInt(num, 10)
+    const targetType = type.toUpperCase() === 'TEST' ? 'eval' : 'pro'
+    // Cherche un nom contenant le type ET le numéro
+    const byFuzzy = existingAccounts.find(ea => {
+      const n = norm(ea.name)
+      if (!n.includes(targetType)) return false
+      // Vérifie que le numéro apparaît (avec ou sans 0 leading)
+      return n.includes(String(cleanNum)) || n.includes(num.toLowerCase())
+    })
+    if (byFuzzy) return { account: byFuzzy, strategy: 'fuzzy_name' }
+  }
+
+  return null
+}
+
 // Page ouverte à tous les users connectés (BETA — utiliser avec précaution).
 // Le mode dry-run par défaut + la confirmation popup protègent contre les écritures
 // accidentelles. Les RLS Supabase garantissent que chaque user n'agit que sur
@@ -45,7 +93,8 @@ export default function ImportLabPage() {
   const [loadingAuth, setLoadingAuth] = useState(true)
 
   // === Tab actif : 'trades' | 'dashboard' ===
-  const [tab, setTab] = useState('trades')
+  // Onglet par défaut = Dashboard (étape 1 du flow recommandé : créer les comptes d'abord)
+  const [tab, setTab] = useState('dashboard')
 
   // === Données partagées (firmes + comptes existants) ===
   const [existingFirms, setExistingFirms] = useState([])
@@ -154,11 +203,11 @@ export default function ImportLabPage() {
           border: `1px solid ${T.color.border}`,
           width: 'fit-content',
         }}>
-          <TabBtn active={tab === 'trades'} onClick={() => setTab('trades')}>
-            📊 Trades (PnL Statement)
-          </TabBtn>
           <TabBtn active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>
-            ⚖️ État des comptes (Dashboard)
+            1️⃣ État des comptes (Dashboard)
+          </TabBtn>
+          <TabBtn active={tab === 'trades'} onClick={() => setTab('trades')}>
+            2️⃣ Trades (PnL Statement)
           </TabBtn>
         </div>
 
@@ -239,10 +288,14 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
         setParseError('')
         const initialMapping = {}
         for (const acc of result.accounts) {
-          // Auto-map si un compte existant a déjà ce rithmic_account_id
-          const existing = existingAccounts.find(ea => ea.rithmic_account_id === acc.rithmicId)
-          if (existing) {
-            initialMapping[acc.rithmicId] = { mode: 'existing', accountId: existing.id }
+          // Auto-map via plusieurs stratégies (rithmic_id, nom, suffix…)
+          const match = findMatchingExistingAccount(acc.rithmicId, existingAccounts)
+          if (match) {
+            initialMapping[acc.rithmicId] = {
+              mode: 'existing',
+              accountId: match.account.id,
+              matchStrategy: match.strategy, // pour afficher le badge approprié
+            }
           } else {
             // === Défauts intelligents pour création ===
             // Date par défaut : 1er trade détecté (sinon aujourd'hui)
@@ -347,6 +400,21 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
         if (m.mode === 'existing' && m.accountId) {
           accountIdMap[acc.rithmicId] = m.accountId
           report.reusedAccounts++
+          // Backfill rithmic_account_id sur le compte existant si pas encore set
+          // → permet au prochain import de matcher exactement (stratégie 'rithmic_id')
+          if (!dryRun) {
+            const ea = existingAccounts.find(a => a.id === m.accountId)
+            if (ea && !ea.rithmic_account_id) {
+              const { error } = await supabase
+                .from('accounts')
+                .update({ rithmic_account_id: acc.rithmicId })
+                .eq('id', m.accountId)
+                .eq('user_id', user.id)
+              if (error) {
+                report.errors.push(`Backfill rithmic_id sur ${acc.rithmicId} : ${error.message}`)
+              }
+            }
+          }
         } else if (m.mode === 'create') {
           // Utilise les valeurs saisies par l'user (avec fallbacks intelligents)
           const fallbackDate = acc.trades[0]?.date || new Date().toISOString().slice(0, 10)
@@ -466,6 +534,39 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
 
       {parsed && (
         <>
+          {/* Warning si des comptes du CSV n'ont pas été matchés à un compte Quantara existant.
+              On recommande l'onglet Dashboard pour les créer proprement (avec balance + DD set automatiquement). */}
+          {(() => {
+            const unmatched = parsed.accounts.filter(acc => {
+              const m = mapping[acc.rithmicId]
+              return m?.mode === 'create' // = pas trouvé via auto-match
+            })
+            if (unmatched.length === 0) return null
+            return (
+              <Card style={{
+                borderColor: T.color.amber,
+                background: T.color.amberSoft,
+                marginBottom: 16,
+              }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: 18, marginTop: -2 }}>💡</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: T.color.amber, marginBottom: 4 }}>
+                      {unmatched.length} compte{unmatched.length > 1 ? 's' : ''} pas encore créé{unmatched.length > 1 ? 's' : ''} dans Quantara
+                    </div>
+                    <div style={{ fontSize: 12, color: T.color.text2, lineHeight: 1.5, marginBottom: 8 }}>
+                      Ordre recommandé : <strong>importe d'abord le CSV "État des comptes" (Dashboard)</strong> pour créer les comptes avec leur balance, DD et status corrects.
+                      Ensuite reviens ici pour importer les trades.
+                    </div>
+                    <div style={{ fontSize: 11, color: T.color.text3, fontFamily: T.font.mono }}>
+                      Si tu préfères tout faire d'un coup, tu peux quand même créer les comptes manquants ici (form ci-dessous).
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )
+          })()}
+
           <Section
             title="2 · Détection"
             action={
@@ -535,13 +636,34 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
         setParsed(result)
         setParseError('')
 
-        // Auto-mapping via rithmic_account_id
+        // Auto-mapping intelligent :
+        //   - Si match trouvé → mode='existing' (update du compte)
+        //   - Sinon → mode='create' (création AVEC les infos d'achat demandées)
+        //   - L'user peut basculer manuellement vers 'skip' pour ne rien faire
         const initialMapping = {}
         for (const acc of result.accounts) {
-          const existing = existingAccounts.find(ea => ea.rithmic_account_id === acc.rithmicId)
-          initialMapping[acc.rithmicId] = {
-            accountId: existing?.id || null,
-            autoMatched: !!existing,
+          const match = findMatchingExistingAccount(acc.rithmicId, existingAccounts)
+          if (match) {
+            initialMapping[acc.rithmicId] = {
+              mode: 'existing',
+              accountId: match.account.id,
+              autoMatched: true,
+              matchStrategy: match.strategy,
+            }
+          } else {
+            // Défauts intelligents pour création (même UX que PnL importer)
+            const today = new Date().toISOString().slice(0, 10)
+            const suggestedPrice = acc.firm ? defaultChallengePrice(acc.firm, '50k') : null
+            initialMapping[acc.rithmicId] = {
+              mode: 'create',
+              autoMatched: false,
+              newName: generateAccountName(acc.rithmicId),
+              planSize: '50k',
+              buyDate: today,
+              challengeCost: suggestedPrice !== null ? String(suggestedPrice) : '',
+              activationFee: '0',
+              fundedDate: acc.type === 'FUNDED' ? today : '',
+            }
           }
         }
         setMapping(initialMapping)
@@ -578,20 +700,30 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
   async function doImport() {
     if (!parsed || !user) return
 
-    const accountsToUpdate = parsed.accounts.filter(a => mapping[a.rithmicId]?.accountId)
-    if (accountsToUpdate.length === 0) {
-      window.alert('Aucun compte mappé — rien à faire. Lie au moins 1 compte CSV à un compte Quantara.')
+    // Catégorise les comptes selon le mode choisi
+    const toUpdate = []
+    const toCreate = []
+    const toSkip = []
+    for (const acc of parsed.accounts) {
+      const m = mapping[acc.rithmicId]
+      const mode = m?.mode || (m?.accountId ? 'existing' : 'skip')
+      if (mode === 'existing' && m?.accountId) toUpdate.push(acc)
+      else if (mode === 'create') toCreate.push(acc)
+      else toSkip.push(acc)
+    }
+
+    if (toUpdate.length + toCreate.length === 0) {
+      window.alert('Aucun compte à traiter — tous en "Skip". Sélectionne au moins 1 compte à lier ou à créer.')
       return
     }
 
     if (!dryRun) {
       const ok = window.confirm(
         `⚠️ IMPORT RÉEL (Dashboard)\n\n` +
-        `${accountsToUpdate.length} comptes Quantara vont être mis à jour avec :\n` +
-        `- Solde actuel (rithmic_balance)\n` +
-        `- Seuil DD trailing (rithmic_min_balance)\n` +
-        `- Status si liquidé\n` +
-        `- Commissions totales\n\n` +
+        (toCreate.length ? `${toCreate.length} nouveaux comptes vont être CRÉÉS\n` : '') +
+        (toUpdate.length ? `${toUpdate.length} comptes existants vont être MIS À JOUR\n` : '') +
+        (toSkip.length   ? `${toSkip.length} comptes seront ignorés\n` : '') +
+        `\nLes nouveaux comptes auront balance + DD + status set depuis le CSV.\n\n` +
         `Continuer ?`
       )
       if (!ok) return
@@ -601,16 +733,86 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
     setImportResult(null)
     const report = {
       dryRun,
+      created: 0,
       updated: 0,
       liquidated: 0,
-      skipped: parsed.accounts.length - accountsToUpdate.length,
+      skipped: toSkip.length,
       perAccount: [],
       errors: [],
     }
     const nowIso = new Date().toISOString()
 
     try {
-      for (const acc of accountsToUpdate) {
+      // === 1. Récupère/crée la firme correspondante (Lucid Trading) ===
+      let firmRow = null
+      const firmName = parsed.accounts[0]?.firm
+      if (firmName) {
+        firmRow = existingFirms.find(f => f.name.toLowerCase() === firmName.toLowerCase())
+        if (!firmRow) {
+          if (!dryRun) {
+            const { data, error } = await supabase
+              .from('firms')
+              .insert({ user_id: user.id, name: firmName, color: '#2d6fff' })
+              .select().single()
+            if (error) throw new Error(`Création firme ${firmName} : ${error.message}`)
+            firmRow = data
+          } else {
+            firmRow = { id: '__dry_run_firm__', name: firmName }
+          }
+        }
+      }
+
+      // === 2. CREATE — nouveaux comptes avec balance + DD + status depuis CSV ===
+      for (const acc of toCreate) {
+        const m = mapping[acc.rithmicId]
+        if (!firmRow) {
+          report.errors.push(`${acc.rithmicId} : impossible de créer le compte (firme inconnue)`)
+          continue
+        }
+        const payload = {
+          user_id: user.id,
+          firm_id: firmRow.id,
+          buy_date: m.buyDate || nowIso.slice(0, 10),
+          currency: acc.currency || 'USD',
+          spent: Number(m.challengeCost) || 0,
+          activation_fee: Number(m.activationFee) || 0,
+          funded_date: acc.type === 'FUNDED' ? (m.fundedDate || null) : null,
+          name: m.newName || generateAccountName(acc.rithmicId),
+          plan_size: m.planSize || '50k',
+          status: acc.liquidated ? 'Échoué' : (acc.type === 'FUNDED' ? 'Financé' : 'Challenge'),
+          dd_type: 'trailing',
+          // === Champs Rithmic sync ===
+          rithmic_account_id: acc.rithmicId,
+          rithmic_balance: acc.balance,
+          rithmic_min_balance: acc.minBalance,
+          rithmic_synced_at: nowIso,
+          total_commissions: acc.totalCommission || null,
+          liquidated_at: (acc.liquidated && acc.triggerTime) ? acc.triggerTime : null,
+          notes: `Importé depuis Rithmic Dashboard le ${new Date().toLocaleDateString('fr-FR')}\nID Rithmic : ${acc.rithmicId}`,
+        }
+
+        if (!dryRun) {
+          const { error } = await supabase.from('accounts').insert(payload)
+          if (error) {
+            report.errors.push(`Création ${acc.rithmicId} : ${error.message}`)
+            continue
+          }
+        }
+        report.created++
+        if (acc.liquidated) report.liquidated++
+        report.perAccount.push({
+          rithmicId: acc.rithmicId,
+          action: 'created',
+          name: payload.name,
+          balance: acc.balance,
+          minBalance: acc.minBalance,
+          bufferDD: acc.bufferDD,
+          liquidated: acc.liquidated,
+        })
+      }
+
+      // === 3. UPDATE — comptes existants ===
+      for (const acc of toUpdate) {
         const targetId = mapping[acc.rithmicId].accountId
         const payload = {
           rithmic_account_id: acc.rithmicId,
@@ -621,9 +823,6 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
         }
         if (acc.liquidated && acc.triggerTime) {
           payload.liquidated_at = acc.triggerTime
-          // 'Échoué' = même chose que liquidé côté Quantara, on unifie les 2 statuts.
-          // La date/heure de liquidation reste stockée dans `liquidated_at` pour distinguer
-          // les comptes ratés challenge (sans liquidated_at) des comptes auto-liquidés (avec).
           payload.status = 'Échoué'
           report.liquidated++
         }
@@ -635,15 +834,14 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
             .eq('id', targetId)
             .eq('user_id', user.id)
           if (error) {
-            report.errors.push(`${acc.rithmicId} : ${error.message}`)
+            report.errors.push(`Update ${acc.rithmicId} : ${error.message}`)
             continue
           }
         }
-
         report.updated++
         report.perAccount.push({
           rithmicId: acc.rithmicId,
-          accountId: targetId,
+          action: 'updated',
           balance: acc.balance,
           minBalance: acc.minBalance,
           bufferDD: acc.bufferDD,
@@ -806,7 +1004,11 @@ function DashboardAccountCard({ account, mapping, existingAccounts, existingFirm
             <code style={{ fontSize: 12, color: T.color.text2, fontFamily: T.font.mono }}>{account.rithmicId}</code>
             {account.firm && <Badge tone="blue">{account.firm}</Badge>}
             <Badge tone={bufferTone}>{bufferLabel}</Badge>
-            {mapping.autoMatched && <Badge tone="blue">✓ AUTO-LIÉ</Badge>}
+            {mapping.autoMatched && (
+              <Badge tone={mapping.matchStrategy === 'rithmic_id' ? 'green' : 'blue'}>
+                ✓ AUTO-LIÉ {mapping.matchStrategy === 'rithmic_id' ? '(ID)' : '(NOM)'}
+              </Badge>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 20, fontSize: 12, color: T.color.text3, fontFamily: T.font.mono, flexWrap: 'wrap' }}>
             <span>Balance : <strong style={{ color: T.color.text, fontSize: 13 }}>${account.balance.toFixed(2)}</strong></span>
@@ -898,6 +1100,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
   const optionStyle = { background: T.color.surfaceSolid, color: T.color.text }
 
   if (dashboardMode) {
+    const mode = mapping.mode || (mapping.accountId ? 'existing' : 'skip')
     return (
       <div style={{
         marginTop: 16, padding: 14,
@@ -905,49 +1108,220 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
         border: `1px solid ${T.color.border}`,
         borderRadius: T.radius.md,
       }}>
+        {/* Toggle 3 modes : existing / create / skip */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 10,
+          marginBottom: 10, flexWrap: 'wrap', gap: 8,
         }}>
           <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: T.font.mono }}>
-            Compte Quantara à mettre à jour
-            {matchingFirm && !showAll && (
-              <span style={{ marginLeft: 8, color: T.color.blueLight, textTransform: 'none', letterSpacing: 0 }}>
-                · filtré sur {matchingFirm.name}
-              </span>
-            )}
+            Action sur ce compte
           </div>
-          {matchingFirm && (
-            <FilterToggle showAll={showAll} setShowAll={setShowAll} firmName={matchingFirm.name} />
-          )}
+          <div style={{ display: 'flex', gap: 4 }}>
+            <ModeChip active={mode === 'existing'} onClick={() => {
+              onChangeMapping({ ...mapping, mode: 'existing', accountId: mapping.accountId || null })
+            }} color={T.color.blueLight}>↻ Lier à existant</ModeChip>
+            <ModeChip active={mode === 'create'} onClick={() => {
+              const today = new Date().toISOString().slice(0, 10)
+              const suggestedPrice = account?.firm ? defaultChallengePrice(account.firm, '50k') : null
+              onChangeMapping({
+                ...mapping,
+                mode: 'create',
+                newName: mapping.newName || generateAccountName(account?.rithmicId || ''),
+                planSize: mapping.planSize || '50k',
+                buyDate: mapping.buyDate || today,
+                challengeCost: mapping.challengeCost ?? (suggestedPrice !== null ? String(suggestedPrice) : ''),
+                activationFee: mapping.activationFee || '0',
+                fundedDate: mapping.fundedDate || (account?.type === 'FUNDED' ? today : ''),
+              })
+            }} color={T.color.green}>➕ Créer nouveau</ModeChip>
+            <ModeChip active={mode === 'skip'} onClick={() => {
+              onChangeMapping({ ...mapping, mode: 'skip', accountId: null })
+            }} color={T.color.text3}>⏭️ Skip</ModeChip>
+          </div>
         </div>
-        <select
-          value={mapping.accountId || '__skip__'}
-          onChange={(e) => {
-            onChangeMapping({
-              accountId: e.target.value === '__skip__' ? null : e.target.value,
-              autoMatched: false,
-            })
-          }}
-          style={inputStyle()}
-        >
-          <option value="__skip__" style={optionStyle}>⏭️ Ne pas mettre à jour (skip)</option>
-          {filteredAccounts.map((ea) => (
-            <option key={ea.id} value={ea.id} style={optionStyle}>
-              {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
-              {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
-            </option>
-          ))}
-        </select>
-        {loadingExisting && <LoadingNote />}
-        {filteredAccounts.length === 0 && !loadingExisting && (
-          <div style={{ fontSize: 11, color: T.color.amber, marginTop: 8, fontFamily: T.font.mono }}>
-            ⚠️ Aucun compte {matchingFirm?.name || ''} trouvé. Active "Tout afficher" pour voir tes autres comptes.
-          </div>
+
+        {/* === MODE EXISTING : dropdown vers compte existant === */}
+        {mode === 'existing' && (
+          <>
+            <div style={{
+              fontSize: 10, color: T.color.text3, textTransform: 'uppercase',
+              letterSpacing: '0.1em', marginBottom: 6, fontFamily: T.font.mono,
+            }}>
+              Lier au compte Quantara
+              {matchingFirm && !showAll && (
+                <span style={{ marginLeft: 8, color: T.color.blueLight, textTransform: 'none', letterSpacing: 0 }}>
+                  · filtré sur {matchingFirm.name}
+                </span>
+              )}
+              {matchingFirm && (
+                <span style={{ marginLeft: 8 }}>
+                  <FilterToggle showAll={showAll} setShowAll={setShowAll} firmName={matchingFirm.name} />
+                </span>
+              )}
+            </div>
+            <select
+              value={mapping.accountId || ''}
+              onChange={(e) => onChangeMapping({ ...mapping, mode: 'existing', accountId: e.target.value || null, autoMatched: false })}
+              style={inputStyle()}
+            >
+              <option value="" style={optionStyle}>— Choisir un compte —</option>
+              {filteredAccounts.map((ea) => (
+                <option key={ea.id} value={ea.id} style={optionStyle}>
+                  {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
+                  {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
+                </option>
+              ))}
+            </select>
+            {loadingExisting && <LoadingNote />}
+            {mapping.autoMatched && (
+              <div style={{ fontSize: 11, color: T.color.green, marginTop: 8, fontFamily: T.font.mono }}>
+                ✓ Auto-lié via {
+                  mapping.matchStrategy === 'rithmic_id' ? 'rithmic_account_id (exact)' :
+                  mapping.matchStrategy === 'generated_name' ? `nom auto-généré ("${generateAccountName(account?.rithmicId || '')}")` :
+                  mapping.matchStrategy === 'legacy_name' ? `nom legacy` :
+                  mapping.matchStrategy === 'fuzzy_name' ? `nom approximatif` :
+                  'auto-detection'
+                }
+              </div>
+            )}
+          </>
         )}
-        {mapping.autoMatched && (
-          <div style={{ fontSize: 11, color: T.color.green, marginTop: 8, fontFamily: T.font.mono }}>
-            ✓ Auto-lié via rithmic_account_id
+
+        {/* === MODE CREATE : form complet avec balance/DD préfilled depuis CSV === */}
+        {mode === 'create' && (
+          <>
+            <div style={{
+              fontSize: 10, color: T.color.green, textTransform: 'uppercase',
+              letterSpacing: '0.1em', marginBottom: 8, fontFamily: T.font.mono,
+            }}>
+              Créer un nouveau compte Quantara
+            </div>
+
+            {/* Ligne 1 : Nom + Plan + Status auto */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <MicroLabel>Nom (auto-renommé)</MicroLabel>
+                <input type="text" placeholder="PRO 7"
+                  value={mapping.newName || ''}
+                  onChange={(e) => onChangeMapping({ ...mapping, newName: e.target.value })}
+                  style={inputStyle()} />
+              </div>
+              <div>
+                <MicroLabel>Plan size</MicroLabel>
+                <select value={mapping.planSize || '50k'}
+                  onChange={(e) => onChangeMapping({ ...mapping, planSize: e.target.value })}
+                  style={{ ...inputStyle(), width: 100 }}
+                >
+                  <option value="25k" style={optionStyle}>25k</option>
+                  <option value="50k" style={optionStyle}>50k</option>
+                  <option value="100k" style={optionStyle}>100k</option>
+                  <option value="150k" style={optionStyle}>150k</option>
+                  <option value="250k" style={optionStyle}>250k</option>
+                </select>
+              </div>
+              <div>
+                <MicroLabel>Status (auto)</MicroLabel>
+                <div style={{
+                  padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                  background: account?.type === 'FUNDED' ? 'rgba(16,185,129,0.12)' : 'rgba(250,199,117,0.12)',
+                  border: `1px solid ${account?.type === 'FUNDED' ? 'rgba(16,185,129,0.3)' : 'rgba(250,199,117,0.3)'}`,
+                  color: account?.type === 'FUNDED' ? T.color.green : T.color.amber,
+                  borderRadius: T.radius.md, fontFamily: T.font.mono, letterSpacing: '0.05em',
+                }}>
+                  {account?.type === 'FUNDED' ? '💰 Financé' : '🎯 Challenge'}
+                </div>
+              </div>
+            </div>
+
+            {/* Bloc Achat challenge */}
+            <div style={{
+              padding: 12, marginTop: 8,
+              background: 'rgba(45,111,255,0.04)',
+              border: `1px solid rgba(45,111,255,0.18)`,
+              borderRadius: T.radius.md,
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 600, color: T.color.blueLight,
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+                marginBottom: 8, fontFamily: T.font.mono,
+              }}>
+                {account?.type === 'FUNDED' ? 'Achat du challenge initial' : 'Achat du challenge'}
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1, minWidth: 140 }}>
+                  <MicroLabel>Date d'achat</MicroLabel>
+                  <input type="date"
+                    value={mapping.buyDate || ''}
+                    onChange={(e) => onChangeMapping({ ...mapping, buyDate: e.target.value })}
+                    style={inputStyle()} />
+                </div>
+                <div style={{ flex: 1, minWidth: 140 }}>
+                  <MicroLabel>Coût du challenge ($)</MicroLabel>
+                  <input type="number" min="0" step="0.01" placeholder="165.00"
+                    value={mapping.challengeCost || ''}
+                    onChange={(e) => onChangeMapping({ ...mapping, challengeCost: e.target.value })}
+                    style={inputStyle()} />
+                </div>
+              </div>
+            </div>
+
+            {/* Bloc Passage financé (FUNDED uniquement) */}
+            {account?.type === 'FUNDED' && (
+              <div style={{
+                padding: 12, marginTop: 8,
+                background: 'rgba(16,185,129,0.04)',
+                border: `1px solid rgba(16,185,129,0.18)`,
+                borderRadius: T.radius.md,
+              }}>
+                <div style={{
+                  fontSize: 10, fontWeight: 600, color: T.color.green,
+                  textTransform: 'uppercase', letterSpacing: '0.1em',
+                  marginBottom: 8, fontFamily: T.font.mono,
+                }}>
+                  Passage en compte financé
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <MicroLabel>Date passage financé</MicroLabel>
+                    <input type="date"
+                      value={mapping.fundedDate || ''}
+                      onChange={(e) => onChangeMapping({ ...mapping, fundedDate: e.target.value })}
+                      style={inputStyle()} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <MicroLabel>Frais activation ($) — 0 si aucun</MicroLabel>
+                    <input type="number" min="0" step="0.01" placeholder="0"
+                      value={mapping.activationFee || ''}
+                      onChange={(e) => onChangeMapping({ ...mapping, activationFee: e.target.value })}
+                      style={inputStyle()} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Info : balance + DD seront set automatiquement depuis le CSV */}
+            <div style={{
+              marginTop: 8, padding: 10,
+              background: 'rgba(255,255,255,0.025)',
+              border: `1px dashed ${T.color.border}`,
+              borderRadius: T.radius.md,
+              fontSize: 11, color: T.color.text3, fontFamily: T.font.mono, lineHeight: 1.5,
+            }}>
+              ⚡ Données auto-importées depuis le CSV : balance ${account?.balance?.toFixed(2) || '?'} · DD min ${account?.minBalance?.toFixed(2) || '?'} · {account?.liquidated ? `💀 liquidé ${account?.triggerTime?.replace('T', ' à ')}` : '✓ actif'}
+            </div>
+          </>
+        )}
+
+        {/* === MODE SKIP === */}
+        {mode === 'skip' && (
+          <div style={{
+            padding: 12,
+            background: 'rgba(255,255,255,0.025)',
+            border: `1px solid ${T.color.border}`,
+            borderRadius: T.radius.md,
+            fontSize: 12, color: T.color.text3, fontFamily: T.font.mono,
+          }}>
+            ⏭️ Ce compte sera ignoré lors de l'import.
           </div>
         )}
       </div>
@@ -1132,6 +1506,23 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
 }
 
 // Mini-label uniforme pour les champs de formulaire
+// Chip de sélection de mode (Existing/Create/Skip)
+function ModeChip({ active, onClick, children, color }) {
+  return (
+    <button type="button" onClick={onClick}
+      style={{
+        padding: '5px 10px', fontSize: 10,
+        background: active ? `${color}22` : 'rgba(255,255,255,0.04)',
+        color: active ? color : T.color.text3,
+        border: `1px solid ${active ? `${color}66` : T.color.border}`,
+        borderRadius: T.radius.sm,
+        cursor: 'pointer', fontFamily: T.font.mono,
+        fontWeight: active ? 600 : 500, letterSpacing: '0.05em',
+      }}
+    >{children}</button>
+  )
+}
+
 function MicroLabel({ children }) {
   return (
     <div style={{
@@ -1291,9 +1682,10 @@ function ResultSection({ result, onReset, kind }) {
             </>
           ) : (
             <>
+              <div>• Comptes créés : <strong style={{ color: T.color.green }}>{r.created || 0}</strong></div>
               <div>• Comptes mis à jour : <strong style={{ color: T.color.green }}>{r.updated}</strong></div>
               <div>• Comptes liquidés détectés : <strong style={{ color: r.liquidated > 0 ? T.color.red : T.color.text3 }}>{r.liquidated}</strong></div>
-              <div>• Comptes non mappés (skip) : <strong style={{ color: T.color.text3 }}>{r.skipped}</strong></div>
+              <div>• Comptes ignorés (skip) : <strong style={{ color: T.color.text3 }}>{r.skipped}</strong></div>
             </>
           )}
         </div>
@@ -1309,7 +1701,15 @@ function ResultSection({ result, onReset, kind }) {
                   <><code>{p.rithmicId}</code> → {p.tradesToInsert} insérés, {p.skipped} skip</>
                 ) : (
                   <>
-                    <code>{p.rithmicId}</code> → bal ${p.balance.toFixed(2)} / min ${p.minBalance.toFixed(2)} / buffer ${p.bufferDD.toFixed(2)}
+                    <span style={{
+                      color: p.action === 'created' ? T.color.green : T.color.blueLight,
+                      fontWeight: 600, marginRight: 4,
+                    }}>
+                      {p.action === 'created' ? '➕ CRÉÉ' : '↻ UPDATED'}
+                    </span>
+                    <code>{p.rithmicId}</code>
+                    {p.name && <> · <strong style={{ color: T.color.text }}>{p.name}</strong></>}
+                    {' '}→ bal ${p.balance.toFixed(2)} / min ${p.minBalance.toFixed(2)} / buffer ${p.bufferDD.toFixed(2)}
                     {p.liquidated && <span style={{ color: T.color.red }}> · 💀 LIQUIDÉ</span>}
                   </>
                 )}
