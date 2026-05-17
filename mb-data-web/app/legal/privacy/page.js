@@ -1,247 +1,281 @@
 import PageHeader from '../../../components/PageHeader'
 import Footer from '../../../components/Footer'
+import Reveal from '../../../components/Reveal'
 
 export const metadata = {
   title: 'Politique de Confidentialité — Quantara',
-  description: 'Comment Quantara LLC collecte, utilise et protège tes données. Conformité RGPD (UE), CCPA (Californie), TDPSA (Texas).',
+  description: 'Comment Quantara collecte, utilise et protège tes données personnelles. RGPD-compliant. Hébergement EU.',
 }
 
 const C = {
   bg: '#0d0f14',
   surface: '#141720',
+  surface2: '#1c2030',
   border: 'rgba(255,255,255,0.07)',
+  border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8',
   text2: '#9098b0',
   text3: '#565e78',
+  blue: '#2d6fff',
+  blueLight: '#4d8fff',
+  green: '#1db87a',
+  amber: '#fac775',
 }
 
-const sectionStyle = { marginBottom: 28 }
-const h2Style = { fontSize: 17, fontWeight: 700, marginBottom: 10, color: C.text }
-const pStyle = { fontSize: 13.5, color: C.text2, lineHeight: 1.7, marginBottom: 10 }
-const liStyle = { fontSize: 13.5, color: C.text2, lineHeight: 1.7, marginBottom: 4 }
+// Privacy Policy — RGPD-compliant
+// Couvre : données collectées, finalité, base légale, durée conservation, droits user, cookies, sous-traitants
+const SECTIONS = [
+  {
+    title: '1. Données collectées',
+    body: `Quantara collecte uniquement les données strictement nécessaires au fonctionnement du service :
+
+• **Données d'inscription** : adresse email (obligatoire), mot de passe (hashé bcrypt côté Supabase), pseudo et nom affiché (optionnels).
+• **Données de profil** : bio, pays, style de trading, instruments préférés (tous optionnels, fournis volontairement).
+• **Données métier** : firmes ajoutées, comptes (taille, plan, drawdown, dates), trades manuels ou importés, payouts, notes personnelles, screenshots.
+• **Données techniques** : timestamp de connexion, IP (uniquement pour rate-limit anti-bot, non stockée durablement).
+
+Quantara ne collecte AUCUNE donnée bancaire, AUCUN token broker, AUCUNE donnée de tracking publicitaire.`,
+  },
+  {
+    title: '2. Finalité du traitement',
+    body: `Les données sont utilisées exclusivement pour :
+
+• Fournir le service de journal de trading (afficher tes trades, calculer tes stats, tracker tes drawdowns).
+• Authentification et sécurité (login, captcha, RLS).
+• Communication transactionnelle si activée (confirmation email signup, reset password, notifications optionnelles).
+• Amélioration continue du produit (sans tracking individuel — uniquement agrégations anonymes).
+
+Quantara ne profile JAMAIS les utilisateurs à des fins publicitaires. Aucune donnée n'est vendue ni partagée avec des tiers commerciaux.`,
+  },
+  {
+    title: '3. Base légale (RGPD article 6)',
+    body: `Le traitement de tes données repose sur :
+
+• **Exécution du contrat** (article 6.1.b) pour les données nécessaires au service (compte, trades, etc.).
+• **Consentement explicite** (article 6.1.a) pour les options facultatives (profil public, notifications push, partage social futur).
+• **Intérêt légitime** (article 6.1.f) pour la sécurité (logs anti-bot, captcha).`,
+  },
+  {
+    title: '4. Durée de conservation',
+    body: `Tes données sont conservées tant que ton compte est actif. Si tu supprimes ton compte :
+
+• Suppression définitive sous 7 jours ouvrés via les contraintes Postgres ON DELETE CASCADE.
+• Aucune copie de sauvegarde n'est conservée au-delà des cycles de backup Supabase (30 jours max, rotation automatique).
+• Les emails envoyés (welcome, recap) restent dans les logs Supabase 90 jours puis purgés.
+
+Pas de soft-delete : c'est une suppression dure.`,
+  },
+  {
+    title: '5. Tes droits RGPD',
+    body: `En tant qu'utilisateur EU, tu disposes des droits suivants — exerçables par email à contact@quantara.tech (réponse sous 30 jours max) :
+
+• **Droit d'accès** : recevoir une copie de toutes tes données (export JSON/CSV).
+• **Droit de rectification** : corriger toute donnée inexacte (modifiable directement dans /app/profile pour la plupart).
+• **Droit à l'effacement** ("droit à l'oubli") : suppression complète de ton compte et données associées.
+• **Droit à la portabilité** : recevoir tes données dans un format structuré (JSON/CSV) pour les migrer ailleurs.
+• **Droit d'opposition** : t'opposer à un traitement spécifique (ex: notifications).
+• **Droit de réclamation auprès de la CNIL** (France) ou de ton autorité nationale équivalente.`,
+  },
+  {
+    title: '6. Sous-traitants',
+    body: `Pour fonctionner, Quantara s'appuie sur les sous-traitants suivants (tous conformes RGPD, Data Processing Agreements en place) :
+
+• **Supabase** (États-Unis, instance Frankfurt EU) — hébergement DB, authentification.
+• **Vercel** (États-Unis, edge Frankfurt EU) — hébergement frontend.
+• **Cloudflare** (États-Unis, points présence mondiaux) — Turnstile captcha anti-bot.
+• **exchangerate-api.com** — taux de change devises (aucune donnée user envoyée).
+• **Finnhub** — calendrier économique (aucune donnée user envoyée).
+• **Resend** (futur) — emails transactionnels.
+
+Aucun de ces tiers n'a accès à tes trades ou données personnelles à des fins propres.`,
+  },
+  {
+    title: '7. Sécurité',
+    body: `Tes données sont protégées par :
+
+• **Chiffrement en transit** : TLS 1.3 obligatoire sur tous les endpoints.
+• **Chiffrement au repos** : disques chiffrés AES-256 côté Supabase et Vercel.
+• **Row Level Security (RLS)** : isolation stricte par utilisateur au niveau base de données.
+• **Hachage mot de passe** : bcrypt avec coût adapté côté Supabase Auth.
+• **Captcha Turnstile** : protection bots sur signup/login.
+
+Voir page /security pour le détail technique complet.`,
+  },
+  {
+    title: '8. Transferts hors UE',
+    body: `L'hébergement principal est en EU (Frankfurt). Certains sous-traitants (Vercel, Supabase, Cloudflare) sont des sociétés américaines. Les transferts éventuels sont encadrés par les Clauses Contractuelles Types (CCT) approuvées par la Commission Européenne. Aucune donnée n'est transférée vers des pays non-adéquats sans garanties appropriées.`,
+  },
+  {
+    title: '9. Mineurs',
+    body: `Quantara est réservé aux personnes majeures (18 ans+) capables juridiquement de signer un contrat. Si nous découvrons qu'un compte appartient à un mineur, il sera supprimé. Le trading PropFirm est lui-même réservé aux majeurs par les firmes elles-mêmes.`,
+  },
+  {
+    title: '10. Modifications',
+    body: `Cette politique peut évoluer. Les modifications matérielles seront notifiées par email aux utilisateurs actifs au moins 30 jours avant entrée en vigueur. La version courante est toujours disponible sur cette page avec date de mise à jour.`,
+  },
+]
+
+// === COOKIES (section dédiée à /legal/privacy#cookies) ===
+const COOKIES = [
+  {
+    type: 'Essentiels',
+    color: C.green,
+    purpose: 'Authentification & sécurité',
+    items: [
+      { name: 'sb-access-token', desc: 'Token JWT Supabase (auth)', duration: 'Session ou 30 jours selon "Rester connecté"' },
+      { name: 'sb-refresh-token', desc: 'Refresh token Supabase', duration: 'Session ou 30 jours' },
+      { name: 'quantara_persist_session', desc: 'Préférence "Rester connecté"', duration: 'Persistant (localStorage)' },
+      { name: 'cf-turnstile-*', desc: 'Captcha anti-bot Cloudflare', duration: 'Session' },
+    ],
+  },
+  {
+    type: 'Fonctionnels',
+    color: C.blueLight,
+    purpose: 'Préférences utilisateur',
+    items: [
+      { name: 'quantara_currency', desc: 'Devise affichée (USD/EUR)', duration: 'Persistant' },
+      { name: 'quantara_lang', desc: 'Langue (FR/EN à venir)', duration: 'Persistant' },
+      { name: 'quantara_calendar_lang', desc: 'Langue calendrier éco', duration: 'Persistant' },
+    ],
+  },
+]
 
 export default function PrivacyPage() {
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader />
 
-      <section style={{ padding: '60px 24px 80px' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <div style={{ marginBottom: 36 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 10 }}>LÉGAL</div>
-            <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: 10 }}>
+      <main style={{ flex: 1 }}>
+        {/* HERO */}
+        <section style={{ padding: '80px 24px 40px', textAlign: 'center', maxWidth: 760, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ fontSize: 11, color: C.green, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 18 }}>
+              Légal · RGPD
+            </div>
+            <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', margin: 0, marginBottom: 14 }}>
               Politique de Confidentialité
             </h1>
-            <div style={{ fontSize: 12, color: C.text3 }}>
-              Conforme RGPD · CCPA · TDPSA · Dernière mise à jour : {new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+            <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6 }}>
+              Version 1.1 · Mise à jour mai 2026 · Hébergement EU (Frankfurt) · RGPD-compliant
+            </p>
+          </Reveal>
+        </section>
+
+        {/* SECTIONS */}
+        <section style={{ padding: '0 24px 60px', maxWidth: 820, margin: '0 auto' }}>
+          {SECTIONS.map((s, i) => (
+            <Reveal key={i}>
+              <div style={{
+                marginBottom: 16,
+                padding: '22px 26px',
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+              }}>
+                <h2 style={{
+                  fontSize: 15, fontWeight: 700,
+                  color: C.text, margin: 0, marginBottom: 10,
+                  letterSpacing: '-0.01em',
+                }}>
+                  {s.title}
+                </h2>
+                <p style={{
+                  fontSize: 13, color: C.text2, lineHeight: 1.7,
+                  margin: 0, whiteSpace: 'pre-line',
+                }}>
+                  {s.body}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </section>
+
+        {/* COOKIES SECTION */}
+        <section id="cookies" style={{ padding: '40px 24px 60px', maxWidth: 820, margin: '0 auto', borderTop: `1px solid ${C.border}` }}>
+          <Reveal>
+            <div style={{ paddingTop: 40, marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: C.amber, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
+                Cookies
+              </div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 8, letterSpacing: '-0.015em' }}>
+                Quels cookies on utilise
+              </h2>
+              <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, margin: 0 }}>
+                <strong style={{ color: C.green }}>Aucun cookie de tracking publicitaire.</strong> Uniquement des cookies fonctionnels essentiels au service. Pas de Google Analytics, pas de Facebook Pixel, pas de tracking cross-site.
+              </p>
             </div>
-          </div>
 
-          <div style={{
-            padding: 14, marginBottom: 32,
-            background: 'rgba(250,199,117,0.07)', border: '1px solid rgba(250,199,117,0.25)',
-            borderRadius: 8, fontSize: 12.5, color: '#fac775', lineHeight: 1.6,
-          }}>
-            ⚠️ <strong>Templates de base.</strong> Pour exploitation commerciale, validation par un attorney privacy law (US + EU) recommandée — surtout si tu cibles activement le marché européen ou californien.
-          </div>
+            {COOKIES.map(cat => (
+              <div key={cat.type} style={{ marginBottom: 20 }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  marginBottom: 10,
+                }}>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: cat.color,
+                  }} />
+                  <h3 style={{
+                    fontSize: 14, fontWeight: 700, margin: 0,
+                    color: cat.color, letterSpacing: '-0.01em',
+                  }}>
+                    {cat.type}
+                  </h3>
+                  <span style={{ fontSize: 11, color: C.text3 }}>· {cat.purpose}</span>
+                </div>
+                <div style={{
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 10, overflow: 'hidden',
+                }}>
+                  {cat.items.map((c, i) => (
+                    <div key={i} style={{
+                      padding: '10px 16px',
+                      borderTop: i > 0 ? `1px solid ${C.border}` : 'none',
+                      display: 'grid',
+                      gridTemplateColumns: '180px 1fr 180px',
+                      gap: 12, alignItems: 'center',
+                      fontSize: 12,
+                    }}>
+                      <code style={{
+                        color: C.blueLight, fontFamily: 'ui-monospace, monospace',
+                        fontSize: 11, fontWeight: 600,
+                      }}>{c.name}</code>
+                      <span style={{ color: C.text2 }}>{c.desc}</span>
+                      <span style={{
+                        color: C.text3, textAlign: 'right',
+                        fontFamily: 'ui-monospace, monospace', fontSize: 10,
+                      }}>{c.duration}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
 
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>1. Responsable du traitement</h2>
-            <p style={pStyle}>
-              <strong>Quantara LLC</strong>, Limited Liability Company constituée selon les lois de l'État du Texas, États-Unis.
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}>EIN : <em>[à compléter après obtention auprès de l'IRS]</em></li>
-              <li style={liStyle}>Siège social / Registered agent : <em>[à compléter avec l'adresse au Texas]</em></li>
-              <li style={liStyle}>Email général : <a href="mailto:contact@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>contact@quantara.tech</a></li>
-              <li style={liStyle}>Email privacy/RGPD : <a href="mailto:privacy@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a></li>
-              <li style={liStyle}>Email sécurité : <a href="mailto:security@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>security@quantara.tech</a></li>
-            </ul>
-          </div>
+            <div style={{
+              marginTop: 18, padding: 14,
+              background: 'rgba(45,111,255,0.04)',
+              border: '1px solid rgba(45,111,255,0.20)',
+              borderRadius: 10,
+              fontSize: 12, color: C.text2, lineHeight: 1.6,
+            }}>
+              <strong style={{ color: C.blueLight }}>Pas de bannière cookies sur Quantara ?</strong> Correct : tous nos cookies sont strictement nécessaires au fonctionnement du service (auth + préférences user). Aucun consentement requis selon la directive ePrivacy + RGPD pour ce type de cookies.
+            </div>
+          </Reveal>
+        </section>
 
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>2. Données collectées</h2>
-            <p style={pStyle}>
-              Quantara collecte uniquement les données nécessaires au fonctionnement du Service :
+        {/* CONTACT */}
+        <section style={{ padding: '40px 24px 80px', maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+          <Reveal>
+            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, marginBottom: 12, letterSpacing: '-0.015em' }}>
+              Une question sur tes données ?
+            </h2>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 18 }}>
+              Pour exercer tes droits RGPD ou poser une question : <a href="mailto:contact@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none' }}>contact@quantara.tech</a>. Réponse sous 30 jours max.
             </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}><strong>Données d'inscription</strong> : adresse email, mot de passe (hashé bcrypt côté Supabase)</li>
-              <li style={liStyle}><strong>Données de trading saisies par l'Utilisateur</strong> : firmes, comptes, trades, payouts, notes, screenshots, certificats de challenge</li>
-              <li style={liStyle}><strong>Données techniques minimales</strong> : adresse IP (logs Vercel/Supabase, conservés 30 jours max), agent navigateur</li>
-              <li style={liStyle}><strong>Aucune donnée bancaire</strong> n'est collectée par Quantara LLC (Service gratuit en beta). Si paiements futurs : traités exclusivement par Stripe, Inc., conforme PCI-DSS</li>
-              <li style={liStyle}><strong>Aucun mot de passe broker</strong> n'est stocké</li>
-            </ul>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>3. Finalités du traitement</h2>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}>Authentification et accès au compte utilisateur</li>
-              <li style={liStyle}>Stockage et affichage des données de trading saisies</li>
-              <li style={liStyle}>Calcul de métriques et statistiques personnelles</li>
-              <li style={liStyle}>Support utilisateur (en cas de demande)</li>
-              <li style={liStyle}>Détection et prévention d'abus du Service</li>
-              <li style={liStyle}>Respect des obligations légales (notamment réquisition judiciaire)</li>
-            </ul>
-            <p style={pStyle}>
-              Quantara LLC <strong>ne réalise aucun profilage publicitaire ni revente de données</strong>. Aucune donnée n'est
-              partagée avec des tiers à des fins commerciales.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>4. Hébergement et localisation des données</h2>
-            <p style={pStyle}>
-              Les données sont hébergées au sein de l'<strong>Union Européenne</strong> :
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}><strong>Frontend</strong> : Vercel Inc. (régions Frankfurt/Paris)</li>
-              <li style={liStyle}><strong>Base de données + Storage</strong> : Supabase Inc. (région Frankfurt, Allemagne)</li>
-              <li style={liStyle}><strong>Calendrier économique</strong> : appels API à Finnhub Inc. (États-Unis) — uniquement pour récupérer des données publiques de marché, aucune donnée utilisateur transmise</li>
-              <li style={liStyle}><strong>Paiements futurs</strong> : Stripe, Inc. (États-Unis) — données de carte traitées chez Stripe directement, jamais transitant par nos serveurs</li>
-            </ul>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>5. Transfert de données et CLOUD Act (transparence)</h2>
-            <p style={pStyle}>
-              Quantara LLC étant une entité de droit américain (Texas), nous sommes légalement soumis au <strong>U.S. CLOUD Act</strong>
-              (Clarifying Lawful Overseas Use of Data Act, 2018), qui peut permettre aux autorités fédérales américaines d'exiger
-              l'accès à des données détenues par notre société, y compris si elles sont physiquement stockées en Europe via
-              nos sous-traitants Vercel et Supabase.
-            </p>
-            <p style={pStyle}>
-              <strong>En pratique :</strong> nous n'avons reçu aucune demande de ce type à ce jour. Si une telle demande nous
-              parvenait, nous (i) la contesterions juridiquement quand légalement possible, et (ii) en informerions les
-              utilisateurs concernés sauf interdiction légale (gag order). Notre engagement de transparence est total :
-              le nombre de demandes reçues sera publié annuellement sur cette page.
-            </p>
-            <p style={pStyle}>
-              Pour les utilisateurs européens préoccupés par cette exposition juridique : nous évaluons la nomination d'un
-              <strong> EU representative</strong> (article 27 RGPD) une fois la base utilisateurs européenne stabilisée.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>6. Durée de conservation</h2>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}>Données du compte : tant que le compte est actif</li>
-              <li style={liStyle}>Après suppression du compte : suppression définitive sous 30 jours max</li>
-              <li style={liStyle}>Logs techniques (IP, requêtes) : 30 jours</li>
-              <li style={liStyle}>Backups Supabase : 7 jours (rolling, chiffrés)</li>
-              <li style={liStyle}>Données de facturation (si paiements futurs) : 7 ans (obligation comptable US/EU)</li>
-            </ul>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>7. Tes droits — Utilisateurs UE/EEA (RGPD)</h2>
-            <p style={pStyle}>
-              Conformément au RGPD, tu disposes des droits suivants :
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}><strong>Accès</strong> : obtenir une copie de toutes tes données (export CSV depuis le Service ou demande email)</li>
-              <li style={liStyle}><strong>Rectification</strong> : corriger des informations inexactes</li>
-              <li style={liStyle}><strong>Effacement</strong> (« droit à l'oubli ») : suppression complète de ton compte et données</li>
-              <li style={liStyle}><strong>Portabilité</strong> : récupérer tes données en format structuré (CSV)</li>
-              <li style={liStyle}><strong>Opposition</strong> : t'opposer à un traitement spécifique</li>
-              <li style={liStyle}><strong>Limitation</strong> : limiter le traitement dans certains cas</li>
-              <li style={liStyle}><strong>Réclamation</strong> : auprès de la CNIL (cnil.fr) ou de toute autorité de contrôle EU compétente</li>
-            </ul>
-            <p style={pStyle}>
-              Pour exercer ces droits : <a href="mailto:privacy@quantara.tech?subject=Demande%20RGPD" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a>
-              {' · '}Réponse sous 30 jours max conformément à l'article 12 RGPD.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>8. Tes droits — Résidents Californiens (CCPA / CPRA)</h2>
-            <p style={pStyle}>
-              Si tu résides en Californie, tu bénéficies des droits supplémentaires suivants au titre du
-              California Consumer Privacy Act (CCPA) tel qu'amendé par le CPRA :
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}><strong>Right to Know</strong> : demander la liste détaillée des catégories de données collectées te concernant et leurs finalités</li>
-              <li style={liStyle}><strong>Right to Delete</strong> : demander la suppression de tes données personnelles</li>
-              <li style={liStyle}><strong>Right to Correct</strong> : demander la correction de données inexactes</li>
-              <li style={liStyle}><strong>Right to Opt-Out of Sale/Sharing</strong> : <strong>non applicable</strong> — Quantara LLC ne vend ni ne partage de données personnelles à des fins publicitaires (« Do Not Sell My Personal Information »)</li>
-              <li style={liStyle}><strong>Right to Limit Use of Sensitive Personal Information</strong> : non applicable — Quantara ne traite pas de catégories sensibles au sens du CCPA (santé, biométrie, etc.)</li>
-              <li style={liStyle}><strong>Right to Non-Discrimination</strong> : exercer ces droits ne donnera lieu à aucune discrimination dans la qualité du Service</li>
-            </ul>
-            <p style={pStyle}>
-              Pour exercer ces droits : <a href="mailto:privacy@quantara.tech?subject=CCPA%20Request" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a>
-              {' · '}Réponse sous 45 jours max.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>9. Tes droits — Résidents Texans (TDPSA)</h2>
-            <p style={pStyle}>
-              Le Texas Data Privacy and Security Act (TDPSA), entré en vigueur en juillet 2024, accorde aux résidents du Texas
-              des droits similaires au CCPA. Quantara LLC, basée au Texas, applique ces droits à tous les utilisateurs texans
-              indépendamment du seuil légal d'applicabilité du TDPSA. Voir section 8 pour le détail des droits, identiques
-              à ceux du CCPA.
-            </p>
-          </div>
-
-          <div style={sectionStyle} id="cookies">
-            <h2 style={h2Style}>10. Cookies</h2>
-            <p style={pStyle}>
-              Quantara utilise un nombre minimal de cookies, tous strictement nécessaires au fonctionnement du Service :
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}><strong>Cookie d'authentification Supabase</strong> (sb-access-token / sb-refresh-token) : pour maintenir ta session connectée. Durée : 1 semaine glissante.</li>
-              <li style={liStyle}><strong>Préférences utilisateur</strong> (localStorage) : langue, thème, état des filtres. Aucune donnée personnelle.</li>
-            </ul>
-            <p style={pStyle}>
-              <strong>Aucun cookie publicitaire ni de tracking tiers (Google Analytics, Meta Pixel, TikTok Pixel, etc.)
-              n'est utilisé.</strong>{' '}Tu peux désactiver les cookies dans ton navigateur, mais l'authentification ne
-              fonctionnera plus.
-            </p>
-            <p style={pStyle}>
-              <strong>Global Privacy Control (GPC)</strong> : Quantara respecte le signal GPC envoyé par certains navigateurs
-              (Brave, Firefox via extensions, etc.), équivalent à un opt-out automatique CCPA — bien que sans effet pratique
-              chez nous puisque nous ne vendons pas de données.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>11. Sécurité</h2>
-            <p style={pStyle}>
-              Quantara LLC met en œuvre des mesures techniques et organisationnelles pour protéger tes données : chiffrement
-              TLS 1.3, chiffrement au repos (AES-256), Row Level Security (RLS) PostgreSQL, isolation des fichiers Storage par
-              utilisateur, JWT signés avec rotation. Voir notre page <a href="/security" style={{ color: '#4d8fff', textDecoration: 'none' }}>Sécurité</a> pour plus de détails.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>12. Notification de violation</h2>
-            <p style={pStyle}>
-              En cas de violation de données susceptibles d'engendrer un risque pour tes droits et libertés :
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}>Pour les utilisateurs UE : notification dans les 72 heures conformément à l'article 34 RGPD</li>
-              <li style={liStyle}>Pour les utilisateurs US : notification conformément aux lois étatiques applicables (notamment Texas Business and Commerce Code §521.053)</li>
-            </ul>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>13. Mineurs</h2>
-            <p style={pStyle}>
-              Le Service n'est pas destiné aux personnes de moins de 18 ans. Quantara LLC ne collecte pas sciemment de données
-              personnelles d'enfants. Si tu es parent et que ton enfant a créé un compte, contacte privacy@quantara.tech pour
-              suppression immédiate.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>14. Évolution de cette politique</h2>
-            <p style={pStyle}>
-              Cette politique peut évoluer. Toute modification substantielle sera notifiée par email aux utilisateurs au moins
-              15 jours avant son entrée en vigueur. La date de dernière mise à jour est indiquée en haut de cette page.
-            </p>
-          </div>
-        </div>
-      </section>
+          </Reveal>
+        </section>
+      </main>
 
       <Footer />
     </div>

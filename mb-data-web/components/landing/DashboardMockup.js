@@ -1,341 +1,341 @@
-'use client'
-// DashboardMockup — vue complète du tableau de bord Quantara comme dans l'app.
-// Contient : sidebar nav + topbar + grille de stats + table de comptes propfirm.
-// Données mockées mais réalistes (toutes les firms, montants crédibles).
-//
-// Utilisé wrapped dans Tilted3DFrame pour la présentation 3D inclinée.
-
-import { useEffect, useState } from 'react'
+// DashboardMockup — réplique fidèle de la page /app (vue tableau de bord).
+// Structure réelle observée dans app/app/page.js :
+//   eyebrow "TABLEAU DE BORD" + "Bonjour Trader 👋" + (currency/search/+PropFirm)
+//   5 stats cards (PropFirms / Total dépensé / Total payouts / Résultat net / Payouts)
+//   firms-grid (cards 340px) : logo + nom + comptes/payouts + Net + ROI + 3 mini stats
+//                              + liste 3 comptes actifs (pastille + nom + badge + net)
+//                              + badges statuts + bouton 🎓 Diplômes
+// Données 100% fictives (pas de nom personnel).
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  sidebar: 'rgba(20,23,32,0.8)',
-  border: 'rgba(255,255,255,0.07)',
-  borderHover: 'rgba(45,111,255,0.35)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#5a6275',
-  blue: '#2d6fff',
+  surface:   'rgba(20,23,32,0.65)',
+  surface2:  'rgba(28,32,48,0.7)',
+  border:    'rgba(255,255,255,0.07)',
+  text:      '#f0ede8',
+  text2:     '#9098b0',
+  text3:     '#5a6275',
+  blue:      '#2d6fff',
   blueLight: '#4d8fff',
-  green: '#10b981',
-  red: '#ef4444',
-  amber: '#fac775',
+  green:     '#1db87a',
+  red:       '#e8504a',
+  amber:     '#fac775',
 }
-
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-const accounts = [
-  { firm: 'Topstep',    plan: '50K Combine',  balance: 52340, profit: 2340, dd: 1250, ddMax: 2000, status: 'OK', statusColor: C.green },
-  { firm: 'Apex',       plan: '100K Eval',    balance: 103820, profit: 3820, dd: 2400, ddMax: 3000, status: 'OK', statusColor: C.green },
-  { firm: 'Lucid',      plan: '50K Eval',     balance: 49660, profit: -340, dd: 1900, ddMax: 2000, status: 'ATTENTION', statusColor: C.amber },
-  { firm: 'MFFU',       plan: '150K PA',      balance: 156210, profit: 6210, dd: 4200, ddMax: 5000, status: 'FUNDED', statusColor: C.blueLight },
-  { firm: 'Tradeify',   plan: '100K Eval',    balance: 100890, profit: 890, dd: 2800, ddMax: 3000, status: 'OK', statusColor: C.green },
+// Helper : pastille colorée pour status compte
+const STATUS_COLORS = {
+  'Financé':   C.green,
+  'Challenge': C.amber,
+  'Échoué':    C.red,
+}
+
+// === Firmes mockées (fictives mais réalistes) ===
+const FIRMS = [
+  {
+    name: 'Topstep',
+    logoColor: '#e8504a',
+    accountsCount: 3,
+    payoutsCount: 2,
+    net: 1840,
+    roi: 92,
+    spent: 198,
+    payouts: 2038,
+    activeCount: 2,
+    accounts: [
+      { name: 'PRO 1', status: 'Financé',   net: 980 },
+      { name: 'PRO 2', status: 'Financé',   net: 860 },
+      { name: 'Combine 50K', status: 'Challenge', net: 0 },
+    ],
+    badges: [{ label: '2 Financés', color: C.green }, { label: '1 Challenge', color: C.amber }],
+  },
+  {
+    name: 'Apex',
+    logoColor: '#2d6fff',
+    accountsCount: 4,
+    payoutsCount: 3,
+    net: 2870,
+    roi: 145,
+    spent: 348,
+    payouts: 3218,
+    activeCount: 2,
+    accounts: [
+      { name: 'PA-389226-04', status: 'Financé', net: 1450 },
+      { name: 'PA-389226-03', status: 'Financé', net: 1420 },
+      { name: 'PA-389226-02', status: 'Échoué',  net: -245 },
+    ],
+    badges: [{ label: '2 Financés', color: C.green }, { label: '2 Échoués', color: C.red }],
+  },
+  {
+    name: 'Lucid',
+    logoColor: '#fac775',
+    accountsCount: 2,
+    payoutsCount: 1,
+    net: 1008,
+    roi: 78,
+    spent: 287,
+    payouts: 1295,
+    activeCount: 1,
+    accounts: [
+      { name: 'PRO 7',   status: 'Financé',  net: 1008 },
+      { name: 'EVAL 17', status: 'Échoué',   net: -210, liquidated: true },
+    ],
+    badges: [{ label: '1 Financé', color: C.green }, { label: '1 Échoué', color: C.red }],
+  },
 ]
 
-const navItems = [
-  { icon: '◫', label: 'Dashboard', active: true },
-  { icon: '☰', label: 'Journal' },
-  { icon: '◳', label: 'Calendrier' },
-  { icon: '◐', label: 'Equity' },
-  { icon: '◉', label: 'Payouts' },
-  { icon: '◊', label: 'PropFirms' },
-  { icon: '◬', label: 'Alertes' },
-  { icon: '◇', label: 'Paramètres' },
-]
+function fmtMoney(n) {
+  return (n >= 0 ? '+' : '-') + '$' + Math.abs(n).toLocaleString('en-US')
+}
 
-export default function DashboardMockup() {
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0)
-  const totalProfit = accounts.reduce((s, a) => s + a.profit, 0)
-  const fundedCount = accounts.filter(a => a.status === 'FUNDED').length
-  const okCount = accounts.filter(a => a.status === 'OK').length
+function StatusBadge({ status }) {
+  const color = STATUS_COLORS[status] || C.text3
+  return (
+    <span style={{
+      display: 'inline-block', fontSize: 9, fontWeight: 600,
+      padding: '1px 6px', borderRadius: 99,
+      background: status === 'Financé' ? 'rgba(29,184,122,0.12)'
+        : status === 'Challenge' ? 'rgba(250,199,117,0.12)'
+        : 'rgba(232,80,74,0.12)',
+      color, letterSpacing: '0.3px',
+    }}>{status}</span>
+  )
+}
 
+function FirmLogo({ color, letter }) {
   return (
     <div style={{
-      background: C.bg,
-      color: C.text,
-      display: 'grid',
-      gridTemplateColumns: '180px 1fr',
-      minHeight: 480,
-      maxHeight: 540,
-      fontFamily: 'inherit',
+      width: 36, height: 36, borderRadius: 8,
+      background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 14, fontWeight: 800, color: '#fff',
+      flexShrink: 0, letterSpacing: '-0.02em',
+    }}>{letter}</div>
+  )
+}
+
+export default function DashboardMockup() {
+  return (
+    <div style={{
+      background: '#0a0c10',
+      padding: '24px 26px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      color: C.text, minHeight: 540,
     }}>
-      {/* === SIDEBAR === */}
-      <aside style={{
-        background: C.sidebar,
-        borderRight: `1px solid ${C.border}`,
-        padding: '20px 12px',
-        display: 'flex',
-        flexDirection: 'column',
+      {/* Header — exactement comme /app dashboard */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        marginBottom: 24, gap: 16, flexWrap: 'wrap',
       }}>
-        {/* Brand */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '0 6px 20px',
-          borderBottom: `1px solid ${C.border}`,
-          marginBottom: 14,
-        }}>
+        <div>
           <div style={{
-            width: 26, height: 26, borderRadius: 6,
-            background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 800, color: '#fff',
-          }}>Q</div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.05em' }}>
-              QUANTARA
-            </div>
-            <div style={{ fontSize: 8, color: C.text3, fontFamily: mono, letterSpacing: '0.1em' }}>
-              BETA
-            </div>
+            fontSize: 10, color: C.blueLight,
+            letterSpacing: '0.16em', textTransform: 'uppercase',
+            fontWeight: 600, marginBottom: 8,
+          }}>Tableau de bord</div>
+          <h1 style={{
+            fontSize: 22, fontWeight: 700, margin: 0,
+            letterSpacing: '-0.025em', lineHeight: 1.1,
+          }}>Bonjour Trader 👋</h1>
+          <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
+            Taux EUR/USD : 1.0823 · MàJ il y a 2 min
           </div>
         </div>
-
-        {/* Nav */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {navItems.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 10px',
-                borderRadius: 6,
-                fontSize: 12,
-                color: item.active ? C.text : C.text2,
-                background: item.active ? 'rgba(45,111,255,0.12)' : 'transparent',
-                borderLeft: `2px solid ${item.active ? C.blue : 'transparent'}`,
-                fontWeight: item.active ? 600 : 400,
-              }}
-            >
-              <span style={{
-                fontSize: 11,
-                color: item.active ? C.blueLight : C.text3,
-                width: 14, textAlign: 'center',
-              }}>{item.icon}</span>
-              {item.label}
-            </div>
-          ))}
-        </nav>
-
-        {/* User avatar bottom */}
-        <div style={{
-          marginTop: 'auto',
-          padding: '10px',
-          background: C.surface,
-          borderRadius: 6,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          border: `1px solid ${C.border}`,
-        }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Currency toggle */}
           <div style={{
-            width: 24, height: 24, borderRadius: '50%',
-            background: `linear-gradient(135deg, ${C.blue}, ${C.green})`,
-          }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: 10, fontWeight: 600, color: C.text,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              omar@quantara.tech
-            </div>
-            <div style={{
-              fontSize: 8, color: C.text3, fontFamily: mono, letterSpacing: '0.08em',
-            }}>
-              PRO PLAN
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* === MAIN CONTENT === */}
-      <main style={{ padding: '14px 18px', overflow: 'hidden' }}>
-        {/* Topbar */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
-              Bonjour Omar 👋
-            </div>
-            <div style={{ fontSize: 10, color: C.text3, fontFamily: mono, marginTop: 2 }}>
-              {accounts.length} comptes actifs · sync il y a 2s
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={topBtn}>+ Trade</button>
-            <button style={{ ...topBtn, background: C.blue, color: '#fff', border: 'none' }}>
-              + Compte
-            </button>
-          </div>
-        </div>
-
-        {/* Stats grid (4 KPIs) */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 8,
-          marginBottom: 12,
-        }}>
-          {[
-            { label: 'BALANCE TOTALE', value: `$${totalBalance.toLocaleString('en-US')}`, color: C.text, trend: '+2.4%', trendColor: C.green },
-            { label: 'PNL JOUR', value: `+$${totalProfit.toLocaleString('en-US')}`, color: C.green, trend: '+1.8%', trendColor: C.green },
-            { label: 'COMPTES FUNDED', value: fundedCount, color: C.blueLight, trend: `${fundedCount}/5`, trendColor: C.text2 },
-            { label: 'STATUS GLOBAL', value: 'OK', color: C.green, trend: `${okCount + fundedCount}/${accounts.length} OK`, trendColor: C.text2 },
-          ].map((s, i) => (
-            <div key={i} style={{
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              padding: '10px 12px',
-            }}>
-              <div style={{
-                fontSize: 8, color: C.text3, fontFamily: mono,
-                letterSpacing: '0.1em', marginBottom: 4,
-              }}>
-                {s.label}
-              </div>
-              <div style={{
-                fontSize: 16, fontWeight: 700, color: s.color,
-                fontFamily: mono, letterSpacing: '-0.02em',
-              }}>
-                {s.value}
-              </div>
-              <div style={{
-                fontSize: 9, color: s.trendColor, fontFamily: mono,
-                letterSpacing: '0.05em', marginTop: 2,
-              }}>
-                {s.trend}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Table des comptes */}
-        <div style={{
-          background: C.surface,
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}>
-          {/* Table header */}
-          <div style={{
-            padding: '10px 14px',
-            borderBottom: `1px solid ${C.border}`,
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: 6, overflow: 'hidden',
+            background: 'rgba(255,255,255,0.02)',
           }}>
-            <div style={{ fontSize: 12, fontWeight: 600 }}>Mes comptes PropFirm</div>
-            <div style={{
-              fontSize: 9, color: C.text3, fontFamily: mono,
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}>
-              <span style={{
-                width: 6, height: 6, borderRadius: '50%', background: C.green,
-              }} />
-              LIVE
-            </div>
+            <span style={{
+              padding: '5px 11px', fontSize: 10,
+              background: C.blue, color: '#fff', fontWeight: 600, letterSpacing: '0.05em',
+            }}>USD</span>
+            <span style={{
+              padding: '5px 11px', fontSize: 10,
+              color: C.text2, fontWeight: 600, letterSpacing: '0.05em',
+            }}>EUR</span>
           </div>
-
-          {/* Column headers */}
+          {/* Search input */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '90px 95px 110px 1fr 100px 70px',
-            gap: 10,
-            padding: '8px 14px',
-            background: C.surface2,
-            fontSize: 9, color: C.text3, fontFamily: mono,
-            letterSpacing: '0.08em',
-            borderBottom: `1px solid ${C.border}`,
-          }}>
-            <div>FIRM</div>
-            <div>PLAN</div>
-            <div>BALANCE</div>
-            <div>DRAWDOWN</div>
-            <div>STATUS</div>
-            <div style={{ textAlign: 'right' }}>ACTIONS</div>
-          </div>
-
-          {/* Rows */}
-          {accounts.map((a, i) => (
-            <div key={i} style={{
-              display: 'grid',
-              gridTemplateColumns: '90px 95px 110px 1fr 100px 70px',
-              gap: 10,
-              padding: '12px 14px',
-              borderBottom: i === accounts.length - 1 ? 'none' : `1px solid ${C.border}`,
-              fontSize: 11,
-              fontFamily: mono,
-              alignItems: 'center',
-            }}>
-              <div style={{ fontWeight: 700, letterSpacing: '0.02em' }}>{a.firm}</div>
-              <div style={{ color: C.text2 }}>{a.plan}</div>
-              <div style={{
-                color: a.profit >= 0 ? C.green : C.red,
-                fontWeight: 600,
-              }}>
-                ${a.balance.toLocaleString('en-US')}
-              </div>
-              <div>
-                <div style={{
-                  fontSize: 9, color: C.text3, marginBottom: 3,
-                  display: 'flex', justifyContent: 'space-between',
-                }}>
-                  <span>${a.dd}</span><span>${a.ddMax}</span>
-                </div>
-                <div style={{
-                  height: 4, background: 'rgba(255,255,255,0.06)',
-                  borderRadius: 2, overflow: 'hidden',
-                }}>
-                  <div style={{
-                    width: `${(a.dd / a.ddMax) * 100}%`,
-                    height: '100%',
-                    background: a.dd / a.ddMax > 0.85 ? C.red : a.dd / a.ddMax > 0.6 ? C.amber : C.green,
-                  }} />
-                </div>
-              </div>
-              <div style={{
-                fontSize: 9, fontWeight: 600, color: a.statusColor,
-                letterSpacing: '0.1em',
-                padding: '3px 8px',
-                background: `${a.statusColor}15`,
-                border: `1px solid ${a.statusColor}40`,
-                borderRadius: 4,
-                display: 'inline-flex',
-                alignItems: 'center', gap: 4,
-                width: 'fit-content',
-              }}>
-                <span style={{
-                  width: 4, height: 4, borderRadius: '50%', background: a.statusColor,
-                }} />
-                {a.status}
-              </div>
-              <div style={{
-                textAlign: 'right',
-                color: C.text3, fontSize: 14,
-              }}>···</div>
-            </div>
-          ))}
+            padding: '5px 10px', fontSize: 10, width: 130,
+            background: 'rgba(255,255,255,0.025)',
+            border: '0.5px solid rgba(255,255,255,0.10)',
+            borderRadius: 6, color: C.text3,
+          }}>🔍 Rechercher...</div>
+          {/* Primary CTA */}
+          <span style={{
+            padding: '6px 12px', fontSize: 10, fontWeight: 500,
+            background: C.text, color: '#0a0c10', borderRadius: 6,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
+          }}>+ Ajouter PropFirm</span>
         </div>
-      </main>
+      </div>
+
+      {/* 5 stats cards — exactement comme /app */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: 10, marginBottom: 22,
+      }}>
+        <StatCard label="PropFirms" value="3 · 9 comptes" small />
+        <StatCard label="Total dépensé" value="833 $" color={C.red} />
+        <StatCard label="Total payouts" value="6,551 $" color={C.green} />
+        <StatCard label="Résultat net" value="+5,718 $" color={C.green} />
+        <StatCard label="Payouts" value="6" />
+      </div>
+
+      {/* Firms grid — 3 cards en row */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 12,
+      }}>
+        {FIRMS.map(f => (
+          <FirmCard key={f.name} firm={f} />
+        ))}
+      </div>
     </div>
   )
 }
 
-const topBtn = {
-  padding: '6px 12px',
-  background: 'transparent',
-  border: `1px solid rgba(255,255,255,0.13)`,
-  borderRadius: 6,
-  fontSize: 11,
-  fontWeight: 500,
-  color: C.text,
-  cursor: 'pointer',
+function StatCard({ label, value, color, small }) {
+  return (
+    <div style={{
+      padding: '12px 13px',
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 8,
+      boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset',
+    }}>
+      <div style={{
+        fontSize: 9, color: C.text3,
+        textTransform: 'uppercase', letterSpacing: '0.12em',
+        marginBottom: 8, fontWeight: 600,
+      }}>{label}</div>
+      <div style={{
+        fontSize: small ? 12 : 17, fontWeight: 700,
+        color: color || C.text, letterSpacing: '-0.015em',
+      }}>{value}</div>
+    </div>
+  )
+}
+
+function FirmCard({ firm }) {
+  return (
+    <div style={{
+      padding: 14,
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 10,
+      boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)',
+    }}>
+      {/* Header firm : logo + nom + accounts/payouts | net + ROI */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+          <FirmLogo color={firm.logoColor} letter={firm.name[0]} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '-0.005em' }}>
+              {firm.name}
+            </div>
+            <div style={{ fontSize: 9, color: C.text3, marginTop: 2 }}>
+              {firm.accountsCount} comptes · {firm.payoutsCount} payouts
+            </div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{
+            fontSize: 14, fontWeight: 700,
+            color: firm.net >= 0 ? C.green : C.red,
+            letterSpacing: '-0.015em', fontFamily: mono,
+          }}>{fmtMoney(firm.net)}</div>
+          <div style={{ fontSize: 9, color: C.text3, marginTop: 2 }}>
+            ROI {firm.roi >= 0 ? '+' : ''}{firm.roi}%
+          </div>
+        </div>
+      </div>
+
+      {/* 3 mini stats : Dépensé / Payouts / Actifs */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 6, marginBottom: 10,
+      }}>
+        {[
+          { l: 'Dépensé', v: '$' + firm.spent, c: C.red },
+          { l: 'Payouts', v: '$' + firm.payouts, c: C.green },
+          { l: 'Actifs',  v: firm.activeCount },
+        ].map((s, i) => (
+          <div key={i} style={{
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.04)',
+            borderRadius: 6, padding: '7px 6px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontSize: 8, color: C.text3,
+              textTransform: 'uppercase', letterSpacing: '0.1em',
+              marginBottom: 3, fontWeight: 600,
+            }}>{s.l}</div>
+            <div style={{
+              fontSize: 11, fontWeight: 700,
+              color: s.c || C.text, fontFamily: mono,
+            }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* List of accounts */}
+      {firm.accounts.slice(0, 3).map((a, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '5px 0',
+          borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+          fontSize: 10.5,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: STATUS_COLORS[a.status] || C.text3, flexShrink: 0,
+            }} />
+            <span style={{
+              color: C.text2, fontWeight: 500, fontSize: 10,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              fontFamily: mono,
+            }}>{a.name}</span>
+            <StatusBadge status={a.status} />
+            {a.liquidated && <span style={{ fontSize: 9 }}>🔥</span>}
+          </div>
+          <span style={{
+            fontWeight: 600, fontSize: 10,
+            color: a.net >= 0 ? C.green : C.red, fontFamily: mono,
+          }}>{fmtMoney(a.net)}</span>
+        </div>
+      ))}
+
+      {/* Bottom badges + diplômes button */}
+      <div style={{
+        display: 'flex', gap: 5, marginTop: 10,
+        flexWrap: 'wrap', alignItems: 'center',
+      }}>
+        {firm.badges.map((b, i) => (
+          <span key={i} style={{
+            fontSize: 8, fontWeight: 600,
+            padding: '2px 6px', borderRadius: 99,
+            background: `${b.color}1f`, color: b.color,
+            letterSpacing: '0.3px',
+          }}>{b.label}</span>
+        ))}
+        <span style={{
+          marginLeft: 'auto', fontSize: 9, padding: '2px 7px',
+          borderRadius: 99,
+          background: 'rgba(45,111,255,0.10)',
+          border: '1px solid rgba(45,111,255,0.30)',
+          color: C.blueLight, fontWeight: 600,
+        }}>🎓 Diplômes</span>
+      </div>
+    </div>
+  )
 }

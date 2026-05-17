@@ -67,13 +67,26 @@ export default function Tilted3DFrame({
       ref={ref}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
+      className="t3d-wrapper"
       style={{
         perspective: '2200px',
         perspectiveOrigin: '50% 50%',
         padding: '40px 0',
+        // Sur mobile, on neutralise le tilt 3D pour que le mockup soit lisible plein écran.
       }}
     >
+      {/* Sur mobile : on désactive le tilt 3D (impossible à apprécier sur petit écran)
+          et on permet au mockup d'utiliser toute la largeur disponible avec scroll-x si besoin */}
+      <style>{`
+        @media (max-width: 768px) {
+          .t3d-wrapper { padding: 16px 0 !important; perspective: none !important; }
+          .t3d-tilt { transform: none !important; border-radius: 10px !important; }
+          .t3d-content { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+          .t3d-content > * { min-width: 640px; }
+        }
+      `}</style>
       <div
+        className="t3d-tilt"
         style={{
           transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
           transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -138,8 +151,8 @@ export default function Tilted3DFrame({
           <div style={{ width: 54 }} />
         </div>
 
-        {/* Contenu de la page produit */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Contenu de la page produit (sur mobile : permet scroll-x interne sans casser le layout) */}
+        <div className="t3d-content" style={{ position: 'relative', zIndex: 1 }}>
           {children}
         </div>
       </div>

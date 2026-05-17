@@ -1,131 +1,185 @@
 import PageHeader from '../../../components/PageHeader'
 import Footer from '../../../components/Footer'
+import Reveal from '../../../components/Reveal'
 
 export const metadata = {
   title: 'Mentions Légales — Quantara',
-  description: 'Mentions légales de Quantara LLC — éditeur du service quantara.tech.',
+  description: 'Mentions légales de Quantara LLC, Texas. Hébergement Vercel + Supabase EU. Contact, propriétaire, identification du site.',
 }
 
 const C = {
   bg: '#0d0f14',
   surface: '#141720',
+  surface2: '#1c2030',
   border: 'rgba(255,255,255,0.07)',
+  border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8',
   text2: '#9098b0',
   text3: '#565e78',
+  blue: '#2d6fff',
+  blueLight: '#4d8fff',
+  green: '#1db87a',
 }
 
-const card = {
-  background: '#141720',
-  border: '1px solid rgba(255,255,255,0.07)',
-  borderRadius: 12,
-  padding: 22,
-  marginBottom: 16,
-}
-const labelStyle = {
-  fontSize: 11, fontWeight: 700, color: C.text3,
-  textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6,
-}
-const valueStyle = { fontSize: 14, color: C.text2, lineHeight: 1.6 }
+const BLOCS = [
+  {
+    title: 'Éditeur du site',
+    rows: [
+      ['Raison sociale', 'Quantara LLC'],
+      ['Forme juridique', 'Limited Liability Company (LLC)'],
+      ['Juridiction', 'État du Texas, États-Unis'],
+      ['Adresse', '(siège enregistré au Texas — communiqué sur demande à contact@quantara.tech)'],
+      ['Représentant légal', 'Omar Bakkali, Founder'],
+      ['Email contact', 'contact@quantara.tech'],
+      ['Email sécurité', 'security@quantara.tech'],
+    ],
+  },
+  {
+    title: 'Hébergement',
+    rows: [
+      ['Frontend', 'Vercel Inc. — 340 S Lemon Ave #4133, Walnut, CA 91789, USA — vercel.com'],
+      ['Région edge', 'Frankfurt, Allemagne (cdg1/fra1)'],
+      ['Base de données', 'Supabase Inc. — 970 Toa Payoh North #07-04, Singapour — supabase.com'],
+      ['Région DB', 'EU Central (Frankfurt, Allemagne)'],
+      ['Anti-bot', 'Cloudflare Inc. (Turnstile) — 101 Townsend St, San Francisco, CA 94107, USA'],
+    ],
+  },
+  {
+    title: 'Propriété intellectuelle',
+    rows: [
+      ['Marque', 'Quantara™ — usage par Quantara LLC'],
+      ['Code source', 'Propriétaire — Quantara LLC. Tous droits réservés.'],
+      ['Données utilisateur', 'Propriété des utilisateurs respectifs (voir CGU)'],
+      ['Logos PropFirms', 'Marques de leurs propriétaires respectifs (Topstep®, Apex®, Lucid Trading®, etc.). Utilisés à titre informatif uniquement.'],
+    ],
+  },
+  {
+    title: 'Activité',
+    rows: [
+      ['Nature', 'Service SaaS de journal de trading et d\'analyse pour traders sur comptes PropFirm'],
+      ['Statut financier', 'Quantara N\'EST PAS un conseiller financier régulé. Pas de PSI, pas d\'AMF, pas de SEC.'],
+      ['Statut', 'Outil informatique — pas de produit financier proposé.'],
+    ],
+  },
+]
 
 export default function ImprintPage() {
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader />
 
-      <section style={{ padding: '60px 24px 80px' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 10 }}>LÉGAL</div>
-            <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: 10 }}>
+      <main style={{ flex: 1 }}>
+        {/* HERO */}
+        <section style={{ padding: '80px 24px 40px', textAlign: 'center', maxWidth: 720, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 18 }}>
+              Légal
+            </div>
+            <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', margin: 0, marginBottom: 14 }}>
               Mentions Légales
             </h1>
-            <div style={{ fontSize: 12, color: C.text3 }}>
-              Conformes aux exigences EU (LCEN, art. 6) et US (Section 5 FTC Act)
-            </div>
-          </div>
+            <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6 }}>
+              Informations légales de Quantara LLC · Mise à jour mai 2026
+            </p>
+          </Reveal>
+        </section>
 
-          {/* Éditeur */}
-          <div style={card}>
-            <div style={labelStyle}>Éditeur du Service</div>
-            <div style={valueStyle}>
-              <strong style={{ color: C.text }}>Quantara LLC</strong><br />
-              Limited Liability Company, immatriculée au Registre du Commerce de l'État du Texas, États-Unis<br />
-              EIN : <em>[à compléter après obtention auprès de l'IRS]</em><br />
-              Adresse du siège (registered agent) : <em>[à compléter — typiquement adresse du registered agent au Texas]</em>
-            </div>
-          </div>
-
-          {/* Contacts */}
-          <div style={card}>
-            <div style={labelStyle}>Contacts</div>
-            <div style={valueStyle}>
-              <div style={{ marginBottom: 6 }}>
-                <strong style={{ color: C.text }}>Contact général</strong> :{' '}
-                <a href="mailto:contact@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>contact@quantara.tech</a>
+        {/* BLOCS */}
+        <section style={{ padding: '0 24px 60px', maxWidth: 820, margin: '0 auto' }}>
+          {BLOCS.map((bloc, i) => (
+            <Reveal key={i}>
+              <div style={{
+                marginBottom: 18,
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  padding: '14px 22px',
+                  background: 'rgba(255,255,255,0.025)',
+                  borderBottom: `1px solid ${C.border}`,
+                }}>
+                  <h2 style={{
+                    fontSize: 14, fontWeight: 700,
+                    color: C.blueLight, margin: 0,
+                    letterSpacing: '0.04em', textTransform: 'uppercase',
+                    fontFamily: 'ui-monospace, monospace',
+                  }}>
+                    {bloc.title}
+                  </h2>
+                </div>
+                <div>
+                  {bloc.rows.map((r, j) => (
+                    <div key={j} style={{
+                      padding: '12px 22px',
+                      borderTop: j > 0 ? `1px solid ${C.border}` : 'none',
+                      display: 'grid',
+                      gridTemplateColumns: '180px 1fr',
+                      gap: 16, alignItems: 'baseline',
+                      fontSize: 13,
+                    }}>
+                      <span style={{
+                        color: C.text3, fontFamily: 'ui-monospace, monospace',
+                        fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em',
+                      }}>{r[0]}</span>
+                      <span style={{ color: C.text, lineHeight: 1.6 }}>{r[1]}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ marginBottom: 6 }}>
-                <strong style={{ color: C.text }}>Privacy / RGPD</strong> :{' '}
-                <a href="mailto:privacy@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>privacy@quantara.tech</a>
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <strong style={{ color: C.text }}>Sécurité (responsible disclosure)</strong> :{' '}
-                <a href="mailto:security@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>security@quantara.tech</a>
-              </div>
-              <div>
-                <strong style={{ color: C.text }}>Légal</strong> :{' '}
-                <a href="mailto:legal@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>legal@quantara.tech</a>
-              </div>
-            </div>
-          </div>
+            </Reveal>
+          ))}
+        </section>
 
-          {/* Directeur de publication */}
-          <div style={card}>
-            <div style={labelStyle}>Directeur de la publication</div>
-            <div style={valueStyle}>
-              Le Managing Member de Quantara LLC<br />
-              <em>[à compléter avec ton nom une fois la LLC formée]</em>
+        {/* DROIT À L'IMAGE */}
+        <section style={{ padding: '20px 24px 40px', maxWidth: 820, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{
+              padding: '20px 24px',
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+            }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0, marginBottom: 10, letterSpacing: '-0.01em' }}>
+                Droit applicable
+              </h2>
+              <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.7, margin: 0 }}>
+                Le présent site est régi par le droit de l'État du Texas, États-Unis, sous réserve des dispositions impératives applicables aux consommateurs résidant dans l'Union Européenne (notamment le RGPD pour la protection des données personnelles). Pour les utilisateurs EU, les juridictions compétentes restent celles du pays de résidence du consommateur pour les litiges relatifs à la protection des données.
+              </p>
             </div>
-          </div>
+          </Reveal>
+        </section>
 
-          {/* Hébergement */}
-          <div style={card}>
-            <div style={labelStyle}>Hébergement</div>
-            <div style={valueStyle}>
-              <strong style={{ color: C.text }}>Frontend</strong> : Vercel Inc.<br />
-              440 N Barranca Ave #4133, Covina, CA 91723, USA<br />
-              Régions : Frankfurt (DE) / Paris (FR)<br /><br />
-
-              <strong style={{ color: C.text }}>Base de données + Storage</strong> : Supabase Inc.<br />
-              970 Toa Payoh North #07-04, Singapore 318992<br />
-              Région : Frankfurt (DE)
+        {/* MARQUE PROPFIRMS */}
+        <section style={{ padding: '20px 24px 40px', maxWidth: 820, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{
+              padding: '18px 22px',
+              background: 'rgba(45,111,255,0.04)',
+              border: '1px solid rgba(45,111,255,0.20)',
+              borderRadius: 10,
+              fontSize: 12, color: C.text2, lineHeight: 1.7,
+            }}>
+              <strong style={{ color: C.blueLight }}>Indépendance vis-à-vis des PropFirms :</strong> Quantara LLC est un éditeur de logiciel indépendant. Quantara n'est ni partenaire officiel, ni affilié, ni sponsorisé par Topstep, Apex Trader Funding, Lucid Trading, Bulenox, Tradeify, My Funded Futures, Take Profit Trader, Phidias Propfirm, Funded Futures Network, FuturesElite, ou toute autre PropFirm mentionnée sur le site. Les marques citées appartiennent à leurs propriétaires respectifs.
             </div>
-          </div>
+          </Reveal>
+        </section>
 
-          {/* Marques */}
-          <div style={card}>
-            <div style={labelStyle}>Marques & Propriété intellectuelle</div>
-            <div style={valueStyle}>
-              « Quantara » et le logo Quantara sont des marques déposées (ou en cours de dépôt) de Quantara LLC.
-              <br /><br />
-              Les marques tierces mentionnées (Topstep®, Apex Trader Funding®, Lucid Trading®, Bulenox®, Tradeify®,
-              Take Profit Trader®, My Funded Futures®, Phidias Propfirm®, Funded Futures Network®, FuturesElite®, etc.)
-              appartiennent à leurs propriétaires respectifs et sont citées à des fins informatives uniquement.
-              Quantara LLC n'est affilié à aucune de ces sociétés.
-            </div>
-          </div>
-
-          {/* Médiation */}
-          <div style={card}>
-            <div style={labelStyle}>Médiation à la consommation (UE)</div>
-            <div style={valueStyle}>
-              Conformément à la directive 2013/11/UE, les utilisateurs résidents de l'Union Européenne peuvent recourir
-              à la plateforme de Règlement en Ligne des Litiges (ODR) de la Commission Européenne :{' '}
-              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" style={{ color: '#4d8fff', textDecoration: 'none' }}>ec.europa.eu/consumers/odr</a>
-            </div>
-          </div>
-        </div>
-      </section>
+        {/* CONTACT */}
+        <section style={{ padding: '20px 24px 80px', maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+          <Reveal>
+            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, marginBottom: 12, letterSpacing: '-0.015em' }}>
+              Une question ?
+            </h2>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 18 }}>
+              Contact général : <a href="mailto:contact@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none' }}>contact@quantara.tech</a>
+              <br />
+              Sécurité / faille : <a href="mailto:security@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none' }}>security@quantara.tech</a>
+            </p>
+          </Reveal>
+        </section>
+      </main>
 
       <Footer />
     </div>

@@ -170,7 +170,7 @@ export default function ImportLabPage() {
   // Render principal
   // ==========================================================================
   return (
-    <div style={{
+    <div className="il-root" style={{
       minHeight: '100vh',
       background: T.color.bg,
       color: T.color.text,
@@ -178,6 +178,20 @@ export default function ImportLabPage() {
       fontFamily: T.font.sans,
     }}>
       <UIStyles />
+      {/* Styles responsive spécifiques à import-lab */}
+      <style>{`
+        @media (max-width: 768px) {
+          .il-root { padding: 18px 12px !important; }
+          .il-tabs { flex-direction: column !important; width: 100% !important; }
+          .il-tabs button { width: 100% !important; text-align: left !important; }
+          .il-kv-grid { grid-template-columns: 1fr !important; }
+          .il-form-row { flex-direction: column !important; align-items: stretch !important; }
+          .il-form-row > div { width: 100% !important; min-width: 0 !important; }
+          .il-mode-chips { flex-wrap: wrap !important; }
+          .il-mode-chips button { flex: 1 1 auto !important; min-width: 100px !important; }
+          .il-acc-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+        }
+      `}</style>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <PageHeader
           eyebrow="IMPORT · BETA"
@@ -196,12 +210,13 @@ export default function ImportLabPage() {
         />
 
         {/* === Tabs === */}
-        <div style={{
+        <div className="il-tabs" style={{
           display: 'flex', gap: 4, marginBottom: 24,
           padding: 4, background: T.color.surface2,
           borderRadius: T.radius.lg,
           border: `1px solid ${T.color.border}`,
           width: 'fit-content',
+          maxWidth: '100%',
         }}>
           <TabBtn active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>
             1️⃣ État des comptes (Dashboard)
@@ -1048,7 +1063,7 @@ function DashboardAccountCard({ account, mapping, existingAccounts, existingFirm
             <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, fontFamily: T.font.mono }}>
               Détails Rithmic
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, fontFamily: T.font.mono }}>
+            <div className="il-kv-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, fontFamily: T.font.mono }}>
               <KV k="Currency" v={account.currency} />
               <KV k="Auto Liquidate" v={account.autoLiquidate ? '✓ Enabled' : '✗ Disabled'} />
               <KV k="Net Position" v={account.netPosition === 0 ? 'Flat' : `${account.netPosition}`} />
@@ -1116,7 +1131,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
           <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: T.font.mono }}>
             Action sur ce compte
           </div>
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div className="il-mode-chips" style={{ display: 'flex', gap: 4 }}>
             <ModeChip active={mode === 'existing'} onClick={() => {
               onChangeMapping({ ...mapping, mode: 'existing', accountId: mapping.accountId || null })
             }} color={T.color.blueLight}>↻ Lier à existant</ModeChip>
@@ -1198,7 +1213,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             </div>
 
             {/* Ligne 1 : Nom + Plan + Status auto */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="il-form-row" style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <MicroLabel>Nom (auto-renommé)</MicroLabel>
                 <input type="text" placeholder="PRO 7"
@@ -1247,7 +1262,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               }}>
                 {account?.type === 'FUNDED' ? 'Achat du challenge initial' : 'Achat du challenge'}
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1, minWidth: 140 }}>
                   <MicroLabel>Date d'achat</MicroLabel>
                   <input type="date"
@@ -1280,7 +1295,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                 }}>
                   Passage en compte financé
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                   <div style={{ flex: 1, minWidth: 140 }}>
                     <MicroLabel>Date passage financé</MicroLabel>
                     <input type="date"
@@ -1385,7 +1400,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
       {mapping.mode === 'create' && (
         <div style={{ marginTop: 12 }}>
           {/* Ligne 1 : Nom + Plan size + Status auto-détecté */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="il-form-row" style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <MicroLabel>Nom du compte (auto-renommé)</MicroLabel>
               <input
@@ -1438,7 +1453,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             }}>
               {account.type === 'FUNDED' ? 'Achat du challenge initial' : 'Achat du challenge'}
             </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ flex: 1, minWidth: 140 }}>
                 <MicroLabel>Date d'achat</MicroLabel>
                 <input
@@ -1476,7 +1491,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               }}>
                 Passage en compte financé
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1, minWidth: 140 }}>
                   <MicroLabel>Date passage financé</MicroLabel>
                   <input

@@ -24,6 +24,8 @@ import JournalMockup from '../components/landing/JournalMockup'
 import EconomicCalendarMockup from '../components/landing/EconomicCalendarMockup'
 import EquityCurveDemo from '../components/landing/EquityCurveDemo'
 import NotificationMockup from '../components/landing/NotificationMockup'
+// SEO — JSON-LD Schema.org pour rich results Google + citations AI search
+import JsonLd, { LANDING_SCHEMAS } from '../components/JsonLd'
 
 // 3D stars — lazy-loaded côté client uniquement (Three.js ~600KB, on évite le SSR + on
 // retire ce poids du first paint pour ne pas dégrader le LCP).
@@ -160,6 +162,12 @@ export default function LandingPage() {
       overflowX: 'hidden',
       position: 'relative',
     }}>
+      {/* JSON-LD Schema.org : Organization + WebSite + SoftwareApplication + FAQPage.
+          Critique pour rich results Google + citations par AI search (ChatGPT/Claude/Perplexity). */}
+      {LANDING_SCHEMAS.map((schema, i) => (
+        <JsonLd key={i} data={schema} />
+      ))}
+
       {/* Polish layers — invisible mais cassent le côté "AI-default" */}
       <SmoothScrollProvider />
       <ScrollProgress />
@@ -316,9 +324,16 @@ export default function LandingPage() {
       </ProductSection>
 
       {/* === PAGE 4 : EQUITY CURVE === */}
-      <section style={{ padding: '60px 24px', position: 'relative' }}>
-        <EquityCurveDemo />
-      </section>
+      <ProductSection
+        label="EQUITY CURVE & DRAWDOWN LIVE"
+        labelColor={colors.green}
+        title="Vois ton compte vivre — balance + DD trailing en temps réel."
+        subtitle="Chaque compte a sa courbe avec la ligne de DD trailing (static, EOD ou intraday selon la firme). Tu sais exactement combien il te reste avant de sauter."
+      >
+        <Tilted3DFrame title="quantara.tech/app/equity" flip>
+          <EquityCurveDemo />
+        </Tilted3DFrame>
+      </ProductSection>
 
       {/* === PAGE 5 : NOTIFICATIONS PUSH === */}
       <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
