@@ -40,6 +40,9 @@ export default function ImportLabPage() {
 
   // ==========================================================================
   // Auth + chargement données
+  // Note : on filtre EXPLICITEMENT par user_id côté client, même si RLS le ferait
+  // déjà. Raison : les emails admin ont parfois une policy "see all" pour les
+  // pages /admin → on évite que ça leak dans /app/import-lab.
   // ==========================================================================
   useEffect(() => {
     let mounted = true
@@ -48,17 +51,17 @@ export default function ImportLabPage() {
       const u = session?.user || null
       setUser(u)
       setLoadingAuth(false)
-      // Tout user connecté peut charger SES données (RLS Supabase = isolation)
-      if (u) loadExisting()
+      if (u) loadExisting(u.id)
     })
 
-    async function loadExisting() {
+    async function loadExisting(userId) {
       setLoadingExisting(true)
       const [firmsRes, accountsRes] = await Promise.all([
-        supabase.from('firms').select('id, name, color').order('name'),
+        supabase.from('firms').select('id, name, color').eq('user_id', userId).order('name'),
         supabase
           .from('accounts')
-          .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at')
+          .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at, user_id')
+          .eq('user_id', userId)
           .order('buy_date', { ascending: false }),
       ])
       if (!mounted) return
@@ -72,11 +75,13 @@ export default function ImportLabPage() {
 
   // Réutilisable : déclenche un re-fetch après un import réussi
   async function refreshExisting() {
+    if (!user) return
     const [firmsRes, accountsRes] = await Promise.all([
-      supabase.from('firms').select('id, name, color').order('name'),
+      supabase.from('firms').select('id, name, color').eq('user_id', user.id).order('name'),
       supabase
         .from('accounts')
-        .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at')
+        .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at, user_id')
+        .eq('user_id', user.id)
         .order('buy_date', { ascending: false }),
     ])
     setExistingFirms(firmsRes.data || [])

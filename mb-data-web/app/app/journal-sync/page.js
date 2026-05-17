@@ -73,27 +73,32 @@ export default function JournalSyncPage() {
   const [filterDateTo, setFilterDateTo] = useState('')
 
   // === Auth ===
+  // Note : on filtre EXPLICITEMENT par user_id côté client. Les emails admin ont
+  // parfois une policy RLS "see all" pour /admin → on évite que ça leak ici.
   useEffect(() => {
     let mounted = true
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
-      setUser(session?.user || null)
+      const u = session?.user || null
+      setUser(u)
       setLoadingAuth(false)
-      if (session?.user) loadData()
+      if (u) loadData(u.id)
     })
 
-    async function loadData() {
+    async function loadData(userId) {
       setLoading(true)
       const [tradesRes, accountsRes] = await Promise.all([
         supabase
           .from('journal_entries')
-          .select('id, account_id, date, pnl, instrument, side, entry_price, exit_price, notes')
+          .select('id, account_id, date, pnl, instrument, side, entry_price, exit_price, notes, user_id')
+          .eq('user_id', userId)
           .like('notes', '%[rithmic:%')
           .order('date', { ascending: false })
           .limit(2000),
         supabase
           .from('accounts')
-          .select('id, name, plan_size, status, firm_id, rithmic_account_id, firms(name, color)'),
+          .select('id, name, plan_size, status, firm_id, rithmic_account_id, user_id, firms(name, color)')
+          .eq('user_id', userId),
       ])
       if (!mounted) return
       setTrades(tradesRes.data || [])
