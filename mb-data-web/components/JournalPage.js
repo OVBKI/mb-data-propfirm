@@ -467,7 +467,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   )
 }
 
-export default function JournalPage({ firms, user, getFirmLogo, showToast, onReload }){
+export default function JournalPage({ firms, user, getFirmLogo, showToast, onReload, hideRithmicEntries=false }){
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
@@ -517,14 +517,21 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
         setLoadError(error.message || 'Erreur chargement journal')
       }
     } else {
-      setEntries(data || [])
+      // Si hideRithmicEntries=true (mode journal manuel) : on exclut les entries dont
+      // les notes contiennent le marker [rithmic:ENTRY/EXIT] (= trades importés via CSV).
+      // Ces trades-là apparaissent uniquement dans /app/journal-sync.
+      const filtered = hideRithmicEntries
+        ? (data || []).filter(e => !e.notes || !e.notes.includes('[rithmic:'))
+        : (data || [])
+      setEntries(filtered)
     }
     setLoading(false)
   }
 
   useEffect(()=>{
     if(user?.id) loadEntries()
-  },[user?.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user?.id, hideRithmicEntries])
 
   // Décore les entries avec les infos firme/compte
   const decoratedEntries = useMemo(()=>{

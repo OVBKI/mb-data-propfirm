@@ -1072,7 +1072,19 @@ export default function Home() {
           )}
 
           {page==='journal'&&(
-            <JournalPage firms={firms} user={user} getFirmLogo={getFirmLogo} showToast={showToast} onReload={loadFirms} />
+            // Journal MANUEL : on filtre les comptes ayant un rithmic_account_id (= comptes synchronisés
+            // via CSV import qui apparaissent dans /app/journal-sync). Les firmes qui n'ont plus de comptes
+            // manuels après filtrage sont également exclues pour éviter de polluer le dropdown.
+            <JournalPage
+              firms={firms
+                .map(f=>({...f,accounts:(f.accounts||[]).filter(a=>!a.rithmic_account_id)}))
+                .filter(f=>(f.accounts||[]).length>0)}
+              user={user}
+              getFirmLogo={getFirmLogo}
+              showToast={showToast}
+              onReload={loadFirms}
+              hideRithmicEntries={true}
+            />
           )}
 
           {page==='calendar'&&(
