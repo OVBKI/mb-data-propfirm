@@ -19,6 +19,20 @@ import { parseRithmicPnL } from '../../../lib/importers/rithmic-pnl'
 import { parseRithmicDashboard } from '../../../lib/importers/rithmic-dashboard'
 import { T } from '../../../components/dashboard/theme'
 import { Card, Btn, Badge, PageHeader, Section, UIStyles } from '../../../components/dashboard/ui'
+import { defaultChallengePrice } from '../../../lib/constants'
+
+// Génère un nom propre depuis un Rithmic ID type LFF050-XXXXXX-PRO007 :
+//   PRO007 → "PRO 7"   (compte financé)
+//   TEST017 → "EVAL 17" (compte challenge)
+// Permet de coller à la convention de naming du screenshot user (PRO 7, PRO 6).
+function generateAccountName(rithmicId) {
+  if (!rithmicId) return ''
+  const match = rithmicId.match(/-(TEST|PRO)(\d+)$/i)
+  if (!match) return rithmicId.slice(-11)
+  const [, type, num] = match
+  const cleanNum = parseInt(num, 10)
+  return type.toUpperCase() === 'TEST' ? `EVAL ${cleanNum}` : `PRO ${cleanNum}`
+}
 
 // Page ouverte à tous les users connectés (BETA — utiliser avec précaution).
 // Le mode dry-run par défaut + la confirmation popup protègent contre les écritures
@@ -230,10 +244,22 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
           if (existing) {
             initialMapping[acc.rithmicId] = { mode: 'existing', accountId: existing.id }
           } else {
+            // === Défauts intelligents pour création ===
+            // Date par défaut : 1er trade détecté (sinon aujourd'hui)
+            const firstTradeDate = acc.trades[0]?.date || new Date().toISOString().slice(0, 10)
+            // Prix challenge suggéré depuis la table PROPFIRM_RULES (peut être null)
+            const suggestedPrice = acc.firm ? defaultChallengePrice(acc.firm, '50k') : null
             initialMapping[acc.rithmicId] = {
               mode: 'create',
-              newName: acc.rithmicId.slice(-11),
+              newName: generateAccountName(acc.rithmicId),
               planSize: '50k',
+              // Date d'achat du challenge (toujours demandée)
+              buyDate: firstTradeDate,
+              // Coût payé pour le challenge (suggéré depuis les règles firme)
+              challengeCost: suggestedPrice !== null ? String(suggestedPrice) : '',
+              // FUNDED uniquement : frais d'activation + date passage en financé
+              activationFee: '0',
+              fundedDate: acc.type === 'FUNDED' ? firstTradeDate : '',
             }
           }
         }
@@ -322,17 +348,21 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
           accountIdMap[acc.rithmicId] = m.accountId
           report.reusedAccounts++
         } else if (m.mode === 'create') {
+          // Utilise les valeurs saisies par l'user (avec fallbacks intelligents)
+          const fallbackDate = acc.trades[0]?.date || new Date().toISOString().slice(0, 10)
           const payload = {
             user_id: user.id,
             firm_id: lucidFirm.id,
-            buy_date: acc.trades[0]?.date || new Date().toISOString().slice(0, 10),
+            buy_date: m.buyDate || fallbackDate,
             currency: 'USD',
-            spent: 0,
-            name: m.newName || acc.rithmicId,
+            spent: Number(m.challengeCost) || 0,                        // coût du challenge
+            activation_fee: Number(m.activationFee) || 0,                // frais activation (FUNDED)
+            funded_date: acc.type === 'FUNDED' ? (m.fundedDate || null) : null, // date passage financé
+            name: m.newName || generateAccountName(acc.rithmicId),
             plan_size: m.planSize || '50k',
-            status: acc.type === 'FUNDED' ? 'Financé' : 'Challenge',
+            status: acc.type === 'FUNDED' ? 'Financé' : 'Challenge',     // auto-détecté
             dd_type: 'trailing',
-            rithmic_account_id: acc.rithmicId, // ← lien Rithmic
+            rithmic_account_id: acc.rithmicId,                           // lien Rithmic
             notes: `Importé depuis Rithmic le ${new Date().toLocaleDateString('fr-FR')}\nID Rithmic : ${acc.rithmicId}`,
           }
           if (!dryRun) {
@@ -591,7 +621,10 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
         }
         if (acc.liquidated && acc.triggerTime) {
           payload.liquidated_at = acc.triggerTime
-          payload.status = 'Liquidé'
+          // 'Échoué' = même chose que liquidé côté Quantara, on unifie les 2 statuts.
+          // La date/heure de liquidation reste stockée dans `liquidated_at` pour distinguer
+          // les comptes ratés challenge (sans liquidated_at) des comptes auto-liquidés (avec).
+          payload.status = 'Échoué'
           report.liquidated++
         }
 
@@ -949,7 +982,16 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
         value={mapping.mode === 'existing' ? mapping.accountId : '__create__'}
         onChange={(e) => {
           if (e.target.value === '__create__') {
-            onChangeMapping({ mode: 'create', newName: account.rithmicId.slice(-11), planSize: '50k' })
+            const firstTradeDate = account.trades?.[0]?.date || new Date().toISOString().slice(0, 10)
+            onChangeMapping({
+              mode: 'create',
+              newName: generateAccountName(account.rithmicId),
+              planSize: '50k',
+              buyDate: firstTradeDate,
+              challengeCost: '',
+              activationFee: '0',
+              fundedDate: account.type === 'FUNDED' ? firstTradeDate : '',
+            })
           } else {
             onChangeMapping({ mode: 'existing', accountId: e.target.value })
           }
@@ -967,28 +1009,136 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
       {loadingExisting && <LoadingNote />}
 
       {mapping.mode === 'create' && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            placeholder="Nom du compte"
-            value={mapping.newName || ''}
-            onChange={(e) => onChangeMapping({ ...mapping, newName: e.target.value })}
-            style={{ ...inputStyle(), flex: 1, minWidth: 200 }}
-          />
-          <select
-            value={mapping.planSize || '50k'}
-            onChange={(e) => onChangeMapping({ ...mapping, planSize: e.target.value })}
-            style={{ ...inputStyle(), width: 'auto' }}
-          >
-            <option value="25k" style={optionStyle}>25k</option>
-            <option value="50k" style={optionStyle}>50k</option>
-            <option value="100k" style={optionStyle}>100k</option>
-            <option value="150k" style={optionStyle}>150k</option>
-            <option value="250k" style={optionStyle}>250k</option>
-          </select>
+        <div style={{ marginTop: 12 }}>
+          {/* Ligne 1 : Nom + Plan size + Status auto-détecté */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <MicroLabel>Nom du compte (auto-renommé)</MicroLabel>
+              <input
+                type="text"
+                placeholder="PRO 7"
+                value={mapping.newName || ''}
+                onChange={(e) => onChangeMapping({ ...mapping, newName: e.target.value })}
+                style={inputStyle()}
+              />
+            </div>
+            <div>
+              <MicroLabel>Plan size</MicroLabel>
+              <select
+                value={mapping.planSize || '50k'}
+                onChange={(e) => onChangeMapping({ ...mapping, planSize: e.target.value })}
+                style={{ ...inputStyle(), width: 100 }}
+              >
+                <option value="25k" style={optionStyle}>25k</option>
+                <option value="50k" style={optionStyle}>50k</option>
+                <option value="100k" style={optionStyle}>100k</option>
+                <option value="150k" style={optionStyle}>150k</option>
+                <option value="250k" style={optionStyle}>250k</option>
+              </select>
+            </div>
+            <div>
+              <MicroLabel>Status (auto)</MicroLabel>
+              <div style={{
+                padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                background: account.type === 'FUNDED' ? 'rgba(16,185,129,0.12)' : 'rgba(250,199,117,0.12)',
+                border: `1px solid ${account.type === 'FUNDED' ? 'rgba(16,185,129,0.3)' : 'rgba(250,199,117,0.3)'}`,
+                color: account.type === 'FUNDED' ? T.color.green : T.color.amber,
+                borderRadius: T.radius.md, fontFamily: T.font.mono, letterSpacing: '0.05em',
+              }}>
+                {account.type === 'FUNDED' ? '💰 Financé' : '🎯 Challenge'}
+              </div>
+            </div>
+          </div>
+
+          {/* Ligne 2 : Achat challenge (TOUJOURS demandé) */}
+          <div style={{
+            padding: 12, marginTop: 8,
+            background: 'rgba(45,111,255,0.04)',
+            border: `1px solid rgba(45,111,255,0.18)`,
+            borderRadius: T.radius.md,
+          }}>
+            <div style={{
+              fontSize: 10, fontWeight: 600, color: T.color.blueLight,
+              textTransform: 'uppercase', letterSpacing: '0.1em',
+              marginBottom: 8, fontFamily: T.font.mono,
+            }}>
+              {account.type === 'FUNDED' ? 'Achat du challenge initial' : 'Achat du challenge'}
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <MicroLabel>Date d'achat</MicroLabel>
+                <input
+                  type="date"
+                  value={mapping.buyDate || ''}
+                  onChange={(e) => onChangeMapping({ ...mapping, buyDate: e.target.value })}
+                  style={inputStyle()}
+                />
+              </div>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <MicroLabel>Coût du challenge ($)</MicroLabel>
+                <input
+                  type="number" min="0" step="0.01"
+                  placeholder="165.00"
+                  value={mapping.challengeCost || ''}
+                  onChange={(e) => onChangeMapping({ ...mapping, challengeCost: e.target.value })}
+                  style={inputStyle()}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Ligne 3 : Activation + funded_date (FUNDED uniquement) */}
+          {account.type === 'FUNDED' && (
+            <div style={{
+              padding: 12, marginTop: 8,
+              background: 'rgba(16,185,129,0.04)',
+              border: `1px solid rgba(16,185,129,0.18)`,
+              borderRadius: T.radius.md,
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 600, color: T.color.green,
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+                marginBottom: 8, fontFamily: T.font.mono,
+              }}>
+                Passage en compte financé
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1, minWidth: 140 }}>
+                  <MicroLabel>Date passage financé</MicroLabel>
+                  <input
+                    type="date"
+                    value={mapping.fundedDate || ''}
+                    onChange={(e) => onChangeMapping({ ...mapping, fundedDate: e.target.value })}
+                    style={inputStyle()}
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 140 }}>
+                  <MicroLabel>Frais activation ($) — 0 si aucun</MicroLabel>
+                  <input
+                    type="number" min="0" step="0.01"
+                    placeholder="0"
+                    value={mapping.activationFee || ''}
+                    onChange={(e) => onChangeMapping({ ...mapping, activationFee: e.target.value })}
+                    style={inputStyle()}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
+  )
+}
+
+// Mini-label uniforme pour les champs de formulaire
+function MicroLabel({ children }) {
+  return (
+    <div style={{
+      fontSize: 9, fontWeight: 600, color: T.color.text3,
+      textTransform: 'uppercase', letterSpacing: '0.1em',
+      marginBottom: 4, fontFamily: T.font.mono,
+    }}>{children}</div>
   )
 }
 
