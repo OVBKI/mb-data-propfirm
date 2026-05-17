@@ -1,5 +1,6 @@
 import PageHeader from '../../../components/PageHeader'
 import Footer from '../../../components/Footer'
+import Reveal from '../../../components/Reveal'
 
 export const metadata = {
   title: 'Conditions Générales d\'Utilisation — Quantara',
@@ -9,197 +10,138 @@ export const metadata = {
 const C = {
   bg: '#0d0f14',
   surface: '#141720',
+  surface2: '#1c2030',
   border: 'rgba(255,255,255,0.07)',
+  border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8',
   text2: '#9098b0',
   text3: '#565e78',
+  blue: '#2d6fff',
+  blueLight: '#4d8fff',
+  green: '#1db87a',
+  amber: '#fac775',
+  red: '#e8504a',
 }
 
-const sectionStyle = { marginBottom: 28 }
-const h2Style = { fontSize: 17, fontWeight: 700, marginBottom: 10, color: C.text }
-const pStyle = { fontSize: 13.5, color: C.text2, lineHeight: 1.7, marginBottom: 10 }
-const liStyle = { fontSize: 13.5, color: C.text2, lineHeight: 1.7, marginBottom: 4 }
+// CGU — mai 2026, conformes pratique standard SaaS B2C
+// Quantara LLC est une LLC Texane (US). Droit applicable Texas + clause arbitrage standard.
+// Adaptable à un cabinet d'avocat plus tard pour version finale "investor-grade".
+const SECTIONS = [
+  {
+    title: '1. Objet du service',
+    body: `Quantara est un outil logiciel SaaS de journalisation et d'analyse de trading destiné aux traders sur les comptes PropFirm futures. Le service permet de tracker manuellement (ou via import CSV) ses comptes, trades, payouts et règles de drawdown. Quantara n'exécute aucun trade en votre nom, ne donne aucun conseil financier, et ne se substitue à aucune plateforme de trading.`,
+  },
+  {
+    title: '2. Inscription & compte utilisateur',
+    body: `L'accès au service nécessite la création d'un compte avec une adresse email valide et un mot de passe. Vous garantissez l'exactitude des informations fournies. Vous êtes seul(e) responsable de la confidentialité de vos identifiants. Tout accès non autorisé à votre compte doit être signalé à security@quantara.tech immédiatement. Un seul compte par personne physique est autorisé.`,
+  },
+  {
+    title: '3. Tarification — Beta gratuite',
+    body: `Pendant la phase beta (en cours mai 2026), le service est entièrement gratuit. Aucune carte bancaire requise. Quantara se réserve le droit d'introduire des tiers payants (plan Pro, plan Team) ultérieurement, avec un préavis email de 30 jours minimum aux utilisateurs concernés. Les fonctionnalités utilisées gratuitement pendant la beta resteront accessibles dans une formule "Free legacy" pour les utilisateurs déjà inscrits.`,
+  },
+  {
+    title: '4. Usage acceptable',
+    body: `Vous vous engagez à ne pas : (a) tenter d'accéder aux données d'autres utilisateurs, (b) utiliser des bots ou scrapers automatisés contre le service, (c) revendre ou redistribuer l'accès à votre compte, (d) utiliser le service pour des activités illégales (blanchiment, fraude, manipulation de marché). Toute violation entraîne suspension immédiate sans préavis ni remboursement.`,
+  },
+  {
+    title: '5. Données utilisateur & propriété',
+    body: `Vous restez propriétaire de toutes les données que vous saisissez ou importez (trades, comptes, notes, screenshots). Quantara possède une licence non-exclusive limitée pour stocker et traiter ces données dans le seul but de fournir le service. Vous pouvez à tout moment exporter (CSV) ou supprimer vos données. Aucune revente à des tiers.`,
+  },
+  {
+    title: '6. Avertissement financier ⚠',
+    body: `Quantara est un outil de journalisation, PAS un conseil financier ni d'investissement. Le trading de futures et de comptes PropFirm comporte des risques substantiels de perte de capital et n'est pas adapté à tous les investisseurs. Les performances passées affichées dans l'app ne préjugent pas des résultats futurs. Vous êtes seul(e) responsable de vos décisions de trading. Quantara LLC décline toute responsabilité pour les pertes financières subies suite à l'utilisation du service.`,
+    danger: true,
+  },
+  {
+    title: '7. Disponibilité du service',
+    body: `Le service est fourni "tel quel" ("as-is") sans garantie d'uptime spécifique pendant la beta. Quantara s'efforce d'atteindre 99.5% de disponibilité mensuelle (mesurée sur status.quantara.tech) mais ne garantit pas de SLA. Des maintenances planifiées peuvent entraîner des interruptions ponctuelles annoncées 24h à l'avance via la bannière in-app.`,
+  },
+  {
+    title: '8. Limitation de responsabilité',
+    body: `Dans les limites maximales permises par la loi applicable, la responsabilité totale cumulée de Quantara LLC vis-à-vis d'un utilisateur ne pourra excéder le montant total payé par cet utilisateur au cours des 12 derniers mois (donc actuellement 0$ en phase beta). Quantara n'est pas responsable des pertes indirectes, immatérielles, ou de la perte de données résultant d'une utilisation contraire aux présentes CGU.`,
+  },
+  {
+    title: '9. Résiliation',
+    body: `Vous pouvez supprimer votre compte à tout moment en envoyant un email à contact@quantara.tech. Toutes vos données seront supprimées définitivement sous 7 jours ouvrés (cascade Postgres ON DELETE). Quantara peut également suspendre ou supprimer un compte en cas de violation de l'article 4 (Usage acceptable), sans remboursement ni préavis.`,
+  },
+  {
+    title: '10. Modifications des CGU',
+    body: `Quantara peut modifier les présentes CGU à tout moment. Les modifications matérielles sont notifiées par email aux utilisateurs actifs au moins 30 jours avant entrée en vigueur. La poursuite de l'utilisation du service après la date d'effet vaut acceptation. Si vous refusez les nouvelles CGU, vous pouvez supprimer votre compte avant la date d'effet.`,
+  },
+  {
+    title: '11. Droit applicable & juridiction',
+    body: `Les présentes CGU sont régies par le droit du Texas, USA. Tout litige sera soumis exclusivement aux tribunaux compétents du Texas, sauf disposition légale impérative contraire (RGPD pour résidents EU notamment, qui permet la juridiction du pays de résidence du consommateur).`,
+  },
+  {
+    title: '12. Contact',
+    body: `Pour toute question concernant ces CGU, contactez contact@quantara.tech. Pour signaler un problème de sécurité : security@quantara.tech.`,
+  },
+]
 
 export default function CGUPage() {
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader />
 
-      <section style={{ padding: '60px 24px 80px' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <div style={{ marginBottom: 36 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 10 }}>LÉGAL</div>
-            <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: 10 }}>
+      <main style={{ flex: 1 }}>
+        {/* HERO */}
+        <section style={{ padding: '80px 24px 40px', textAlign: 'center', maxWidth: 720, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 18 }}>
+              Légal
+            </div>
+            <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', margin: 0, marginBottom: 14 }}>
               Conditions Générales d'Utilisation
             </h1>
-            <div style={{ fontSize: 12, color: C.text3 }}>
-              Dernière mise à jour : {new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+            <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6 }}>
+              Version 1.1 · Dernière mise à jour : mai 2026 · Régies par le droit du Texas, USA
+            </p>
+          </Reveal>
+        </section>
+
+        {/* SECTIONS */}
+        <section style={{ padding: '0 24px 60px', maxWidth: 820, margin: '0 auto' }}>
+          {SECTIONS.map((s, i) => (
+            <Reveal key={i}>
+              <div style={{
+                marginBottom: 16,
+                padding: '22px 26px',
+                background: s.danger ? 'rgba(232,80,74,0.04)' : C.surface,
+                border: `1px solid ${s.danger ? 'rgba(232,80,74,0.25)' : C.border}`,
+                borderRadius: 12,
+              }}>
+                <h2 style={{
+                  fontSize: 15, fontWeight: 700,
+                  color: s.danger ? C.red : C.text,
+                  margin: 0, marginBottom: 10, letterSpacing: '-0.01em',
+                }}>
+                  {s.title}
+                </h2>
+                <p style={{
+                  fontSize: 13, color: C.text2, lineHeight: 1.7, margin: 0,
+                }}>
+                  {s.body}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </section>
+
+        {/* Disclaimer rappel */}
+        <section style={{ padding: '20px 24px 80px', maxWidth: 820, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{
+              padding: '20px 24px',
+              background: 'rgba(250,199,117,0.06)',
+              border: '1px solid rgba(250,199,117,0.25)',
+              borderRadius: 12,
+              fontSize: 12, color: C.text3, lineHeight: 1.6,
+            }}>
+              <strong style={{ color: C.amber }}>⚠ Rappel important :</strong> Quantara est un outil de journalisation et d'analyse. Le trading de futures comporte des risques substantiels. Les performances passées ne préjugent pas des résultats futurs. Tradez avec un capital que vous pouvez vous permettre de perdre.
             </div>
-          </div>
-
-          <div style={{
-            padding: 14, marginBottom: 32,
-            background: 'rgba(250,199,117,0.07)', border: '1px solid rgba(250,199,117,0.25)',
-            borderRadius: 8, fontSize: 12.5, color: '#fac775', lineHeight: 1.6,
-          }}>
-            ⚠️ <strong>Templates de base.</strong> Pour exploitation commerciale à grande échelle, validation par un attorney spécialisé en droit du Texas recommandée.
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>1. Préambule</h2>
-            <p style={pStyle}>
-              Les présentes Conditions Générales d'Utilisation (« CGU ») régissent l'accès et l'utilisation du service Quantara
-              (« le Service »), un outil web de journalisation et d'analyse de performance pour traders de futures sur PropFirms,
-              édité et opéré par <strong>Quantara LLC</strong>, une Limited Liability Company constituée selon les lois de l'État du
-              Texas, États-Unis (EIN : <em>[à compléter après obtention]</em>, siège social : <em>[à compléter avec l'adresse du registered agent au Texas]</em>),
-              accessible à l'adresse quantara.tech et ses sous-domaines.
-            </p>
-            <p style={pStyle}>
-              En accédant au Service ou en créant un compte, l'utilisateur (« Utilisateur ») accepte sans réserve les présentes CGU.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>2. Description du Service</h2>
-            <p style={pStyle}>
-              Quantara fournit à ses Utilisateurs un outil de :
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}>Journalisation manuelle de trades (PnL, instrument, notes, screenshots)</li>
-              <li style={liStyle}>Suivi de comptes PropFirm (drawdown, profit target, payouts)</li>
-              <li style={liStyle}>Calcul automatique de métriques (consistency, ROI, jours validés)</li>
-              <li style={liStyle}>Affichage d'un calendrier économique tiers (Finnhub)</li>
-              <li style={liStyle}>Export CSV des données</li>
-            </ul>
-            <p style={pStyle}>
-              Quantara <strong>ne fournit aucun conseil financier, d'investissement ou de trading</strong>. Le Service est purement
-              informatif et organisationnel. Quantara LLC n'est ni un broker, ni un investment adviser au sens de la SEC,
-              ni une PropFirm.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>3. Création et gestion du compte</h2>
-            <p style={pStyle}>
-              L'inscription nécessite une adresse email valide et un mot de passe. L'Utilisateur s'engage à fournir des informations
-              exactes et à maintenir la confidentialité de ses identifiants. Quantara LLC ne peut être tenue responsable d'un accès
-              non autorisé résultant d'une négligence de l'Utilisateur.
-            </p>
-            <p style={pStyle}>
-              Quantara LLC se réserve le droit de suspendre ou supprimer un compte en cas de violation des présentes CGU,
-              d'usage frauduleux, ou d'inactivité prolongée (12 mois consécutifs).
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>4. Tarification</h2>
-            <p style={pStyle}>
-              Le Service est actuellement gratuit pendant la phase beta. Quantara LLC se réserve le droit d'introduire
-              ultérieurement des plans payants. Les paiements seraient traités via Stripe, Inc. (USA) en USD ou EUR.
-              Les Utilisateurs existants seront notifiés au moins 30 jours à l'avance et bénéficieront, dans la mesure du possible,
-              d'un accès continu aux fonctionnalités auxquelles ils ont souscrit gratuitement.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>5. Avertissement sur les risques de trading</h2>
-            <p style={pStyle}>
-              Le trading de futures est une activité hautement spéculative comportant des risques substantiels de perte
-              en capital. Les performances passées (affichées via le Service) ne préjugent pas des résultats futurs.
-            </p>
-            <p style={pStyle}>
-              <strong>L'Utilisateur reconnaît trader sous sa seule responsabilité.</strong> Quantara LLC ne saurait être tenue
-              responsable des pertes financières, des défaillances de PropFirms tierces, ou de toute conséquence résultant
-              de l'utilisation du Service.
-            </p>
-            <p style={pStyle}>
-              Conformément à la réglementation CFTC/NFA américaine : <em>« Trading futures involves substantial risk of loss
-              and is not suitable for all investors. Past performance is not indicative of future results. »</em>
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>6. Propriété intellectuelle</h2>
-            <p style={pStyle}>
-              Le Service, son code, son design, sa marque « Quantara » et ses contenus (hors données utilisateurs) sont la
-              propriété exclusive de Quantara LLC ou de ses concédants. Toute reproduction, copie, ou exploitation non autorisée
-              est interdite et constitue une violation de droit d'auteur sanctionnée par les lois fédérales américaines (17 U.S.C.).
-            </p>
-            <p style={pStyle}>
-              L'Utilisateur conserve la pleine propriété des données qu'il saisit (trades, notes, screenshots, certificats).
-              Il accorde à Quantara LLC une licence d'usage limitée à la stricte fourniture du Service.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>7. Disponibilité du service</h2>
-            <p style={pStyle}>
-              Quantara LLC s'efforce d'assurer une disponibilité maximale du Service mais ne garantit pas un fonctionnement
-              ininterrompu. Le Service est fourni « AS IS » et « AS AVAILABLE ». Des opérations de maintenance, mises à jour,
-              ou pannes techniques peuvent rendre le Service temporairement indisponible.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>8. Limitation de responsabilité</h2>
-            <p style={pStyle}>
-              Dans la limite maximale autorisée par la loi applicable, la responsabilité totale de Quantara LLC envers tout
-              Utilisateur ne pourra excéder cent (100) dollars USD ou le montant payé par l'Utilisateur au cours des
-              12 mois précédant l'événement déclencheur, le plus élevé des deux.
-            </p>
-            <p style={pStyle}>
-              Quantara LLC décline toute responsabilité quant aux dommages directs, indirects, accessoires, spéciaux,
-              consécutifs ou exemplaires résultant de l'utilisation ou de l'impossibilité d'utiliser le Service, y compris
-              perte de données, perte de profit, ou interruption d'activité.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>9. Indemnisation</h2>
-            <p style={pStyle}>
-              L'Utilisateur s'engage à indemniser et tenir Quantara LLC à l'écart de toute réclamation, dommage ou frais
-              (y compris frais juridiques raisonnables) résultant de sa violation des présentes CGU ou de son utilisation
-              illicite du Service.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>10. Modification des CGU</h2>
-            <p style={pStyle}>
-              Quantara LLC se réserve le droit de modifier les présentes CGU à tout moment. Les Utilisateurs seront notifiés
-              par email au moins 15 jours avant l'entrée en vigueur des modifications substantielles.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>11. Droit applicable et juridiction</h2>
-            <p style={pStyle}>
-              Les présentes CGU sont régies et interprétées conformément aux lois de l'<strong>État du Texas, États-Unis</strong>,
-              sans égard à ses principes de conflits de lois.
-            </p>
-            <p style={pStyle}>
-              Tout litige sera, à défaut de résolution amiable, soumis à la juridiction exclusive des tribunaux d'État et
-              fédéraux situés dans le comté de <em>[à compléter — typiquement le comté du registered agent au Texas]</em>,
-              Texas. L'Utilisateur renonce expressément à toute objection fondée sur le forum non conveniens.
-            </p>
-            <p style={pStyle}>
-              <strong>Class action waiver :</strong> Tout litige sera résolu de manière individuelle. L'Utilisateur renonce à
-              participer à toute action de groupe, action collective ou procédure consolidée contre Quantara LLC.
-            </p>
-          </div>
-
-          <div style={sectionStyle}>
-            <h2 style={h2Style}>12. Contact</h2>
-            <p style={pStyle}>
-              Pour toute question relative aux présentes CGU :
-            </p>
-            <ul style={{ paddingLeft: 22, margin: '0 0 10px' }}>
-              <li style={liStyle}>Email : <a href="mailto:legal@quantara.tech" style={{ color: '#4d8fff', textDecoration: 'none' }}>legal@quantara.tech</a></li>
-              <li style={liStyle}>Adresse postale : Quantara LLC, <em>[adresse du registered agent au Texas]</em></li>
-            </ul>
-          </div>
-        </div>
-      </section>
+          </Reveal>
+        </section>
+      </main>
 
       <Footer />
     </div>

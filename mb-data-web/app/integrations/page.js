@@ -2,11 +2,10 @@ import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import Reveal from '../../components/Reveal'
 import { getFirmLogo } from '../../lib/firmLogos'
-import { PROPFIRM_RULES } from '../../lib/constants'
 
 export const metadata = {
   title: 'PropFirms supportées — Quantara',
-  description: 'Topstep, Apex Trader Funding, Lucid Trading, Bulenox, Tradeify, MFFU, Phidias, FFN, FuturesElite — toutes les firmes futures supportées par Quantara.',
+  description: '10 PropFirms futures supportées : Topstep, Apex, Lucid, Bulenox, Tradeify, MFFU, Phidias, FFN, FuturesElite, TPT. Import CSV Rithmic actif. API broker en développement.',
 }
 
 const C = {
@@ -24,206 +23,191 @@ const C = {
   amber: '#fac775',
 }
 
-// PropFirms : on prend la liste depuis PROPFIRM_RULES + on ajoute le statut intégration
+// PropFirms — statut sync RÉEL.
+//   'csv-rithmic' = supportée via import CSV Rithmic (Performance + Trader Dashboard)
+//   'csv-soon'    = import CSV non implémenté pour ce format spécifique
+//   'manual'      = saisie manuelle uniquement pour l'instant
+// Toutes sont utilisables en saisie manuelle ; on indique juste si l'import auto est dispo.
 const FIRMS = [
-  { name: 'Topstep',                color: '#ff8c42', status: 'live',   apiVendor: 'TopstepX (ProjectX)' },
-  { name: 'Apex Trader Funding',    color: '#a78bfa', status: 'pending', apiVendor: 'Rithmic / Tradovate' },
-  { name: 'Bulenox',                color: '#e8504a', status: 'pending', apiVendor: 'Rithmic' },
-  { name: 'Lucid Trading',          color: '#4d8fff', status: 'pending', apiVendor: 'Rithmic / Tradovate / NinjaTrader' },
-  { name: 'Tradeify',               color: '#1db87a', status: 'live',   apiVendor: 'Tradeify (ProjectX)' },
-  { name: 'Take Profit Trader',     color: '#fac775', status: 'live',   apiVendor: 'TPT (ProjectX)' },
-  { name: 'My Funded Futures',      color: '#fb923c', status: 'live',   apiVendor: 'MFFU (ProjectX)' },
-  { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'pending', apiVendor: 'Rithmic' },
-  { name: 'Funded Futures Network', color: '#a86bff', status: 'pending', apiVendor: 'Rithmic / Tradovate' },
-  { name: 'FuturesELites',          color: '#f472b6', status: 'pending', apiVendor: 'Rithmic' },
+  { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'Apex Trader Funding',    color: '#a78bfa', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic R|Trader Pro' },
+  { name: 'Bulenox',                color: '#e8504a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
+  { name: 'Lucid Trading',          color: '#4d8fff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Import CSV Rithmic — testé en prod' },
+  { name: 'Tradeify',               color: '#1db87a', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'Take Profit Trader',     color: '#fac775', status: 'manual',       apiVendor: 'TPT (ProjectX)',              note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'My Funded Futures',      color: '#fb923c', status: 'manual',       apiVendor: 'MFFU (ProjectX)',             note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
+  { name: 'Funded Futures Network', color: '#a86bff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic' },
+  { name: 'FuturesElite',           color: '#f472b6', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
 ]
 
 const PLATFORMS = [
-  { name: 'NinjaTrader', desc: 'Plateforme phare pour futures, supportée par toutes les PropFirms majeures.' },
-  { name: 'Tradovate',   desc: 'Web-based, ergonomique. Compatible Apex, Lucid, FFN, Bulenox.' },
-  { name: 'Rithmic',     desc: 'Flux de marché professionnel ultra rapide, utilisé par la plupart des firmes.' },
+  { name: 'NinjaTrader', desc: 'Plateforme phare pour futures, supportée par toutes les PropFirms majeures. Saisie manuelle.' },
+  { name: 'Tradovate',   desc: 'Web-based, ergonomique. Compatible Apex, Lucid, FFN, Bulenox. Saisie manuelle pour l\'instant.' },
+  { name: 'Rithmic',     desc: 'Flux de marché professionnel. ✓ Import CSV actif (Performance + Trader Dashboard).' },
   { name: 'CQG',         desc: 'Alternative à Rithmic, supportée par TPT, MFFU, et certains plans Topstep.' },
   { name: 'TradingView', desc: 'Charts pour analyse technique, accès via certaines firmes (Tradeify, TPT...).' },
-  { name: 'ProjectX',    desc: 'API moderne unifiée — Topstep, Tradeify, TPT, MFFU, TradeDay, UProfit.' },
-  { name: 'R|Trader Pro',desc: 'Plateforme Rithmic native, populaire pour le scalping bas-latence.' },
+  { name: 'ProjectX',    desc: 'API moderne unifiée Topstep, Tradeify, TPT, MFFU. Intégration en cours de développement.' },
+  { name: 'R|Trader Pro',desc: 'Plateforme Rithmic native, populaire pour le scalping bas-latence. ✓ Import CSV.' },
   { name: 'Quantower',   desc: 'Plateforme multi-actifs, supportée par TPT et certaines autres firmes.' },
 ]
 
-const StatusBadge = ({ status }) => {
-  if(status === 'live') return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
-      background: 'rgba(29,184,122,0.15)', color: C.green,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.green, boxShadow: `0 0 6px ${C.green}` }} />
-      ✓ Tracking actif
-    </span>
-  )
+function StatusBadge({ status }) {
+  const config = {
+    'csv-rithmic': { label: '✓ Import CSV Rithmic actif', color: C.green, bg: 'rgba(29,184,122,0.10)', border: 'rgba(29,184,122,0.35)' },
+    'manual':      { label: '⏳ API en roadmap',           color: C.amber, bg: 'rgba(250,199,117,0.10)', border: 'rgba(250,199,117,0.35)' },
+    'csv-soon':    { label: '⏳ Import CSV bientôt',       color: C.text3, bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.10)' },
+  }
+  const s = config[status] || config.manual
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
-      background: 'rgba(250,199,117,0.12)', color: C.amber,
-    }}>
-      ⏳ API bientôt disponible
-    </span>
+      display: 'inline-block', padding: '4px 10px',
+      fontSize: 10, fontWeight: 600,
+      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
+      borderRadius: 6, letterSpacing: '0.04em',
+    }}>{s.label}</span>
   )
 }
 
 export default function IntegrationsPage() {
-  const liveCount    = FIRMS.filter(f => f.status === 'live').length
-  const pendingCount = FIRMS.filter(f => f.status === 'pending').length
+  const csvCount = FIRMS.filter(f => f.status === 'csv-rithmic').length
+  const manualCount = FIRMS.filter(f => f.status === 'manual').length
 
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader active="integrations" />
 
-      {/* Hero */}
-      <section style={{ position: 'relative', overflow: 'hidden' }}>
-        <div className="lp-halo-animated" style={{
-          position: 'absolute', inset: 0,
-          background: `radial-gradient(ellipse 70% 50% at 50% 0%, rgba(45,111,255,0.15), transparent 60%)`,
-          pointerEvents: 'none',
-        }} />
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '72px 24px 40px', textAlign: 'center', position: 'relative' }}>
-          <div style={{
-            fontSize: 11, color: C.blueLight, letterSpacing: '0.16em',
-            marginBottom: 20, textTransform: 'uppercase', fontWeight: 600,
-          }}>
-            Intégrations
-          </div>
-          <h1 className="lp-h1" style={{
-            fontSize: 'clamp(32px, 5.5vw, 52px)', fontWeight: 700, lineHeight: 1.05,
-            marginBottom: 16, letterSpacing: '-0.025em',
-          }}>
-            <span className="lp-gradient-text">{FIRMS.length} PropFirms</span> supportées,<br />
-            8 plateformes compatibles
-          </h1>
-          <p style={{
-            fontSize: 16, color: C.text2,
-            maxWidth: 640, margin: '0 auto 24px', lineHeight: 1.5,
-          }}>
-            Saisis tes trades manuellement dès aujourd'hui sur n'importe quelle PropFirm.
-            Le tracking automatique via API arrive progressivement, firme par firme.
-          </p>
-          <div style={{ display: 'inline-flex', gap: 16, alignItems: 'center', fontSize: 13, color: C.text3 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green }} />
-              {liveCount} live
-            </span>
-            <span>·</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.amber }} />
-              {pendingCount} en attente d'API
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* PropFirms grid */}
-      <section style={{ padding: '40px 24px 80px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <main style={{ flex: 1 }}>
+        {/* HERO */}
+        <section style={{ padding: '80px 24px 60px', textAlign: 'center', maxWidth: 880, margin: '0 auto' }}>
           <Reveal>
-            <div style={{ marginBottom: 32 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.blueLight, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>PROPFIRMS</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700 }}>Toutes les firmes que tu peux suivre</h2>
-              <p style={{ fontSize: 14, color: C.text2, marginTop: 6 }}>
-                Chaque firme a ses règles pré-configurées (drawdowns, profit targets, payouts, contrats max).
-                Pas besoin de retenir tout par cœur.
-              </p>
+            <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 18 }}>
+              Intégrations
+            </div>
+            <h1 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', margin: 0, marginBottom: 18 }}>
+              <span style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.green})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>10 PropFirms</span> supportées,<br />
+              <span style={{ color: C.text }}>4 via import CSV automatique</span>
+            </h1>
+            <p style={{ fontSize: 16, color: C.text2, lineHeight: 1.6, maxWidth: 640, margin: '0 auto' }}>
+              Toutes les PropFirms futures populaires fonctionnent en <strong style={{ color: C.text }}>saisie manuelle</strong>.
+              Les firmes qui utilisent Rithmic supportent en plus <strong style={{ color: C.green }}>l'import CSV automatique</strong> (Performance Statement + Trader Dashboard).
+              L'intégration API directe (ProjectX/TopstepX) arrive Q3 2026.
+            </p>
+            <div style={{ marginTop: 26, display: 'inline-flex', gap: 18, fontSize: 12, color: C.text3, letterSpacing: '0.04em', fontFamily: 'ui-monospace, monospace' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.green, boxShadow: `0 0 6px ${C.green}` }} />
+                {csvCount} import CSV actif
+              </span>
+              <span style={{ color: C.text3 }}>·</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.amber }} />
+                {manualCount} saisie manuelle (API en cours)
+              </span>
             </div>
           </Reveal>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16,
-          }}>
-            {FIRMS.map((firm, i) => {
-              const plans = PROPFIRM_RULES[firm.name]?.plans || []
-              return (
-                <Reveal key={firm.name} delay={i * 50}>
-                  <div className="dp-card" style={{
-                    background: C.surface, border: `1px solid ${C.border}`,
-                    borderRadius: 12, padding: 18,
-                    height: '100%', display: 'flex', flexDirection: 'column', gap: 10,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {getFirmLogo(firm.name, firm.color, 44)}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{firm.name}</div>
-                        <div style={{ fontSize: 10, color: C.text3, marginTop: 2 }}>{firm.apiVendor}</div>
-                      </div>
-                    </div>
-                    {plans.length > 0 && (
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {plans.map(p => (
-                          <span key={p} style={{
-                            fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
-                            background: C.surface2, color: C.text2,
-                          }}>{p.toUpperCase()}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ marginTop: 'auto', paddingTop: 8 }}>
-                      <StatusBadge status={firm.status} />
+        </section>
+
+        {/* PROPFIRMS GRID */}
+        <section style={{ padding: '0 24px 60px', maxWidth: 1200, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
+                PropFirms
+              </div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6, letterSpacing: '-0.015em' }}>
+                Toutes les firmes que tu peux suivre
+              </h2>
+              <p style={{ fontSize: 13, color: C.text3, margin: 0 }}>
+                Chaque firme a ses règles pré-configurées (drawdowns, profit targets, payouts, contrats max). Pas besoin de retenir tout par cœur.
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: 14,
+            }}>
+              {FIRMS.map(firm => (
+                <div key={firm.name} style={{
+                  padding: 18,
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  display: 'flex', flexDirection: 'column', gap: 10,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {getFirmLogo(firm.name, firm.color, 32)}
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>{firm.name}</div>
+                      <div style={{ fontSize: 10, color: C.text3, marginTop: 2 }}>{firm.apiVendor}</div>
                     </div>
                   </div>
-                </Reveal>
-              )
-            })}
-          </div>
-        </div>
-      </section>
 
-      {/* Plateformes */}
-      <section style={{ padding: '60px 24px', background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <Reveal>
-            <div style={{ marginBottom: 32 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>PLATEFORMES</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700 }}>Compatibles avec ton setup actuel</h2>
-              <p style={{ fontSize: 14, color: C.text2, marginTop: 6, maxWidth: 640 }}>
-                Quantara fonctionne en saisie manuelle (CSV, drag & drop) avec n'importe quelle plateforme.
-                L'intégration directe via API est en cours de développement pour ces 8 plateformes.
-              </p>
+                  <StatusBadge status={firm.status} />
+
+                  <div style={{ fontSize: 11, color: C.text2, lineHeight: 1.5 }}>
+                    {firm.note}
+                  </div>
+                </div>
+              ))}
             </div>
           </Reveal>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14,
-          }}>
-            {PLATFORMS.map((p, i) => (
-              <Reveal key={p.name} delay={i * 40}>
-                <div style={{
-                  background: C.bg, border: `1px solid ${C.border}`,
-                  borderRadius: 10, padding: 16,
+        </section>
+
+        {/* PLATEFORMES */}
+        <section style={{ padding: '40px 24px 80px', maxWidth: 1200, margin: '0 auto', borderTop: `1px solid ${C.border}` }}>
+          <Reveal>
+            <div style={{ marginBottom: 28, paddingTop: 40 }}>
+              <div style={{ fontSize: 11, color: C.green, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
+                Plateformes
+              </div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6, letterSpacing: '-0.015em' }}>
+                Compatibles avec ton setup actuel
+              </h2>
+              <p style={{ fontSize: 13, color: C.text3, margin: 0, maxWidth: 700 }}>
+                Quantara fonctionne en saisie manuelle avec n'importe quelle plateforme. L'import CSV automatique est dispo pour Rithmic.
+                L'intégration API directe arrive Q3 2026 pour ProjectX (TopstepX/Tradeify/TPT/MFFU).
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 14,
+            }}>
+              {PLATFORMS.map(p => (
+                <div key={p.name} style={{
+                  padding: 18,
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
                 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{p.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, letterSpacing: '-0.01em' }}>{p.name}</div>
                   <div style={{ fontSize: 12, color: C.text2, lineHeight: 1.5 }}>{p.desc}</div>
                 </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+              ))}
+            </div>
+          </Reveal>
+        </section>
 
-      {/* CTA */}
-      <section style={{ padding: '60px 24px' }}>
-        <Reveal style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 700, marginBottom: 12 }}>
-            Ta firme n'est pas listée ?
-          </h2>
-          <p style={{ fontSize: 14, color: C.text2, marginBottom: 24, lineHeight: 1.5 }}>
-            Quantara fonctionne avec toutes les PropFirms en mode saisie manuelle. Tu peux ajouter une PropFirm
-            personnalisée depuis le dashboard et configurer ses règles toi-même.
-          </p>
-          <a href="mailto:contact@quantara.tech?subject=Demande%20d'ajout%20PropFirm" style={{
-            display: 'inline-block', padding: '12px 28px',
-            fontSize: 14, fontWeight: 600, borderRadius: 99,
-            background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,
-            color: '#fff', textDecoration: 'none',
-            boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
-          }}>Suggérer une PropFirm</a>
-        </Reveal>
-      </section>
+        {/* CTA "ta firme n'est pas listée" */}
+        <section style={{ padding: '40px 24px 80px', maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+          <Reveal>
+            <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, marginBottom: 12, letterSpacing: '-0.015em' }}>
+              Ta firme n'est pas listée ?
+            </h2>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 20 }}>
+              Quantara fonctionne avec toutes les PropFirms en mode saisie manuelle. Tu peux ajouter une PropFirm personnalisée depuis le dashboard et configurer ses règles toi-même.
+            </p>
+            <a href="mailto:contact@quantara.tech?subject=Suggestion%20PropFirm" style={{
+              display: 'inline-block', padding: '11px 24px',
+              fontSize: 13, fontWeight: 500, borderRadius: 8,
+              background: C.blue, color: '#fff', textDecoration: 'none',
+              boxShadow: '0 4px 12px rgba(45,111,255,0.3)',
+            }}>Suggérer une PropFirm</a>
+          </Reveal>
+        </section>
+      </main>
 
       <Footer />
     </div>

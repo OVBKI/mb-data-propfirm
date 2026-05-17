@@ -4,7 +4,7 @@ import Reveal from '../../components/Reveal'
 
 export const metadata = {
   title: 'Sécurité — Quantara',
-  description: 'Comment Quantara protège tes données de trading : chiffrement TLS, RLS Supabase, hébergement EU, RGPD, contact responsible disclosure.',
+  description: 'Comment Quantara protège tes données : RLS Postgres, hébergement EU, captcha Turnstile, JWT Supabase, zéro accès broker.',
 }
 
 const C = {
@@ -22,173 +22,206 @@ const C = {
   amber: '#fac775',
 }
 
+// Sections sécurité — basées sur l'architecture réelle (Supabase + RLS + Turnstile + import CSV)
 const SECTIONS = [
   {
-    icon: '🔐',
-    title: 'Chiffrement de bout en bout',
+    title: 'Architecture',
+    icon: '◫',
+    color: C.blueLight,
     items: [
-      { label: 'TLS 1.3', desc: 'Toutes les communications entre ton navigateur et nos serveurs sont chiffrées en TLS 1.3 (HSTS forcé sur quantara.tech).' },
-      { label: 'Données au repos', desc: 'PostgreSQL Supabase chiffre les données en AES-256 au repos. Les snapshots de backup sont également chiffrés.' },
-      { label: 'Mots de passe', desc: 'Tes credentials Quantara sont hashés via bcrypt côté Supabase. On ne stocke jamais le mot de passe en clair, même temporairement.' },
+      { label: 'Frontend', value: 'Next.js 14 App Router · React 18 · hébergé sur Vercel (Frankfurt EU)' },
+      { label: 'Backend & DB', value: 'Supabase (Postgres 15) · région Frankfurt EU · backups automatiques quotidiens' },
+      { label: 'Auth', value: 'Supabase Auth · JWT signés HS256 · tokens dans localStorage/sessionStorage (au choix user via toggle "Rester connecté")' },
+      { label: 'CDN', value: 'Vercel Edge Network · TLS 1.3 obligatoire · HSTS activé' },
     ],
   },
   {
-    icon: '🛡️',
-    title: 'Isolation des données par utilisateur',
+    title: 'Isolation des données',
+    icon: '◐',
+    color: C.green,
     items: [
-      { label: 'Row Level Security (RLS)', desc: 'Toutes les tables (firms, accounts, payouts, journal_entries, certificates) sont protégées par des policies PostgreSQL qui empêchent un utilisateur d\'accéder aux données d\'un autre, même via SQL injection.' },
-      { label: 'JWT signés', desc: 'L\'authentification utilise des JWT signés HMAC-SHA256 avec rotation auto. Aucune session n\'est partagée entre utilisateurs.' },
-      { label: 'Buckets Storage', desc: 'Les screenshots de trades et les diplômes sont stockés dans des dossiers nommés `userId/...`. Les RLS policies du Storage empêchent un user de supprimer/modifier les fichiers d\'un autre.' },
+      { label: 'Row Level Security (RLS)', value: 'Chaque table Postgres (firms, accounts, payouts, journal_entries, profiles) a une policy RLS qui force auth.uid() = user_id sur lecture ET écriture. Un user ne peut JAMAIS voir/modifier les données d\'un autre.' },
+      { label: 'Defensive client filtering', value: 'En plus de RLS, chaque query côté client ajoute un filtre .eq(\'user_id\', userId) explicite. Ceinture + bretelles.' },
+      { label: 'Cascade delete', value: 'Suppression d\'un compte ou d\'un user → cascade automatique sur toutes les data liées (trades, payouts). Conservation 0 jour après suppression.' },
+      { label: 'Pas de service_role côté client', value: 'La clé service_role (bypass RLS) reste UNIQUEMENT côté serveur dans les endpoints /api/admin. Le client utilise toujours la clé anon (RLS forced).' },
     ],
   },
   {
-    icon: '🔑',
-    title: 'API keys brokers — gestion sensible',
+    title: 'Protection contre les bots',
+    icon: '△',
+    color: C.amber,
     items: [
-      { label: 'Aucun mot de passe broker stocké', desc: 'Pour l\'intégration ProjectX (Topstep, TPT, MFFU, Tradeify), Quantara utilise des API keys génériques côté Supabase Edge Functions, jamais des username/password broker.' },
-      { label: 'Tokens jetables', desc: 'Les sessions broker sont des access tokens à durée de vie courte (1h-24h). Ils sont stockés en mémoire serveur uniquement, jamais persistés en DB.' },
-      { label: 'HTTPS forcé', desc: 'Tous les appels API broker passent par notre proxy Vercel en HTTPS. Aucune communication en clair.' },
+      { label: 'Cloudflare Turnstile', value: 'Captcha invisible sur signup ET login. Bloque ~99% du trafic bot sans friction utilisateur.' },
+      { label: 'Honeypot', value: 'Champ invisible piégé dans le formulaire d\'inscription. Si rempli (= bot), inscription rejetée silencieusement.' },
+      { label: 'Rate limiting Supabase', value: 'Supabase limite les tentatives d\'auth (5 req/min par IP par défaut) pour bloquer le brute force.' },
     ],
   },
   {
-    icon: '🇪🇺',
-    title: 'Hébergement & conformité',
+    title: 'Aucun accès broker',
+    icon: '◇',
+    color: C.blueLight,
     items: [
-      { label: 'Hébergement EU', desc: 'Frontend Vercel (Paris/Frankfurt). Base de données Supabase (Frankfurt). Aucune donnée ne quitte l\'UE pour le tracking principal.' },
-      { label: 'RGPD compliant', desc: 'Tu peux exporter toutes tes données (CSV) depuis le journal et le dashboard. Suppression de compte sur demande à contact@quantara.tech sous 30 jours max.' },
-      { label: 'Pas de tracking publicitaire', desc: 'Aucun Google Analytics, Facebook Pixel, ou tracker tiers. Quantara n\'a pas de modèle ads — tes données ne sont jamais vendues.' },
+      { label: 'Zero credentials brokers', value: 'Quantara ne se connecte à AUCUN broker. On ne demande JAMAIS ton mot de passe Rithmic, Tradovate, NinjaTrader, etc.' },
+      { label: 'Import CSV manuel uniquement', value: 'Tu exportes manuellement un CSV depuis ton broker (Rithmic Performance ou Dashboard) et tu le glisses dans /app/import-lab. Tu gardes le contrôle total.' },
+      { label: 'Pas d\'API key stockée', value: 'Aucun token broker n\'est stocké en DB. L\'app n\'a aucune capacité de trader pour toi.' },
     ],
   },
   {
-    icon: '💾',
-    title: 'Sauvegardes & disponibilité',
+    title: 'Conformité & légal',
+    icon: '◊',
+    color: C.green,
     items: [
-      { label: 'Backup quotidien', desc: 'Supabase effectue un snapshot quotidien de la base, conservé 7 jours (plan gratuit) ou 30 jours (production payante).' },
-      { label: 'Réplication', desc: 'PostgreSQL Supabase est répliqué sur plusieurs nœuds en EU pour garantir la haute disponibilité.' },
-      { label: 'Statut système', desc: 'Tu peux voir l\'état des services Vercel et Supabase en temps réel sur leurs status pages publiques.' },
+      { label: 'GDPR / RGPD', value: 'Quantara LLC est conforme RGPD. Données hébergées en EU (Frankfurt). Droit d\'accès, rectification, suppression, portabilité accessibles via contact@quantara.tech.' },
+      { label: 'Cookies', value: 'Aucun cookie de tracking. Uniquement cookies fonctionnels (session Supabase, préférences). Voir /legal/privacy#cookies.' },
+      { label: 'Suppression de compte', value: 'À ta demande par email, ton compte + toutes tes données sont supprimés sous 7 jours ouvrés. Pas de soft-delete : c\'est définitif.' },
     ],
   },
   {
-    icon: '🐛',
-    title: 'Responsible disclosure',
+    title: 'Bonnes pratiques côté toi',
+    icon: '◉',
+    color: C.amber,
     items: [
-      { label: 'Tu as trouvé une faille ?', desc: 'Envoie un mail à security@quantara.tech avec une description détaillée. Réponse sous 48h ouvrées garantie. On apprécie les chercheurs en sécurité — pas de poursuites tant que tu respectes la disclosure responsable (pas d\'exfiltration de données, pas de DoS, etc.).' },
-      { label: 'Hall of Fame', desc: 'Les chercheurs qui nous signalent des vulnérabilités valides sont listés (avec leur accord) sur cette page. Aucune récompense monétaire pour l\'instant (Quantara est en beta).' },
+      { label: 'Mot de passe fort', value: 'Min 8 caractères imposé. Recommandation : 12+ avec mélange lettres/chiffres/symboles. Utilise un gestionnaire (Bitwarden, 1Password).' },
+      { label: '"Rester connecté"', value: 'Décoche cette option sur un appareil partagé pour que la session soit effacée à la fermeture du navigateur.' },
+      { label: 'Vérifie ton URL', value: 'Quantara n\'envoie JAMAIS d\'email demandant ton mot de passe. Vérifie toujours que tu es bien sur quantara.tech (pas un fake).' },
     ],
   },
 ]
 
+const FACTS = [
+  { v: '100%', l: 'données isolées par RLS' },
+  { v: '0', l: 'token broker stocké' },
+  { v: 'EU', l: 'hébergement Frankfurt' },
+  { v: 'TLS 1.3', l: 'chiffrement obligatoire' },
+]
+
 export default function SecurityPage() {
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader active="security" />
 
-      {/* Hero */}
-      <section style={{ position: 'relative', overflow: 'hidden' }}>
-        <div className="lp-halo-animated" style={{
-          position: 'absolute', inset: 0,
-          background: `radial-gradient(ellipse 70% 50% at 50% 0%, rgba(29,184,122,0.12), transparent 60%)`,
-          pointerEvents: 'none',
-        }} />
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '72px 24px 40px', textAlign: 'center', position: 'relative' }}>
-          <div style={{
-            fontSize: 11, color: C.green, letterSpacing: '0.16em',
-            marginBottom: 20, textTransform: 'uppercase', fontWeight: 600,
-          }}>
-            Sécurité
-          </div>
-          <h1 className="lp-h1" style={{
-            fontSize: 'clamp(32px, 5.5vw, 52px)', fontWeight: 700, lineHeight: 1.05,
-            marginBottom: 16, letterSpacing: '-0.025em',
-          }}>
-            Tes <span className="lp-gradient-text">données de trading</span><br />
-            méritent une vraie sécurité.
-          </h1>
-          <p style={{
-            fontSize: 16, color: C.text2,
-            maxWidth: 640, margin: '0 auto', lineHeight: 1.5,
-          }}>
-            Quantara stocke tes performances, tes payouts, tes captures de challenge.
-            Voici concrètement comment on les protège — sans bullshit marketing.
-          </p>
-        </div>
-      </section>
+      <main style={{ flex: 1 }}>
+        {/* HERO */}
+        <section style={{ padding: '80px 24px 40px', textAlign: 'center', maxWidth: 880, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ fontSize: 11, color: C.green, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 18 }}>
+              Sécurité
+            </div>
+            <h1 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', margin: 0, marginBottom: 18 }}>
+              Tes données <span style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.green})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ne sortent jamais</span> de chez toi
+            </h1>
+            <p style={{ fontSize: 16, color: C.text2, lineHeight: 1.6, maxWidth: 700, margin: '0 auto' }}>
+              Quantara ne se connecte à aucun broker, ne stocke aucun token d'API, et chaque utilisateur est strictement isolé par les Row Level Security policies Postgres. Hébergement EU, RGPD-compliant.
+            </p>
+          </Reveal>
+        </section>
 
-      {/* Sections */}
-      <section style={{ padding: '40px 24px 80px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          {SECTIONS.map((section, i) => (
-            <Reveal key={section.title} delay={i * 80}>
-              <div style={{
-                background: C.surface, border: `1px solid ${C.border}`,
-                borderRadius: 14, padding: 28, marginBottom: 18,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+        {/* QUICK FACTS */}
+        <section style={{ padding: '20px 24px 40px', maxWidth: 900, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 12,
+            }}>
+              {FACTS.map(f => (
+                <div key={f.l} style={{
+                  padding: '18px 20px',
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  textAlign: 'center',
+                }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: 10,
-                    background: 'rgba(45,111,255,0.10)', border: `1px solid rgba(45,111,255,0.25)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 22, flexShrink: 0,
-                  }}>{section.icon}</div>
-                  <h2 style={{ fontSize: 18, fontWeight: 700 }}>{section.title}</h2>
+                    fontSize: 28, fontWeight: 800, lineHeight: 1,
+                    background: `linear-gradient(135deg, ${C.blue}, ${C.green})`,
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    marginBottom: 8, letterSpacing: '-0.02em',
+                    fontFamily: 'ui-monospace, monospace',
+                  }}>{f.v}</div>
+                  <div style={{
+                    fontSize: 11, color: C.text3,
+                    textTransform: 'uppercase', letterSpacing: '0.08em',
+                    fontWeight: 500,
+                  }}>{f.l}</div>
                 </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {section.items.map(item => (
-                    <li key={item.label} style={{
-                      display: 'flex', gap: 14, paddingLeft: 56,
-                      borderLeft: `2px solid ${C.border}`,
-                      marginLeft: 22, paddingTop: 4, paddingBottom: 4,
+              ))}
+            </div>
+          </Reveal>
+        </section>
+
+        {/* SECTIONS */}
+        <section style={{ padding: '20px 24px 60px', maxWidth: 900, margin: '0 auto' }}>
+          {SECTIONS.map(section => (
+            <Reveal key={section.title}>
+              <div style={{ marginBottom: 28 }}>
+                <h2 style={{
+                  fontSize: 18, fontWeight: 700,
+                  margin: 0, marginBottom: 14,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  letterSpacing: '-0.01em',
+                }}>
+                  <span style={{
+                    width: 28, height: 28, borderRadius: 7,
+                    background: `${section.color}1f`,
+                    border: `1px solid ${section.color}55`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, color: section.color, fontWeight: 700,
+                  }}>{section.icon}</span>
+                  {section.title}
+                </h2>
+                <div style={{
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                }}>
+                  {section.items.map((item, i) => (
+                    <div key={i} style={{
+                      padding: '14px 18px',
+                      borderTop: i > 0 ? `1px solid ${C.border}` : 'none',
                     }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>{item.label}</div>
-                        <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.55 }}>{item.desc}</div>
+                      <div style={{
+                        fontSize: 10, color: section.color,
+                        textTransform: 'uppercase', letterSpacing: '0.08em',
+                        fontWeight: 600, marginBottom: 6, fontFamily: 'ui-monospace, monospace',
+                      }}>{item.label}</div>
+                      <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.6 }}>
+                        {item.value}
                       </div>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             </Reveal>
           ))}
+        </section>
 
-          {/* Contact box */}
-          <Reveal delay={SECTIONS.length * 80 + 40}>
+        {/* SIGNALER */}
+        <section style={{ padding: '40px 24px 80px', maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+          <Reveal>
             <div style={{
-              background: 'linear-gradient(135deg, rgba(45,111,255,0.08), rgba(29,184,122,0.05))',
+              padding: '28px 28px',
+              background: C.surface,
               border: `1px solid ${C.border2}`,
-              borderRadius: 14, padding: 28, marginTop: 24,
-              textAlign: 'center',
+              borderRadius: 14,
             }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>📬</div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Une question sur la sécurité ?</h3>
-              <p style={{ fontSize: 14, color: C.text2, marginBottom: 18, maxWidth: 520, margin: '0 auto 18px', lineHeight: 1.5 }}>
-                Pour toute question sécurité, divulgation de vulnérabilité, ou demande d'export/suppression RGPD,
-                contacte-nous directement.
+              <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, marginBottom: 12, letterSpacing: '-0.015em' }}>
+                Tu as trouvé une faille ?
+              </h2>
+              <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 20 }}>
+                Programme de divulgation responsable. Écris à <a href="mailto:security@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none', fontWeight: 600 }}>security@quantara.tech</a> avec les détails. On répond sous 48h. Pas de bug bounty cash actuellement mais on fait des shoutouts publics + crédits Quantara à vie.
               </p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="mailto:security@quantara.tech" style={{
-                  display: 'inline-block', padding: '10px 20px',
-                  fontSize: 13, fontWeight: 600, borderRadius: 99,
-                  background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueLight} 100%)`,
-                  color: '#fff', textDecoration: 'none',
-                  boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
-                }}>security@quantara.tech</a>
-                <a href="mailto:contact@quantara.tech?subject=Demande%20RGPD" style={{
-                  display: 'inline-block', padding: '10px 20px',
-                  fontSize: 13, fontWeight: 600, borderRadius: 99,
-                  background: 'transparent', color: C.text,
-                  border: `1px solid ${C.border2}`,
-                  textDecoration: 'none',
-                }}>Demande RGPD</a>
-              </div>
+              <a href="mailto:security@quantara.tech" style={{
+                display: 'inline-block', padding: '11px 24px',
+                fontSize: 13, fontWeight: 500, borderRadius: 8,
+                background: C.text, color: '#0a0c10', textDecoration: 'none',
+                boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
+              }}>Reporter une faille</a>
             </div>
           </Reveal>
-
-          {/* Last updated */}
-          <div style={{ textAlign: 'center', marginTop: 28, fontSize: 11, color: C.text3 }}>
-            Dernière mise à jour : {new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <Footer />
     </div>
