@@ -20,11 +20,10 @@ import { parseRithmicDashboard } from '../../../lib/importers/rithmic-dashboard'
 import { T } from '../../../components/dashboard/theme'
 import { Card, Btn, Badge, PageHeader, Section, UIStyles } from '../../../components/dashboard/ui'
 
-const ADMIN_EMAILS = [
-  'bakkali-omar@hotmail.com',
-  'omar.mbtrading@gmail.com',
-  'admin@quantara.tech',
-]
+// Page ouverte à tous les users connectés (BETA — utiliser avec précaution).
+// Le mode dry-run par défaut + la confirmation popup protègent contre les écritures
+// accidentelles. Les RLS Supabase garantissent que chaque user n'agit que sur
+// SES propres comptes/firmes.
 
 export default function ImportLabPage() {
   // === Auth ===
@@ -49,9 +48,8 @@ export default function ImportLabPage() {
       const u = session?.user || null
       setUser(u)
       setLoadingAuth(false)
-      if (u && ADMIN_EMAILS.includes(u.email)) {
-        loadExisting()
-      }
+      // Tout user connecté peut charger SES données (RLS Supabase = isolation)
+      if (u) loadExisting()
     })
 
     async function loadExisting() {
@@ -100,15 +98,6 @@ export default function ImportLabPage() {
       <Link href="/app" style={{ color: T.color.blueLight, textDecoration: 'none' }}>← Page de connexion</Link>
     </FullPageState>
   }
-  if (!ADMIN_EMAILS.includes(user.email)) {
-    return <FullPageState>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Accès admin requis</h1>
-      <p style={{ fontSize: 12, color: T.color.text3, fontFamily: T.font.mono, marginBottom: 16 }}>{user.email}</p>
-      <Link href="/app" style={{ color: T.color.blueLight, textDecoration: 'none' }}>← Retour à l'app</Link>
-    </FullPageState>
-  }
-
   // ==========================================================================
   // Render principal
   // ==========================================================================
@@ -123,13 +112,18 @@ export default function ImportLabPage() {
       <UIStyles />
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <PageHeader
-          eyebrow="ADMIN LAB · BETA"
+          eyebrow="IMPORT · BETA"
           title="Import Lab — Rithmic CSV"
-          subtitle="Page isolée pour tester l'import CSV. Mode dry-run par défaut sur chaque onglet."
+          subtitle="Importe tes trades depuis un export Rithmic R|Trader Pro. Mode dry-run par défaut, rien n'est écrit en DB tant que tu ne bascules pas en import réel."
           actions={
-            <Link href="/app" style={{ textDecoration: 'none' }}>
-              <Btn variant="ghost" size="sm">← Retour app</Btn>
-            </Link>
+            <>
+              <Link href="/app/journal-sync" style={{ textDecoration: 'none' }}>
+                <Btn variant="ghost" size="sm">Journal Sync →</Btn>
+              </Link>
+              <Link href="/app" style={{ textDecoration: 'none' }}>
+                <Btn variant="ghost" size="sm">← Retour app</Btn>
+              </Link>
+            </>
           }
         />
 
@@ -164,6 +158,7 @@ export default function ImportLabPage() {
           <DashboardImporter
             user={user}
             existingAccounts={existingAccounts}
+            existingFirms={existingFirms}
             loadingExisting={loadingExisting}
             onSuccess={refreshExisting}
           />
@@ -455,6 +450,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
                 account={acc}
                 mapping={mapping[acc.rithmicId]}
                 existingAccounts={existingAccounts}
+                existingFirms={existingFirms}
                 loadingExisting={loadingExisting}
                 onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
               />
@@ -483,7 +479,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
 // IMPORTER 2 : DASHBOARD (état des comptes)
 // ============================================================================
 // ============================================================================
-function DashboardImporter({ user, existingAccounts, loadingExisting, onSuccess }) {
+function DashboardImporter({ user, existingAccounts, existingFirms, loadingExisting, onSuccess }) {
   const [fileName, setFileName] = useState('')
   const [parsed, setParsed] = useState(null)
   const [parseError, setParseError] = useState('')
@@ -671,6 +667,7 @@ function DashboardImporter({ user, existingAccounts, loadingExisting, onSuccess 
                 account={acc}
                 mapping={mapping[acc.rithmicId]}
                 existingAccounts={existingAccounts}
+                existingFirms={existingFirms}
                 loadingExisting={loadingExisting}
                 onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
               />
@@ -697,7 +694,7 @@ function DashboardImporter({ user, existingAccounts, loadingExisting, onSuccess 
 // ============================================================================
 // CARD : compte du PnL Statement (mode Trades)
 // ============================================================================
-function TradesAccountCard({ account, mapping, existingAccounts, loadingExisting, onChangeMapping }) {
+function TradesAccountCard({ account, mapping, existingAccounts, existingFirms, loadingExisting, onChangeMapping }) {
   const [expanded, setExpanded] = useState(true)
   const isProfit = account.summary.netPnL >= 0
   if (!mapping) return null
@@ -730,6 +727,7 @@ function TradesAccountCard({ account, mapping, existingAccounts, loadingExisting
           <MappingBlock
             mapping={mapping}
             existingAccounts={existingAccounts}
+            existingFirms={existingFirms}
             loadingExisting={loadingExisting}
             allowCreate={true}
             account={account}
@@ -745,7 +743,7 @@ function TradesAccountCard({ account, mapping, existingAccounts, loadingExisting
 // ============================================================================
 // CARD : compte du Dashboard (mode État)
 // ============================================================================
-function DashboardAccountCard({ account, mapping, existingAccounts, loadingExisting, onChangeMapping }) {
+function DashboardAccountCard({ account, mapping, existingAccounts, existingFirms, loadingExisting, onChangeMapping }) {
   const [expanded, setExpanded] = useState(true)
   if (!mapping) return null
 
@@ -792,9 +790,11 @@ function DashboardAccountCard({ account, mapping, existingAccounts, loadingExist
           <MappingBlock
             mapping={mapping}
             existingAccounts={existingAccounts}
+            existingFirms={existingFirms}
             loadingExisting={loadingExisting}
             allowCreate={false}
             dashboardMode={true}
+            account={account}
             onChangeMapping={onChangeMapping}
           />
 
@@ -837,9 +837,27 @@ function KV({ k, v }) {
 // ============================================================================
 // BLOC commun : mapping vers compte Quantara (réutilisé Trades + Dashboard)
 // ============================================================================
-function MappingBlock({ mapping, existingAccounts, loadingExisting, allowCreate, dashboardMode, account, onChangeMapping }) {
+// Filtre les comptes par firme détectée (ex: Lucid Trading) pour ne pas
+// noyer l'user dans tous ses comptes Apex / PropFirm / etc.
+// Toggle "Tout afficher" pour revenir à la liste complète.
+function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExisting, allowCreate, dashboardMode, account, onChangeMapping }) {
   // Mode Dashboard : mapping = { accountId, autoMatched }
   // Mode Trades :   mapping = { mode: 'create'|'existing', accountId?, newName?, planSize? }
+
+  const [showAll, setShowAll] = useState(false)
+
+  // Détecte la firme du compte CSV (account.firm = "Lucid Trading" via parser)
+  const detectedFirmName = account?.firm
+  const matchingFirm = detectedFirmName
+    ? existingFirms.find(f => f.name.toLowerCase() === detectedFirmName.toLowerCase())
+    : null
+
+  // Filtre les comptes : si on a matché une firme et qu'on n'est pas en "tout afficher"
+  const filteredAccounts = (matchingFirm && !showAll)
+    ? existingAccounts.filter(ea => ea.firm_id === matchingFirm.id)
+    : existingAccounts
+
+  const optionStyle = { background: T.color.surfaceSolid, color: T.color.text }
 
   if (dashboardMode) {
     return (
@@ -849,8 +867,21 @@ function MappingBlock({ mapping, existingAccounts, loadingExisting, allowCreate,
         border: `1px solid ${T.color.border}`,
         borderRadius: T.radius.md,
       }}>
-        <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, fontFamily: T.font.mono }}>
-          Compte Quantara à mettre à jour
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 10,
+        }}>
+          <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: T.font.mono }}>
+            Compte Quantara à mettre à jour
+            {matchingFirm && !showAll && (
+              <span style={{ marginLeft: 8, color: T.color.blueLight, textTransform: 'none', letterSpacing: 0 }}>
+                · filtré sur {matchingFirm.name}
+              </span>
+            )}
+          </div>
+          {matchingFirm && (
+            <FilterToggle showAll={showAll} setShowAll={setShowAll} firmName={matchingFirm.name} />
+          )}
         </div>
         <select
           value={mapping.accountId || '__skip__'}
@@ -862,15 +893,20 @@ function MappingBlock({ mapping, existingAccounts, loadingExisting, allowCreate,
           }}
           style={inputStyle()}
         >
-          <option value="__skip__">⏭️ Ne pas mettre à jour (skip)</option>
-          {existingAccounts.map((ea) => (
-            <option key={ea.id} value={ea.id}>
+          <option value="__skip__" style={optionStyle}>⏭️ Ne pas mettre à jour (skip)</option>
+          {filteredAccounts.map((ea) => (
+            <option key={ea.id} value={ea.id} style={optionStyle}>
               {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
               {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
             </option>
           ))}
         </select>
         {loadingExisting && <LoadingNote />}
+        {filteredAccounts.length === 0 && !loadingExisting && (
+          <div style={{ fontSize: 11, color: T.color.amber, marginTop: 8, fontFamily: T.font.mono }}>
+            ⚠️ Aucun compte {matchingFirm?.name || ''} trouvé. Active "Tout afficher" pour voir tes autres comptes.
+          </div>
+        )}
         {mapping.autoMatched && (
           <div style={{ fontSize: 11, color: T.color.green, marginTop: 8, fontFamily: T.font.mono }}>
             ✓ Auto-lié via rithmic_account_id
@@ -888,8 +924,21 @@ function MappingBlock({ mapping, existingAccounts, loadingExisting, allowCreate,
       border: `1px solid ${T.color.border}`,
       borderRadius: T.radius.md,
     }}>
-      <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, fontFamily: T.font.mono }}>
-        Mapping vers Quantara
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 10,
+      }}>
+        <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: T.font.mono }}>
+          Mapping vers Quantara
+          {matchingFirm && !showAll && (
+            <span style={{ marginLeft: 8, color: T.color.blueLight, textTransform: 'none', letterSpacing: 0 }}>
+              · filtré sur {matchingFirm.name}
+            </span>
+          )}
+        </div>
+        {matchingFirm && (
+          <FilterToggle showAll={showAll} setShowAll={setShowAll} firmName={matchingFirm.name} />
+        )}
       </div>
       <select
         value={mapping.mode === 'existing' ? mapping.accountId : '__create__'}
@@ -902,9 +951,9 @@ function MappingBlock({ mapping, existingAccounts, loadingExisting, allowCreate,
         }}
         style={inputStyle()}
       >
-        {allowCreate && <option value="__create__">➕ Créer un nouveau compte Quantara</option>}
-        {existingAccounts.map((ea) => (
-          <option key={ea.id} value={ea.id}>
+        {allowCreate && <option value="__create__" style={optionStyle}>➕ Créer un nouveau compte Quantara</option>}
+        {filteredAccounts.map((ea) => (
+          <option key={ea.id} value={ea.id} style={optionStyle}>
             {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
             {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
           </option>
@@ -926,15 +975,35 @@ function MappingBlock({ mapping, existingAccounts, loadingExisting, allowCreate,
             onChange={(e) => onChangeMapping({ ...mapping, planSize: e.target.value })}
             style={{ ...inputStyle(), width: 'auto' }}
           >
-            <option value="25k">25k</option>
-            <option value="50k">50k</option>
-            <option value="100k">100k</option>
-            <option value="150k">150k</option>
-            <option value="250k">250k</option>
+            <option value="25k" style={optionStyle}>25k</option>
+            <option value="50k" style={optionStyle}>50k</option>
+            <option value="100k" style={optionStyle}>100k</option>
+            <option value="150k" style={optionStyle}>150k</option>
+            <option value="250k" style={optionStyle}>250k</option>
           </select>
         </div>
       )}
     </div>
+  )
+}
+
+// Petit bouton toggle pour basculer "filtré sur firme X" / "tout afficher"
+function FilterToggle({ showAll, setShowAll, firmName }) {
+  return (
+    <button
+      type="button"
+      onClick={() => setShowAll(!showAll)}
+      style={{
+        fontSize: 10, padding: '4px 10px',
+        background: showAll ? T.color.blueSoft : 'rgba(255,255,255,0.04)',
+        color: showAll ? T.color.blueLight : T.color.text3,
+        border: `1px solid ${showAll ? T.color.blueRing : T.color.border}`,
+        borderRadius: T.radius.sm, cursor: 'pointer',
+        fontFamily: T.font.mono, letterSpacing: '0.05em',
+      }}
+    >
+      {showAll ? `↺ Filtrer sur ${firmName}` : '👁 Tout afficher'}
+    </button>
   )
 }
 
@@ -1106,8 +1175,10 @@ function ResultSection({ result, onReset, kind }) {
         <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
           <Btn variant="ghost" size="sm" onClick={onReset}>↺ Nouveau fichier</Btn>
           {result.ok && !r.dryRun && (
-            <Link href="/app" style={{ textDecoration: 'none' }}>
-              <Btn variant="blue" size="sm">→ Voir dans l'app</Btn>
+            <Link href={kind === 'trades' ? '/app/journal-sync' : '/app'} style={{ textDecoration: 'none' }}>
+              <Btn variant="blue" size="sm">
+                {kind === 'trades' ? '→ Voir dans Journal Sync' : '→ Voir mes comptes'}
+              </Btn>
             </Link>
           )}
         </div>
