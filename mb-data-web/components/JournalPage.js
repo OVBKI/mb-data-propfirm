@@ -24,7 +24,7 @@ const btnGhost = { padding:'8px 14px', fontSize:'12px', fontWeight:'500', backgr
 const chipBtn = (active)=>({ padding:'7px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:`1px solid ${active?'rgba(45,111,255,0.4)':'rgba(255,255,255,0.10)'}`, fontFamily:'inherit', fontWeight:active?'600':'500', background:active?'rgba(45,111,255,0.15)':'transparent', color:active?'var(--blue-light)':'var(--text2)', transition:'all 0.15s' })
 
 // Carte avec courbe de balance pour un compte donné
-function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade }){
+function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade, addTradeHref=null }){
   const ref = useRef(null)
   const chart = useRef(null)
 
@@ -286,7 +286,18 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-          {onAddTrade && (
+          {addTradeHref ? (
+            <a
+              href={addTradeHref}
+              title="Importer un CSV pour ajouter des trades"
+              style={{
+                fontSize:'11px',padding:'7px 11px',borderRadius:'8px',
+                background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
+                color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',whiteSpace:'nowrap',
+                textDecoration:'none',display:'inline-block',
+              }}
+            >+ Importer</a>
+          ) : onAddTrade && (
             <button
               onClick={()=>onAddTrade(account.id)}
               title="Ajouter un trade pour ce compte"
@@ -467,7 +478,23 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   )
 }
 
-export default function JournalPage({ firms, user, getFirmLogo, showToast, onReload, hideRithmicEntries=false }){
+// Props :
+//   firms, user, getFirmLogo, showToast, onReload     → comme avant
+//   hideRithmicEntries (bool)   → mode journal manuel : exclut les trades CSV
+//   onlyRithmicEntries (bool)   → mode journal sync : N'AFFICHE QUE les trades CSV
+//   addTradeHref (string|null)  → si set, remplace le modal d'ajout par un Link vers cette URL
+//   addTradeLabel (string)      → label du bouton (défaut "+ Ajouter trade")
+//   pageEyebrow / pageTitle / pageSubtitleSuffix → personnalisation du header
+export default function JournalPage({
+  firms, user, getFirmLogo, showToast, onReload,
+  hideRithmicEntries = false,
+  onlyRithmicEntries = false,
+  addTradeHref = null,
+  addTradeLabel = '+ Ajouter trade',
+  pageEyebrow = 'Journal de trading',
+  pageTitle = 'Chaque trade. Tracké. Analysé.',
+  pageSubtitleSuffix = 'saisie manuelle',
+}){
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
@@ -517,12 +544,15 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
         setLoadError(error.message || 'Erreur chargement journal')
       }
     } else {
-      // Si hideRithmicEntries=true (mode journal manuel) : on exclut les entries dont
-      // les notes contiennent le marker [rithmic:ENTRY/EXIT] (= trades importés via CSV).
-      // Ces trades-là apparaissent uniquement dans /app/journal-sync.
-      const filtered = hideRithmicEntries
-        ? (data || []).filter(e => !e.notes || !e.notes.includes('[rithmic:'))
-        : (data || [])
+      // Filtre selon le mode :
+      //   - hideRithmicEntries (manuel) : exclut les trades CSV (marker [rithmic:])
+      //   - onlyRithmicEntries (sync)   : N'INCLUT QUE les trades CSV
+      let filtered = data || []
+      if (onlyRithmicEntries) {
+        filtered = filtered.filter(e => e.notes && e.notes.includes('[rithmic:'))
+      } else if (hideRithmicEntries) {
+        filtered = filtered.filter(e => !e.notes || !e.notes.includes('[rithmic:'))
+      }
       setEntries(filtered)
     }
     setLoading(false)
@@ -531,7 +561,7 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
   useEffect(()=>{
     if(user?.id) loadEntries()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[user?.id, hideRithmicEntries])
+  },[user?.id, hideRithmicEntries, onlyRithmicEntries])
 
   // Décore les entries avec les infos firme/compte
   const decoratedEntries = useMemo(()=>{
@@ -795,35 +825,51 @@ export default function JournalPage({ firms, user, getFirmLogo, showToast, onRel
       <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'28px',flexWrap:'wrap',gap:'18px'}}>
         <div>
           <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
-            Journal de trading
+            {pageEyebrow}
           </div>
-          <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>Chaque trade. Tracké. Analysé.</h1>
+          <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{pageTitle}</h1>
           <div style={{fontSize:'13px',color:'var(--text3)'}}>
-            {entries.length} trade{entries.length>1?'s':''} enregistré{entries.length>1?'s':''} · saisie manuelle
+            {entries.length} trade{entries.length>1?'s':''} enregistré{entries.length>1?'s':''} · {pageSubtitleSuffix}
           </div>
         </div>
         <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
           <button onClick={exportJournalCSV} disabled={!filteredEntries.length} style={{...btnGhost,opacity:filteredEntries.length?1:0.5}}>↓ CSV</button>
-          {/* Si un compte spécifique est sélectionné dans le filtre, on l'affiche dans le bouton */}
-          {(() => {
-            const filteredAcct = scope.includes(':') ? allAccounts.find(a => a.id === scope.split(':')[1]) : null
-            return (
-              <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>
-                + Ajouter trade{filteredAcct ? ` · ${accountLabel(filteredAcct)}` : ''}
-              </button>
-            )
-          })()}
+          {/* Bouton + Trade :
+                - Mode SYNC (addTradeHref défini) : <a href> vers l'import-lab
+                - Mode MANUEL : ouvre le modal d'ajout, désactivé si pas de compte */}
+          {addTradeHref ? (
+            <a href={addTradeHref} style={{...btnPrimary,textDecoration:'none',display:'inline-block'}}>
+              {addTradeLabel}
+            </a>
+          ) : (
+            (() => {
+              const filteredAcct = scope.includes(':') ? allAccounts.find(a => a.id === scope.split(':')[1]) : null
+              return (
+                <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>
+                  {addTradeLabel}{filteredAcct ? ` · ${accountLabel(filteredAcct)}` : ''}
+                </button>
+              )
+            })()
+          )}
         </div>
       </div>
 
       {noAccounts && (
         <div style={{...card,padding:'40px 24px',marginBottom:'16px',background:'var(--surface2)',borderStyle:'dashed',borderColor:'var(--border2)',textAlign:'center'}}>
-          <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>📔</div>
-          <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'8px'}}>Aucun compte à journaliser</div>
-          <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',maxWidth:'460px',margin:'0 auto 20px',lineHeight:1.6}}>
-            Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.
+          <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>{onlyRithmicEntries?'⟲':'📔'}</div>
+          <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'8px'}}>
+            {onlyRithmicEntries ? 'Aucun compte synchronisé' : 'Aucun compte à journaliser'}
           </div>
-          <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
+          <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',maxWidth:'460px',margin:'0 auto 20px',lineHeight:1.6}}>
+            {onlyRithmicEntries
+              ? `Importe ton premier CSV Rithmic depuis l'Import Lab. Les comptes créés via l'import apparaîtront ici automatiquement, séparés de tes comptes manuels.`
+              : `Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.`}
+          </div>
+          {onlyRithmicEntries ? (
+            <a href="/app/import-lab" style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>→ Aller à l'Import Lab</a>
+          ) : (
+            <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
+          )}
         </div>
       )}
 
@@ -1061,7 +1107,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   ? new Date(selDay+'T00:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})
                   : 'Sélectionnez un jour'}
               </div>
-              {selDay && !noAccounts && (
+              {selDay && !noAccounts && !addTradeHref && (
                 <button onClick={()=>openNewEntry(selDay)} style={{...btnGhost,padding:'4px 10px',fontSize:'11px'}}>+ Trade</button>
               )}
             </div>
@@ -1198,6 +1244,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                       getFirmLogo={getFirmLogo}
                       onResetBalance={resetAccountBalance}
                       onAddTrade={(acctId) => openNewEntry({ accountId: acctId })}
+                      addTradeHref={addTradeHref}
                     />
                   )
                 })}
