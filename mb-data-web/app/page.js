@@ -316,9 +316,16 @@ export default function LandingPage() {
       </ProductSection>
 
       {/* === PAGE 4 : EQUITY CURVE === */}
-      <section style={{ padding: '60px 24px', position: 'relative' }}>
-        <EquityCurveDemo />
-      </section>
+      <ProductSection
+        label="EQUITY CURVE & DRAWDOWN LIVE"
+        labelColor={colors.green}
+        title="Vois ton compte vivre — balance + DD trailing en temps réel."
+        subtitle="Chaque compte a sa courbe avec la ligne de DD trailing (static, EOD ou intraday selon la firme). Tu sais exactement combien il te reste avant de sauter."
+      >
+        <Tilted3DFrame title="quantara.tech/app/equity" flip>
+          <EquityCurveDemo />
+        </Tilted3DFrame>
+      </ProductSection>
 
       {/* === PAGE 5 : NOTIFICATIONS PUSH === */}
       <section style={{ padding: '60px 24px 80px', position: 'relative' }}>

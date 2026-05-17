@@ -1,236 +1,202 @@
-'use client'
-// EconomicCalendarMockup — vue calendrier économique de Quantara comme dans l'app.
-// Style ForexFactory : événements macro par jour avec impact (high/medium/low),
-// devise concernée, forecast vs previous vs actual.
+// EconomicCalendarMockup — simulation /app/calendar pour la landing.
+// Style ForexFactory dark : événements macro par jour avec impact, devise,
+// forecast vs previous vs actual.
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#5a6275',
-  blue: '#2d6fff',
+  bg:        '#0a0c10',
+  surface:   '#141720',
+  surface2:  '#1c2030',
+  border:    'rgba(255,255,255,0.07)',
+  border2:   'rgba(255,255,255,0.13)',
+  text:      '#f0ede8',
+  text2:     '#9098b0',
+  text3:     '#5a6275',
+  blue:      '#2d6fff',
   blueLight: '#4d8fff',
-  green: '#10b981',
-  red: '#ef4444',
-  amber: '#fac775',
-  high: '#ef4444',
-  med: '#fac775',
-  low: '#5a6275',
+  green:     '#10b981',
+  red:       '#ef4444',
+  amber:     '#fac775',
 }
-
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-const events = [
-  { day: 'Aujourd\'hui · Jeu 15 mai', items: [
-    { time: '08:30', cur: 'USD', flag: '🇺🇸', impact: 'high', event: 'Core CPI m/m', forecast: '0.3%', previous: '0.4%', actual: '0.3%', done: true, surprise: 'neutral' },
-    { time: '08:30', cur: 'USD', flag: '🇺🇸', impact: 'high', event: 'Unemployment Claims', forecast: '220K', previous: '231K', actual: '229K', done: true, surprise: 'neutral' },
-    { time: '14:00', cur: 'USD', flag: '🇺🇸', impact: 'high', event: 'Fed Powell Speech', forecast: '—', previous: '—', actual: null, done: false, soon: true },
-    { time: '15:30', cur: 'EUR', flag: '🇪🇺', impact: 'med',  event: 'Industrial Production', forecast: '0.2%', previous: '-0.1%', actual: null, done: false },
-  ]},
-  { day: 'Demain · Ven 16 mai', items: [
-    { time: '08:30', cur: 'USD', flag: '🇺🇸', impact: 'high', event: 'Retail Sales m/m', forecast: '0.4%', previous: '0.6%', actual: null, done: false },
-    { time: '10:00', cur: 'USD', flag: '🇺🇸', impact: 'med',  event: 'Prelim UoM Consumer Sentiment', forecast: '77.5', previous: '77.2', actual: null, done: false },
-    { time: '15:00', cur: 'CAD', flag: '🇨🇦', impact: 'low',  event: 'BOC Financial System Review', forecast: '—', previous: '—', actual: null, done: false },
-  ]},
+const EVENTS_TODAY = [
+  { time: '08:30', cc: 'US', cur: 'USD', name: 'Core CPI m/m',         impact: 'HIGH', fcst: '0.4%', prev: '0.4%',  actual: '0.3%',  actualColor: C.green, soon: false },
+  { time: '08:30', cc: 'US', cur: 'USD', name: 'Unemployment Claims',  impact: 'HIGH', fcst: '220K', prev: '231K',  actual: '229K',  actualColor: C.green, soon: false },
+  { time: '14:00', cc: 'US', cur: 'USD', name: 'Fed Powell Speech',    impact: 'HIGH', fcst: '—',    prev: '—',     actual: '—',    soon: true },
+  { time: '15:30', cc: 'EU', cur: 'EUR', name: 'Industrial Production', impact: 'MED',  fcst: '0.2%', prev: '-0.1%', actual: '—',    soon: false },
 ]
 
-const impactStyles = {
-  high: { color: C.red,   bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.35)',   label: 'HIGH' },
-  med:  { color: C.amber, bg: 'rgba(250,199,117,0.15)', border: 'rgba(250,199,117,0.35)', label: 'MED' },
-  low:  { color: C.text3, bg: 'rgba(90,98,117,0.15)',   border: 'rgba(90,98,117,0.3)',    label: 'LOW' },
+const EVENTS_TOMORROW = [
+  { time: '08:30', cc: 'US', cur: 'USD', name: 'Retail Sales m/m',              impact: 'HIGH', fcst: '0.4%', prev: '0.6%',  actual: '—' },
+  { time: '10:00', cc: 'US', cur: 'USD', name: 'Prelim UoM Consumer Sentiment', impact: 'MED',  fcst: '77.5', prev: '77.2',  actual: '—' },
+  { time: '15:00', cc: 'CA', cur: 'CAD', name: 'BOC Financial System Review',   impact: 'LOW',  fcst: '—',    prev: '—',     actual: '—' },
+]
+
+function ImpactTag({ impact }) {
+  const map = {
+    HIGH: { color: C.red,   bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.35)' },
+    MED:  { color: C.amber, bg: 'rgba(250,199,117,0.10)', border: 'rgba(250,199,117,0.35)' },
+    LOW:  { color: C.text3, bg: 'rgba(255,255,255,0.04)', border: C.border },
+  }
+  const s = map[impact] || map.LOW
+  return (
+    <span style={{
+      padding: '3px 9px', fontSize: 9, fontWeight: 700,
+      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
+      borderRadius: 5, fontFamily: mono, letterSpacing: '0.08em',
+    }}>{impact}</span>
+  )
+}
+
+function EventRow({ e }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '60px 70px 1fr 70px 100px 100px 100px',
+      gap: 10, alignItems: 'center',
+      padding: '11px 16px',
+      background: e.soon ? 'rgba(45,111,255,0.05)' : 'transparent',
+      borderTop: `1px solid ${C.border}`,
+    }}>
+      <span style={{
+        fontSize: 11, fontWeight: 700, color: e.soon ? C.blueLight : C.text, fontFamily: mono,
+      }}>{e.time}</span>
+
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        fontSize: 10, color: C.text2, fontFamily: mono,
+      }}>
+        <span style={{
+          fontSize: 9, padding: '2px 5px', borderRadius: 3,
+          background: 'rgba(255,255,255,0.05)', color: C.text3,
+          fontWeight: 700, letterSpacing: '0.05em',
+        }}>{e.cc}</span>
+        <span style={{ fontWeight: 600 }}>{e.cur}</span>
+      </span>
+
+      <span style={{
+        fontSize: 12, color: C.text, fontWeight: 500,
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        {e.name}
+        {e.soon && (
+          <span style={{
+            fontSize: 8, padding: '2px 7px', borderRadius: 4,
+            background: 'rgba(45,111,255,0.18)', color: C.blueLight,
+            fontWeight: 700, fontFamily: mono, letterSpacing: '0.1em',
+            border: '1px solid rgba(45,111,255,0.4)',
+          }}>DANS 30 MIN</span>
+        )}
+      </span>
+
+      <ImpactTag impact={e.impact} />
+
+      <StatCell label="FCST" value={e.fcst} />
+      <StatCell label="PREV" value={e.prev} />
+      <StatCell label="ACTUAL" value={e.actual} color={e.actualColor} />
+    </div>
+  )
+}
+
+function StatCell({ label, value, color }) {
+  return (
+    <div style={{ textAlign: 'right' }}>
+      <div style={{
+        fontSize: 8, color: C.text3, fontFamily: mono,
+        textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 3,
+      }}>{label}</div>
+      <div style={{
+        fontSize: 11, fontWeight: 600, fontFamily: mono,
+        color: color || C.text2,
+      }}>{value}</div>
+    </div>
+  )
 }
 
 export default function EconomicCalendarMockup() {
   return (
     <div style={{
-      background: C.bg,
-      color: C.text,
-      padding: '16px 18px',
-      minHeight: 480,
-      maxHeight: 540,
-      overflow: 'hidden',
+      background: C.bg, padding: '24px 28px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      color: C.text, minHeight: 480,
     }}>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 14,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        marginBottom: 16, gap: 16, flexWrap: 'wrap',
       }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Calendrier économique</div>
-          <div style={{ fontSize: 10, color: C.text3, fontFamily: mono, marginTop: 3, letterSpacing: '0.05em' }}>
-            ÉVÉNEMENTS MACRO À FORT IMPACT · LIVE FOREXFACTORY
+          <h1 style={{
+            fontSize: 22, fontWeight: 700, margin: 0,
+            letterSpacing: '-0.02em',
+          }}>Calendrier économique</h1>
+          <div style={{ fontSize: 10, color: C.text3, marginTop: 4, fontFamily: mono, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Événements macro à fort impact · live forexfactory
           </div>
         </div>
 
         {/* Filter pills */}
         <div style={{ display: 'flex', gap: 5 }}>
-          {[
-            { label: 'Toutes', active: true },
-            { label: 'High', icon: '●', color: C.red },
-            { label: 'Med', icon: '●', color: C.amber },
-          ].map((f, i) => (
-            <div key={i} style={{
-              padding: '4px 10px',
-              background: f.active ? 'rgba(45,111,255,0.15)' : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${f.active ? 'rgba(45,111,255,0.4)' : C.border}`,
-              borderRadius: 99,
-              fontSize: 10,
-              color: f.active ? C.blueLight : C.text2,
-              fontWeight: f.active ? 600 : 400,
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              cursor: 'pointer',
-            }}>
-              {f.icon && <span style={{ color: f.color, fontSize: 8 }}>{f.icon}</span>}
-              {f.label}
-            </div>
-          ))}
+          <FilterPill label="Toutes" active />
+          <FilterPill label="High"  dot={C.red} />
+          <FilterPill label="Med"   dot={C.amber} />
         </div>
       </div>
 
-      {/* Liste des jours + events */}
+      {/* Section AUJOURD'HUI */}
+      <SectionLabel title="Aujourd'hui · Jeu 15 mai" count={4} />
       <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
+        background: 'rgba(20,23,32,0.65)',
+        border: `1px solid ${C.border}`,
+        borderRadius: 10, overflow: 'hidden', marginBottom: 14,
       }}>
-        {events.map((day, di) => (
-          <div key={di}>
-            {/* Day label */}
-            <div style={{
-              fontSize: 11, fontWeight: 600, color: C.text2,
-              marginBottom: 6,
-              padding: '4px 0',
-              borderBottom: `1px solid ${C.border}`,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}>
-              {day.day}
-              <span style={{
-                fontSize: 9, color: C.text3, fontFamily: mono,
-                letterSpacing: '0.1em',
-              }}>
-                · {day.items.length} ÉVÉNEMENTS
-              </span>
-            </div>
+        {EVENTS_TODAY.map((e, i) => (
+          <EventRow key={i} e={e} />
+        ))}
+      </div>
 
-            {/* Items */}
-            <div style={{
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              overflow: 'hidden',
-            }}>
-              {day.items.map((ev, i) => {
-                const impact = impactStyles[ev.impact]
-                return (
-                  <div key={i} style={{
-                    display: 'grid',
-                    gridTemplateColumns: '50px 40px 1fr 60px 70px 70px 70px',
-                    gap: 10,
-                    padding: '10px 14px',
-                    borderBottom: i === day.items.length - 1 ? 'none' : `1px solid ${C.border}`,
-                    alignItems: 'center',
-                    fontSize: 11,
-                    background: ev.soon ? 'rgba(45,111,255,0.05)' : 'transparent',
-                  }}>
-                    {/* Time */}
-                    <div style={{
-                      color: ev.soon ? C.blueLight : C.text,
-                      fontFamily: mono,
-                      fontWeight: ev.soon ? 700 : 400,
-                      fontSize: 11,
-                    }}>
-                      {ev.time}
-                    </div>
-
-                    {/* Currency + flag */}
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 4,
-                      fontSize: 10, color: C.text2, fontFamily: mono,
-                    }}>
-                      <span style={{ fontSize: 12 }}>{ev.flag}</span>
-                      {ev.cur}
-                    </div>
-
-                    {/* Event name */}
-                    <div style={{
-                      color: C.text,
-                      fontSize: 11,
-                      display: 'flex', alignItems: 'center', gap: 8,
-                    }}>
-                      {ev.event}
-                      {ev.soon && (
-                        <span style={{
-                          fontSize: 8, color: C.blueLight,
-                          padding: '1px 5px',
-                          background: 'rgba(45,111,255,0.18)',
-                          border: '1px solid rgba(45,111,255,0.4)',
-                          borderRadius: 3,
-                          fontFamily: mono,
-                          letterSpacing: '0.1em',
-                        }}>
-                          DANS 30 MIN
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Impact badge */}
-                    <div style={{
-                      fontSize: 8,
-                      fontWeight: 700,
-                      color: impact.color,
-                      background: impact.bg,
-                      border: `1px solid ${impact.border}`,
-                      borderRadius: 3,
-                      padding: '2px 6px',
-                      textAlign: 'center',
-                      letterSpacing: '0.1em',
-                      fontFamily: mono,
-                      width: 'fit-content',
-                    }}>
-                      {impact.label}
-                    </div>
-
-                    {/* Forecast */}
-                    <div style={{
-                      fontSize: 10, color: C.text3, fontFamily: mono,
-                      textAlign: 'center',
-                    }}>
-                      <div style={{ fontSize: 7, color: C.text3, letterSpacing: '0.1em', marginBottom: 1 }}>FCST</div>
-                      {ev.forecast}
-                    </div>
-
-                    {/* Previous */}
-                    <div style={{
-                      fontSize: 10, color: C.text2, fontFamily: mono,
-                      textAlign: 'center',
-                    }}>
-                      <div style={{ fontSize: 7, color: C.text3, letterSpacing: '0.1em', marginBottom: 1 }}>PREV</div>
-                      {ev.previous}
-                    </div>
-
-                    {/* Actual */}
-                    <div style={{
-                      fontSize: 11, fontWeight: 700, fontFamily: mono,
-                      textAlign: 'center',
-                      color: ev.done ? (ev.actual === ev.forecast ? C.text : ev.actual > ev.forecast ? C.green : C.red) : C.text3,
-                    }}>
-                      <div style={{ fontSize: 7, color: C.text3, letterSpacing: '0.1em', marginBottom: 1, fontWeight: 400 }}>ACTUAL</div>
-                      {ev.actual || '—'}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+      {/* Section DEMAIN */}
+      <SectionLabel title="Demain · Ven 16 mai" count={3} />
+      <div style={{
+        background: 'rgba(20,23,32,0.65)',
+        border: `1px solid ${C.border}`,
+        borderRadius: 10, overflow: 'hidden',
+      }}>
+        {EVENTS_TOMORROW.map((e, i) => (
+          <EventRow key={i} e={e} />
         ))}
       </div>
     </div>
+  )
+}
+
+function SectionLabel({ title, count }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'baseline', gap: 8,
+      marginBottom: 8, marginTop: 4,
+    }}>
+      <span style={{ fontSize: 13, fontWeight: 600 }}>{title}</span>
+      <span style={{
+        fontSize: 9, color: C.text3, fontFamily: mono,
+        letterSpacing: '0.1em', textTransform: 'uppercase',
+      }}>· {count} évènements</span>
+    </div>
+  )
+}
+
+function FilterPill({ label, active, dot }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '6px 12px', borderRadius: 99,
+      background: active ? 'rgba(45,111,255,0.15)' : 'rgba(255,255,255,0.025)',
+      border: `1px solid ${active ? 'rgba(45,111,255,0.4)' : C.border}`,
+      fontSize: 11, fontWeight: active ? 600 : 500,
+      color: active ? C.blueLight : C.text2,
+    }}>
+      {dot && <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot }} />}
+      {label}
+    </span>
   )
 }
