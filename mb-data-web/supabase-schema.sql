@@ -41,6 +41,26 @@ alter table accounts add column if not exists funded_date       date;
 -- des jours min de trading (pré-rempli depuis les règles de la firme).
 alter table accounts add column if not exists min_daily_profit  numeric(10,2);
 
+-- ============================================================================
+-- IMPORT RITHMIC (Phase 2) — colonnes pour l'import Trader Dashboard
+-- ============================================================================
+-- rithmic_account_id : ID Rithmic du compte (ex: LFF050-579ZNFS2-PRO006)
+--   → permet l'auto-mapping entre les imports successifs et entre PnL/Dashboard.
+-- rithmic_balance     : dernier solde rapporté par Rithmic.
+-- rithmic_min_balance : seuil trailing DD actuel (Min Account Balance Rithmic).
+-- rithmic_synced_at   : timestamp de la dernière sync depuis Rithmic.
+-- liquidated_at       : date/heure de liquidation auto si le compte a sauté.
+-- total_commissions   : commissions cumulées rapportées par Rithmic.
+alter table accounts add column if not exists rithmic_account_id  text;
+alter table accounts add column if not exists rithmic_balance     numeric(12,2);
+alter table accounts add column if not exists rithmic_min_balance numeric(12,2);
+alter table accounts add column if not exists rithmic_synced_at   timestamptz;
+alter table accounts add column if not exists liquidated_at       timestamptz;
+alter table accounts add column if not exists total_commissions   numeric(12,2);
+
+-- Index pour le lookup rithmic_account_id → account
+create index if not exists accounts_rithmic_account_id_idx on accounts(rithmic_account_id) where rithmic_account_id is not null;
+
 -- PAYOUTS table
 create table if not exists payouts (
   id uuid default gen_random_uuid() primary key,

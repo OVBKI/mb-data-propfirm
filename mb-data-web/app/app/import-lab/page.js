@@ -1,22 +1,25 @@
 'use client'
-// Page ISOLÉE pour tester l'import CSV Rithmic R|Trader Pro Performance.
-// - Accessible uniquement aux emails admin
-// - Mode "Dry Run" par défaut : aucun écriture en DB
-// - Détection auto multi-comptes (Lucid Trading actuellement)
-// - Mapping : créer nouveau compte Quantara OU lier à existant
-// - Dédoublonnage via marker dans la colonne `notes` : [rithmic:ENTRY/EXIT]
+// Page ISOLÉE pour tester l'import CSV Rithmic.
+// 2 modes (onglets) :
+//   📊 Trades   — Import du CSV "Performance" (PnL Statement) → crée comptes + trades
+//   ⚖️ État    — Import du CSV "Trader Dashboard" → met à jour soldes + DD + status
 //
-// Aucun import dans /app/page.js — cette page est totalement indépendante
-// pour ne RIEN casser de la prod tant que le système n'est pas validé.
+// Sécurités :
+//   - Accessible aux emails admin uniquement
+//   - Dry run par défaut, aucune écriture en DB
+//   - Confirmation explicite pour l'import réel
+//
+// Dédoublonnage Trades : marker [rithmic:ENTRY/EXIT] dans notes
+// Auto-mapping Dashboard : via accounts.rithmic_account_id
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import { parseRithmicPnL } from '../../../lib/importers/rithmic-pnl'
+import { parseRithmicDashboard } from '../../../lib/importers/rithmic-dashboard'
 import { T } from '../../../components/dashboard/theme'
 import { Card, Btn, Badge, PageHeader, Section, UIStyles } from '../../../components/dashboard/ui'
 
-// Doit matcher ADMIN_EMAILS de app/admin/layout.js et les RLS Supabase
 const ADMIN_EMAILS = [
   'bakkali-omar@hotmail.com',
   'omar.mbtrading@gmail.com',
@@ -24,34 +27,20 @@ const ADMIN_EMAILS = [
 ]
 
 export default function ImportLabPage() {
-  // === État Auth ===
+  // === Auth ===
   const [user, setUser] = useState(null)
   const [loadingAuth, setLoadingAuth] = useState(true)
 
-  // === État Fichier / Parsing ===
-  const [fileName, setFileName] = useState('')
-  const [parsed, setParsed] = useState(null)
-  const [parseError, setParseError] = useState('')
-  const [dragOver, setDragOver] = useState(false)
+  // === Tab actif : 'trades' | 'dashboard' ===
+  const [tab, setTab] = useState('trades')
 
-  // === État Données Quantara existantes ===
+  // === Données partagées (firmes + comptes existants) ===
   const [existingFirms, setExistingFirms] = useState([])
   const [existingAccounts, setExistingAccounts] = useState([])
   const [loadingExisting, setLoadingExisting] = useState(false)
 
-  // === État Mapping : rithmicId → { mode, accountId, newName, planSize } ===
-  const [mapping, setMapping] = useState({})
-
-  // === État Import ===
-  const [dryRun, setDryRun] = useState(true)
-  const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState(null)
-  const [confirmReal, setConfirmReal] = useState(false)
-
-  const fileInputRef = useRef(null)
-
   // ==========================================================================
-  // Init : Auth + chargement données existantes
+  // Auth + chargement données
   // ==========================================================================
   useEffect(() => {
     let mounted = true
@@ -61,15 +50,18 @@ export default function ImportLabPage() {
       setUser(u)
       setLoadingAuth(false)
       if (u && ADMIN_EMAILS.includes(u.email)) {
-        loadExistingData()
+        loadExisting()
       }
     })
 
-    async function loadExistingData() {
+    async function loadExisting() {
       setLoadingExisting(true)
       const [firmsRes, accountsRes] = await Promise.all([
         supabase.from('firms').select('id, name, color').order('name'),
-        supabase.from('accounts').select('id, firm_id, name, plan_size, status, buy_date').order('buy_date', { ascending: false }),
+        supabase
+          .from('accounts')
+          .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at')
+          .order('buy_date', { ascending: false }),
       ])
       if (!mounted) return
       setExistingFirms(firmsRes.data || [])
@@ -80,28 +72,169 @@ export default function ImportLabPage() {
     return () => { mounted = false }
   }, [])
 
+  // Réutilisable : déclenche un re-fetch après un import réussi
+  async function refreshExisting() {
+    const [firmsRes, accountsRes] = await Promise.all([
+      supabase.from('firms').select('id, name, color').order('name'),
+      supabase
+        .from('accounts')
+        .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at')
+        .order('buy_date', { ascending: false }),
+    ])
+    setExistingFirms(firmsRes.data || [])
+    setExistingAccounts(accountsRes.data || [])
+  }
+
   // ==========================================================================
-  // Gestion fichier CSV
+  // Gardes d'accès
   // ==========================================================================
+  if (loadingAuth) {
+    return <FullPageState>
+      <div style={{ color: T.color.text3 }}>⏳ Vérification accès...</div>
+    </FullPageState>
+  }
+  if (!user) {
+    return <FullPageState>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Connexion requise</h1>
+      <Link href="/app" style={{ color: T.color.blueLight, textDecoration: 'none' }}>← Page de connexion</Link>
+    </FullPageState>
+  }
+  if (!ADMIN_EMAILS.includes(user.email)) {
+    return <FullPageState>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Accès admin requis</h1>
+      <p style={{ fontSize: 12, color: T.color.text3, fontFamily: T.font.mono, marginBottom: 16 }}>{user.email}</p>
+      <Link href="/app" style={{ color: T.color.blueLight, textDecoration: 'none' }}>← Retour à l'app</Link>
+    </FullPageState>
+  }
+
+  // ==========================================================================
+  // Render principal
+  // ==========================================================================
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: T.color.bg,
+      color: T.color.text,
+      padding: '32px 24px',
+      fontFamily: T.font.sans,
+    }}>
+      <UIStyles />
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <PageHeader
+          eyebrow="ADMIN LAB · BETA"
+          title="Import Lab — Rithmic CSV"
+          subtitle="Page isolée pour tester l'import CSV. Mode dry-run par défaut sur chaque onglet."
+          actions={
+            <Link href="/app" style={{ textDecoration: 'none' }}>
+              <Btn variant="ghost" size="sm">← Retour app</Btn>
+            </Link>
+          }
+        />
+
+        {/* === Tabs === */}
+        <div style={{
+          display: 'flex', gap: 4, marginBottom: 24,
+          padding: 4, background: T.color.surface2,
+          borderRadius: T.radius.lg,
+          border: `1px solid ${T.color.border}`,
+          width: 'fit-content',
+        }}>
+          <TabBtn active={tab === 'trades'} onClick={() => setTab('trades')}>
+            📊 Trades (PnL Statement)
+          </TabBtn>
+          <TabBtn active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>
+            ⚖️ État des comptes (Dashboard)
+          </TabBtn>
+        </div>
+
+        {/* === Contenu de l'onglet actif === */}
+        {tab === 'trades' && (
+          <TradesImporter
+            user={user}
+            existingFirms={existingFirms}
+            existingAccounts={existingAccounts}
+            loadingExisting={loadingExisting}
+            onSuccess={refreshExisting}
+          />
+        )}
+
+        {tab === 'dashboard' && (
+          <DashboardImporter
+            user={user}
+            existingAccounts={existingAccounts}
+            loadingExisting={loadingExisting}
+            onSuccess={refreshExisting}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// COMPOSANT : Tab button
+// ============================================================================
+function TabBtn({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '10px 18px',
+        fontSize: 13,
+        fontWeight: active ? 600 : 500,
+        background: active ? T.color.surfaceSolid : 'transparent',
+        color: active ? T.color.text : T.color.text2,
+        border: active ? `1px solid ${T.color.borderStrong}` : '1px solid transparent',
+        borderRadius: T.radius.md,
+        cursor: 'pointer',
+        fontFamily: T.font.sans,
+        transition: T.transition.base,
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ============================================================================
+// ============================================================================
+// IMPORTER 1 : TRADES (PnL Statement)
+// ============================================================================
+// ============================================================================
+function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting, onSuccess }) {
+  const [fileName, setFileName] = useState('')
+  const [parsed, setParsed] = useState(null)
+  const [parseError, setParseError] = useState('')
+  const [dragOver, setDragOver] = useState(false)
+  const [mapping, setMapping] = useState({})
+  const [dryRun, setDryRun] = useState(true)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState(null)
+  const fileInputRef = useRef(null)
+
   function handleFile(file) {
     setFileName(file.name)
     setImportResult(null)
     const reader = new FileReader()
     reader.onload = (e) => {
-      const text = e.target.result
       try {
-        const result = parseRithmicPnL(text)
+        const result = parseRithmicPnL(e.target.result)
         setParsed(result)
         setParseError('')
-        // Initialise le mapping : tous en mode "create" par défaut
         const initialMapping = {}
         for (const acc of result.accounts) {
-          // Suggestion de nom : derniers 11 chars (ex: "07-TEST017")
-          const suggested = acc.rithmicId.slice(-11)
-          initialMapping[acc.rithmicId] = {
-            mode: 'create',
-            newName: suggested,
-            planSize: '50k', // user pourra changer
+          // Auto-map si un compte existant a déjà ce rithmic_account_id
+          const existing = existingAccounts.find(ea => ea.rithmic_account_id === acc.rithmicId)
+          if (existing) {
+            initialMapping[acc.rithmicId] = { mode: 'existing', accountId: existing.id }
+          } else {
+            initialMapping[acc.rithmicId] = {
+              mode: 'create',
+              newName: acc.rithmicId.slice(-11),
+              planSize: '50k',
+            }
           }
         }
         setMapping(initialMapping)
@@ -110,10 +243,7 @@ export default function ImportLabPage() {
         setParsed(null)
       }
     }
-    reader.onerror = () => {
-      setParseError('Erreur de lecture du fichier')
-      setParsed(null)
-    }
+    reader.onerror = () => setParseError('Erreur de lecture du fichier')
     reader.readAsText(file)
   }
 
@@ -129,24 +259,26 @@ export default function ImportLabPage() {
     handleFile(file)
   }
 
-  // ==========================================================================
-  // Import réel (ou dry run)
-  // ==========================================================================
+  function reset() {
+    setFileName('')
+    setParsed(null)
+    setParseError('')
+    setMapping({})
+    setImportResult(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   async function doImport() {
     if (!parsed || !user) return
 
-    // Garde-fou : import réel = double confirmation
-    if (!dryRun && !confirmReal) {
+    if (!dryRun) {
       const ok = window.confirm(
-        `⚠️ IMPORT RÉEL\n\n` +
-        `Tu vas écrire dans Supabase :\n` +
+        `⚠️ IMPORT RÉEL (Trades)\n\n` +
         `- ${countToCreate(parsed, mapping)} nouveaux comptes\n` +
         `- ${parsed.totals.tradeCount} trades (avant dédoublonnage)\n\n` +
-        `Cette opération NE PEUT PAS être annulée automatiquement.\n\n` +
         `Continuer ?`
       )
       if (!ok) return
-      setConfirmReal(true)
     }
 
     setImporting(true)
@@ -154,7 +286,6 @@ export default function ImportLabPage() {
 
     const report = {
       dryRun,
-      startedAt: new Date().toISOString(),
       createdFirms: 0,
       createdAccounts: 0,
       reusedAccounts: 0,
@@ -165,27 +296,24 @@ export default function ImportLabPage() {
     }
 
     try {
-      // ===== 1. Récupère/crée la firme "Lucid Trading" =====
+      // === 1. Firme Lucid Trading ===
       let lucidFirm = existingFirms.find(f => f.name.toLowerCase().includes('lucid'))
       if (!lucidFirm) {
         if (!dryRun) {
           const { data, error } = await supabase
             .from('firms')
             .insert({ user_id: user.id, name: 'Lucid Trading', color: '#2d6fff' })
-            .select()
-            .single()
-          if (error) throw new Error(`Création firme Lucid : ${error.message}`)
+            .select().single()
+          if (error) throw new Error(`Création firme : ${error.message}`)
           lucidFirm = data
-          // Mise à jour locale
-          setExistingFirms(prev => [...prev, data])
         } else {
-          lucidFirm = { id: '__dry_run_firm__', name: 'Lucid Trading' }
+          lucidFirm = { id: '__dry_run_firm__' }
         }
         report.createdFirms++
       }
 
-      // ===== 2. Pour chaque compte du CSV : create ou link =====
-      const accountIdMap = {} // rithmicId → quantara account.id
+      // === 2. Comptes ===
+      const accountIdMap = {}
       for (const acc of parsed.accounts) {
         const m = mapping[acc.rithmicId]
         if (!m) continue
@@ -194,7 +322,7 @@ export default function ImportLabPage() {
           accountIdMap[acc.rithmicId] = m.accountId
           report.reusedAccounts++
         } else if (m.mode === 'create') {
-          const accountPayload = {
+          const payload = {
             user_id: user.id,
             firm_id: lucidFirm.id,
             buy_date: acc.trades[0]?.date || new Date().toISOString().slice(0, 10),
@@ -203,54 +331,41 @@ export default function ImportLabPage() {
             name: m.newName || acc.rithmicId,
             plan_size: m.planSize || '50k',
             status: acc.type === 'FUNDED' ? 'Financé' : 'Challenge',
-            dd_type: 'trailing', // Lucid = trailing par défaut
+            dd_type: 'trailing',
+            rithmic_account_id: acc.rithmicId, // ← lien Rithmic
             notes: `Importé depuis Rithmic le ${new Date().toLocaleDateString('fr-FR')}\nID Rithmic : ${acc.rithmicId}`,
           }
           if (!dryRun) {
             const { data, error } = await supabase
-              .from('accounts')
-              .insert(accountPayload)
-              .select()
-              .single()
+              .from('accounts').insert(payload).select().single()
             if (error) throw new Error(`Création compte ${acc.rithmicId} : ${error.message}`)
             accountIdMap[acc.rithmicId] = data.id
           } else {
-            accountIdMap[acc.rithmicId] = `__dry_run_acc_${acc.rithmicId}__`
+            accountIdMap[acc.rithmicId] = `__dry_${acc.rithmicId}`
           }
           report.createdAccounts++
         }
       }
 
-      // ===== 3. Pour chaque compte : insert trades avec dédoublonnage =====
+      // === 3. Trades avec dédoublonnage ===
       for (const acc of parsed.accounts) {
         const accountId = accountIdMap[acc.rithmicId]
         if (!accountId) continue
+        const perAcc = { rithmicId: acc.rithmicId, tradesToInsert: 0, skipped: 0 }
 
-        const perAcc = {
-          rithmicId: acc.rithmicId,
-          tradesToInsert: 0,
-          skipped: 0,
-        }
-
-        // Récupère les markers déjà présents
         let existingMarkers = new Set()
         if (!dryRun) {
-          const { data, error } = await supabase
+          const { data } = await supabase
             .from('journal_entries')
             .select('notes')
             .eq('account_id', accountId)
             .like('notes', '%[rithmic:%')
-          if (error) {
-            report.errors.push(`Compte ${acc.rithmicId} (fetch existing) : ${error.message}`)
-          } else {
-            for (const e of (data || [])) {
-              const m = (e.notes || '').match(/\[rithmic:(\d+)\/(\d+)\]/)
-              if (m) existingMarkers.add(`${m[1]}/${m[2]}`)
-            }
+          for (const e of (data || [])) {
+            const m = (e.notes || '').match(/\[rithmic:(\d+)\/(\d+)\]/)
+            if (m) existingMarkers.add(`${m[1]}/${m[2]}`)
           }
         }
 
-        // Prépare les lignes à insérer
         const rows = []
         for (const t of acc.trades) {
           const marker = `${t.entryOrderId}/${t.exitOrderId}`
@@ -274,12 +389,11 @@ export default function ImportLabPage() {
 
         if (rows.length > 0) {
           if (!dryRun) {
-            // Insert par batch de 100 pour éviter les limites
             for (let i = 0; i < rows.length; i += 100) {
               const batch = rows.slice(i, i + 100)
               const { error } = await supabase.from('journal_entries').insert(batch)
               if (error) {
-                report.errors.push(`Compte ${acc.rithmicId} (insert batch ${i}) : ${error.message}`)
+                report.errors.push(`${acc.rithmicId} batch ${i} : ${error.message}`)
                 break
               }
             }
@@ -287,12 +401,11 @@ export default function ImportLabPage() {
           perAcc.tradesToInsert = rows.length
           report.insertedTrades += rows.length
         }
-
         report.perAccount.push(perAcc)
       }
 
-      report.finishedAt = new Date().toISOString()
       setImportResult({ ok: true, report })
+      if (!dryRun && onSuccess) onSuccess()
     } catch (err) {
       report.errors.push(err.message)
       setImportResult({ ok: false, error: err.message, report })
@@ -301,350 +414,297 @@ export default function ImportLabPage() {
     }
   }
 
-  // ==========================================================================
-  // Reset
-  // ==========================================================================
+  return (
+    <>
+      <Section title="1 · Sélectionne ton CSV PnL Statement">
+        <Card padding="lg">
+          <DropZone
+            fileName={fileName}
+            dragOver={dragOver}
+            onDrop={onDrop}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onClick={() => fileInputRef.current?.click()}
+            placeholder="Format : Rithmic R|Trader Pro → Performance → Export CSV"
+          />
+          <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
+        </Card>
+      </Section>
+
+      {parseError && <ErrorCard message={parseError} />}
+
+      {parsed && (
+        <>
+          <Section
+            title="2 · Détection"
+            action={
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Badge tone="blue">{parsed.accounts.length} comptes</Badge>
+                <Badge tone="neutral">{parsed.totals.tradeCount} trades</Badge>
+                <Badge tone="neutral">{parsed.totals.fillCount} fills</Badge>
+                <Badge tone={parsed.totals.netPnL >= 0 ? 'green' : 'red'}>
+                  Net ${parsed.totals.netPnL.toFixed(2)}
+                </Badge>
+              </div>
+            }
+          >
+            {parsed.accounts.map((acc) => (
+              <TradesAccountCard
+                key={acc.rithmicId}
+                account={acc}
+                mapping={mapping[acc.rithmicId]}
+                existingAccounts={existingAccounts}
+                loadingExisting={loadingExisting}
+                onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
+              />
+            ))}
+          </Section>
+
+          <ExecutionSection
+            dryRun={dryRun}
+            setDryRun={setDryRun}
+            importing={importing}
+            onLaunch={doImport}
+            label="Trades"
+          />
+
+          {importResult && (
+            <ResultSection result={importResult} onReset={reset} kind="trades" />
+          )}
+        </>
+      )}
+    </>
+  )
+}
+
+// ============================================================================
+// ============================================================================
+// IMPORTER 2 : DASHBOARD (état des comptes)
+// ============================================================================
+// ============================================================================
+function DashboardImporter({ user, existingAccounts, loadingExisting, onSuccess }) {
+  const [fileName, setFileName] = useState('')
+  const [parsed, setParsed] = useState(null)
+  const [parseError, setParseError] = useState('')
+  const [dragOver, setDragOver] = useState(false)
+  const [mapping, setMapping] = useState({}) // rithmicId → { accountId | null }  (null = skip)
+  const [dryRun, setDryRun] = useState(true)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState(null)
+  const fileInputRef = useRef(null)
+
+  function handleFile(file) {
+    setFileName(file.name)
+    setImportResult(null)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const result = parseRithmicDashboard(e.target.result)
+        setParsed(result)
+        setParseError('')
+
+        // Auto-mapping via rithmic_account_id
+        const initialMapping = {}
+        for (const acc of result.accounts) {
+          const existing = existingAccounts.find(ea => ea.rithmic_account_id === acc.rithmicId)
+          initialMapping[acc.rithmicId] = {
+            accountId: existing?.id || null,
+            autoMatched: !!existing,
+          }
+        }
+        setMapping(initialMapping)
+      } catch (err) {
+        setParseError(err.message)
+        setParsed(null)
+      }
+    }
+    reader.onerror = () => setParseError('Erreur de lecture du fichier')
+    reader.readAsText(file)
+  }
+
+  function onDrop(e) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setParseError('Seuls les fichiers .csv sont acceptés')
+      return
+    }
+    handleFile(file)
+  }
+
   function reset() {
     setFileName('')
     setParsed(null)
     setParseError('')
     setMapping({})
     setImportResult(null)
-    setConfirmReal(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // ==========================================================================
-  // Gardes d'accès
-  // ==========================================================================
-  if (loadingAuth) {
-    return (
-      <FullPageState>
-        <div style={{ color: T.color.text3 }}>⏳ Vérification accès...</div>
-      </FullPageState>
-    )
-  }
+  async function doImport() {
+    if (!parsed || !user) return
 
-  if (!user) {
-    return (
-      <FullPageState>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Connexion requise</h1>
-        <p style={{ color: T.color.text2, marginBottom: 16 }}>Cette page est réservée aux administrateurs.</p>
-        <Link href="/app" style={{ color: T.color.blueLight, textDecoration: 'none' }}>
-          ← Page de connexion
-        </Link>
-      </FullPageState>
-    )
-  }
+    const accountsToUpdate = parsed.accounts.filter(a => mapping[a.rithmicId]?.accountId)
+    if (accountsToUpdate.length === 0) {
+      window.alert('Aucun compte mappé — rien à faire. Lie au moins 1 compte CSV à un compte Quantara.')
+      return
+    }
 
-  if (!ADMIN_EMAILS.includes(user.email)) {
-    return (
-      <FullPageState>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Accès admin requis</h1>
-        <p style={{ fontSize: 12, color: T.color.text3, fontFamily: T.font.mono, marginBottom: 16 }}>
-          {user.email}
-        </p>
-        <Link href="/app" style={{ color: T.color.blueLight, textDecoration: 'none' }}>
-          ← Retour à l'app
-        </Link>
-      </FullPageState>
-    )
-  }
+    if (!dryRun) {
+      const ok = window.confirm(
+        `⚠️ IMPORT RÉEL (Dashboard)\n\n` +
+        `${accountsToUpdate.length} comptes Quantara vont être mis à jour avec :\n` +
+        `- Solde actuel (rithmic_balance)\n` +
+        `- Seuil DD trailing (rithmic_min_balance)\n` +
+        `- Status si liquidé\n` +
+        `- Commissions totales\n\n` +
+        `Continuer ?`
+      )
+      if (!ok) return
+    }
 
-  // ==========================================================================
-  // Render principal
-  // ==========================================================================
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: T.color.bg,
-      color: T.color.text,
-      padding: '32px 24px',
-      fontFamily: T.font.sans,
-    }}>
-      <UIStyles />
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <PageHeader
-          eyebrow="ADMIN LAB · BETA"
-          title="Import Lab — Rithmic CSV"
-          subtitle="Page isolée pour tester l'import CSV. Mode dry-run par défaut, aucune écriture en DB tant que tu ne bascules pas en import réel."
-          actions={
-            <>
-              {parsed && (
-                <Btn variant="ghost" size="sm" onClick={reset}>
-                  Reset
-                </Btn>
-              )}
-              <Link href="/app" style={{ textDecoration: 'none' }}>
-                <Btn variant="ghost" size="sm">← Retour app</Btn>
-              </Link>
-            </>
+    setImporting(true)
+    setImportResult(null)
+    const report = {
+      dryRun,
+      updated: 0,
+      liquidated: 0,
+      skipped: parsed.accounts.length - accountsToUpdate.length,
+      perAccount: [],
+      errors: [],
+    }
+    const nowIso = new Date().toISOString()
+
+    try {
+      for (const acc of accountsToUpdate) {
+        const targetId = mapping[acc.rithmicId].accountId
+        const payload = {
+          rithmic_account_id: acc.rithmicId,
+          rithmic_balance: acc.balance,
+          rithmic_min_balance: acc.minBalance,
+          rithmic_synced_at: nowIso,
+          total_commissions: acc.totalCommission || null,
+        }
+        if (acc.liquidated && acc.triggerTime) {
+          payload.liquidated_at = acc.triggerTime
+          payload.status = 'Liquidé'
+          report.liquidated++
+        }
+
+        if (!dryRun) {
+          const { error } = await supabase
+            .from('accounts')
+            .update(payload)
+            .eq('id', targetId)
+            .eq('user_id', user.id)
+          if (error) {
+            report.errors.push(`${acc.rithmicId} : ${error.message}`)
+            continue
           }
-        />
+        }
 
-        {/* ===== STEP 1 : Drop CSV ===== */}
-        <Section title="1 · Sélectionne ton CSV Rithmic">
-          <Card padding="lg">
-            <div
-              onDrop={onDrop}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                border: `2px dashed ${dragOver ? T.color.blueLight : T.color.borderStrong}`,
-                borderRadius: T.radius.lg,
-                padding: 40,
-                textAlign: 'center',
-                cursor: 'pointer',
-                background: dragOver ? T.color.blueSoft : 'rgba(255,255,255,0.02)',
-                transition: T.transition.base,
-              }}
-            >
-              <div style={{ fontSize: 36, marginBottom: 12 }}>{fileName ? '📄' : '📁'}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: T.color.text }}>
-                {fileName || 'Glisse ton fichier CSV ici'}
+        report.updated++
+        report.perAccount.push({
+          rithmicId: acc.rithmicId,
+          accountId: targetId,
+          balance: acc.balance,
+          minBalance: acc.minBalance,
+          bufferDD: acc.bufferDD,
+          liquidated: acc.liquidated,
+        })
+      }
+
+      setImportResult({ ok: true, report })
+      if (!dryRun && onSuccess) onSuccess()
+    } catch (err) {
+      report.errors.push(err.message)
+      setImportResult({ ok: false, error: err.message, report })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  return (
+    <>
+      <Section title="1 · Sélectionne ton CSV Trader Dashboard">
+        <Card padding="lg">
+          <DropZone
+            fileName={fileName}
+            dragOver={dragOver}
+            onDrop={onDrop}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onClick={() => fileInputRef.current?.click()}
+            placeholder="Format : Rithmic R|Trader Pro → Trader Dashboard → Export CSV"
+          />
+          <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
+        </Card>
+      </Section>
+
+      {parseError && <ErrorCard message={parseError} />}
+
+      {parsed && (
+        <>
+          <Section
+            title="2 · État des comptes"
+            action={
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Badge tone="blue">{parsed.accounts.length} comptes</Badge>
+                <Badge tone="green">{parsed.totals.activeCount} actifs</Badge>
+                {parsed.totals.atRiskCount > 0 && (
+                  <Badge tone="amber">{parsed.totals.atRiskCount} à risque</Badge>
+                )}
+                {parsed.totals.liquidatedCount > 0 && (
+                  <Badge tone="red">{parsed.totals.liquidatedCount} liquidés</Badge>
+                )}
+                <Badge tone="neutral">Total ${parsed.totals.totalBalance.toFixed(2)}</Badge>
               </div>
-              <div style={{ fontSize: 12, color: T.color.text3 }}>
-                ou clique pour parcourir · Format attendu : Rithmic R|Trader Pro → Performance → Export CSV
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) handleFile(f)
-                }}
+            }
+          >
+            {parsed.accounts.map((acc) => (
+              <DashboardAccountCard
+                key={acc.rithmicId}
+                account={acc}
+                mapping={mapping[acc.rithmicId]}
+                existingAccounts={existingAccounts}
+                loadingExisting={loadingExisting}
+                onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
               />
-            </div>
-          </Card>
-        </Section>
+            ))}
+          </Section>
 
-        {/* ===== ERREUR PARSING ===== */}
-        {parseError && (
-          <Card style={{
-            borderColor: T.color.red,
-            background: T.color.redSoft,
-            marginBottom: 24,
-          }}>
-            <div style={{ color: T.color.red, fontSize: 13 }}>❌ {parseError}</div>
-          </Card>
-        )}
+          <ExecutionSection
+            dryRun={dryRun}
+            setDryRun={setDryRun}
+            importing={importing}
+            onLaunch={doImport}
+            label="Mise à jour comptes"
+          />
 
-        {/* ===== STEP 2 : Preview ===== */}
-        {parsed && (
-          <>
-            <Section
-              title={`2 · Détection`}
-              action={
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11, color: T.color.text3, fontFamily: T.font.mono }}>
-                  <Badge tone="blue">{parsed.accounts.length} comptes</Badge>
-                  <Badge tone="neutral">{parsed.totals.tradeCount} trades</Badge>
-                  <Badge tone="neutral">{parsed.totals.fillCount} fills bruts</Badge>
-                  <Badge tone={parsed.totals.netPnL >= 0 ? 'green' : 'red'}>
-                    Net ${parsed.totals.netPnL.toFixed(2)}
-                  </Badge>
-                </div>
-              }
-            >
-              {parsed.warnings.length > 0 && (
-                <Card style={{
-                  marginBottom: 12,
-                  borderColor: T.color.amber,
-                  background: T.color.amberSoft,
-                }}>
-                  <div style={{ fontSize: 12, color: T.color.amber, marginBottom: 6, fontWeight: 600 }}>
-                    ⚠️ {parsed.warnings.length} avertissements
-                  </div>
-                  <div style={{ fontSize: 11, color: T.color.text2, fontFamily: T.font.mono, maxHeight: 100, overflow: 'auto' }}>
-                    {parsed.warnings.map((w, i) => <div key={i}>· {w}</div>)}
-                  </div>
-                </Card>
-              )}
-
-              {parsed.accounts.map((acc) => (
-                <AccountPreviewCard
-                  key={acc.rithmicId}
-                  account={acc}
-                  mapping={mapping[acc.rithmicId]}
-                  existingAccounts={existingAccounts}
-                  loadingExisting={loadingExisting}
-                  onChangeMapping={(newM) => setMapping(prev => ({ ...prev, [acc.rithmicId]: newM }))}
-                />
-              ))}
-            </Section>
-
-            {/* ===== STEP 3 : Mode + Import ===== */}
-            <Section title="3 · Mode d'exécution">
-              <Card>
-                <label style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  padding: 12, borderRadius: T.radius.md,
-                  background: dryRun ? T.color.blueSoft : 'transparent',
-                  border: `1px solid ${dryRun ? T.color.blueRing : T.color.border}`,
-                  marginBottom: 10, cursor: 'pointer',
-                }}>
-                  <input
-                    type="radio" name="mode" checked={dryRun}
-                    onChange={() => { setDryRun(true); setConfirmReal(false) }}
-                    style={{ marginTop: 3 }}
-                  />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
-                      🔍 Dry Run (recommandé)
-                    </div>
-                    <div style={{ fontSize: 12, color: T.color.text2 }}>
-                      Simule l'import et affiche un rapport. <strong>N'écrit rien en DB.</strong>
-                    </div>
-                  </div>
-                </label>
-
-                <label style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  padding: 12, borderRadius: T.radius.md,
-                  background: !dryRun ? T.color.amberSoft : 'transparent',
-                  border: `1px solid ${!dryRun ? 'rgba(250,199,117,0.4)' : T.color.border}`,
-                  cursor: 'pointer',
-                }}>
-                  <input
-                    type="radio" name="mode" checked={!dryRun}
-                    onChange={() => setDryRun(false)}
-                    style={{ marginTop: 3 }}
-                  />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2, color: T.color.amber }}>
-                      ⚠️ Import réel
-                    </div>
-                    <div style={{ fontSize: 12, color: T.color.text2 }}>
-                      Crée les comptes + insère les trades dans Supabase. Confirmation requise.
-                      Le dédoublonnage utilise un marker <code style={{ color: T.color.text3 }}>[rithmic:ENTRY/EXIT]</code> stocké dans <code>notes</code>.
-                    </div>
-                  </div>
-                </label>
-
-                <div style={{ marginTop: 18, display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <Btn
-                    variant={dryRun ? 'blue' : 'primary'}
-                    size="lg"
-                    onClick={doImport}
-                    disabled={importing}
-                    style={!dryRun ? { background: T.color.amber, color: '#000' } : {}}
-                  >
-                    {importing
-                      ? '⏳ Traitement...'
-                      : dryRun
-                        ? '🔍 Lancer le dry run'
-                        : '⚠️ Lancer l\'import réel'
-                    }
-                  </Btn>
-                  {!dryRun && (
-                    <div style={{ fontSize: 11, color: T.color.text3 }}>
-                      → une popup de confirmation s'affichera
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </Section>
-
-            {/* ===== STEP 4 : Résultat ===== */}
-            {importResult && (
-              <Section title="4 · Rapport">
-                <Card style={{
-                  borderColor: importResult.ok ? T.color.green : T.color.red,
-                  background: importResult.ok
-                    ? 'rgba(16,185,129,0.05)'
-                    : 'rgba(239,68,68,0.05)',
-                }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: importResult.ok ? T.color.green : T.color.red }}>
-                    {importResult.ok
-                      ? (importResult.report.dryRun ? '🔍 Dry run terminé avec succès' : '✅ Import réel terminé')
-                      : '❌ Erreur durant l\'import'
-                    }
-                  </div>
-
-                  {!importResult.ok && (
-                    <div style={{
-                      fontSize: 12, color: T.color.red,
-                      fontFamily: T.font.mono,
-                      padding: 10, background: 'rgba(0,0,0,0.3)',
-                      borderRadius: T.radius.sm, marginBottom: 12,
-                    }}>
-                      {importResult.error}
-                    </div>
-                  )}
-
-                  <div style={{ fontSize: 13, color: T.color.text2, lineHeight: 1.9, fontFamily: T.font.mono }}>
-                    <div>• Firmes créées : <strong style={{ color: T.color.text }}>{importResult.report.createdFirms}</strong></div>
-                    <div>• Comptes créés : <strong style={{ color: T.color.text }}>{importResult.report.createdAccounts}</strong></div>
-                    <div>• Comptes existants réutilisés : <strong style={{ color: T.color.text }}>{importResult.report.reusedAccounts}</strong></div>
-                    <div>• Trades insérés : <strong style={{ color: T.color.green }}>{importResult.report.insertedTrades}</strong></div>
-                    <div>• Doublons ignorés : <strong style={{ color: T.color.text3 }}>{importResult.report.skippedDuplicates}</strong></div>
-                  </div>
-
-                  {importResult.report.perAccount.length > 0 && (
-                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${T.color.border}` }}>
-                      <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-                        Détail par compte
-                      </div>
-                      {importResult.report.perAccount.map((p, i) => (
-                        <div key={i} style={{ fontSize: 12, color: T.color.text2, fontFamily: T.font.mono, marginBottom: 4 }}>
-                          <code>{p.rithmicId}</code> → {p.tradesToInsert} insérés, {p.skipped} skip
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {importResult.report.errors.length > 0 && (
-                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${T.color.red}` }}>
-                      <div style={{ fontSize: 11, color: T.color.red, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-                        Erreurs non bloquantes
-                      </div>
-                      {importResult.report.errors.map((e, i) => (
-                        <div key={i} style={{ fontSize: 12, color: T.color.red, fontFamily: T.font.mono, marginBottom: 4 }}>
-                          · {e}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {importResult.ok && !importResult.report.dryRun && (
-                    <div style={{ marginTop: 16 }}>
-                      <Link href="/app" style={{ textDecoration: 'none' }}>
-                        <Btn variant="blue" size="md">
-                          → Voir dans le journal
-                        </Btn>
-                      </Link>
-                    </div>
-                  )}
-                </Card>
-              </Section>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+          {importResult && (
+            <ResultSection result={importResult} onReset={reset} kind="dashboard" />
+          )}
+        </>
+      )}
+    </>
   )
 }
 
 // ============================================================================
-// Sub-component : Card de preview d'un compte CSV avec mapping editable
+// CARD : compte du PnL Statement (mode Trades)
 // ============================================================================
-function AccountPreviewCard({ account, mapping, existingAccounts, loadingExisting, onChangeMapping }) {
+function TradesAccountCard({ account, mapping, existingAccounts, loadingExisting, onChangeMapping }) {
   const [expanded, setExpanded] = useState(true)
   const isProfit = account.summary.netPnL >= 0
-
   if (!mapping) return null
 
   return (
     <Card style={{ marginBottom: 12 }}>
-      {/* Header de la card : ID + stats + bouton expand */}
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', gap: 16, cursor: 'pointer',
-      }}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, cursor: 'pointer' }}
         onClick={() => setExpanded(!expanded)}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -652,22 +712,11 @@ function AccountPreviewCard({ account, mapping, existingAccounts, loadingExistin
             <Badge tone={account.type === 'FUNDED' ? 'green' : 'amber'}>
               {account.type === 'FUNDED' ? '💰 FUNDED' : '🎯 EVAL'}
             </Badge>
-            <code style={{ fontSize: 12, color: T.color.text2, fontFamily: T.font.mono }}>
-              {account.rithmicId}
-            </code>
-            {account.firm && (
-              <Badge tone="blue">{account.firm}</Badge>
-            )}
+            <code style={{ fontSize: 12, color: T.color.text2, fontFamily: T.font.mono }}>{account.rithmicId}</code>
+            {account.firm && <Badge tone="blue">{account.firm}</Badge>}
           </div>
-          <div style={{
-            display: 'flex', gap: 20, fontSize: 12,
-            color: T.color.text3, fontFamily: T.font.mono, flexWrap: 'wrap',
-          }}>
-            <span>
-              Net : <strong style={{ color: isProfit ? T.color.green : T.color.red, fontSize: 13 }}>
-                ${account.summary.netPnL.toFixed(2)}
-              </strong>
-            </span>
+          <div style={{ display: 'flex', gap: 20, fontSize: 12, color: T.color.text3, fontFamily: T.font.mono, flexWrap: 'wrap' }}>
+            <span>Net : <strong style={{ color: isProfit ? T.color.green : T.color.red, fontSize: 13 }}>${account.summary.netPnL.toFixed(2)}</strong></span>
             <span>{account.trades.length} trades · {account.summary.fillCount} fills</span>
             <span>{account.summary.winRate.toFixed(1)}% wins</span>
             <span>Instr : {account.instruments.join(', ') || '—'}</span>
@@ -678,161 +727,15 @@ function AccountPreviewCard({ account, mapping, existingAccounts, loadingExistin
 
       {expanded && (
         <>
-          {/* === Bloc Mapping === */}
-          <div style={{
-            marginTop: 16, padding: 14,
-            background: T.color.surface2,
-            border: `1px solid ${T.color.border}`,
-            borderRadius: T.radius.md,
-          }}>
-            <div style={{
-              fontSize: 11, color: T.color.text3,
-              textTransform: 'uppercase', letterSpacing: '0.12em',
-              marginBottom: 10, fontFamily: T.font.mono,
-            }}>
-              Mapping vers Quantara
-            </div>
-
-            <select
-              value={mapping.mode === 'existing' ? mapping.accountId : '__create__'}
-              onChange={(e) => {
-                if (e.target.value === '__create__') {
-                  onChangeMapping({
-                    mode: 'create',
-                    newName: account.rithmicId.slice(-11),
-                    planSize: '50k',
-                  })
-                } else {
-                  onChangeMapping({ mode: 'existing', accountId: e.target.value })
-                }
-              }}
-              style={{
-                width: '100%', padding: 10, fontSize: 13,
-                background: T.color.surfaceSolid, color: T.color.text,
-                border: `1px solid ${T.color.borderStrong}`,
-                borderRadius: T.radius.md,
-                fontFamily: T.font.sans, outline: 'none',
-              }}
-            >
-              <option value="__create__">➕ Créer un nouveau compte Quantara</option>
-              {existingAccounts.map((ea) => (
-                <option key={ea.id} value={ea.id}>
-                  {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
-                </option>
-              ))}
-            </select>
-            {loadingExisting && (
-              <div style={{ fontSize: 11, color: T.color.text3, marginTop: 6 }}>
-                ⏳ Chargement des comptes existants...
-              </div>
-            )}
-
-            {/* Si mode "create" → champs nom + plan_size */}
-            {mapping.mode === 'create' && (
-              <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                <input
-                  type="text"
-                  placeholder="Nom du compte"
-                  value={mapping.newName || ''}
-                  onChange={(e) => onChangeMapping({ ...mapping, newName: e.target.value })}
-                  style={{
-                    flex: 1, minWidth: 200, padding: 10, fontSize: 13,
-                    background: T.color.surfaceSolid, color: T.color.text,
-                    border: `1px solid ${T.color.borderStrong}`,
-                    borderRadius: T.radius.md, outline: 'none',
-                    fontFamily: T.font.sans,
-                  }}
-                />
-                <select
-                  value={mapping.planSize || '50k'}
-                  onChange={(e) => onChangeMapping({ ...mapping, planSize: e.target.value })}
-                  style={{
-                    padding: 10, fontSize: 13,
-                    background: T.color.surfaceSolid, color: T.color.text,
-                    border: `1px solid ${T.color.borderStrong}`,
-                    borderRadius: T.radius.md, outline: 'none',
-                    fontFamily: T.font.sans,
-                  }}
-                >
-                  <option value="25k">25k</option>
-                  <option value="50k">50k</option>
-                  <option value="100k">100k</option>
-                  <option value="150k">150k</option>
-                  <option value="250k">250k</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* === Aperçu des trades === */}
-          <div style={{ marginTop: 14 }}>
-            <div style={{
-              fontSize: 11, color: T.color.text3,
-              textTransform: 'uppercase', letterSpacing: '0.12em',
-              marginBottom: 8, fontFamily: T.font.mono,
-            }}>
-              Aperçu — {Math.min(10, account.trades.length)} premiers trades
-            </div>
-            <div style={{ overflowX: 'auto', maxHeight: 320, border: `1px solid ${T.color.border}`, borderRadius: T.radius.md }}>
-              <table style={{
-                width: '100%', fontSize: 11,
-                fontFamily: T.font.mono, borderCollapse: 'collapse',
-                background: T.color.surfaceSolid,
-              }}>
-                <thead>
-                  <tr style={{
-                    position: 'sticky', top: 0,
-                    background: T.color.surface2Solid,
-                    textAlign: 'left', color: T.color.text3,
-                    zIndex: 1,
-                  }}>
-                    <th style={th}>Date</th>
-                    <th style={th}>Inst.</th>
-                    <th style={th}>Side</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Qty</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Entry</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Exit</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Net P&L</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Fills</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Hold</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {account.trades.slice(0, 10).map((t, i) => (
-                    <tr key={i} style={{ borderTop: `1px solid ${T.color.border}` }}>
-                      <td style={td}>{t.date}</td>
-                      <td style={td}>{t.instrument}</td>
-                      <td style={{ ...td, color: t.side === 'LONG' ? T.color.green : T.color.red, fontWeight: 600 }}>
-                        {t.side}
-                      </td>
-                      <td style={{ ...td, textAlign: 'right' }}>{t.qty}</td>
-                      <td style={{ ...td, textAlign: 'right' }}>{t.entryPrice}</td>
-                      <td style={{ ...td, textAlign: 'right' }}>{t.exitPrice}</td>
-                      <td style={{
-                        ...td, textAlign: 'right',
-                        color: t.netPnL >= 0 ? T.color.green : T.color.red,
-                        fontWeight: 600,
-                      }}>
-                        {t.netPnL.toFixed(2)}
-                      </td>
-                      <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>{t.fillCount}</td>
-                      <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>
-                        {formatHold(t.holdSeconds)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {account.trades.length > 10 && (
-              <div style={{
-                padding: 8, fontSize: 11, color: T.color.text3,
-                textAlign: 'center', fontFamily: T.font.mono,
-              }}>
-                ... et {account.trades.length - 10} autres trades dans cet account
-              </div>
-            )}
-          </div>
+          <MappingBlock
+            mapping={mapping}
+            existingAccounts={existingAccounts}
+            loadingExisting={loadingExisting}
+            allowCreate={true}
+            account={account}
+            onChangeMapping={onChangeMapping}
+          />
+          <TradesPreviewTable trades={account.trades} />
         </>
       )}
     </Card>
@@ -840,8 +743,423 @@ function AccountPreviewCard({ account, mapping, existingAccounts, loadingExistin
 }
 
 // ============================================================================
-// Sub-component : écran plein page pour les états bloquants (loading/auth)
+// CARD : compte du Dashboard (mode État)
 // ============================================================================
+function DashboardAccountCard({ account, mapping, existingAccounts, loadingExisting, onChangeMapping }) {
+  const [expanded, setExpanded] = useState(true)
+  if (!mapping) return null
+
+  const buffer = account.bufferDD
+  const bufferPct = account.balance > 0 ? (buffer / account.balance) * 100 : 0
+  let bufferTone, bufferLabel
+  if (account.liquidated) { bufferTone = 'red'; bufferLabel = '💀 LIQUIDÉ' }
+  else if (buffer < 0) { bufferTone = 'red'; bufferLabel = '🚨 DÉPASSEMENT' }
+  else if (bufferPct < 3) { bufferTone = 'amber'; bufferLabel = '⚠️ PROCHE' }
+  else { bufferTone = 'green'; bufferLabel = '✓ SAFE' }
+
+  return (
+    <Card style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, cursor: 'pointer' }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <Badge tone={account.type === 'FUNDED' ? 'green' : 'amber'}>
+              {account.type === 'FUNDED' ? '💰 FUNDED' : '🎯 EVAL'}
+            </Badge>
+            <code style={{ fontSize: 12, color: T.color.text2, fontFamily: T.font.mono }}>{account.rithmicId}</code>
+            {account.firm && <Badge tone="blue">{account.firm}</Badge>}
+            <Badge tone={bufferTone}>{bufferLabel}</Badge>
+            {mapping.autoMatched && <Badge tone="blue">✓ AUTO-LIÉ</Badge>}
+          </div>
+          <div style={{ display: 'flex', gap: 20, fontSize: 12, color: T.color.text3, fontFamily: T.font.mono, flexWrap: 'wrap' }}>
+            <span>Balance : <strong style={{ color: T.color.text, fontSize: 13 }}>${account.balance.toFixed(2)}</strong></span>
+            <span>DD Min : <strong style={{ color: T.color.text2 }}>${account.minBalance.toFixed(2)}</strong></span>
+            <span>Buffer : <strong style={{ color: buffer >= 0 ? T.color.green : T.color.red, fontSize: 13 }}>{buffer >= 0 ? '+' : ''}${buffer.toFixed(2)}</strong></span>
+            {account.totalCommission > 0 && <span>Fees : ${account.totalCommission.toFixed(2)}</span>}
+          </div>
+          {account.liquidated && (
+            <div style={{ marginTop: 6, fontSize: 11, color: T.color.red, fontFamily: T.font.mono }}>
+              💀 Liquidé le {account.triggerTime?.replace('T', ' à ')} · {account.triggerStatus}
+            </div>
+          )}
+        </div>
+        <span style={{ fontSize: 14, color: T.color.text3 }}>{expanded ? '▲' : '▼'}</span>
+      </div>
+
+      {expanded && (
+        <>
+          <MappingBlock
+            mapping={mapping}
+            existingAccounts={existingAccounts}
+            loadingExisting={loadingExisting}
+            allowCreate={false}
+            dashboardMode={true}
+            onChangeMapping={onChangeMapping}
+          />
+
+          {/* Détails compte */}
+          <div style={{
+            marginTop: 14, padding: 14,
+            background: T.color.surface2,
+            border: `1px solid ${T.color.border}`,
+            borderRadius: T.radius.md,
+          }}>
+            <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, fontFamily: T.font.mono }}>
+              Détails Rithmic
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, fontFamily: T.font.mono }}>
+              <KV k="Currency" v={account.currency} />
+              <KV k="Auto Liquidate" v={account.autoLiquidate ? '✓ Enabled' : '✗ Disabled'} />
+              <KV k="Net Position" v={account.netPosition === 0 ? 'Flat' : `${account.netPosition}`} />
+              <KV k="Available Margin" v={`$${account.availableMargin.toFixed(2)}`} />
+              <KV k="Cash on Hand" v={`$${account.cashOnHand.toFixed(2)}`} />
+              <KV k="Cash EOD précédent" v={`$${account.cashOnHandPrevEOD.toFixed(2)}`} />
+              <KV k="Risk Algorithm" v={account.riskAlgorithm || '—'} />
+              <KV k="Account Name" v={account.accountName || '—'} />
+            </div>
+          </div>
+        </>
+      )}
+    </Card>
+  )
+}
+
+function KV({ k, v }) {
+  return (
+    <div>
+      <span style={{ color: T.color.text3 }}>{k} : </span>
+      <span style={{ color: T.color.text2 }}>{v}</span>
+    </div>
+  )
+}
+
+// ============================================================================
+// BLOC commun : mapping vers compte Quantara (réutilisé Trades + Dashboard)
+// ============================================================================
+function MappingBlock({ mapping, existingAccounts, loadingExisting, allowCreate, dashboardMode, account, onChangeMapping }) {
+  // Mode Dashboard : mapping = { accountId, autoMatched }
+  // Mode Trades :   mapping = { mode: 'create'|'existing', accountId?, newName?, planSize? }
+
+  if (dashboardMode) {
+    return (
+      <div style={{
+        marginTop: 16, padding: 14,
+        background: T.color.surface2,
+        border: `1px solid ${T.color.border}`,
+        borderRadius: T.radius.md,
+      }}>
+        <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, fontFamily: T.font.mono }}>
+          Compte Quantara à mettre à jour
+        </div>
+        <select
+          value={mapping.accountId || '__skip__'}
+          onChange={(e) => {
+            onChangeMapping({
+              accountId: e.target.value === '__skip__' ? null : e.target.value,
+              autoMatched: false,
+            })
+          }}
+          style={inputStyle()}
+        >
+          <option value="__skip__">⏭️ Ne pas mettre à jour (skip)</option>
+          {existingAccounts.map((ea) => (
+            <option key={ea.id} value={ea.id}>
+              {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
+              {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
+            </option>
+          ))}
+        </select>
+        {loadingExisting && <LoadingNote />}
+        {mapping.autoMatched && (
+          <div style={{ fontSize: 11, color: T.color.green, marginTop: 8, fontFamily: T.font.mono }}>
+            ✓ Auto-lié via rithmic_account_id
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // === Mode Trades ===
+  return (
+    <div style={{
+      marginTop: 16, padding: 14,
+      background: T.color.surface2,
+      border: `1px solid ${T.color.border}`,
+      borderRadius: T.radius.md,
+    }}>
+      <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, fontFamily: T.font.mono }}>
+        Mapping vers Quantara
+      </div>
+      <select
+        value={mapping.mode === 'existing' ? mapping.accountId : '__create__'}
+        onChange={(e) => {
+          if (e.target.value === '__create__') {
+            onChangeMapping({ mode: 'create', newName: account.rithmicId.slice(-11), planSize: '50k' })
+          } else {
+            onChangeMapping({ mode: 'existing', accountId: e.target.value })
+          }
+        }}
+        style={inputStyle()}
+      >
+        {allowCreate && <option value="__create__">➕ Créer un nouveau compte Quantara</option>}
+        {existingAccounts.map((ea) => (
+          <option key={ea.id} value={ea.id}>
+            {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
+            {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
+          </option>
+        ))}
+      </select>
+      {loadingExisting && <LoadingNote />}
+
+      {mapping.mode === 'create' && (
+        <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Nom du compte"
+            value={mapping.newName || ''}
+            onChange={(e) => onChangeMapping({ ...mapping, newName: e.target.value })}
+            style={{ ...inputStyle(), flex: 1, minWidth: 200 }}
+          />
+          <select
+            value={mapping.planSize || '50k'}
+            onChange={(e) => onChangeMapping({ ...mapping, planSize: e.target.value })}
+            style={{ ...inputStyle(), width: 'auto' }}
+          >
+            <option value="25k">25k</option>
+            <option value="50k">50k</option>
+            <option value="100k">100k</option>
+            <option value="150k">150k</option>
+            <option value="250k">250k</option>
+          </select>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// TABLE : preview des 10 premiers trades
+// ============================================================================
+function TradesPreviewTable({ trades }) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8, fontFamily: T.font.mono }}>
+        Aperçu — {Math.min(10, trades.length)} premiers trades
+      </div>
+      <div style={{ overflowX: 'auto', maxHeight: 320, border: `1px solid ${T.color.border}`, borderRadius: T.radius.md }}>
+        <table style={{ width: '100%', fontSize: 11, fontFamily: T.font.mono, borderCollapse: 'collapse', background: T.color.surfaceSolid }}>
+          <thead>
+            <tr style={{ position: 'sticky', top: 0, background: T.color.surface2Solid, textAlign: 'left', color: T.color.text3, zIndex: 1 }}>
+              <th style={th}>Date</th><th style={th}>Inst.</th><th style={th}>Side</th>
+              <th style={{ ...th, textAlign: 'right' }}>Qty</th>
+              <th style={{ ...th, textAlign: 'right' }}>Entry</th>
+              <th style={{ ...th, textAlign: 'right' }}>Exit</th>
+              <th style={{ ...th, textAlign: 'right' }}>Net P&L</th>
+              <th style={{ ...th, textAlign: 'right' }}>Fills</th>
+              <th style={{ ...th, textAlign: 'right' }}>Hold</th>
+            </tr>
+          </thead>
+          <tbody>
+            {trades.slice(0, 10).map((t, i) => (
+              <tr key={i} style={{ borderTop: `1px solid ${T.color.border}` }}>
+                <td style={td}>{t.date}</td>
+                <td style={td}>{t.instrument}</td>
+                <td style={{ ...td, color: t.side === 'LONG' ? T.color.green : T.color.red, fontWeight: 600 }}>{t.side}</td>
+                <td style={{ ...td, textAlign: 'right' }}>{t.qty}</td>
+                <td style={{ ...td, textAlign: 'right' }}>{t.entryPrice}</td>
+                <td style={{ ...td, textAlign: 'right' }}>{t.exitPrice}</td>
+                <td style={{ ...td, textAlign: 'right', color: t.netPnL >= 0 ? T.color.green : T.color.red, fontWeight: 600 }}>{t.netPnL.toFixed(2)}</td>
+                <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>{t.fillCount}</td>
+                <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>{formatHold(t.holdSeconds)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {trades.length > 10 && (
+        <div style={{ padding: 8, fontSize: 11, color: T.color.text3, textAlign: 'center', fontFamily: T.font.mono }}>
+          ... et {trades.length - 10} autres
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// BLOC commun : sélecteur Dry Run / Import + bouton lancement
+// ============================================================================
+function ExecutionSection({ dryRun, setDryRun, importing, onLaunch, label }) {
+  return (
+    <Section title="3 · Mode d'exécution">
+      <Card>
+        <label style={modeRowStyle(dryRun, T.color.blueSoft, T.color.blueRing)}>
+          <input type="radio" name="exec-mode" checked={dryRun} onChange={() => setDryRun(true)} style={{ marginTop: 3 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>🔍 Dry Run (recommandé)</div>
+            <div style={{ fontSize: 12, color: T.color.text2 }}>Simule et affiche le rapport. <strong>N'écrit rien en DB.</strong></div>
+          </div>
+        </label>
+
+        <label style={modeRowStyle(!dryRun, T.color.amberSoft, 'rgba(250,199,117,0.4)')}>
+          <input type="radio" name="exec-mode" checked={!dryRun} onChange={() => setDryRun(false)} style={{ marginTop: 3 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2, color: T.color.amber }}>⚠️ Import réel</div>
+            <div style={{ fontSize: 12, color: T.color.text2 }}>Écrit en Supabase. Confirmation popup requise.</div>
+          </div>
+        </label>
+
+        <div style={{ marginTop: 18, display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Btn
+            variant={dryRun ? 'blue' : 'primary'}
+            size="lg"
+            onClick={onLaunch}
+            disabled={importing}
+            style={!dryRun ? { background: T.color.amber, color: '#000' } : {}}
+          >
+            {importing
+              ? '⏳ Traitement...'
+              : dryRun ? `🔍 Lancer le dry run (${label})` : `⚠️ Lancer l'import réel (${label})`
+            }
+          </Btn>
+        </div>
+      </Card>
+    </Section>
+  )
+}
+
+// ============================================================================
+// BLOC : affichage du résultat (rapport)
+// ============================================================================
+function ResultSection({ result, onReset, kind }) {
+  const r = result.report
+  return (
+    <Section title="4 · Rapport">
+      <Card style={{
+        borderColor: result.ok ? T.color.green : T.color.red,
+        background: result.ok ? 'rgba(16,185,129,0.05)' : 'rgba(239,68,68,0.05)',
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: result.ok ? T.color.green : T.color.red }}>
+          {result.ok
+            ? (r.dryRun ? '🔍 Dry run terminé avec succès' : '✅ Import réel terminé')
+            : '❌ Erreur durant l\'import'
+          }
+        </div>
+
+        {!result.ok && (
+          <div style={{
+            fontSize: 12, color: T.color.red, fontFamily: T.font.mono,
+            padding: 10, background: 'rgba(0,0,0,0.3)',
+            borderRadius: T.radius.sm, marginBottom: 12,
+          }}>
+            {result.error}
+          </div>
+        )}
+
+        <div style={{ fontSize: 13, color: T.color.text2, lineHeight: 1.9, fontFamily: T.font.mono }}>
+          {kind === 'trades' ? (
+            <>
+              <div>• Firmes créées : <strong style={{ color: T.color.text }}>{r.createdFirms}</strong></div>
+              <div>• Comptes créés : <strong style={{ color: T.color.text }}>{r.createdAccounts}</strong></div>
+              <div>• Comptes réutilisés : <strong style={{ color: T.color.text }}>{r.reusedAccounts}</strong></div>
+              <div>• Trades insérés : <strong style={{ color: T.color.green }}>{r.insertedTrades}</strong></div>
+              <div>• Doublons ignorés : <strong style={{ color: T.color.text3 }}>{r.skippedDuplicates}</strong></div>
+            </>
+          ) : (
+            <>
+              <div>• Comptes mis à jour : <strong style={{ color: T.color.green }}>{r.updated}</strong></div>
+              <div>• Comptes liquidés détectés : <strong style={{ color: r.liquidated > 0 ? T.color.red : T.color.text3 }}>{r.liquidated}</strong></div>
+              <div>• Comptes non mappés (skip) : <strong style={{ color: T.color.text3 }}>{r.skipped}</strong></div>
+            </>
+          )}
+        </div>
+
+        {r.perAccount?.length > 0 && (
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${T.color.border}` }}>
+            <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+              Détail par compte
+            </div>
+            {r.perAccount.map((p, i) => (
+              <div key={i} style={{ fontSize: 12, color: T.color.text2, fontFamily: T.font.mono, marginBottom: 4 }}>
+                {kind === 'trades' ? (
+                  <><code>{p.rithmicId}</code> → {p.tradesToInsert} insérés, {p.skipped} skip</>
+                ) : (
+                  <>
+                    <code>{p.rithmicId}</code> → bal ${p.balance.toFixed(2)} / min ${p.minBalance.toFixed(2)} / buffer ${p.bufferDD.toFixed(2)}
+                    {p.liquidated && <span style={{ color: T.color.red }}> · 💀 LIQUIDÉ</span>}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {r.errors?.length > 0 && (
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${T.color.red}` }}>
+            <div style={{ fontSize: 11, color: T.color.red, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Erreurs</div>
+            {r.errors.map((e, i) => (
+              <div key={i} style={{ fontSize: 12, color: T.color.red, fontFamily: T.font.mono, marginBottom: 4 }}>· {e}</div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
+          <Btn variant="ghost" size="sm" onClick={onReset}>↺ Nouveau fichier</Btn>
+          {result.ok && !r.dryRun && (
+            <Link href="/app" style={{ textDecoration: 'none' }}>
+              <Btn variant="blue" size="sm">→ Voir dans l'app</Btn>
+            </Link>
+          )}
+        </div>
+      </Card>
+    </Section>
+  )
+}
+
+// ============================================================================
+// COMPOSANTS UTILITAIRES
+// ============================================================================
+
+function DropZone({ fileName, dragOver, onDrop, onDragOver, onDragLeave, onClick, placeholder }) {
+  return (
+    <div
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onClick={onClick}
+      style={{
+        border: `2px dashed ${dragOver ? T.color.blueLight : T.color.borderStrong}`,
+        borderRadius: T.radius.lg,
+        padding: 40, textAlign: 'center', cursor: 'pointer',
+        background: dragOver ? T.color.blueSoft : 'rgba(255,255,255,0.02)',
+        transition: T.transition.base,
+      }}
+    >
+      <div style={{ fontSize: 36, marginBottom: 12 }}>{fileName ? '📄' : '📁'}</div>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: T.color.text }}>
+        {fileName || 'Glisse ton fichier CSV ici'}
+      </div>
+      <div style={{ fontSize: 12, color: T.color.text3 }}>
+        ou clique pour parcourir · {placeholder}
+      </div>
+    </div>
+  )
+}
+
+function ErrorCard({ message }) {
+  return (
+    <Card style={{ borderColor: T.color.red, background: T.color.redSoft, marginBottom: 24 }}>
+      <div style={{ color: T.color.red, fontSize: 13 }}>❌ {message}</div>
+    </Card>
+  )
+}
+
+function LoadingNote() {
+  return (
+    <div style={{ fontSize: 11, color: T.color.text3, marginTop: 6 }}>⏳ Chargement des comptes existants...</div>
+  )
+}
+
 function FullPageState({ children }) {
   return (
     <div style={{
@@ -850,17 +1168,35 @@ function FullPageState({ children }) {
       alignItems: 'center', justifyContent: 'center',
       padding: 32, textAlign: 'center',
       fontFamily: T.font.sans,
-    }}>
-      {children}
-    </div>
+    }}>{children}</div>
   )
 }
 
 // ============================================================================
-// Helpers UI
+// Helpers
 // ============================================================================
 const th = { padding: '8px 10px', fontWeight: 600, letterSpacing: '0.05em' }
 const td = { padding: '6px 10px', color: T.color.text2 }
+
+function inputStyle() {
+  return {
+    width: '100%', padding: 10, fontSize: 13,
+    background: T.color.surfaceSolid, color: T.color.text,
+    border: `1px solid ${T.color.borderStrong}`,
+    borderRadius: T.radius.md,
+    fontFamily: T.font.sans, outline: 'none',
+  }
+}
+
+function modeRowStyle(active, bg, borderColor) {
+  return {
+    display: 'flex', alignItems: 'flex-start', gap: 12,
+    padding: 12, borderRadius: T.radius.md,
+    background: active ? bg : 'transparent',
+    border: `1px solid ${active ? borderColor : T.color.border}`,
+    marginBottom: 10, cursor: 'pointer',
+  }
+}
 
 function formatHold(seconds) {
   if (!seconds) return '—'
