@@ -548,6 +548,8 @@ export default function JournalPage({
       // Filtre selon le mode :
       //   - hideRithmicEntries (manuel) : exclut les trades CSV (marker [rithmic:])
       //   - onlyRithmicEntries (sync)   : N'INCLUT QUE les trades CSV
+      // Le filtre par comptes visibles est appliqué dans decoratedEntries (useMemo)
+      // pour éviter un refetch SQL à chaque fois que la liste des firms change.
       let filtered = data || []
       if (onlyRithmicEntries) {
         filtered = filtered.filter(e => e.notes && e.notes.includes('[rithmic:'))
@@ -565,17 +567,24 @@ export default function JournalPage({
   },[user?.id, hideRithmicEntries, onlyRithmicEntries])
 
   // Décore les entries avec les infos firme/compte
+  // FIX BUG : on EXCLUT aussi les entries dont le account_id n'est pas dans les
+  // accounts visibles (passés via firms). Cas typique : un trade manuel sur un
+  // compte qui est devenu synced (rithmic_account_id rempli) → ce compte est
+  // exclu du journal manuel par le parent, donc le trade doit l'être aussi pour
+  // ne pas apparaître comme "Compte supprimé" dans le calendrier/stats.
   const decoratedEntries = useMemo(()=>{
-    return entries.map(e=>{
-      const acc = allAccounts.find(a => a.id === e.account_id)
-      return {
-        ...e,
-        _firmId: acc?.firmId,
-        _firmName: acc?.firmName || 'Compte supprimé',
-        _firmColor: acc?.firmColor || '#565e78',
-        _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
-      }
-    })
+    return entries
+      .filter(e => allAccounts.some(a => a.id === e.account_id))
+      .map(e=>{
+        const acc = allAccounts.find(a => a.id === e.account_id)
+        return {
+          ...e,
+          _firmId: acc?.firmId,
+          _firmName: acc?.firmName || 'Compte supprimé',
+          _firmColor: acc?.firmColor || '#565e78',
+          _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
+        }
+      })
   },[entries, allAccounts])
 
   // Helper : un compte passe-t-il le filtre de statut ?
@@ -830,7 +839,7 @@ export default function JournalPage({
           </div>
           <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{pageTitle}</h1>
           <div style={{fontSize:'13px',color:'var(--text3)'}}>
-            {entries.length} trade{entries.length>1?'s':''} enregistré{entries.length>1?'s':''} · {pageSubtitleSuffix}
+            {decoratedEntries.length} trade{decoratedEntries.length>1?'s':''} enregistré{decoratedEntries.length>1?'s':''} · {pageSubtitleSuffix}
           </div>
         </div>
         <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
