@@ -14,6 +14,7 @@ import { supabase } from '../../../lib/supabase'
 import JournalPage from '../../../components/JournalPage'
 import QLogoIcon from '../../../components/QLogoIcon'
 import SpaceBackground from '../../../components/dashboard/SpaceBackground'
+import ProfileModal from '../../../components/ProfileModal'
 import { FIRM_COLORS } from '../../../lib/constants'
 import { getFirmLogo } from '../../../lib/firmLogos'
 
@@ -82,6 +83,19 @@ export default function JournalSyncPage() {
   const [loadingAuth, setLoadingAuth] = useState(true)
   const [firms, setFirms] = useState([])
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [profile, setProfile] = useState(null)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+
+  // Charge le profil (pseudo + display_name) pour l'affichage sidebar
+  const loadProfile = useCallback(async (userId) => {
+    if (!userId) return
+    const { data } = await supabase
+      .from('profiles')
+      .select('username, display_name, avatar_url')
+      .eq('user_id', userId)
+      .single()
+    setProfile(data || { username: null, display_name: null, avatar_url: null })
+  }, [])
 
   // Charge firms+accounts+payouts (même shape que /app/page.js loadFirms)
   // Filtre EXPLICITEMENT par user_id (anti-leak admin RLS).
@@ -118,10 +132,13 @@ export default function JournalSyncPage() {
       const u = session?.user || null
       setUser(u)
       setLoadingAuth(false)
-      if (u) loadFirms(u.id)
+      if (u) {
+        loadFirms(u.id)
+        loadProfile(u.id)
+      }
     })
     return () => { mounted = false }
-  }, [loadFirms])
+  }, [loadFirms, loadProfile])
 
   function showToast(msg) {
     if (typeof window !== 'undefined') console.log('[journal-sync]', msg)
@@ -276,11 +293,35 @@ export default function JournalSyncPage() {
             </div>
           )}
 
-          <div style={{ position:'absolute', bottom:'12px', left:0, right:0, padding:'0 14px' }}>
-            <div style={{
-              fontSize:'11px', color:'var(--text3)',
-              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-            }}>{user?.email}</div>
+          {/* Footer sidebar : carte profil cliquable */}
+          <div style={{ position:'absolute', bottom:'12px', left:0, right:0, padding:'0 12px' }}>
+            <button
+              onClick={()=>setShowProfileModal(true)}
+              style={{
+                width:'100%', padding:'9px 11px',
+                background:'rgba(255,255,255,0.025)',
+                border:'1px solid rgba(255,255,255,0.07)',
+                borderRadius:'8px', cursor:'pointer',
+                textAlign:'left', color:'var(--text)',
+                fontFamily:'inherit', transition:'all 0.15s',
+                overflow:'hidden',
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)'}}
+              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}}
+            >
+              <div style={{
+                fontSize:'12px', fontWeight:600,
+                color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+              }}>
+                {profile?.display_name || (profile?.username ? `@${profile.username}` : '⊕ Définir un pseudo')}
+              </div>
+              <div style={{
+                fontSize:'10px', color:'var(--text3)', marginTop:'2px',
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                fontFamily:'ui-monospace, SFMono-Regular, Menlo, monospace',
+              }}>{user?.email}</div>
+            </button>
           </div>
         </nav>
 
@@ -309,6 +350,15 @@ export default function JournalSyncPage() {
           />
         </div>
       </div>
+
+      {/* Modal Profil */}
+      {showProfileModal && (
+        <ProfileModal
+          user={user}
+          onClose={()=>setShowProfileModal(false)}
+          onUpdated={()=>loadProfile(user.id)}
+        />
+      )}
     </div>
   )
 }

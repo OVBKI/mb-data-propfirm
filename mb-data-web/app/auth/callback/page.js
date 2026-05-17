@@ -130,6 +130,22 @@ function CallbackInner() {
           setEmail(session.user.email || '')
           return
         }
+        // 🪪 Applique le pseudo en attente (passé via user_metadata.pending_username
+        // lors du signup) à la table profiles, puis nettoie la metadata.
+        const pendingUsername = session.user.user_metadata?.pending_username
+        if (pendingUsername) {
+          try {
+            const { error: profErr } = await supabase
+              .from('profiles')
+              .update({ username: pendingUsername })
+              .eq('user_id', session.user.id)
+            if (profErr) console.warn('[profile pending_username]', profErr)
+            // Nettoie la metadata pour ne pas réappliquer si on repasse ici
+            await supabase.auth.updateUser({ data: { pending_username: null } })
+          } catch (err) {
+            console.warn('[apply pending_username]', err)
+          }
+        }
         setEmail(session.user.email || '')
         setStatus('success')
         setTimeout(() => {

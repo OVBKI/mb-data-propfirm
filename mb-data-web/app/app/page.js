@@ -26,6 +26,7 @@ import AnnouncementBanner from '../../components/AnnouncementBanner'
 import Tutorial from '../../components/Tutorial'
 import PushNotificationToggle from '../../components/PushNotificationToggle'
 import SpaceBackground from '../../components/dashboard/SpaceBackground'
+import ProfileModal from '../../components/ProfileModal'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
 
 
@@ -200,6 +201,9 @@ export default function Home() {
   const [tradesCount,setTradesCount]=useState(0) // total trades user, pour détecter l'ajout dans le tutoriel
   const [acctDrawer,setAcctDrawer]=useState(null)
   const [payoutForm,setPayoutForm]=useState(false)
+  // === Profil user (pseudo + display_name) ===
+  const [profile,setProfile]=useState(null) // { username, display_name } | null
+  const [showProfileModal,setShowProfileModal]=useState(false)
   const [newFirmName,setNewFirmName]=useState('')
   const [acctForm,setAcctForm]=useState({buyDate:'',currency:'USD',spent:'',activationFee:'',activationDate:'',status:'Challenge',notes:'',planSize:'50k',name:'',ddType:'static',payoutTarget:'',minTradingDays:'',minDailyProfit:'',profitSplit:'90',paymentMode:'monthly',quantity:'1'})
   const [payoutFD,setPayoutFD]=useState({date:'',amount:'',note:''})
@@ -228,7 +232,19 @@ export default function Home() {
     return ()=>subscription.unsubscribe()
   },[])
 
-  useEffect(()=>{if(user){loadFirms();fetchRates()}},[user])
+  useEffect(()=>{if(user){loadFirms();fetchRates();loadProfile()}},[user])
+
+  // Charge le profil (pseudo + display_name) de l'user pour l'afficher dans la sidebar
+  async function loadProfile(){
+    if(!user) return
+    const {data,error}=await supabase
+      .from('profiles')
+      .select('username,display_name,avatar_url')
+      .eq('user_id',user.id)
+      .single()
+    if(error && error.code!=='PGRST116') console.warn('[profile load]',error)
+    setProfile(data||{username:null,display_name:null,avatar_url:null})
+  }
 
   // Détecte si on doit afficher le modal d'onboarding (nouveau user, 0 firmes, pas dismissed)
   // Se déclenche quand `firms` est chargé et qu'un user est présent
@@ -742,8 +758,38 @@ export default function Home() {
               <span>🎓</span> Lancer le tutoriel
             </button>
           </div>
-          <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 14px'}}>
-            <div style={{fontSize:'11px',color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.email}</div>
+          {/* Footer sidebar : carte profil cliquable (ouvre ProfileModal).
+              Affiche pseudo si défini, sinon "Définir un pseudo".
+              Email toujours visible en dessous (smaller). */}
+          <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 12px'}}>
+            <button
+              onClick={()=>setShowProfileModal(true)}
+              className="qt-profile-btn"
+              style={{
+                width:'100%',padding:'9px 11px',
+                background:'rgba(255,255,255,0.025)',
+                border:'1px solid rgba(255,255,255,0.07)',
+                borderRadius:'8px',cursor:'pointer',
+                textAlign:'left',color:'var(--text)',
+                fontFamily:'inherit',transition:'all 0.15s',
+                overflow:'hidden',
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)'}}
+              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}}
+            >
+              <div style={{
+                fontSize:'12px',fontWeight:600,
+                color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+              }}>
+                {profile?.display_name || (profile?.username ? `@${profile.username}` : '⊕ Définir un pseudo')}
+              </div>
+              <div style={{
+                fontSize:'10px',color:'var(--text3)',marginTop:'2px',
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+                fontFamily:'ui-monospace, SFMono-Regular, Menlo, monospace',
+              }}>{user?.email}</div>
+            </button>
           </div>
         </nav>
         {mobileNavOpen&&<div className="nav-backdrop" onClick={()=>setMobileNavOpen(false)} />}
@@ -758,7 +804,7 @@ export default function Home() {
                     Tableau de bord
                   </div>
                   <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>
-                    Bonjour {user?.email?.split('@')[0] || 'Trader'} 👋
+                    Bonjour {profile?.display_name || profile?.username || user?.email?.split('@')[0] || 'Trader'} 👋
                   </h1>
                   <div style={{fontSize:'13px',color:'var(--text3)'}}>{rateInfo}</div>
                 </div>
@@ -1347,6 +1393,15 @@ export default function Home() {
           onClose={()=>setCertsFirm(null)}
           showToast={showToast}
           getFirmLogo={getFirmLogo}
+        />
+      )}
+
+      {/* Modal Profil — édition pseudo + display name + bio */}
+      {showProfileModal && user && (
+        <ProfileModal
+          user={user}
+          onClose={()=>setShowProfileModal(false)}
+          onUpdated={loadProfile}
         />
       )}
 

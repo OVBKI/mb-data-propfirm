@@ -144,3 +144,114 @@ create index if not exists payouts_account_id_idx on payouts(account_id);
 create index if not exists journal_entries_user_id_idx    on journal_entries(user_id);
 create index if not exists journal_entries_account_id_idx on journal_entries(account_id);
 create index if not exists journal_entries_date_idx       on journal_entries(date);
+
+-- ============================================================================
+-- PROFILES — pseudos, display names, avatars + login par pseudo
+-- ============================================================================
+--
+-- 1 profil par user. Le pseudo est unique (case-insensitive).
+-- Le pseudo permet à l'user de se connecter avec username au lieu de l'email :
+--   - Le client appelle l'RPC `resolve_username_to_email(p_username)` pour mapper
+--     username → email, puis fait un signInWithPassword classique avec l'email.
+--   - Trade-off connu : exposer cet RPC permet à n'importe qui de découvrir l'email
+--     d'un user donné son pseudo. C'est le pattern standard pour le login username
+--     sur Supabase Auth. Pour mitiger : rate-limiting côté API + monitoring.
+
+create table if not exists profiles (
+  user_id       uuid references auth.users(id) on delete cascade primary key,
+  username      text,
+  display_name  text,
+  avatar_url    text,
+  bio           text,
+  created_at    timestamptz default now(),
+  updated_at    timestamptz default now()
+);
+
+-- Unicité case-insensitive du pseudo (ignore NULL)
+create unique index if not exists profiles_username_lower_uniq
+  on profiles (lower(username))
+  where username is not null;
+
+-- RLS : un user lit/modifie SON profil uniquement.
+-- Lecture publique des pseudos déléguée à un RPC SECURITY DEFINER (ci-dessous).
+alter table profiles enable row level security;
+drop policy if exists "Users manage own profile" on profiles;
+create policy "Users manage own profile" on profiles
+  for all using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Trigger d'auto-création du profil à l'inscription (alimenté par auth.users insert)
+-- Le profil est créé vide ; l'user peut ensuite setter son pseudo via le ProfileModal.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (user_id)
+  values (new.id)
+  on conflict (user_id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Backfill : crée un profil vide pour les users existants qui n'en ont pas
+insert into public.profiles (user_id)
+select id from auth.users
+where id not in (select user_id from public.profiles)
+on conflict (user_id) do nothing;
+
+-- ============================================================================
+-- RPCs publiques pour le login par pseudo
+-- ============================================================================
+
+-- Résout un pseudo en email (utilisé par AuthPage au login)
+-- Retourne NULL si le pseudo n'existe pas.
+create or replace function public.resolve_username_to_email(p_username text)
+returns text
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_email text;
+begin
+  if p_username is null or length(trim(p_username)) = 0 then
+    return null;
+  end if;
+  select u.email into v_email
+  from auth.users u
+  join public.profiles p on p.user_id = u.id
+  where lower(p.username) = lower(trim(p_username))
+  limit 1;
+  return v_email;
+end;
+$$;
+
+-- Vérifie si un pseudo est disponible (utilisé par AuthPage signup + ProfileModal)
+create or replace function public.username_available(p_username text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_username is null or length(trim(p_username)) = 0 then
+    return false;
+  end if;
+  return not exists (
+    select 1 from public.profiles
+    where lower(username) = lower(trim(p_username))
+  );
+end;
+$$;
+
+-- Permet aux users anonymes (login form) ET authentifiés d'appeler ces RPCs
+grant execute on function public.resolve_username_to_email(text) to anon, authenticated;
+grant execute on function public.username_available(text)       to anon, authenticated;

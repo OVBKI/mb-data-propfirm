@@ -7,14 +7,52 @@ import QLogoIcon from './QLogoIcon'
 // La secret key correspondante est configurée dans Supabase Auth → CAPTCHA Protection
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
+// Regex pour valider un pseudo : 3-20 chars, lettres/chiffres/_/-
+const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
+// Détection naïve email (présence d'un @ avec qqch avant/après)
+const EMAIL_REGEX = /@/
+
 export default function AuthPage({ onAuth }) {
   const [mode, setMode]       = useState('login') // login | register
-  const [email, setEmail]     = useState('')
+  // En mode login : peut contenir un email OU un pseudo
+  // En mode register : email uniquement
+  const [emailOrUsername, setEmailOrUsername] = useState('')
+  // Pseudo (uniquement en signup, optionnel)
+  const [username, setUsername] = useState('')
+  const [usernameCheck, setUsernameCheck] = useState(null) // null | 'checking' | 'available' | 'taken' | 'invalid'
   const [password, setPass]   = useState('')
   const [stayLogged, setStayLogged] = useState(true) // ✅ par défaut coché
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const [success, setSuccess] = useState('')
+
+  // Vérifie en live la disponibilité du pseudo (debounce 500ms)
+  useEffect(() => {
+    if (mode !== 'register' || !username) {
+      setUsernameCheck(null)
+      return
+    }
+    if (!USERNAME_REGEX.test(username)) {
+      setUsernameCheck('invalid')
+      return
+    }
+    setUsernameCheck('checking')
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.rpc('username_available', { p_username: username })
+        if (error) {
+          console.warn('[username_available]', error)
+          setUsernameCheck(null)
+          return
+        }
+        setUsernameCheck(data ? 'available' : 'taken')
+      } catch (err) {
+        console.warn('[username_available]', err)
+        setUsernameCheck(null)
+      }
+    }, 500)
+    return () => clearTimeout(t)
+  }, [username, mode])
   // Anti-bot
   const [honeypot, setHoneypot] = useState('') // ne doit JAMAIS être rempli (invisible)
   const [captchaToken, setCaptchaToken] = useState('')
@@ -102,30 +140,73 @@ export default function AuthPage({ onAuth }) {
       setSessionPersistence(stayLogged)
 
       if (mode === 'login') {
+        // 🪪 Résolution pseudo → email si l'input ne contient pas '@'
+        let loginEmail = emailOrUsername.trim()
+        if (!EMAIL_REGEX.test(loginEmail)) {
+          // C'est un pseudo : on le résout via le RPC SECURITY DEFINER
+          const { data: resolved, error: rpcErr } = await supabase
+            .rpc('resolve_username_to_email', { p_username: loginEmail })
+          if (rpcErr) throw new Error('Erreur lors de la résolution du pseudo : ' + rpcErr.message)
+          if (!resolved) throw new Error(`Aucun compte trouvé avec le pseudo « ${loginEmail} ».`)
+          loginEmail = resolved
+        }
+
         const opts = {}
         if (captchaToken) opts.captchaToken = captchaToken
         const { data, error } = await supabase.auth.signInWithPassword({
-          email, password,
+          email: loginEmail, password,
           options: Object.keys(opts).length ? opts : undefined,
         })
         if (error) throw error
         onAuth(data.user)
       } else {
+        // === SIGNUP ===
+        const signupEmail = emailOrUsername.trim()
+        if (!EMAIL_REGEX.test(signupEmail)) {
+          throw new Error('Renseigne ton email pour créer un compte (pas un pseudo).')
+        }
+        // Si pseudo renseigné : vérifie le format et la dispo avant le signup
+        const trimmedUsername = username.trim()
+        if (trimmedUsername) {
+          if (!USERNAME_REGEX.test(trimmedUsername)) {
+            throw new Error('Pseudo invalide : 3-20 caractères, lettres/chiffres/_/- uniquement.')
+          }
+          if (usernameCheck === 'taken') {
+            throw new Error(`Le pseudo « ${trimmedUsername} » est déjà pris.`)
+          }
+          if (usernameCheck === 'checking') {
+            throw new Error('Vérification du pseudo en cours, réessaie dans une seconde.')
+          }
+        }
+
         // Lors de l'inscription : redirige vers /auth/callback après confirmation email
         const redirectTo = typeof window !== 'undefined'
           ? `${window.location.origin}/auth/callback`
           : 'https://quantara.tech/auth/callback'
         const { data, error } = await supabase.auth.signUp({
-          email, password,
+          email: signupEmail, password,
           options: {
             emailRedirectTo: redirectTo,
             captchaToken: captchaToken || undefined,
+            // Le pseudo est passé via metadata, on l'écrira dans la table profiles
+            // une fois que l'user est authentifié (post-confirmation email)
+            data: trimmedUsername ? { pending_username: trimmedUsername } : undefined,
           },
         })
         if (error) throw error
+
+        // Si l'user est immédiatement signé (email confirmation désactivée),
+        // on écrit le pseudo dans la table profiles tout de suite.
+        if (data.user && data.session && trimmedUsername) {
+          const { error: profErr } = await supabase
+            .from('profiles')
+            .update({ username: trimmedUsername })
+            .eq('user_id', data.user.id)
+          if (profErr) console.warn('[profile update]', profErr)
+        }
+
         if (data.user && !data.user.email_confirmed_at) {
-          setSuccess(`📧 Compte créé ! Un email de confirmation a été envoyé à ${email}. Vérifie ta boîte de réception (et tes spams) pour activer ton compte.`)
-          // Reset Turnstile pour qu'on puisse re-soumettre si besoin
+          setSuccess(`📧 Compte créé ! Un email de confirmation a été envoyé à ${signupEmail}. Vérifie ta boîte de réception (et tes spams) pour activer ton compte.${trimmedUsername ? ` Ton pseudo « ${trimmedUsername} » sera activé après confirmation.` : ''}`)
           if (typeof window !== 'undefined' && window.turnstile && widgetIdRef.current) {
             window.turnstile.reset(widgetIdRef.current)
             setCaptchaToken('')
@@ -199,13 +280,45 @@ export default function AuthPage({ onAuth }) {
         <form onSubmit={handleSubmit} autoComplete="on">
           <div style={{ marginBottom: '14px' }}>
             <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
-              Email
+              {mode === 'login' ? 'Email ou pseudo' : 'Email'}
             </label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+            <input
+              type={mode === 'login' ? 'text' : 'email'}
+              value={emailOrUsername} onChange={e => setEmailOrUsername(e.target.value)} required
               autoComplete={mode === 'login' ? 'username' : 'email'}
-              placeholder="votre@email.com"
+              placeholder={mode === 'login' ? 'votre@email.com ou votre_pseudo' : 'votre@email.com'}
               style={{ width: '100%', padding: '10px 12px', fontSize: '14px', background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 'var(--radius)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} />
           </div>
+
+          {/* PSEUDO — uniquement en signup, optionnel */}
+          {mode === 'register' && (
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
+                Pseudo <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>(optionnel)</span>
+              </label>
+              <input
+                type="text" value={username} onChange={e => setUsername(e.target.value)}
+                autoComplete="off" maxLength={20}
+                placeholder="trader_pro_2026"
+                style={{
+                  width: '100%', padding: '10px 12px', fontSize: '14px',
+                  background: 'var(--surface2)',
+                  border: `0.5px solid ${
+                    usernameCheck === 'taken' || usernameCheck === 'invalid' ? 'var(--red)' :
+                    usernameCheck === 'available' ? 'var(--green)' :
+                    'var(--border2)'
+                  }`,
+                  borderRadius: 'var(--radius)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit',
+                }} />
+              <div style={{ fontSize: '10px', marginTop: '4px', minHeight: '14px', color: 'var(--text3)' }}>
+                {!username && '3-20 caractères · lettres, chiffres, _ et - · Permettra de te connecter avec ce pseudo'}
+                {username && usernameCheck === 'invalid' && <span style={{ color: 'var(--red-text)' }}>✗ Format invalide</span>}
+                {username && usernameCheck === 'checking' && <span style={{ color: 'var(--text3)' }}>⋯ Vérification...</span>}
+                {username && usernameCheck === 'available' && <span style={{ color: 'var(--green-text)' }}>✓ Pseudo disponible</span>}
+                {username && usernameCheck === 'taken' && <span style={{ color: 'var(--red-text)' }}>✗ Pseudo déjà pris</span>}
+              </div>
+            </div>
+          )}
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
