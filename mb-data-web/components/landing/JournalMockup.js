@@ -1,10 +1,15 @@
-// JournalMockup — simulation visuelle de /app/journal pour la landing.
-// Reproduit le pattern : header avec filtres pills par firme + table dense de trades.
+// JournalMockup — réplique du JournalPage.js réel.
+// Structure réelle observée :
+//   eyebrow "JOURNAL DE TRADING" blue
+//   h1 "Chaque trade. Tracké. Analysé."
+//   subtitle "X trades enregistrés · saisie manuelle"
+//   buttons [↓ CSV] [+ Ajouter trade]
+//   Filtres card : Statut pills + Firme dropdown + Compte dropdown
+//   6 PNL stats cards (Filtré / Mois / Win Rate / Consistency / Trades / Jours)
+//   Calendrier PnL mensuel (heatmap vert/rouge)
 
 const C = {
-  bg:        '#0a0c10',
-  surface:   '#141720',
-  surface2:  '#1c2030',
+  surface:   'rgba(20,23,32,0.65)',
   border:    'rgba(255,255,255,0.07)',
   border2:   'rgba(255,255,255,0.13)',
   text:      '#f0ede8',
@@ -12,190 +17,271 @@ const C = {
   text3:     '#5a6275',
   blue:      '#2d6fff',
   blueLight: '#4d8fff',
-  green:     '#10b981',
-  red:       '#ef4444',
+  green:     '#1db87a',
+  red:       '#e8504a',
   amber:     '#fac775',
 }
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-const FIRM_FILTERS = [
-  { name: 'Toutes les firms', count: 6, active: true },
-  { name: 'Topstep', count: 3 },
-  { name: 'Apex',    count: 2 },
-  { name: 'Lucid',   count: 1 },
-  { name: 'MFFU',    count: 1 },
+// === Données calendrier (semaine type, valeurs réalistes) ===
+// Format : { day, pnl, count } | { day } = vide
+const CAL_DAYS = [
+  // Semaine 1 (jours grisés mois précédent)
+  { day: 27, other: true }, { day: 28, other: true }, { day: 29, other: true },
+  { day: 30, other: true }, { day: 1 }, { day: 2 }, { day: 3 },
+  // Semaine 2
+  { day: 4 }, { day: 5, pnl: 245, count: 3 }, { day: 6, pnl: -89, count: 2 },
+  { day: 7, pnl: 178, count: 4 }, { day: 8, pnl: 312, count: 5 }, { day: 9 }, { day: 10 },
+  // Semaine 3
+  { day: 11 }, { day: 12, pnl: 156, count: 3 }, { day: 13, pnl: 432, count: 6, today: true },
+  { day: 14 }, { day: 15 }, { day: 16 }, { day: 17 },
+  // Semaine 4
+  { day: 18 }, { day: 19 }, { day: 20 }, { day: 21 }, { day: 22 }, { day: 23 }, { day: 24 },
+  // Semaine 5
+  { day: 25 }, { day: 26 }, { day: 27 }, { day: 28 }, { day: 29 }, { day: 30 }, { day: 31 },
 ]
+const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-const TRADES = [
-  { date: '15 mai', time: '09:42', firm: 'Topstep', inst: 'MNQ', side: 'LONG',  entry: 18254.50, pnl: 138.00,  note: 'Cassure résistance' },
-  { date: '15 mai', time: '10:18', firm: 'Topstep', inst: 'MNQ', side: 'SHORT', entry: 18301.00, pnl: 90.00,   note: 'Rejet du high' },
-  { date: '15 mai', time: '14:05', firm: 'Apex',    inst: 'MES', side: 'LONG',  entry: 5247.25,  pnl: 56.25,   note: 'FOMC reaction' },
-  { date: '14 mai', time: '15:30', firm: 'Apex',    inst: 'MES', side: 'SHORT', entry: 5258.00,  pnl: -55.00,  note: 'Bad entry' },
-  { date: '14 mai', time: '11:22', firm: 'MFFU',    inst: 'MGC', side: 'LONG',  entry: 2348.40,  pnl: 34.00,   note: 'Gold bounce' },
-  { date: '13 mai', time: '13:15', firm: 'Topstep', inst: 'MNQ', side: 'LONG',  entry: 18198.50, pnl: 67.00,   note: 'Trend continuation' },
-  { date: '13 mai', time: '09:55', firm: 'Lucid',   inst: 'MES', side: 'SHORT', entry: 5223.50,  pnl: -13.75,  note: 'Stopped out' },
-]
-
-function SideTag({ side }) {
-  const isLong = side === 'LONG'
-  const color = isLong ? C.green : C.red
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      padding: '2px 8px', borderRadius: 99,
-      background: `${color}1a`,
-      border: `1px solid ${color}44`,
-      fontSize: 9, fontWeight: 700, color, fontFamily: mono,
-      letterSpacing: '0.06em',
-    }}>
-      {isLong ? '↑' : '↓'} {side}
-    </span>
-  )
-}
-
-function fmtPnl(n) {
-  return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(2)
+function fmtMoneyShort(n) {
+  return (n >= 0 ? '+' : '-') + '$' + Math.abs(n)
 }
 
 export default function JournalMockup() {
   return (
     <div style={{
-      background: C.bg, padding: '24px 28px',
+      background: '#0a0c10',
+      padding: '24px 28px',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      color: C.text, minHeight: 500,
+      color: C.text, minHeight: 540,
     }}>
-      {/* Header */}
+      {/* Header (eyebrow + title + subtitle + actions) */}
       <div style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        marginBottom: 16, gap: 16, flexWrap: 'wrap',
+        marginBottom: 18, gap: 16, flexWrap: 'wrap',
       }}>
         <div>
+          <div style={{
+            fontSize: 10, color: C.blueLight,
+            letterSpacing: '0.16em', textTransform: 'uppercase',
+            fontWeight: 600, marginBottom: 8,
+          }}>Journal de trading</div>
           <h1 style={{
             fontSize: 22, fontWeight: 700, margin: 0,
-            letterSpacing: '-0.02em',
-          }}>Journal de trading</h1>
-          <div style={{ fontSize: 11, color: C.text3, marginTop: 4, fontFamily: mono, letterSpacing: '0.04em' }}>
-            7 TRADES · 3 DERNIERS JOURS · <span style={{ color: C.green, fontWeight: 600 }}>+$316.50 NET</span>
+            letterSpacing: '-0.025em', lineHeight: 1.1,
+            marginBottom: 4,
+          }}>Chaque trade. Tracké. Analysé.</h1>
+          <div style={{ fontSize: 11, color: C.text3 }}>
+            42 trades enregistrés · saisie manuelle
           </div>
         </div>
-        <button style={{
-          padding: '8px 14px', fontSize: 11, fontWeight: 600,
-          background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
-          color: '#fff', border: 'none', borderRadius: 7,
-          fontFamily: 'inherit', cursor: 'default',
-          boxShadow: '0 4px 12px rgba(45,111,255,0.3)',
-        }}>+ Nouveau trade</button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <span style={{
+            padding: '6px 12px', fontSize: 10, fontWeight: 500,
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: C.text2, borderRadius: 6,
+          }}>↓ CSV</span>
+          <span style={{
+            padding: '6px 12px', fontSize: 10, fontWeight: 500,
+            background: C.text, color: '#0a0c10', borderRadius: 6,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
+          }}>+ Ajouter trade</span>
+        </div>
       </div>
 
-      {/* Firm filter pills */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-        {FIRM_FILTERS.map(f => (
-          <div key={f.name} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 12px', borderRadius: 99,
-            background: f.active ? 'rgba(45,111,255,0.15)' : 'transparent',
-            border: `1px solid ${f.active ? 'rgba(45,111,255,0.4)' : C.border}`,
-            fontSize: 11, fontWeight: f.active ? 600 : 500,
-            color: f.active ? C.blueLight : C.text2,
-          }}>
-            {f.name}
-            <span style={{
-              fontSize: 9, padding: '1px 6px', borderRadius: 99,
-              background: f.active ? 'rgba(45,111,255,0.25)' : 'rgba(255,255,255,0.05)',
-              color: f.active ? C.blueLight : C.text3,
-              fontFamily: mono, fontWeight: 600,
-            }}>{f.count}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Trades table */}
+      {/* Filtres card : Statut pills + Firme/Compte selects */}
       <div style={{
-        background: 'rgba(20,23,32,0.65)',
+        padding: '12px 14px',
+        background: C.surface,
         border: `1px solid ${C.border}`,
-        borderRadius: 10, overflow: 'hidden',
+        borderRadius: 10, marginBottom: 16,
+        display: 'flex', flexDirection: 'column', gap: 10,
       }}>
-        {/* Headers */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '70px 60px 90px 60px 80px 90px 100px 1fr',
-          padding: '8px 14px',
-          background: 'rgba(255,255,255,0.025)',
-          borderBottom: `1px solid ${C.border}`,
-          fontSize: 9, fontWeight: 600, color: C.text3,
-          textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: mono,
-        }}>
-          <span>Date</span>
-          <span>Heure</span>
-          <span>Firm</span>
-          <span>Inst.</span>
-          <span>Side</span>
-          <span>Entry</span>
-          <span>PnL</span>
-          <span>Notes</span>
+        {/* Statut row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: 9, fontWeight: 700, color: C.text3,
+            textTransform: 'uppercase', letterSpacing: '0.5px',
+            minWidth: 50,
+          }}>Statut</span>
+          <StatusPill label="Tous" active />
+          <StatusPill label="Challenge" dot={C.amber} />
+          <StatusPill label="Financé" dot={C.green} />
+          <StatusPill label="Échoué" dot={C.red} />
         </div>
-
-        {/* Rows */}
-        {TRADES.map((t, i) => (
-          <div key={i} style={{
-            display: 'grid',
-            gridTemplateColumns: '70px 60px 90px 60px 80px 90px 100px 1fr',
-            padding: '10px 14px',
-            borderBottom: i < TRADES.length - 1 ? `1px solid ${C.border}` : 'none',
-            alignItems: 'center',
-            fontSize: 11, fontFamily: mono,
-          }}>
-            <span style={{ fontWeight: 600 }}>{t.date}</span>
-            <span style={{ color: C.text2 }}>{t.time}</span>
-            <span style={{ fontWeight: 700 }}>{t.firm}</span>
-            <span style={{ color: C.text2 }}>{t.inst}</span>
-            <SideTag side={t.side} />
-            <span style={{ color: C.text2 }}>{t.entry.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+        {/* Firme + Compte */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 200 }}>
             <span style={{
-              fontWeight: 700,
-              color: t.pnl >= 0 ? C.green : C.red,
-            }}>{fmtPnl(t.pnl)}</span>
-            <span style={{
-              color: C.text3, fontFamily: '-apple-system, sans-serif',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>{t.note}</span>
+              fontSize: 9, fontWeight: 700, color: C.text3,
+              textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 50,
+            }}>Firme</span>
+            <FakeSelect value="🏢 Toutes les firmes" />
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 200 }}>
+            <span style={{
+              fontSize: 9, fontWeight: 700, color: C.text3,
+              textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 50,
+            }}>Compte</span>
+            <FakeSelect value="Tous les comptes" />
+          </div>
+        </div>
+      </div>
+
+      {/* 6 PNL stats cards */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)',
+        gap: 8, marginBottom: 18,
+      }}>
+        <PnlCard label="PNL Filtré"   value="+$3,247" color={C.green} />
+        <PnlCard label="PNL Mai 2026" value="+$2,840" color={C.green} />
+        <PnlCard label="Win Rate"     value="78.5%"  color={C.green} />
+        <PnlCard label="Consistency"  value="22.4%"  />
+        <PnlCard label="Trades"       value="42" />
+        <PnlCard label="Jours tradés" value="11" />
+      </div>
+
+      {/* Calendrier PnL */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 10,
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>
+          Calendrier PnL <span style={{ color: C.text3, fontWeight: 500 }}>— Mai 2026</span>
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <NavBtn>◀</NavBtn>
+          <span style={{
+            padding: '4px 12px', fontSize: 10, fontWeight: 600,
+            background: 'rgba(255,255,255,0.025)',
+            border: `1px solid ${C.border}`, borderRadius: 5,
+            color: C.text2, letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>Aujourd'hui</span>
+          <NavBtn>▶</NavBtn>
+        </div>
+      </div>
+
+      {/* Day labels */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+        gap: 4, marginBottom: 4,
+      }}>
+        {DAYS_FR.map(d => (
+          <div key={d} style={{
+            fontSize: 9, color: C.text3, textAlign: 'center', padding: '4px 0',
+            fontFamily: mono, letterSpacing: '0.1em', textTransform: 'uppercase',
+            fontWeight: 600,
+          }}>{d}</div>
         ))}
       </div>
 
-      {/* Pagination */}
+      {/* Calendar grid */}
       <div style={{
-        marginTop: 14, display: 'flex',
-        alignItems: 'center', justifyContent: 'space-between',
-        fontSize: 10, color: C.text3, fontFamily: mono,
-        letterSpacing: '0.08em', textTransform: 'uppercase',
+        display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4,
       }}>
-        <span>Affichage 1-7 sur 84 trades</span>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <PgBtn>&lt;</PgBtn>
-          <PgBtn active>1</PgBtn>
-          <PgBtn>2</PgBtn>
-          <PgBtn>3</PgBtn>
-          <PgBtn>···</PgBtn>
-          <PgBtn>12</PgBtn>
-          <PgBtn>&gt;</PgBtn>
-        </div>
+        {CAL_DAYS.map((c, i) => {
+          const hasPnl = c.pnl !== undefined
+          const isProfit = (c.pnl || 0) >= 0
+          const intensity = hasPnl ? 0.12 + Math.min(0.4, Math.abs(c.pnl) / 500) : 0
+          const bg = !hasPnl
+            ? (c.other ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.03)')
+            : isProfit ? `rgba(29,184,122,${intensity})` : `rgba(232,80,74,${intensity})`
+          return (
+            <div key={i} style={{
+              aspectRatio: '1.35',
+              background: bg,
+              borderRadius: 5,
+              padding: '4px 6px',
+              border: c.today ? `1px solid ${C.blueLight}` : '1px solid rgba(255,255,255,0.04)',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              opacity: c.other ? 0.35 : 1,
+            }}>
+              <div style={{
+                fontSize: 9, fontWeight: c.today ? 700 : 500,
+                color: c.today ? C.blueLight : (hasPnl ? C.text : C.text3),
+                fontFamily: mono,
+              }}>{c.day}</div>
+              {hasPnl && (
+                <div style={{
+                  fontSize: 9, fontWeight: 700,
+                  color: isProfit ? C.green : C.red,
+                  textAlign: 'right', fontFamily: mono, lineHeight: 1,
+                }}>{fmtMoneyShort(c.pnl)}</div>
+              )}
+              {hasPnl && (
+                <div style={{
+                  fontSize: 7, color: C.text3,
+                  textAlign: 'right', fontFamily: mono, marginTop: 1,
+                }}>{c.count} trade{c.count > 1 ? 's' : ''}</div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-function PgBtn({ children, active }) {
+function StatusPill({ label, active, dot }) {
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      minWidth: 24, height: 24, padding: '0 6px',
-      fontSize: 10, fontWeight: active ? 700 : 500,
-      borderRadius: 5,
-      background: active ? C.blue : 'rgba(255,255,255,0.04)',
-      color: active ? '#fff' : C.text2,
-      border: `1px solid ${active ? C.blue : C.border}`,
-      fontFamily: mono,
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '5px 11px', borderRadius: 99,
+      background: active ? 'rgba(45,111,255,0.15)' : 'transparent',
+      border: `1px solid ${active ? 'rgba(45,111,255,0.4)' : 'rgba(255,255,255,0.10)'}`,
+      fontSize: 10, fontWeight: active ? 600 : 500,
+      color: active ? C.blueLight : C.text2,
+    }}>
+      {dot && <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot }} />}
+      {label}
+    </span>
+  )
+}
+
+function FakeSelect({ value }) {
+  return (
+    <div style={{
+      flex: 1, padding: '7px 11px', fontSize: 11,
+      background: 'rgba(28,32,48,0.7)',
+      border: `1px solid ${C.border2}`,
+      borderRadius: 6, color: C.text,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      <span>{value}</span>
+      <span style={{ color: C.text3, fontSize: 9 }}>▼</span>
+    </div>
+  )
+}
+
+function PnlCard({ label, value, color }) {
+  return (
+    <div style={{
+      padding: '10px 11px',
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 8,
+    }}>
+      <div style={{
+        fontSize: 8, color: C.text3,
+        textTransform: 'uppercase', letterSpacing: '0.12em',
+        marginBottom: 6, fontWeight: 600,
+      }}>{label}</div>
+      <div style={{
+        fontSize: 15, fontWeight: 700,
+        color: color || C.text, fontFamily: mono,
+        letterSpacing: '-0.015em',
+      }}>{value}</div>
+    </div>
+  )
+}
+
+function NavBtn({ children }) {
+  return (
+    <span style={{
+      padding: '4px 8px', fontSize: 10, fontWeight: 600,
+      background: 'rgba(255,255,255,0.025)',
+      border: `1px solid ${C.border}`, borderRadius: 5,
+      color: C.text2,
     }}>{children}</span>
   )
 }
