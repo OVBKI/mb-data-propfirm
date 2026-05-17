@@ -494,6 +494,7 @@ export default function JournalPage({
   pageEyebrow = 'Journal de trading',
   pageTitle = 'Chaque trade. Tracké. Analysé.',
   pageSubtitleSuffix = 'saisie manuelle',
+  renderExtraSection = null,  // (ctx) => JSX — appelé avant le footer. ctx = { filteredEntries, decoratedEntries, allAccounts, firms }
 }){
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1252,6 +1253,9 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
             </div>
           )
         })()}
+
+        {/* === Section extra (injection par le parent — ex: historique trades sync) === */}
+        {renderExtraSection && renderExtraSection({ filteredEntries, decoratedEntries, allAccounts, firms })}
       </>
       )}
 

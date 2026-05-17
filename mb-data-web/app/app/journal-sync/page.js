@@ -1,39 +1,90 @@
 'use client'
-// JOURNAL SYNC — réutilise le composant JournalPage en mode "sync".
+// JOURNAL SYNC — réutilise JournalPage en mode "sync" dans le shell /app
+// (topbar + sidebar identiques à /app, deep-link via ?p= pour navigation interne).
 //
-// Strictement isolé du journal manuel :
-//   - Côté DATA : JournalPage filtre les entries via onlyRithmicEntries=true
-//     → ne montre QUE les trades avec le marker [rithmic:ENTRY/EXIT] dans notes
-//   - Côté COMPTES : on filtre les firms avant de les passer pour ne garder
-//     QUE les comptes ayant un rithmic_account_id (= créés/liés par l'import CSV)
+// Hérite de TOUTE l'UI de JournalPage : filtres Statut/Firme/Compte, courbes
+// de balance, calendrier, stats, etc.
 //
-// Comme on réutilise JournalPage, on hérite automatiquement de :
-//   - Filtres Statut / Firme / Compte (les pills + dropdowns du screenshot)
-//   - Courbes de balance par compte (EquityCurveCard avec DD line)
-//   - Calendrier PnL mensuel
-//   - Stats agrégées (WR, R-ratio, consistency, etc.)
-//   - Export CSV
-//   - Toutes les futures features qu'on ajoute au journal
-//
-// Différences en mode sync (props) :
-//   - Bouton "+ Trade" → "+ Importer un CSV" (lien vers /app/import-lab)
-//   - Eyebrow / titre / subtitle changent pour refléter la source des données
-//   - Empty state pointe vers l'Import Lab au lieu du dashboard
+// Ajoute en dessous (via renderExtraSection) un historique tabulaire dense
+// des trades, avec colonnes Rithmic complètes (entry/exit, fills, hold).
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import JournalPage from '../../../components/JournalPage'
+import QLogoIcon from '../../../components/QLogoIcon'
+import SpaceBackground from '../../../components/dashboard/SpaceBackground'
 import { FIRM_COLORS } from '../../../lib/constants'
 import { getFirmLogo } from '../../../lib/firmLogos'
 
+// ============================================================================
+// Helpers : extraction métadonnées Rithmic depuis notes
+// ============================================================================
+function parseRithmicMeta(notes) {
+  if (!notes) return null
+  const markerMatch = notes.match(/\[rithmic:(\d+)\/(\d+)\]/)
+  if (!markerMatch) return null
+  return {
+    entryOrderId: markerMatch[1],
+    exitOrderId: markerMatch[2],
+    qty: parseInt((notes.match(/qty=(\d+)/) || [])[1] || 0),
+    fills: parseInt((notes.match(/fills=(\d+)/) || [])[1] || 0),
+    holdSeconds: parseFloat((notes.match(/hold=([\d.]+)s/) || [])[1] || 0),
+    entryTime: (notes.match(/entry=([\d-]+ [\d:]+)/) || [])[1] || null,
+    exitTime: (notes.match(/exit=([\d-]+ [\d:]+)/) || [])[1] || null,
+  }
+}
+
+function fmtMoney(n) {
+  const v = Number(n) || 0
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + ' $'
+}
+
+function fmtHold(s) {
+  if (!s || s < 1) return '<1s'
+  if (s < 60) return `${s.toFixed(0)}s`
+  if (s < 3600) return `${(s / 60).toFixed(1)}m`
+  return `${(s / 3600).toFixed(1)}h`
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—'
+  const parts = iso.split(' ')
+  return parts[1] || iso
+}
+
+// Mêmes emails que app/admin/layout.js — affichage conditionnel du lien admin
+const ADMIN_EMAILS = [
+  'bakkali-omar@hotmail.com',
+  'omar.mbtrading@gmail.com',
+  'admin@quantara.tech',
+]
+
+// Navigation sidebar : items internes (key) deep-linkent vers /app?p=key,
+// items externes (href) naviguent directement à la route Next.js.
+const NAV_ITEMS = [
+  { key: 'dashboard', icon: '◫', label: 'Tableau de bord', section: 'Principal' },
+  { key: 'analytics', icon: '◐', label: 'Analytics',       section: 'Principal' },
+  { key: 'journal',   icon: '☰', label: 'Journal manuel',  section: 'Principal' },
+  { key: 'rules',     icon: '◊', label: 'Règles firmes',   section: 'PropFirm' },
+  { key: 'alerts',    icon: '◉', label: 'Alertes',         section: 'PropFirm' },
+  { key: 'calendar',  icon: '◳', label: 'Calendrier Éco.', section: 'Live Data' },
+  { href: '/app/import-lab',   icon: '↓', label: 'Import CSV',   section: 'Sync', badgeLabel: 'BETA' },
+  { href: '/app/journal-sync', icon: '◰', label: 'Journal Sync', section: 'Sync' },
+]
+const SECTIONS = ['Principal', 'Live Data', 'PropFirm', 'Sync']
+
+// ============================================================================
+// COMPOSANT PRINCIPAL
+// ============================================================================
 export default function JournalSyncPage() {
   const [user, setUser] = useState(null)
   const [loadingAuth, setLoadingAuth] = useState(true)
   const [firms, setFirms] = useState([])
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
-  // Charge firms+accounts+payouts EN MÊME SHAPE que /app/page.js loadFirms()
-  // (chaque firm a un tableau `accounts`, chaque account a un tableau `payouts`)
-  // Filtre EXPLICITEMENT par user_id pour contrer une éventuelle policy admin RLS.
+  // Charge firms+accounts+payouts (même shape que /app/page.js loadFirms)
+  // Filtre EXPLICITEMENT par user_id (anti-leak admin RLS).
   const loadFirms = useCallback(async (userId) => {
     if (!userId) return
     const [fd, ad, pd] = await Promise.all([
@@ -45,26 +96,21 @@ export default function JournalSyncPage() {
     const accountsRaw = ad.data || []
     const payoutsRaw = pd.data || []
 
-    // Hydrate la même structure que /app/page.js attend
     const hydrated = firmsRaw.map((f, i) => ({
       ...f,
       color: f.color || FIRM_COLORS[i % FIRM_COLORS.length],
       accounts: accountsRaw
         .filter(a => a.firm_id === f.id)
-        // ⚠ FILTRE SYNC : ne garde QUE les comptes synchronisés (rithmic_account_id rempli)
-        // Les comptes manuels apparaissent uniquement dans le journal classique.
+        // FILTRE SYNC : ne garde QUE les comptes ayant rithmic_account_id rempli
         .filter(a => !!a.rithmic_account_id)
         .map(a => ({
           ...a,
           payouts: payoutsRaw.filter(p => p.account_id === a.id),
         })),
     }))
-    // Retire les firmes qui n'ont plus de compte sync après filtrage
-    const filtered = hydrated.filter(f => (f.accounts || []).length > 0)
-    setFirms(filtered)
+    setFirms(hydrated.filter(f => (f.accounts || []).length > 0))
   }, [])
 
-  // Auth + initial load
   useEffect(() => {
     let mounted = true
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -77,18 +123,20 @@ export default function JournalSyncPage() {
     return () => { mounted = false }
   }, [loadFirms])
 
-  // Toast minimaliste (le journal en a besoin)
   function showToast(msg) {
-    if (typeof window !== 'undefined') {
-      console.log('[journal-sync]', msg)
-    }
+    if (typeof window !== 'undefined') console.log('[journal-sync]', msg)
   }
 
-  // Reload après une action (rare en mode sync, mais pour cohérence avec JournalPage)
   function onReload() {
     if (user?.id) loadFirms(user.id)
   }
 
+  async function signOut() {
+    await supabase.auth.signOut()
+    window.location.href = '/app'
+  }
+
+  // === Gardes ===
   if (loadingAuth) {
     return (
       <div style={{
@@ -99,7 +147,6 @@ export default function JournalSyncPage() {
       </div>
     )
   }
-
   if (!user) {
     return (
       <div style={{
@@ -109,27 +156,298 @@ export default function JournalSyncPage() {
       }}>
         <div style={{ fontSize:48, marginBottom:16 }}>🔒</div>
         <h1 style={{ fontSize:22, fontWeight:700, marginBottom:8 }}>Connexion requise</h1>
-        <a href="/app" style={{ color:'var(--blue-light)', textDecoration:'none' }}>← Page de connexion</a>
+        <Link href="/app" style={{ color:'var(--blue-light)', textDecoration:'none' }}>← Page de connexion</Link>
       </div>
     )
   }
 
-  // Render principal : JournalPage en mode sync
+  const isAdmin = ADMIN_EMAILS.includes(user.email)
+
+  // ==========================================================================
+  // Render principal — même shell que /app (topbar + sidebar + content)
+  // ==========================================================================
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>
-      <JournalPage
-        firms={firms}
-        user={user}
-        getFirmLogo={getFirmLogo}
-        showToast={showToast}
-        onReload={onReload}
-        onlyRithmicEntries={true}
-        addTradeHref="/app/import-lab"
-        addTradeLabel="+ Importer un CSV"
-        pageEyebrow="Journal Sync · CSV Import"
-        pageTitle="Chaque trade importé. Tracké. Analysé."
-        pageSubtitleSuffix="synchronisé depuis Rithmic"
-      />
+    <div style={{ minHeight:'100vh', background:'transparent', position:'relative' }}>
+      <SpaceBackground />
+      <div style={{ height:'2px', background:'linear-gradient(90deg,var(--blue) 0%,transparent 100%)', position:'relative', zIndex:1 }} />
+
+      {/* TOPBAR */}
+      <div className="top-bar" style={{
+        height:'52px', background:'rgba(13,15,20,0.78)',
+        backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)',
+        borderBottom:'1px solid rgba(255,255,255,0.06)',
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'0 24px', position:'sticky', top:0, zIndex:200,
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
+          <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
+          <Link href="/app" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', color:'var(--text)' }}>
+            <QLogoIcon size={44} color="#4d8fff" />
+            <div style={{ display:'flex', alignItems:'baseline', gap:'10px' }}>
+              <div style={{ fontWeight:'700', fontSize:'14px', letterSpacing:'0.14em', color:'var(--text)' }}>QUANTARA</div>
+              <span className="top-bar-brand-sub" style={{ fontSize:'10px', color:'var(--text3)', letterSpacing:'0.18em' }}>TRACK · ANALYZE · GROW</span>
+            </div>
+          </Link>
+        </div>
+        <div className="top-bar-actions" style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+          <button onClick={signOut} style={{
+            fontSize:'12px', padding:'7px 14px', background:'rgba(255,255,255,0.025)',
+            border:'1px solid rgba(255,255,255,0.10)', color:'var(--text2)',
+            borderRadius:'8px', cursor:'pointer', fontFamily:'inherit',
+          }}>Déconnexion</button>
+        </div>
+      </div>
+
+      <div style={{ display:'flex', minHeight:'calc(100vh - 50px)' }}>
+        {/* SIDEBAR */}
+        <nav className={'app-nav'+(mobileNavOpen?' open':'')} style={{
+          width:'210px', flexShrink:0, background:'rgba(13,15,20,0.65)',
+          backdropFilter:'blur(26px)', WebkitBackdropFilter:'blur(26px)',
+          borderRight:'1px solid rgba(255,255,255,0.05)',
+          padding:'18px 0', position:'sticky', top:'52px',
+          height:'calc(100vh - 52px)', overflowY:'auto',
+        }}>
+          {SECTIONS.map(section => (
+            <div key={section}>
+              <div className="nav-section-label" style={{
+                padding:'12px 18px 6px', fontSize:'10px', fontWeight:'700',
+                color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.14em',
+              }}>{section}</div>
+              {NAV_ITEMS.filter(i => i.section === section).map(item => {
+                // Item EXTERNE (href = autre route)
+                if (item.href) {
+                  const isActive = item.href === '/app/journal-sync'
+                  return (
+                    <a key={item.href} href={item.href} style={{
+                      display:'flex', alignItems:'center', gap:'11px',
+                      padding:'9px 18px', width:'100%',
+                      background: isActive ? 'rgba(45,111,255,0.12)' : 'transparent',
+                      color: isActive ? 'var(--blue-light)' : 'var(--text2)',
+                      fontSize:'13px', fontWeight: isActive ? 600 : 500,
+                      textDecoration:'none',
+                      borderLeft:`2px solid ${isActive?'var(--blue)':'transparent'}`,
+                      transition:'all 0.15s', fontFamily:'inherit',
+                    }}>
+                      <span style={{
+                        fontSize:'14px',
+                        color: isActive ? 'var(--blue-light)' : 'var(--text3)',
+                        width:'18px', display:'inline-block', textAlign:'center', lineHeight:1,
+                      }}>{item.icon}</span>
+                      {item.label}
+                      {item.badgeLabel && (
+                        <span style={{
+                          marginLeft:'auto',
+                          background:'rgba(45,111,255,0.15)', color:'var(--blue-light)',
+                          fontSize:'9px', fontWeight:'700', padding:'2px 7px',
+                          borderRadius:'99px', letterSpacing:'0.08em',
+                        }}>{item.badgeLabel}</span>
+                      )}
+                    </a>
+                  )
+                }
+                // Item INTERNE (key) → deep-link vers /app?p=key
+                return (
+                  <a key={item.key} href={`/app?p=${item.key}`} style={{
+                    display:'flex', alignItems:'center', gap:'11px',
+                    padding:'9px 18px', width:'100%',
+                    background:'transparent', color:'var(--text2)',
+                    fontSize:'13px', fontWeight:500,
+                    textDecoration:'none',
+                    borderLeft:'2px solid transparent',
+                    transition:'all 0.15s', fontFamily:'inherit',
+                  }}>
+                    <span style={{ fontSize:'14px', color:'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>
+                    {item.label}
+                  </a>
+                )
+              })}
+            </div>
+          ))}
+
+          {/* Admin panel (si admin) */}
+          {isAdmin && (
+            <div style={{ padding:'8px 12px', marginTop:'12px', borderTop:'1px solid var(--border)' }}>
+              <a href="/admin" style={{
+                display:'flex', alignItems:'center', gap:'10px',
+                padding:'10px 12px', borderRadius:'8px',
+                background:'rgba(232,80,74,0.08)', border:'1px solid rgba(232,80,74,0.25)',
+                color:'var(--red-text)', fontSize:'12px', fontWeight:'600', textDecoration:'none',
+              }}>🔧 Admin Panel</a>
+            </div>
+          )}
+
+          <div style={{ position:'absolute', bottom:'12px', left:0, right:0, padding:'0 14px' }}>
+            <div style={{
+              fontSize:'11px', color:'var(--text3)',
+              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+            }}>{user?.email}</div>
+          </div>
+        </nav>
+
+        {mobileNavOpen && <div className="nav-backdrop" onClick={()=>setMobileNavOpen(false)} />}
+
+        {/* CONTENT — JournalPage + historique en dessous */}
+        <div style={{ flex:1, overflow:'auto' }}>
+          <JournalPage
+            firms={firms}
+            user={user}
+            getFirmLogo={getFirmLogo}
+            showToast={showToast}
+            onReload={onReload}
+            onlyRithmicEntries={true}
+            addTradeHref="/app/import-lab"
+            addTradeLabel="+ Importer un CSV"
+            pageEyebrow="Journal Sync · CSV Import"
+            pageTitle="Chaque trade importé. Tracké. Analysé."
+            pageSubtitleSuffix="synchronisé depuis Rithmic"
+            renderExtraSection={(ctx) => (
+              <TradesHistory
+                filteredEntries={ctx.filteredEntries}
+                allAccounts={ctx.allAccounts}
+              />
+            )}
+          />
+        </div>
+      </div>
     </div>
   )
+}
+
+// ============================================================================
+// HISTORIQUE DES TRADES — table dense avec métadonnées Rithmic complètes
+// ============================================================================
+function TradesHistory({ filteredEntries, allAccounts }) {
+  const accountById = {}
+  for (const a of allAccounts) accountById[a.id] = a
+
+  if (filteredEntries.length === 0) {
+    return null
+  }
+
+  return (
+    <div style={{ marginTop:'32px' }}>
+      <div style={{
+        fontSize:'15px', fontWeight:'600', marginBottom:'12px',
+        display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap',
+      }}>
+        📋 Historique des trades
+        <span style={{
+          fontSize:'11px', color:'var(--text3)', fontFamily:'ui-monospace,monospace',
+          fontWeight:'500', letterSpacing:'0.05em',
+        }}>
+          ({filteredEntries.length} trade{filteredEntries.length > 1 ? 's' : ''})
+        </span>
+      </div>
+
+      <div style={{
+        background:'var(--surface)',
+        border:'1px solid rgba(255,255,255,0.06)',
+        borderRadius:'10px',
+        overflow:'hidden',
+        boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)',
+      }}>
+        <div style={{ overflowX:'auto', maxHeight:'600px' }}>
+          <table style={{
+            width:'100%', fontSize:'12px',
+            fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace',
+            borderCollapse:'separate', borderSpacing:0,
+          }}>
+            <thead>
+              <tr style={{
+                position:'sticky', top:0,
+                background:'rgba(255,255,255,0.025)',
+                borderBottom:'1px solid rgba(255,255,255,0.06)',
+                zIndex:1,
+              }}>
+                <th style={thStyle}>Date</th>
+                <th style={thStyle}>Compte</th>
+                <th style={thStyle}>Inst.</th>
+                <th style={thStyle}>Side</th>
+                <th style={{ ...thStyle, textAlign:'right' }}>Qty</th>
+                <th style={{ ...thStyle, textAlign:'right' }}>Entrée</th>
+                <th style={{ ...thStyle, textAlign:'right' }}>Sortie</th>
+                <th style={{ ...thStyle, textAlign:'right' }}>Net P&L</th>
+                <th style={thStyle}>Heures</th>
+                <th style={{ ...thStyle, textAlign:'right' }}>Hold</th>
+                <th style={{ ...thStyle, textAlign:'right' }}>Fills</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEntries.slice(0, 1000).map((t) => {
+                const meta = parseRithmicMeta(t.notes)
+                const acc = accountById[t.account_id]
+                const pnl = Number(t.pnl) || 0
+                const isLong = t.side === 'LONG'
+                return (
+                  <tr key={t.id} className="ts-row" style={{
+                    borderTop:'1px solid rgba(255,255,255,0.04)',
+                    transition:'background 0.12s ease',
+                  }}>
+                    <td style={tdStyle}>{t.date}</td>
+                    <td style={tdStyle}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        {t._firmColor && (
+                          <span style={{
+                            width:6, height:6, borderRadius:'50%',
+                            background: t._firmColor, flexShrink:0,
+                          }} />
+                        )}
+                        <span style={{ color:'var(--text2)' }}>
+                          {acc?.name || (acc ? `· ${acc.id.slice(0,6)}` : '?')}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ ...tdStyle, color:'var(--text)' }}>{t.instrument || '—'}</td>
+                    <td style={{
+                      ...tdStyle, fontWeight:600, letterSpacing:'0.05em',
+                      color: isLong ? 'var(--green)' : 'var(--red)',
+                    }}>
+                      {t.side === 'LONG' ? '▲ LONG' : t.side === 'SHORT' ? '▼ SHORT' : t.side || '—'}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign:'right' }}>{meta?.qty ?? '—'}</td>
+                    <td style={{ ...tdStyle, textAlign:'right', color:'var(--text2)' }}>{t.entry_price ?? '—'}</td>
+                    <td style={{ ...tdStyle, textAlign:'right', color:'var(--text2)' }}>{t.exit_price ?? '—'}</td>
+                    <td style={{
+                      ...tdStyle, textAlign:'right', fontWeight:600,
+                      color: pnl >= 0 ? 'var(--green)' : 'var(--red)',
+                    }}>{fmtMoney(pnl)}</td>
+                    <td style={{ ...tdStyle, color:'var(--text3)', fontSize:11 }}>
+                      {meta?.entryTime && meta?.exitTime
+                        ? `${fmtTime(meta.entryTime)} → ${fmtTime(meta.exitTime)}`
+                        : '—'}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign:'right', color:'var(--text3)' }}>
+                      {meta?.holdSeconds ? fmtHold(meta.holdSeconds) : '—'}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign:'right', color:'var(--text3)' }}>{meta?.fills ?? '—'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        {filteredEntries.length > 1000 && (
+          <div style={{
+            padding:'12px 16px', textAlign:'center', fontSize:11,
+            color:'var(--text3)', fontFamily:'ui-monospace,monospace',
+            borderTop:'1px solid rgba(255,255,255,0.06)',
+          }}>
+            Affichage des 1000 premiers · {filteredEntries.length - 1000} trades masqués. Affine les filtres pour voir le reste.
+          </div>
+        )}
+      </div>
+
+      {/* Hover effect via style tag */}
+      <style>{`.ts-row:hover { background: rgba(255,255,255,0.025); }`}</style>
+    </div>
+  )
+}
+
+const thStyle = {
+  padding:'10px 12px', textAlign:'left',
+  fontSize:10, fontWeight:600, color:'var(--text3)',
+  textTransform:'uppercase', letterSpacing:'0.1em',
+}
+const tdStyle = {
+  padding:'9px 12px', color:'var(--text2)',
 }

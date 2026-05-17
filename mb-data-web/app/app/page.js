@@ -179,7 +179,15 @@ export default function Home() {
   const [firms,setFirms]=useState([])
   const [rates,setRates]=useState({USD:0.9259,GBP:1.163,CHF:1.032,EUR:1})
   const [rateInfo,setRateInfo]=useState('Chargement...')
-  const [page,setPage]=useState('dashboard')
+  // Page courante : lue depuis ?p= au mount pour permettre le deep-linking depuis
+  // les pages externes (ex: sidebar de /app/journal-sync → /app?p=journal).
+  // Valeurs valides : 'dashboard' | 'analytics' | 'journal' | 'rules' | 'alerts' | 'calendar' | 'sync'
+  const [page,setPage]=useState(()=>{
+    if(typeof window==='undefined') return 'dashboard'
+    const p=new URLSearchParams(window.location.search).get('p')
+    const valid=['dashboard','analytics','journal','rules','alerts','calendar','sync']
+    return valid.includes(p) ? p : 'dashboard'
+  })
   const [currency,setCurrencyMode]=useState('native')
   const [searchQ,setSearchQ]=useState('')
   const [toast,setToast]=useState('')
