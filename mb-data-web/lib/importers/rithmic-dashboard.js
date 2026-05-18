@@ -83,12 +83,24 @@ function parseRithmicDateTime(s) {
   return null
 }
 
-// Détecte le type (eval/funded) à partir de l'ID Rithmic
+// Détecte le type (eval/funded) à partir de l'ID Rithmic.
+// Mai 2026 : étendu pour TPT (TPT=EVAL, TPTPRO=FUNDED) et Phidias (PP=EVAL, PP CASH=FUNDED).
 function detectAccountType(rithmicId) {
-  if (rithmicId.includes('-TEST')) return 'EVAL'
-  if (rithmicId.includes('-PRO')) return 'FUNDED'
-  if (rithmicId.startsWith('LFE')) return 'EVAL'
-  if (rithmicId.startsWith('LFF')) return 'FUNDED'
+  const id = (rithmicId || '').toUpperCase()
+
+  // ── Patterns FUNDED (à vérifier EN PREMIER car certains sont sous-chaînes des EVAL) ──
+  if (id.startsWith('TPTPRO'))                  return 'FUNDED'  // Take Profit Trader Funded
+  if (id.startsWith('PPCASH'))                  return 'FUNDED'  // Phidias Funded (concaténé)
+  if (id.startsWith('PP CASH') || id.startsWith('PP_CASH')) return 'FUNDED'  // Phidias Funded (séparé)
+  if (id.startsWith('LFF'))                     return 'FUNDED'  // Lucid Funded
+  if (id.includes('-PRO'))                      return 'FUNDED'  // Pattern générique -PRO
+
+  // ── Patterns EVAL ──
+  if (id.startsWith('TPT'))                     return 'EVAL'    // Take Profit Trader Challenge
+  if (id.startsWith('PP'))                      return 'EVAL'    // Phidias Challenge
+  if (id.startsWith('LFE'))                     return 'EVAL'    // Lucid Eval
+  if (id.includes('-TEST'))                     return 'EVAL'    // Pattern générique -TEST
+
   return 'UNKNOWN'
 }
 

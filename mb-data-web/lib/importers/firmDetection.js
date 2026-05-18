@@ -32,8 +32,9 @@ export const FIRM_PATTERNS = [
   { firm: 'Apex Trader Funding', pattern: /^(PA|APEX)[-_][A-Z0-9]+(-[A-Z0-9]+)*$/i },
 
   // ── Take Profit Trader (TPT) ──
-  // Ex: TPT-12345, TPT12345, TPT_12345-XX
-  { firm: 'Take Profit Trader', pattern: /^TPT[-_]?[A-Z0-9-]+$/i },
+  // Challenge/EVAL : TPT-12345, TPT12345
+  // Funded         : TPTPRO-12345, TPTPRO12345 (préfixe "PRO" concaténé)
+  { firm: 'Take Profit Trader', pattern: /^TPT(PRO)?[-_]?[A-Z0-9-]*$/i },
 
   // ── Topstep ──
   // Ex: TSP-12345, TS-12345, PRO-12345, PRO007, EFA-50K-12345, COMBINE-50K
@@ -61,8 +62,11 @@ export const FIRM_PATTERNS = [
   { firm: 'FuturesELites', pattern: /^(FE|FELITES)[-_][A-Z0-9-]+$/i },
 
   // ── Phidias Propfirm ──
-  // Ex: PHI-12345, PHIDIAS-12345
-  { firm: 'Phidias Propfirm', pattern: /^(PHI|PHIDIAS)[-_][A-Z0-9-]+$/i },
+  // Challenge/EVAL : PP, PP-12345, PHI-12345, PHIDIAS-12345
+  // Funded         : PP CASH-12345, PPCASH-12345, PP_CASH-12345
+  // Pattern : "PP" (avec CASH optionnel concaténé) OU "PHI"/"PHIDIAS"
+  // suivi d'un séparateur optionnel ([-_ ]) puis du reste de l'ID.
+  { firm: 'Phidias Propfirm', pattern: /^(PP(CASH)?|PHI(DIAS)?)([-_ ][A-Z0-9-]+)?$/i },
 ]
 
 // Pattern générique de fallback : permet d'identifier qu'une chaîne ressemble
