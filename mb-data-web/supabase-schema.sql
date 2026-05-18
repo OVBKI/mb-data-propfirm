@@ -99,6 +99,15 @@ alter table journal_entries add column if not exists tags text[] default '{}';
 -- Index GIN pour filtres rapides type "trades avec tag X" (vu que c'est array)
 create index if not exists journal_entries_tags_idx on journal_entries using gin (tags);
 
+-- Commissions & slippage (mai 2026) — coûts cachés sur chaque trade.
+-- Convention : `pnl` reste le PnL NET (ce que l'user voit sur son compte).
+--   commissions : montant payé en frais broker (positif, ex: 5.40)
+--   slippage    : coût de glissement (positif, ex: 2.50) — optionnel
+-- Gross PnL = pnl + commissions + slippage (utile pour analyse exécution).
+-- Import CSV Rithmic alimente déjà `commissions` automatiquement.
+alter table journal_entries add column if not exists commissions numeric(12,2) default 0;
+alter table journal_entries add column if not exists slippage    numeric(12,2) default 0;
+
 -- CERTIFICATS / DIPLÔMES — captures de réussite challenge, payouts, etc.
 create table if not exists certificates (
   id uuid default gen_random_uuid() primary key,

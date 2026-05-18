@@ -17,6 +17,7 @@ function suggestProfitSplit(firmName, plan){
 import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
 import TradesPage from '../../components/TradesPage'
+import EquityOverlayChart from '../../components/EquityOverlayChart'
 import QLogoIcon from '../../components/QLogoIcon'
 import CertificatesModal from '../../components/CertificatesModal'
 import OnboardingModal from '../../components/OnboardingModal'
@@ -1091,7 +1092,11 @@ export default function Home() {
               </div>
               {!cLabels.length
                 ?<div style={{...S.card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>Ajoutez des comptes pour voir les analytics.</div>
-                :<AnalyticsCharts cLabels={cLabels} cSpent={cSpent} cPayout={cPayout} cNet={cNet} yLabels={yLabels} ySpent={ySpent} yPayout={yPayout} yNet={yNet} mLabels={mLabels} mSpent={mSpent} mPayout={mPayout} mNet={mNet} />
+                :<>
+                  <AnalyticsCharts cLabels={cLabels} cSpent={cSpent} cPayout={cPayout} cNet={cNet} yLabels={yLabels} ySpent={ySpent} yPayout={yPayout} yNet={yNet} mLabels={mLabels} mSpent={mSpent} mPayout={mPayout} mNet={mNet} />
+                  {/* Phase 5 : Overlay multi-comptes — comparer 2-5 equity curves côte à côte */}
+                  <EquityOverlayChart firms={firms} user={user} />
+                </>
               }
             </div>
           )}

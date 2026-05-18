@@ -496,6 +496,9 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
             side: t.side,
             entry_price: t.entryPrice,
             exit_price: t.exitPrice,
+            // Phase 4 : commissions extraites du CSV Rithmic (gross - net = commissions)
+            // Le `pnl` reste le NET (ce que l'user voit), les commissions sont trackées séparément.
+            commissions: t.commissions != null ? Math.abs(t.commissions) : 0,
             notes: `[rithmic:${marker}] qty=${t.qty} fills=${t.fillCount} hold=${t.holdSeconds}s entry=${t.entryTime} exit=${t.exitTime}`,
           })
         }

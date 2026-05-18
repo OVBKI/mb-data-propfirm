@@ -512,6 +512,7 @@ export default function JournalPage({
     accountId:'', date:todayISO(), pnl:'', instrument:'', side:'', notes:'',
     entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
     tags: [],
+    commissions:'', slippage:'',
   })
   // Filtre par tags dans le journal (array d'IDs sélectionnés ; vide = pas de filtre)
   const [tagFilter, setTagFilter] = useState([])
@@ -721,6 +722,7 @@ export default function JournalPage({
       pnl:'', instrument:'', side:'', notes:'',
       entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
       tags: [],
+      commissions:'', slippage:'',
     })
     setEntryModal({ defaultDate })
   }
@@ -734,6 +736,8 @@ export default function JournalPage({
       takeProfit: e.take_profit != null ? String(e.take_profit) : '',
       screenshotUrl: e.screenshot_url || '',
       tags: Array.isArray(e.tags) ? e.tags : [],
+      commissions: e.commissions != null && Number(e.commissions) !== 0 ? String(e.commissions) : '',
+      slippage:    e.slippage    != null && Number(e.slippage)    !== 0 ? String(e.slippage)    : '',
     })
     setEntryModal({ entry:e })
   }
@@ -757,6 +761,9 @@ export default function JournalPage({
       screenshot_url: form.screenshotUrl || null,
       // Tags : array vide → null en DB pour cohérence (évite les '{}' inutiles)
       tags: Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : null,
+      // Commissions & slippage en montant positif absolu (coûts)
+      commissions: Math.abs(parseFloat(form.commissions) || 0) || 0,
+      slippage:    Math.abs(parseFloat(form.slippage)    || 0) || 0,
     }
     let res
     if(entryModal?.entry){
@@ -829,15 +836,19 @@ export default function JournalPage({
     if(onReload) await onReload()
   }
 
-  // Export CSV des trades filtrés (avec BOM UTF-8 pour Excel Windows + tags + R-multiple)
+  // Export CSV des trades filtrés (avec BOM UTF-8 + tags + R-multiple + commissions)
   function exportJournalCSV(){
-    const rows = [['Date','Firme','Compte','Instrument','Side','PnL','Entry','Exit','Stop','TP','R réalisé','R:R visé','Tags','Notes']]
+    const rows = [['Date','Firme','Compte','Instrument','Side','PnL net','Commissions','Slippage','PnL gross','Entry','Exit','Stop','TP','R réalisé','R:R visé','Tags','Notes']]
     filteredEntries.forEach(e=>{
       const tagsStr = Array.isArray(e.tags) ? e.tags.join(', ') : ''
       const r = computeRMultiple({ entry:e.entry_price, exit:e.exit_price, stop:e.stop_loss, side:e.side, pnl:e.pnl })
       const rr = computeRiskReward({ entry:e.entry_price, takeProfit:e.take_profit, stop:e.stop_loss, side:e.side, pnl:e.pnl, exit:e.exit_price })
+      const comm = Number(e.commissions) || 0
+      const slip = Number(e.slippage) || 0
+      const gross = Number(e.pnl) + comm + slip
       rows.push([
         e.date, e._firmName, e._accountLabel, e.instrument||'', e.side||'', String(e.pnl),
+        comm > 0 ? comm.toFixed(2) : '', slip > 0 ? slip.toFixed(2) : '', gross.toFixed(2),
         e.entry_price ?? '', e.exit_price ?? '', e.stop_loss ?? '', e.take_profit ?? '',
         r != null ? r.toFixed(2) : '', rr != null ? rr.toFixed(2) : '',
         tagsStr, e.notes||'',
@@ -1492,6 +1503,34 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 <label style={labelS}>Take Profit</label>
                 <input type="number" step="0.0001" value={form.takeProfit} onChange={e=>setForm(p=>({...p,takeProfit:e.target.value}))} placeholder="ex : 5440.00" style={inputS} />
               </div>
+
+              {/* Commissions & Slippage (Phase 4) */}
+              <div>
+                <label style={labelS}>Commissions ($)</label>
+                <input type="number" step="0.01" min="0" value={form.commissions} onChange={e=>setForm(p=>({...p,commissions:e.target.value}))} placeholder="ex : 5.40" style={inputS} />
+              </div>
+              <div>
+                <label style={labelS}>Slippage ($)</label>
+                <input type="number" step="0.01" min="0" value={form.slippage} onChange={e=>setForm(p=>({...p,slippage:e.target.value}))} placeholder="ex : 2.50" style={inputS} />
+              </div>
+
+              {/* Aperçu Gross PnL si commissions/slippage renseignés */}
+              {(() => {
+                const comm = Math.abs(parseFloat(form.commissions) || 0)
+                const slip = Math.abs(parseFloat(form.slippage)    || 0)
+                const net  = parseFloat(form.pnl)
+                if ((comm <= 0 && slip <= 0) || !Number.isFinite(net)) return null
+                const gross = net + comm + slip
+                return (
+                  <div style={{gridColumn:'1/-1',padding:'8px 12px',background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'6px',display:'flex',gap:'14px',flexWrap:'wrap',alignItems:'center',fontSize:'11px',color:'var(--text3)'}}>
+                    <span style={{fontWeight:'700',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px',fontSize:'9px'}}>💵 Décomposition</span>
+                    <span>Gross : <strong style={{color:gross>=0?'var(--green)':'var(--red)'}}>{(gross>=0?'+':'')+gross.toFixed(2)} $</strong></span>
+                    {comm > 0 && <span>− Commissions : <strong style={{color:'var(--red)'}}>{comm.toFixed(2)} $</strong></span>}
+                    {slip > 0 && <span>− Slippage : <strong style={{color:'var(--red)'}}>{slip.toFixed(2)} $</strong></span>}
+                    <span>= Net : <strong style={{color:net>=0?'var(--green)':'var(--red)'}}>{(net>=0?'+':'')+net.toFixed(2)} $</strong></span>
+                  </div>
+                )
+              })()}
 
               {/* === Aperçu R-multiple & R:R en temps réel === */}
               {(() => {

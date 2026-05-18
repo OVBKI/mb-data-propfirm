@@ -203,7 +203,10 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
     const wins = filteredEntries.filter(e => Number(e.pnl) > 0).length
     const winRate = total > 0 ? (wins / total * 100) : 0
     const rStats = computeRStats(filteredEntries)
-    return { total, totalPnl, winRate, ...rStats }
+    // Coûts cumulés (commissions + slippage)
+    const totalCommissions = filteredEntries.reduce((s, e) => s + (Number(e.commissions) || 0), 0)
+    const totalSlippage    = filteredEntries.reduce((s, e) => s + (Number(e.slippage)    || 0), 0)
+    return { total, totalPnl, winRate, totalCommissions, totalSlippage, ...rStats }
   }, [filteredEntries])
 
   // === Liste unique des instruments présents (pour le dropdown filter) ===
@@ -231,12 +234,16 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
 
   // === Export CSV ===
   function exportCSV() {
-    const rows = [['Date', 'Firme', 'Compte', 'Instrument', 'Side', 'PnL', 'Entry', 'Exit', 'Stop', 'TP', 'R réalisé', 'R:R visé', 'Tags', 'Notes']]
+    const rows = [['Date', 'Firme', 'Compte', 'Instrument', 'Side', 'PnL net', 'Commissions', 'Slippage', 'PnL gross', 'Entry', 'Exit', 'Stop', 'TP', 'R réalisé', 'R:R visé', 'Tags', 'Notes']]
     filteredEntries.forEach(e => {
       const r = computeRMultiple({ entry: e.entry_price, exit: e.exit_price, stop: e.stop_loss, side: e.side, pnl: e.pnl })
       const rr = computeRiskReward({ entry: e.entry_price, takeProfit: e.take_profit, stop: e.stop_loss, side: e.side, pnl: e.pnl, exit: e.exit_price })
+      const comm = Number(e.commissions) || 0
+      const slip = Number(e.slippage) || 0
+      const gross = Number(e.pnl) + comm + slip
       rows.push([
         e.date, e._firmName, e._accountLabel, e.instrument || '', e.side || '', String(e.pnl),
+        comm > 0 ? comm.toFixed(2) : '', slip > 0 ? slip.toFixed(2) : '', gross.toFixed(2),
         e.entry_price ?? '', e.exit_price ?? '', e.stop_loss ?? '', e.take_profit ?? '',
         r != null ? r.toFixed(2) : '', rr != null ? rr.toFixed(2) : '',
         Array.isArray(e.tags) ? e.tags.join(', ') : '',
@@ -288,13 +295,33 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
         </div>
       </div>
 
-      {/* === Stats résumé === */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }} className="trades-stats">
+      {/* === Stats résumé (4 KPIs + ligne coûts si applicable) === */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }} className="trades-stats">
         <StatCard label="Trades" value={String(stats.total)} />
         <StatCard label="PnL total" value={fmtMoney(stats.totalPnl)} color={stats.totalPnl >= 0 ? C.green : C.red} />
         <StatCard label="Win rate" value={stats.total > 0 ? stats.winRate.toFixed(1) + '%' : '—'} color={stats.winRate >= 50 ? C.green : C.amber} />
         <StatCard label="R moyen" value={stats.avgR != null ? (stats.avgR >= 0 ? '+' : '') + stats.avgR.toFixed(2) + 'R' : '—'} color={stats.avgR != null && stats.avgR >= 0.5 ? C.green : stats.avgR != null && stats.avgR >= 0 ? C.amber : C.red} />
       </div>
+
+      {/* Coûts cumulés — affiché uniquement si > 0 (typiquement pour les imports Rithmic) */}
+      {(stats.totalCommissions > 0 || stats.totalSlippage > 0) && (
+        <div style={{ ...card, padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center', fontSize: 11, color: C.text3 }}>
+          <span style={{ fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: 9 }}>
+            💸 Coûts cumulés (filtrés)
+          </span>
+          {stats.totalCommissions > 0 && (
+            <span>Commissions : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${stats.totalCommissions.toFixed(2)}</strong></span>
+          )}
+          {stats.totalSlippage > 0 && (
+            <span>Slippage : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${stats.totalSlippage.toFixed(2)}</strong></span>
+          )}
+          <span style={{ marginLeft: 'auto' }}>
+            Gross : <strong style={{ color: stats.totalPnl + stats.totalCommissions + stats.totalSlippage >= 0 ? C.green : C.red, fontFamily: 'ui-monospace, monospace' }}>
+              {fmtMoney(stats.totalPnl + stats.totalCommissions + stats.totalSlippage)}
+            </strong>
+          </span>
+        </div>
+      )}
 
       {/* === Toolbar filtres === */}
       <div style={{ ...card, padding: '14px 16px', marginBottom: 14 }}>

@@ -195,33 +195,43 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
             </div>
           )}
 
-          {/* Metrics ligne : R + R:R */}
-          {(r != null || rr != null) && (
-            <div style={{
-              display: 'flex', flexWrap: 'wrap', gap: 8,
-              padding: '6px 10px', marginBottom: 8,
-              background: 'rgba(45,111,255,0.04)',
-              border: '1px solid rgba(45,111,255,0.15)',
-              borderRadius: 6,
-            }}>
-              {r != null && (
-                <span style={{ fontSize: 11, color: C.text3 }}>
-                  📐 R : <strong style={{
-                    color: r >= 0 ? C.green : C.red,
-                    fontFamily: 'ui-monospace, monospace',
-                  }}>{formatR(r)}</strong>
-                </span>
-              )}
-              {rr != null && (
-                <span style={{ fontSize: 11, color: C.text3 }}>
-                  ⚖ R:R : <strong style={{
-                    color: rr >= 2 ? C.green : rr >= 1 ? C.amber : C.red,
-                    fontFamily: 'ui-monospace, monospace',
-                  }}>{formatRR(rr)}</strong>
-                </span>
-              )}
-            </div>
-          )}
+          {/* Metrics ligne : R + R:R + commissions */}
+          {(() => {
+            const comm = Number(e.commissions) || 0
+            const slip = Number(e.slippage) || 0
+            const hasMetrics = r != null || rr != null || comm > 0 || slip > 0
+            if (!hasMetrics) return null
+            return (
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: 8,
+                padding: '6px 10px', marginBottom: 8,
+                background: 'rgba(45,111,255,0.04)',
+                border: '1px solid rgba(45,111,255,0.15)',
+                borderRadius: 6,
+              }}>
+                {r != null && (
+                  <span style={{ fontSize: 11, color: C.text3 }}>
+                    📐 R : <strong style={{ color: r >= 0 ? C.green : C.red, fontFamily: 'ui-monospace, monospace' }}>{formatR(r)}</strong>
+                  </span>
+                )}
+                {rr != null && (
+                  <span style={{ fontSize: 11, color: C.text3 }}>
+                    ⚖ R:R : <strong style={{ color: rr >= 2 ? C.green : rr >= 1 ? C.amber : C.red, fontFamily: 'ui-monospace, monospace' }}>{formatRR(rr)}</strong>
+                  </span>
+                )}
+                {comm > 0 && (
+                  <span style={{ fontSize: 11, color: C.text3 }} title="Commissions payées sur ce trade">
+                    💸 Comm : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${comm.toFixed(2)}</strong>
+                  </span>
+                )}
+                {slip > 0 && (
+                  <span style={{ fontSize: 11, color: C.text3 }} title="Slippage estimé sur ce trade">
+                    ⤵ Slip : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${slip.toFixed(2)}</strong>
+                  </span>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </div>
 
