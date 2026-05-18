@@ -261,6 +261,14 @@ html, body { overflow-x: hidden; }
   .lp-steps { grid-template-columns: 1fr !important; }
   .lp-why { grid-template-columns: 1fr !important; gap: 32px !important; }
   .lp-footer { flex-direction: column; text-align: center; gap: 12px !important; }
+  /* ProductSection : padding latéral réduit pour libérer la largeur disponible
+     aux mockups (sinon 24px x 2 = 48px de marge volée à un viewport de 390px) */
+  .lp-product-section { padding: 50px 12px 40px !important; }
+  .lp-product-section h2 { font-size: 22px !important; }
+  .lp-product-section p { font-size: 14px !important; }
+}
+@media (max-width: 480px) {
+  .lp-product-section { padding: 40px 8px 30px !important; }
 }
 @media (max-width: 480px) {
   .lp-mockup-stats { grid-template-columns: repeat(2, 1fr) !important; }

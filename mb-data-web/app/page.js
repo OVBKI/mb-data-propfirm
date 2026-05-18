@@ -120,7 +120,7 @@ const STATS = [
 // ============================================================================
 function ProductSection({ label, labelColor, title, subtitle, children }) {
   return (
-    <section style={{ padding: '80px 24px 60px', position: 'relative' }}>
+    <section className="lp-product-section" style={{ padding: '80px 24px 60px', position: 'relative' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         {/* Intro text centrée */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>

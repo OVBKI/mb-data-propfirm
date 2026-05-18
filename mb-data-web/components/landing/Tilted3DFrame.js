@@ -80,23 +80,31 @@ export default function Tilted3DFrame({
           (pas de scroll horizontal). Zoom shrink aussi la bounding box, donc le
           conteneur s'adapte naturellement à la nouvelle taille. */}
       <style>{`
+        /* Mobile : neutralise le tilt 3D + shrink le mockup pour qu'il rentre
+           ENTIER dans la viewport sans scroll horizontal.
+           Le mockup le plus large (Dashboard avec 3 firm cards) fait ~900px natif.
+           Sur iPhone 14 Pro (390px viewport - 24px padding section), il reste ~342px.
+           Donc zoom requis = 342/900 = 0.38. */
         @media (max-width: 900px) {
           .t3d-wrapper { padding: 12px 0 !important; perspective: none !important; }
           .t3d-tilt {
             transform: none !important;
             border-radius: 10px !important;
             box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
-            zoom: 0.75;
+            zoom: 0.7;
           }
         }
         @media (max-width: 700px) {
-          .t3d-tilt { zoom: 0.6; }
+          .t3d-tilt { zoom: 0.5; }
         }
         @media (max-width: 480px) {
-          .t3d-tilt { zoom: 0.46; }
+          .t3d-tilt { zoom: 0.36; }
         }
         @media (max-width: 380px) {
-          .t3d-tilt { zoom: 0.38; }
+          .t3d-tilt { zoom: 0.32; }
+        }
+        @media (max-width: 340px) {
+          .t3d-tilt { zoom: 0.28; }
         }
       `}</style>
       <div
