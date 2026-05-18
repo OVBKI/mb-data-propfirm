@@ -4,6 +4,7 @@
 
 import { useRef, useState } from 'react'
 import { motion, useInView, useScroll, useTransform } from 'framer-motion'
+import { useT } from '../LanguageProvider'
 
 const C = {
   surface: '#141720',
@@ -92,6 +93,7 @@ function StepCard({ step, index, total }) {
 }
 
 export default function EnhancedSteps({ steps }) {
+  const t = useT()
   const sectionRef = useRef(null)
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -111,13 +113,13 @@ export default function EnhancedSteps({ steps }) {
           <div style={{
             fontSize: 11, fontWeight: 700, color: C.amber,
             textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12,
-          }}>🚀 Comment ça marche</div>
+          }}>{t('steps.eyebrow')}</div>
           <h2 style={{
             fontSize: 'clamp(28px, 4vw, 40px)',
             fontWeight: 800, marginBottom: 14,
             letterSpacing: '-0.02em',
             color: C.text,
-          }}>3 étapes. 90 secondes. Démarre maintenant.</h2>
+          }}>{t('steps.heading')}</h2>
         </div>
 
         {/* Cards avec ligne de connexion derrière (visible sur desktop seulement) */}

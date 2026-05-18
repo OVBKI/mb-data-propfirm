@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/react'
+import { LanguageProvider } from '../components/LanguageProvider'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -121,7 +122,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <body className={inter.className}>
-        {children}
+        {/* i18n FR/EN — Provider client-side qui injecte useT() partout sous lui */}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
         {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
