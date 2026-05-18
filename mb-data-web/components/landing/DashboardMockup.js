@@ -2,10 +2,19 @@
 // Structure réelle observée dans app/app/page.js :
 //   eyebrow "TABLEAU DE BORD" + "Bonjour Trader 👋" + (currency/search/+PropFirm)
 //   5 stats cards (PropFirms / Total dépensé / Total payouts / Résultat net / Payouts)
-//   firms-grid (cards 340px) : logo + nom + comptes/payouts + Net + ROI + 3 mini stats
+//   firms-grid (cards 340px) : logo SVG + nom + comptes/payouts + Net + ROI + 3 mini stats
 //                              + liste 3 comptes actifs (pastille + nom + badge + net)
 //                              + badges statuts + bouton 🎓 Diplômes
-// Données 100% fictives (pas de nom personnel).
+// Données 100% fictives mais MATHÉMATIQUEMENT COHÉRENTES :
+//   - Spent = (challenges × prix_challenge) + (activations × prix_activation)
+//   - Net firm = Σ net comptes
+//   - Payouts firm = Net firm + Spent firm  (P&L brut)
+//   - Total dépensé = Σ spent firms
+//   - Résultat net global = Total payouts - Total dépensé
+// Prix propfirm réels (mai 2026) :
+//   - Topstep : challenge $49, activation $149
+//   - Apex    : challenge $30, activation $75
+//   - Lucid   : challenge $95, pas d'activation
 
 const C = {
   surface:   'rgba(20,23,32,0.65)',
@@ -29,7 +38,51 @@ const STATUS_COLORS = {
   'Échoué':    C.red,
 }
 
-// === Firmes mockées (fictives mais réalistes) ===
+// === Logos SVG inspirés des propfirms (stylisés, pas de copyright) ===
+const FIRM_ICONS = {
+  // Topstep : 3 barres ascendantes (les "steps" vers le top)
+  Topstep: (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" style={{ display: 'block' }}>
+      <rect x="3" y="15" width="5" height="6" rx="1" />
+      <rect x="9.5" y="10" width="5" height="11" rx="1" />
+      <rect x="16" y="5" width="5" height="16" rx="1" />
+    </svg>
+  ),
+  // Apex : triangle pointant vers le haut (apex = sommet)
+  Apex: (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" style={{ display: 'block' }}>
+      <path d="M12 3 L22 21 L2 21 Z" />
+    </svg>
+  ),
+  // Lucid : losange/prisme (clarté, transparence)
+  Lucid: (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" style={{ display: 'block' }}>
+      <path d="M12 2 L22 12 L12 22 L2 12 Z" />
+    </svg>
+  ),
+}
+
+// === Firmes mockées avec prix réels ===
+// CALCUL :
+//   Topstep : 3 comptes (2 Financés actifs + 1 Challenge en cours)
+//     Spent = 3×49 (challenges) + 2×149 (activations 2 Financés) = 147 + 298 = 445
+//     Net   = 980 + 860 + 0 = 1840
+//     Payouts (P&L brut) = Net + Spent = 1840 + 445 = 2285
+//     ROI   = Net / Spent × 100 = 1840/445 = 413%
+//
+//   Apex : 4 comptes (2 Financés actifs + 2 Échoués)
+//     Spent = 4×30 (challenges) + 2×75 (activations 2 Financés) = 120 + 150 = 270
+//     Net   = 1450 + 1420 + (-245) = 2625  (1 échoué non affiché supposé ~0)
+//     Payouts = 2625 + 270 = 2895
+//     ROI   = 2625/270 = 972%
+//
+//   Lucid : 2 comptes (1 Financé + 1 Échoué)
+//     Spent = 2×95 (challenges) + 0 (pas d'activation chez Lucid) = 190
+//     Net   = 1008 + (-210) = 798
+//     Payouts = 798 + 190 = 988
+//     ROI   = 798/190 = 420%
+//
+//   TOTAL : Spent 905$ · Payouts 6168$ · Net 5263$ · Payouts count 6
 const FIRMS = [
   {
     name: 'Topstep',
@@ -37,43 +90,43 @@ const FIRMS = [
     accountsCount: 3,
     payoutsCount: 2,
     net: 1840,
-    roi: 92,
-    spent: 198,
-    payouts: 2038,
+    roi: 413,
+    spent: 445,
+    payouts: 2285,
     activeCount: 2,
     accounts: [
-      { name: 'PRO 1', status: 'Financé',   net: 980 },
-      { name: 'PRO 2', status: 'Financé',   net: 860 },
-      { name: 'Combine 50K', status: 'Challenge', net: 0 },
+      { name: 'PRO 1',        status: 'Financé',   net:  980 },
+      { name: 'PRO 2',        status: 'Financé',   net:  860 },
+      { name: 'Combine 50K',  status: 'Challenge', net:    0 },
     ],
     badges: [{ label: '2 Financés', color: C.green }, { label: '1 Challenge', color: C.amber }],
   },
   {
     name: 'Apex',
-    logoColor: '#2d6fff',
+    logoColor: '#d94a3a',
     accountsCount: 4,
     payoutsCount: 3,
-    net: 2870,
-    roi: 145,
-    spent: 348,
-    payouts: 3218,
+    net: 2625,
+    roi: 972,
+    spent: 270,
+    payouts: 2895,
     activeCount: 2,
     accounts: [
-      { name: 'PA-389226-04', status: 'Financé', net: 1450 },
-      { name: 'PA-389226-03', status: 'Financé', net: 1420 },
-      { name: 'PA-389226-02', status: 'Échoué',  net: -245 },
+      { name: 'PA-389226-04', status: 'Financé', net:  1450 },
+      { name: 'PA-389226-03', status: 'Financé', net:  1420 },
+      { name: 'PA-389226-02', status: 'Échoué',  net:  -245 },
     ],
     badges: [{ label: '2 Financés', color: C.green }, { label: '2 Échoués', color: C.red }],
   },
   {
     name: 'Lucid',
-    logoColor: '#fac775',
+    logoColor: '#1db87a',
     accountsCount: 2,
     payoutsCount: 1,
-    net: 1008,
-    roi: 78,
-    spent: 287,
-    payouts: 1295,
+    net: 798,
+    roi: 420,
+    spent: 190,
+    payouts: 988,
     activeCount: 1,
     accounts: [
       { name: 'PRO 7',   status: 'Financé',  net: 1008 },
@@ -101,15 +154,21 @@ function StatusBadge({ status }) {
   )
 }
 
-function FirmLogo({ color, letter }) {
+function FirmLogo({ color, name }) {
   return (
     <div style={{
       width: 36, height: 36, borderRadius: 8,
       background: `linear-gradient(135deg, ${color}, ${color}cc)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 14, fontWeight: 800, color: '#fff',
-      flexShrink: 0, letterSpacing: '-0.02em',
-    }}>{letter}</div>
+      flexShrink: 0,
+      boxShadow: `0 2px 8px ${color}33, 0 0 0 1px rgba(255,255,255,0.06) inset`,
+    }}>
+      {FIRM_ICONS[name] || (
+        <span style={{
+          fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em',
+        }}>{name[0]}</span>
+      )}
+    </div>
   )
 }
 
@@ -173,16 +232,16 @@ export default function DashboardMockup() {
         </div>
       </div>
 
-      {/* 5 stats cards — exactement comme /app */}
+      {/* 5 stats cards — calculs cohérents avec FIRMS ci-dessus */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 10, marginBottom: 22,
       }}>
-        <StatCard label="PropFirms" value="3 · 9 comptes" small />
-        <StatCard label="Total dépensé" value="833 $" color={C.red} />
-        <StatCard label="Total payouts" value="6,551 $" color={C.green} />
-        <StatCard label="Résultat net" value="+5,718 $" color={C.green} />
-        <StatCard label="Payouts" value="6" />
+        <StatCard label="PropFirms"      value="3 · 9 comptes" small />
+        <StatCard label="Total dépensé"  value="905 $"         color={C.red} />
+        <StatCard label="Total payouts"  value="6,168 $"       color={C.green} />
+        <StatCard label="Résultat net"   value="+5,263 $"      color={C.green} />
+        <StatCard label="Payouts"        value="6" />
       </div>
 
       {/* Firms grid — 3 cards en row */}
@@ -236,7 +295,7 @@ function FirmCard({ firm }) {
         marginBottom: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-          <FirmLogo color={firm.logoColor} letter={firm.name[0]} />
+          <FirmLogo color={firm.logoColor} name={firm.name} />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '-0.005em' }}>
               {firm.name}
@@ -264,7 +323,7 @@ function FirmCard({ firm }) {
         gap: 6, marginBottom: 10,
       }}>
         {[
-          { l: 'Dépensé', v: '$' + firm.spent, c: C.red },
+          { l: 'Dépensé', v: '$' + firm.spent,   c: C.red },
           { l: 'Payouts', v: '$' + firm.payouts, c: C.green },
           { l: 'Actifs',  v: firm.activeCount },
         ].map((s, i) => (
