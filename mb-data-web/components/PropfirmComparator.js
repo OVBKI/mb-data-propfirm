@@ -747,9 +747,5 @@ function RuleSection({ title, keys, rules, ruleValue, firmName, plan }) {
   )
 }
 
-// Emails admins (pour le badge "mode admin")
-const ADMIN_EMAILS = [
-  'bakkali-omar@hotmail.com',
-  'omar.mbtrading@gmail.com',
-  'admin@quantara.tech',
-]
+// Emails admins (pour le badge "mode admin") — liste centralisée
+import { ADMIN_EMAILS } from '../lib/admins'

@@ -6,6 +6,22 @@
 //
 // Le format de sortie reste IDENTIQUE à l'ancien (ForexFactory) pour éviter
 // toute modif côté CalendarPage.js — on mappe les champs Finnhub vers les nôtres.
+//
+// SÉCURITÉ (mai 2026 — audit Agent #3) :
+//   1. CACHE IN-MEMORY 5 min par {week} → évite de burn la clé Finnhub
+//      (free tier 60 calls/min). Avant : chaque request hit Finnhub directement.
+//   2. RATE LIMIT IP : 30 req/min/IP → empêche un bot scraper d'épuiser la clé
+//      via spam de cette route.
+//   3. CACHE-CONTROL public 5 min → permet au CDN Vercel + browser de cacher
+//      aussi côté edge, réduisant encore plus les hits Finnhub.
+
+import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
+import { getClientIp } from '../../../lib/apiAuth'
+
+// Cache server-side simple : key = "this" | "next" → { events, fetched, expiresAt }
+// Cleanup auto via TTL check à chaque GET.
+const CACHE = new Map()
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -130,6 +146,37 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const week = searchParams.get('week') || 'this'
 
+    // Validation du param week (anti-injection dans cache key)
+    if (week !== 'this' && week !== 'next') {
+      return Response.json({ error: 'Invalid week param (must be "this" or "next")', events: [] }, { status: 400 })
+    }
+
+    // ── Sécurité #1 : rate limit par IP (30 req/min) ──
+    const ip = getClientIp(request)
+    const limit = rateLimit({ key: `calendar:${ip}`, windowMs: 60_000, max: 30 })
+    if (!limit.allowed) {
+      return rateLimitResponse(limit, 'Trop de requêtes calendrier. Ralentis un peu.')
+    }
+
+    // ── Sécurité #2 : cache server-side (5 min) ──
+    // Évite de spammer Finnhub si plusieurs users demandent la même semaine en parallèle.
+    const cacheKey = `calendar:${week}`
+    const cached = CACHE.get(cacheKey)
+    const now = Date.now()
+    if (cached && cached.expiresAt > now) {
+      // Hit cache — retourne directement sans appeler Finnhub
+      return new Response(JSON.stringify(cached.payload), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          // Cache CDN/browser aussi : pas la peine de relancer la requête côté client avant 5 min
+          'Cache-Control': 'public, max-age=300, s-maxage=300',
+          'X-Cache': 'HIT',
+          'X-Cache-Age': String(Math.floor((CACHE_TTL_MS - (cached.expiresAt - now)) / 1000)),
+        },
+      })
+    }
+
     const apiKey = process.env.FINNHUB_API_KEY
     if (!apiKey) {
       return Response.json({
@@ -174,21 +221,29 @@ export async function GET(request) {
       }
     })
 
-    return new Response(JSON.stringify({
+    const payload = {
       events,
       week,
       count: events.length,
       fetched: new Date().toISOString(),
       source: 'finnhub',
       range: { from, to },
-    }), {
+    }
+
+    // ── Sécurité #2 : store dans cache server-side pour les 5 prochaines minutes ──
+    CACHE.set(cacheKey, { payload, expiresAt: Date.now() + CACHE_TTL_MS })
+
+    return new Response(JSON.stringify(payload), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        // Cache CDN/browser : 5 min — réduit drastiquement les hits Finnhub
+        'Cache-Control': 'public, max-age=300, s-maxage=300',
+        'X-Cache': 'MISS',
       },
     })
   } catch (err) {
-    return Response.json({ error: err.message, events: [] }, { status: 500 })
+    console.error('[/api/calendar] error:', err.message)
+    return Response.json({ error: 'Erreur calendrier économique', events: [] }, { status: 500 })
   }
 }

@@ -18,6 +18,7 @@ import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
 import TradesPage from '../../components/TradesPage'
 import EquityOverlayChart from '../../components/EquityOverlayChart'
+import { isAdmin } from '../../lib/admins'
 import QLogoIcon from '../../components/QLogoIcon'
 import CertificatesModal from '../../components/CertificatesModal'
 import OnboardingModal from '../../components/OnboardingModal'
@@ -532,7 +533,10 @@ export default function Home() {
     if(!pxLoginData.user||!pxLoginData.pass){setPxError('Renseignez vos identifiants');return}
     setPxConnecting(true);setPxError('')
     try{
-      const r=await fetch('/api/px-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userName:pxLoginData.user,apiKey:pxLoginData.pass,clientId:PX_FIRMS[firm?.name]})})
+      // Récupère le token Supabase pour authentifier l'appel (mai 2026 : endpoint sécurisé)
+      const { data: { session } } = await supabase.auth.getSession()
+      if(!session?.access_token){setPxError('Session expirée, reconnecte-toi à Quantara');setPxConnecting(false);return}
+      const r=await fetch('/api/px-login',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({userName:pxLoginData.user,apiKey:pxLoginData.pass,clientId:PX_FIRMS[firm?.name]})})
       const data=await r.json()
       if(!r.ok)throw new Error(data.error||'Erreur de connexion')
       setPxSessions(prev=>({...prev,[pxSelFirm]:{...data,connected:true}}))
@@ -792,8 +796,8 @@ export default function Home() {
               })}
             </div>
           ))}
-          {/* Lien admin — visible uniquement pour les emails admin */}
-          {user && ['bakkali-omar@hotmail.com','omar.mbtrading@gmail.com','admin@quantara.tech'].includes(user.email) && (
+          {/* Lien admin — visible uniquement pour les emails admin (liste centralisée lib/admins.js) */}
+          {user && isAdmin(user.email) && (
             <div style={{padding:'8px 12px',marginTop:'12px',borderTop:'1px solid var(--border)'}}>
               <a href="/admin" style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'8px',background:'rgba(232,80,74,0.08)',border:'1px solid rgba(232,80,74,0.25)',color:'var(--red-text)',fontSize:'12px',fontWeight:'600',textDecoration:'none'}}>
                 🔧 Admin Panel

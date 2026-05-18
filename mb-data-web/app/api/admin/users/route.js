@@ -6,15 +6,11 @@
 //   GET  /api/admin/users?summary=1 → stats agrégées (total, newWeek, newMonth, active7d)
 //   DELETE /api/admin/users?id=xxx  → supprime un user (avec cascade sur ses data)
 //
-// SÉCURITÉ : vérifie que la requête vient d'un admin via cookie Supabase + match avec ADMIN_EMAILS.
+// SÉCURITÉ : vérifie que la requête vient d'un admin via Bearer token Supabase
+// + match avec ADMIN_EMAILS (centralisée dans lib/admins.js).
 
 import { createClient } from '@supabase/supabase-js'
-
-const ADMIN_EMAILS = [
-  'bakkali-omar@hotmail.com',
-  'omar.mbtrading@gmail.com',
-  'admin@quantara.tech',
-]
+import { verifyAdmin } from '../../../../lib/apiAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,31 +22,11 @@ function getAdminClient() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 }
 
-// Vérifie que l'appel vient d'un admin (vérifie le token JWT depuis cookies)
-async function verifyAdmin(request) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !anonKey) return { error: 'Supabase env vars missing' }
-
-  // Récupère le token Bearer depuis Authorization header (envoyé par fetch côté client)
-  const authHeader = request.headers.get('authorization') || ''
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
-  if (!token) return { error: 'Missing auth token' }
-
-  // Vérifie le token avec un client read-only
-  const client = createClient(url, anonKey)
-  const { data: { user }, error } = await client.auth.getUser(token)
-  if (error || !user) return { error: 'Invalid token' }
-  if (!ADMIN_EMAILS.includes(user.email)) return { error: 'Forbidden' }
-
-  return { user }
-}
-
 // === GET ===
 export async function GET(request) {
   const auth = await verifyAdmin(request)
   if (auth.error) {
-    return Response.json({ error: auth.error }, { status: 401 })
+    return Response.json({ error: auth.error }, { status: auth.status || 401 })
   }
 
   const admin = getAdminClient()
@@ -136,7 +112,7 @@ export async function GET(request) {
 // === DELETE ===
 export async function DELETE(request) {
   const auth = await verifyAdmin(request)
-  if (auth.error) return Response.json({ error: auth.error }, { status: 401 })
+  if (auth.error) return Response.json({ error: auth.error }, { status: auth.status || 401 })
 
   const admin = getAdminClient()
   if (!admin) return Response.json({ error: 'Service role not configured' }, { status: 500 })

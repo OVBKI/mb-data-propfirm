@@ -20,12 +20,8 @@ import QLogoIcon from '../../../components/QLogoIcon'
 import SpaceBackground from '../../../components/dashboard/SpaceBackground'
 import ProfileModal from '../../../components/ProfileModal'
 
-// Mêmes constantes que les autres pages du shell
-const ADMIN_EMAILS = [
-  'bakkali-omar@hotmail.com',
-  'omar.mbtrading@gmail.com',
-  'admin@quantara.tech',
-]
+// Mêmes constantes que les autres pages du shell — liste centralisée
+import { ADMIN_EMAILS } from '../../../lib/admins'
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: '◫', label: 'Tableau de bord', section: 'Principal' },

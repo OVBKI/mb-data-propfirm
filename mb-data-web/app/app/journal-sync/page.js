@@ -55,11 +55,7 @@ function fmtTime(iso) {
 }
 
 // Mêmes emails que app/admin/layout.js — affichage conditionnel du lien admin
-const ADMIN_EMAILS = [
-  'bakkali-omar@hotmail.com',
-  'omar.mbtrading@gmail.com',
-  'admin@quantara.tech',
-]
+import { ADMIN_EMAILS } from '../../../lib/admins'
 
 // Navigation sidebar : items internes (key) deep-linkent vers /app?p=key,
 // items externes (href) naviguent directement à la route Next.js.

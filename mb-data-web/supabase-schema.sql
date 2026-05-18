@@ -274,6 +274,70 @@ grant execute on function public.resolve_username_to_email(text) to anon, authen
 grant execute on function public.username_available(text)       to anon, authenticated;
 
 -- ============================================================================
+-- SÉCURITÉ — Anti-énumération des pseudos (mai 2026 — audit Agent #3)
+-- ============================================================================
+-- L'RPC resolve_username_to_email permet à n'importe qui de découvrir l'email
+-- d'un user à partir de son pseudo. C'est le pattern standard du login par
+-- username sur Supabase, mais c'est exploitable pour du farm-to-phishing.
+--
+-- MITIGATION RECOMMANDÉE (à activer manuellement sur Supabase) :
+--
+-- 1. Activer le rate-limiting au niveau du projet Supabase :
+--    Dashboard → Authentication → Rate Limits → "Email signups per hour : 10"
+--    (déjà fait par défaut mais à vérifier)
+--
+-- 2. Pour rate-limiter spécifiquement les RPCs anon, l'idéal est de wrapper
+--    l'appel dans une route /api/auth/resolve-username avec rate limit IP.
+--    À implémenter quand Quantara dépasse 1000 users actifs.
+--
+-- 3. Monitoring : ajouter une alerte sur > 100 appels resolve_username_to_email
+--    en 1 minute (indicateur d'attaque par scraping).
+
+-- ============================================================================
+-- SÉCURITÉ — RLS admin policies (mai 2026 — audit Agent #3)
+-- ============================================================================
+-- Les pages /admin et /api/admin/* nécessitent que les admins puissent LIRE
+-- les data de TOUS les users (pas juste les leurs). Pour ça, il faut activer
+-- une RLS policy admin-permissive sur chaque table.
+--
+-- ⚠ ATTENTION : si tu actives ces policies, les routes /api/admin/* doivent
+-- ABSOLUMENT vérifier que l'appelant est admin (déjà fait via verifyAdmin()
+-- dans lib/apiAuth.js — voir mai 2026).
+--
+-- Email-based admin check via auth.jwt() :
+--
+-- create policy "Admin read all firms"
+--   on firms for select
+--   using (
+--     auth.jwt() ->> 'email' in (
+--       'bakkali-omar@hotmail.com',
+--       'omar.mbtrading@gmail.com',
+--       'admin@quantara.tech'
+--     )
+--   );
+--
+-- create policy "Admin read all accounts"
+--   on accounts for select
+--   using (
+--     auth.jwt() ->> 'email' in (
+--       'bakkali-omar@hotmail.com',
+--       'omar.mbtrading@gmail.com',
+--       'admin@quantara.tech'
+--     )
+--   );
+--
+-- (idem pour journal_entries, payouts, profiles...)
+--
+-- ALTERNATIVE PLUS PROPRE : table `admins` + fonction `is_admin()` SECURITY DEFINER.
+--    create table admins ( user_id uuid primary key references auth.users(id) );
+--    create function is_admin() returns boolean security definer set search_path = public as $$
+--      select exists (select 1 from admins where user_id = auth.uid())
+--    $$ language sql stable;
+--    Puis : using ( is_admin() ) au lieu de hardcoder les emails.
+--
+-- Pour ajouter/retirer un admin sans redeploy : insert/delete dans `admins`.
+
+-- ============================================================================
 -- PROFILES — Extensions pour la page profil + base future réseau social
 -- ============================================================================
 alter table profiles add column if not exists is_public      boolean default false;  -- opt-in public view
