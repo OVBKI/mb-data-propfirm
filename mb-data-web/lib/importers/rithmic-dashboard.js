@@ -1,7 +1,12 @@
+import { detectFirm } from './firmDetection'
+
 // Parser pour Rithmic R|Trader Pro "Trader Dashboard" export CSV.
-//
 // Format : 1 ligne header + 1 ligne par compte (pas de structure imbriquée).
 // Beaucoup plus simple que le PnL Statement.
+//
+// Détection firme : déléguée au module partagé multi-propfirms.
+// Supporte Lucid, Apex (PA-/APEX-), TPT, Topstep, Bulenox, Tradeify, MFFU,
+// FFN, FuturesElites, Phidias + fallback générique.
 //
 // Colonnes extraites :
 //   Account                          → ID Rithmic (ex: LFF050-...)
@@ -85,11 +90,6 @@ function detectAccountType(rithmicId) {
   if (rithmicId.startsWith('LFE')) return 'EVAL'
   if (rithmicId.startsWith('LFF')) return 'FUNDED'
   return 'UNKNOWN'
-}
-
-function detectFirm(rithmicId) {
-  if (rithmicId.startsWith('LFE') || rithmicId.startsWith('LFF')) return 'Lucid Trading'
-  return null
 }
 
 // ============================================================================

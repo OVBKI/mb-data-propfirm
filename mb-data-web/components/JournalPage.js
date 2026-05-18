@@ -4,7 +4,10 @@ import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { uploadFile } from '../lib/uploadFile'
 import { TooltipIcon } from './Tooltip'
-import TagSelector, { TagDisplay } from './TagSelector'
+// Tags : seul TagSelector est utilisé (dans le modal de saisie). L'affichage
+// des badges + le filtre par tags ont été déplacés vers la page Trade Log
+// (/app?p=trades) pour garder le Journal focalisé sur la vue calendrier.
+import TagSelector from './TagSelector'
 import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
@@ -514,8 +517,6 @@ export default function JournalPage({
     tags: [],
     commissions:'', slippage:'',
   })
-  // Filtre par tags dans le journal (array d'IDs sélectionnés ; vide = pas de filtre)
-  const [tagFilter, setTagFilter] = useState([])
   const [uploadingScreen, setUploadingScreen] = useState(false)
   // Lightbox pour afficher un screenshot en grand
   const [lightboxUrl, setLightboxUrl] = useState(null)
@@ -600,8 +601,8 @@ export default function JournalPage({
     return acc.status === statusFilter
   }
 
-  // Filtre par scope, statut, ET funded_date (reset balance) du compte rattaché
-  // + filtre par tags (un trade matche si TOUS les tags sélectionnés sont présents — AND)
+  // Filtre par scope, statut, ET funded_date (reset balance) du compte rattaché.
+  // (Le filtre par tags a été déplacé vers la page Trade Log dédiée.)
   const filteredEntries = useMemo(()=>{
     let arr = decoratedEntries
     if(scope.includes(':')){
@@ -619,16 +620,8 @@ export default function JournalPage({
       if(acc?.funded_date && e.date < acc.funded_date) return false
       return true
     })
-    // Filtre par tags : si tagFilter contient des tags, ne garde que les trades qui ont
-    // TOUS ces tags (AND, pas OR — plus puissant pour analyse fine type "FOMO + revenge").
-    if (tagFilter.length > 0) {
-      arr = arr.filter(e => {
-        if (!Array.isArray(e.tags) || e.tags.length === 0) return false
-        return tagFilter.every(t => e.tags.includes(t))
-      })
-    }
     return arr
-  },[decoratedEntries, scope, statusFilter, allAccounts, tagFilter])
+  },[decoratedEntries, scope, statusFilter, allAccounts])
 
   // PnL agrégé par jour
   const dailyPnL = useMemo(()=>{
@@ -1043,29 +1036,6 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 </select>
               </div>
             </div>
-
-            {/* Filtre par tags trades (AND : trade doit avoir TOUS les tags sélectionnés) */}
-            <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'flex-start'}}>
-              <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px',paddingTop:'5px'}}>
-                Tags
-              </span>
-              <div style={{flex:1, minWidth:0}}>
-                <TagSelector value={tagFilter} onChange={setTagFilter} compact />
-                {tagFilter.length > 0 && (
-                  <button
-                    onClick={() => setTagFilter([])}
-                    style={{
-                      marginTop:6, padding:'3px 10px', fontSize:10, fontWeight:600,
-                      background:'transparent', color:'var(--text3)',
-                      border:'1px solid var(--border)', borderRadius:99,
-                      cursor:'pointer',
-                    }}
-                  >
-                    ✕ Effacer le filtre tags ({tagFilter.length})
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
         )
       })()}
@@ -1280,12 +1250,8 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                               </div>
                             )
                           })()}
-                          {/* Tags trades : badges colorés (max 4 visibles, le reste en +N) */}
-                          {Array.isArray(e.tags) && e.tags.length > 0 && (
-                            <div style={{marginTop:'5px'}}>
-                              <TagDisplay tags={e.tags} compact max={4} />
-                            </div>
-                          )}
+                          {/* Note : les badges tags sont volontairement masqués ici ;
+                              ils s'affichent dans la page Trade Log (/app?p=trades). */}
                           {e.notes && <div style={{fontSize:'11px',color:'var(--text2)',marginTop:'4px',fontStyle:'italic'}}>{e.notes}</div>}
                           <div style={{display:'flex',gap:'6px',marginTop:'6px'}}>
                             <button onClick={()=>openEditEntry(e)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px'}}>✏ Modifier</button>

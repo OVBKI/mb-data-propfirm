@@ -25,9 +25,10 @@
 // Patterns de détection
 // ============================================================================
 
-// Account ID Lucid Trading : 3 lettres + 3 chiffres - alphanumériques - lettres+chiffres
-// Ex: LFE050-SQA26F07-TEST017, LFF050-579ZNFS2-PRO006
-const ACCOUNT_PATTERN = /^[A-Z]{3}\d{3}-[A-Z0-9]+-[A-Z]+\d+$/
+// Détection account ID & firme : module partagé multi-propfirms (mai 2026).
+// Supporte Lucid, Apex (PA-/APEX-), TPT, Topstep (PRO/TSP/EFA/COMBINE), Bulenox,
+// Tradeify, MFFU, FFN, FuturesElites, Phidias + fallback générique.
+import { isAccountId as isFirmAccountId, detectFirm } from './firmDetection'
 
 // Header de la table summary (commence par "Account")
 const SUMMARY_HEADER_FIRST_CELL = 'Account'
@@ -89,15 +90,8 @@ function detectAccountType(rithmicId) {
   return 'UNKNOWN'
 }
 
-// Détecte la PropFirm à partir du préfixe (extensible)
-function detectFirm(rithmicId) {
-  if (rithmicId.startsWith('LFE') || rithmicId.startsWith('LFF')) return 'Lucid Trading'
-  // Futures : autres préfixes Apex, Topstep, etc.
-  return null
-}
-
 function isAccountRow(cells) {
-  return cells[0] && ACCOUNT_PATTERN.test(cells[0])
+  return cells[0] && isFirmAccountId(cells[0])
 }
 
 function isInstrumentBreakdownRow(cells, mode, hasCurrentAccount) {
@@ -109,7 +103,7 @@ function isInstrumentBreakdownRow(cells, mode, hasCurrentAccount) {
     cells[0] &&
     cells[0].length <= 7 &&
     /^[A-Z][A-Z0-9]{1,6}$/.test(cells[0]) &&
-    !ACCOUNT_PATTERN.test(cells[0])
+    !isFirmAccountId(cells[0])
   )
 }
 
