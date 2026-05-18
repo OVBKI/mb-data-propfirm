@@ -7,13 +7,9 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import QLogoIcon from '../../components/QLogoIcon'
-
-// Emails admins autorisés (doivent matcher les RLS policies Supabase)
-const ADMIN_EMAILS = [
-  'bakkali-omar@hotmail.com',
-  'omar.mbtrading@gmail.com',
-  'admin@quantara.tech',
-]
+// Emails admins autorisés — liste centralisée dans lib/admins.js
+// (doivent matcher les RLS policies Supabase si configurées admin-permissives)
+import { ADMIN_EMAILS } from '../../lib/admins'
 
 const C = {
   bg: '#0d0f14',
