@@ -65,15 +65,26 @@ const SECTIONS = [
     body: `Vous pouvez supprimer votre compte à tout moment en envoyant un email à contact@quantara.tech. Toutes vos données seront supprimées définitivement sous 7 jours ouvrés (cascade Postgres ON DELETE). Quantara peut également suspendre ou supprimer un compte en cas de violation de l'article 4 (Usage acceptable), sans remboursement ni préavis.`,
   },
   {
-    title: '10. Modifications des CGU',
+    title: '10. Droit de rétractation (14 jours)',
+    body: `Conformément aux articles L221-18 et suivants du Code de la consommation français (et plus largement à la directive 2011/83/UE applicable dans l'EEE), les utilisateurs consommateurs résidant dans l'Union Européenne ou dans l'Espace Économique Européen bénéficient d'un droit de rétractation de 14 jours calendaires à compter de la souscription d'un abonnement payant à Quantara, sans avoir à justifier de motif ni à supporter de pénalité.
+
+• **Bénéficiaires** : consommateurs (personnes physiques agissant à des fins non-professionnelles) résidant en UE/EEE.
+• **Délai** : 14 jours calendaires à compter de la date de souscription de l'abonnement payant.
+• **Modalités d'exercice** : envoyer un email à contact@quantara.tech avec la mention claire « demande de rétractation », en précisant votre adresse email de compte et la date de souscription. Un modèle de formulaire de rétractation peut être fourni sur simple demande.
+• **Remboursement** : en cas de rétractation valide, Quantara LLC procédera au remboursement intégral des sommes versées sous 14 jours calendaires à compter de la réception de la demande, par le même moyen de paiement que celui utilisé pour la souscription (sauf accord exprès pour un autre moyen).
+• **Exception (article L221-28 13°)** : le droit de rétractation ne s'applique pas si l'utilisateur a expressément demandé et reçu une prestation pleinement exécutée de contenu numérique avant la fin du délai de 14 jours, et a expressément renoncé à son droit de rétractation à ce moment-là. Cette renonciation expresse sera demandée le cas échéant lors de l'activation immédiate d'un service payant.
+• **Plan Free** : le plan Free n'étant pas un service payant, le droit de rétractation ne lui est pas applicable. La présente clause vise exclusivement les futurs plans Pro et Lifetime.`,
+  },
+  {
+    title: '11. Modifications des CGU',
     body: `Quantara peut modifier les présentes CGU à tout moment. Les modifications matérielles sont notifiées par email aux utilisateurs actifs au moins 30 jours avant entrée en vigueur. La poursuite de l'utilisation du service après la date d'effet vaut acceptation. Si vous refusez les nouvelles CGU, vous pouvez supprimer votre compte avant la date d'effet.`,
   },
   {
-    title: '11. Droit applicable & juridiction',
-    body: `Les présentes CGU sont régies par le droit du Texas, USA. Tout litige sera soumis exclusivement aux tribunaux compétents du Texas, sauf disposition légale impérative contraire (RGPD pour résidents EU notamment, qui permet la juridiction du pays de résidence du consommateur).`,
+    title: '12. Droit applicable & juridiction',
+    body: `Les présentes CGU sont régies par le droit du Texas, USA. Tout litige sera soumis exclusivement aux tribunaux compétents du Texas, sauf disposition légale impérative contraire (RGPD et droit de la consommation pour résidents EU notamment, qui permettent la juridiction du pays de résidence du consommateur).`,
   },
   {
-    title: '12. Contact',
+    title: '13. Contact',
     body: `Pour toute question concernant ces CGU, contactez contact@quantara.tech. Pour signaler un problème de sécurité : security@quantara.tech.`,
   },
 ]
@@ -94,7 +105,7 @@ export default function CGUPage() {
               Conditions Générales d'Utilisation
             </h1>
             <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6 }}>
-              Version 1.1 · Dernière mise à jour : mai 2026 · Régies par le droit du Texas, USA
+              Version 1.2 · Dernière mise à jour : 18 mai 2026 · Régies par le droit du Texas, USA
             </p>
           </Reveal>
         </section>

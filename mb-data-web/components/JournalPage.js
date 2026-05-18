@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { uploadFile } from '../lib/uploadFile'
 import { TooltipIcon } from './Tooltip'
+import TagSelector, { TagDisplay } from './TagSelector'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -509,7 +510,10 @@ export default function JournalPage({
   const [form, setForm] = useState({
     accountId:'', date:todayISO(), pnl:'', instrument:'', side:'', notes:'',
     entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
+    tags: [],
   })
+  // Filtre par tags dans le journal (array d'IDs sélectionnés ; vide = pas de filtre)
+  const [tagFilter, setTagFilter] = useState([])
   const [uploadingScreen, setUploadingScreen] = useState(false)
   // Lightbox pour afficher un screenshot en grand
   const [lightboxUrl, setLightboxUrl] = useState(null)
@@ -595,6 +599,7 @@ export default function JournalPage({
   }
 
   // Filtre par scope, statut, ET funded_date (reset balance) du compte rattaché
+  // + filtre par tags (un trade matche si TOUS les tags sélectionnés sont présents — AND)
   const filteredEntries = useMemo(()=>{
     let arr = decoratedEntries
     if(scope.includes(':')){
@@ -612,8 +617,16 @@ export default function JournalPage({
       if(acc?.funded_date && e.date < acc.funded_date) return false
       return true
     })
+    // Filtre par tags : si tagFilter contient des tags, ne garde que les trades qui ont
+    // TOUS ces tags (AND, pas OR — plus puissant pour analyse fine type "FOMO + revenge").
+    if (tagFilter.length > 0) {
+      arr = arr.filter(e => {
+        if (!Array.isArray(e.tags) || e.tags.length === 0) return false
+        return tagFilter.every(t => e.tags.includes(t))
+      })
+    }
     return arr
-  },[decoratedEntries, scope, statusFilter, allAccounts])
+  },[decoratedEntries, scope, statusFilter, allAccounts, tagFilter])
 
   // PnL agrégé par jour
   const dailyPnL = useMemo(()=>{
@@ -706,6 +719,7 @@ export default function JournalPage({
       accountId:acctId, date:defaultDate||todayISO(),
       pnl:'', instrument:'', side:'', notes:'',
       entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
+      tags: [],
     })
     setEntryModal({ defaultDate })
   }
@@ -718,6 +732,7 @@ export default function JournalPage({
       stopLoss:   e.stop_loss   != null ? String(e.stop_loss)   : '',
       takeProfit: e.take_profit != null ? String(e.take_profit) : '',
       screenshotUrl: e.screenshot_url || '',
+      tags: Array.isArray(e.tags) ? e.tags : [],
     })
     setEntryModal({ entry:e })
   }
@@ -739,6 +754,8 @@ export default function JournalPage({
       stop_loss:      numOrNull(form.stopLoss),
       take_profit:    numOrNull(form.takeProfit),
       screenshot_url: form.screenshotUrl || null,
+      // Tags : array vide → null en DB pour cohérence (évite les '{}' inutiles)
+      tags: Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : null,
     }
     let res
     if(entryModal?.entry){
@@ -811,15 +828,17 @@ export default function JournalPage({
     if(onReload) await onReload()
   }
 
-  // Export CSV des trades filtrés
+  // Export CSV des trades filtrés (avec BOM UTF-8 pour Excel Windows + tags)
   function exportJournalCSV(){
-    const rows = [['Date','Firme','Compte','Instrument','Side','PnL','Notes']]
+    const rows = [['Date','Firme','Compte','Instrument','Side','PnL','Tags','Notes']]
     filteredEntries.forEach(e=>{
-      rows.push([e.date, e._firmName, e._accountLabel, e.instrument||'', e.side||'', String(e.pnl), e.notes||''])
+      const tagsStr = Array.isArray(e.tags) ? e.tags.join(', ') : ''
+      rows.push([e.date, e._firmName, e._accountLabel, e.instrument||'', e.side||'', String(e.pnl), tagsStr, e.notes||''])
     })
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
+    // BOM UTF-8 préfixé : permet à Excel Windows d'afficher correctement les accents
     const a = document.createElement('a')
-    a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv)
+    a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent('﻿'+csv)
     a.download = `Quantara_Journal_${todayISO()}.csv`
     a.click()
     showToast?.('Export CSV ✓')
@@ -993,6 +1012,29 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            {/* Filtre par tags trades (AND : trade doit avoir TOUS les tags sélectionnés) */}
+            <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'flex-start'}}>
+              <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px',paddingTop:'5px'}}>
+                Tags
+              </span>
+              <div style={{flex:1, minWidth:0}}>
+                <TagSelector value={tagFilter} onChange={setTagFilter} compact />
+                {tagFilter.length > 0 && (
+                  <button
+                    onClick={() => setTagFilter([])}
+                    style={{
+                      marginTop:6, padding:'3px 10px', fontSize:10, fontWeight:600,
+                      background:'transparent', color:'var(--text3)',
+                      border:'1px solid var(--border)', borderRadius:99,
+                      cursor:'pointer',
+                    }}
+                  >
+                    ✕ Effacer le filtre tags ({tagFilter.length})
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1187,6 +1229,12 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                               {e.take_profit && <span>🎯 TP : <strong style={{color:'var(--green-text)'}}>{e.take_profit}</strong></span>}
                             </div>
                           )}
+                          {/* Tags trades : badges colorés (max 4 visibles, le reste en +N) */}
+                          {Array.isArray(e.tags) && e.tags.length > 0 && (
+                            <div style={{marginTop:'5px'}}>
+                              <TagDisplay tags={e.tags} compact max={4} />
+                            </div>
+                          )}
                           {e.notes && <div style={{fontSize:'11px',color:'var(--text2)',marginTop:'4px',fontStyle:'italic'}}>{e.notes}</div>}
                           <div style={{display:'flex',gap:'6px',marginTop:'6px'}}>
                             <button onClick={()=>openEditEntry(e)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px'}}>✏ Modifier</button>
@@ -1351,6 +1399,20 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               <div>
                 <label style={labelS}>Take Profit</label>
                 <input type="number" step="0.0001" value={form.takeProfit} onChange={e=>setForm(p=>({...p,takeProfit:e.target.value}))} placeholder="ex : 5440.00" style={inputS} />
+              </div>
+
+              {/* === Tags trades (psychologie + setup + contexte) === */}
+              <div style={{gridColumn:'1/-1',marginTop:'8px',paddingTop:'16px',borderTop:'1px solid var(--border)'}}>
+                <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>
+                  🏷 Tags du trade (optionnel)
+                  <span style={{textTransform:'none',letterSpacing:0,fontWeight:'normal',color:'var(--text3)',fontSize:'10px',marginLeft:'6px'}}>
+                    — pour analyser ta psycho &amp; tes setups
+                  </span>
+                </div>
+                <TagSelector
+                  value={form.tags}
+                  onChange={tags => setForm(p => ({ ...p, tags }))}
+                />
               </div>
 
               {/* === Screenshot du graphique === */}

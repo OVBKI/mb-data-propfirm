@@ -296,10 +296,21 @@ export default function ProfilePage() {
 
         {/* === CONTENT === */}
         <div style={{ flex: 1, overflow: 'auto' }}>
+          {/* Styles responsive profile */}
+          <style>{`
+            @media (max-width: 768px) {
+              .qt-profile-hero { padding: 18px !important; }
+              .qt-profile-hero h1 { font-size: 22px !important; }
+              .qt-profile-avatar { width: 64px !important; height: 64px !important; font-size: 24px !important; }
+              .qt-profile-actions { width: 100% !important; }
+              .qt-profile-actions button,
+              .qt-profile-actions a { flex: 1 1 auto !important; min-width: 130px !important; text-align: center !important; }
+            }
+          `}</style>
           <div className="page-pad" style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 60px' }}>
 
             {/* === HERO === */}
-            <div style={{
+            <div className="qt-profile-hero" style={{
               background: 'rgba(20,23,32,0.65)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
@@ -320,7 +331,7 @@ export default function ProfilePage() {
 
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', position: 'relative' }}>
                 {/* Avatar (initiales colorées) */}
-                <div style={{
+                <div className="qt-profile-avatar" style={{
                   width: 92, height: 92, flexShrink: 0,
                   borderRadius: '50%',
                   background: 'linear-gradient(135deg, var(--blue) 0%, #6e3aff 100%)',
@@ -388,7 +399,7 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
+                  <div className="qt-profile-actions" style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
                     <button
                       onClick={() => setShowProfileModal(true)}
                       style={btnPrimary}

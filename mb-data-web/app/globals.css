@@ -31,6 +31,8 @@ html, body {
   font-size: 14px;
   min-height: 100vh;
   -webkit-text-size-adjust: 100%;
+  /* Lenis (smooth scroll) exige que le scroll container ne soit pas en position static */
+  position: relative;
 }
 
 button { cursor: pointer; font-family: inherit; }
@@ -219,6 +221,52 @@ select { color-scheme: dark; }
   .filter-row .label-min { display: none; }
 }
 
+/* Wrappers de table : autorisent le scroll horizontal sur mobile sans déborder
+   la page. À utiliser autour de toute <table> ayant un min-width. */
+.page-pad .table-wrap,
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* === Mobile fixes globaux pour les nouvelles pages app (import-lab, journal-sync, profile) === */
+@media (max-width: 768px) {
+  /* PageHeader (eyebrow + title + actions) : stack vertical */
+  .qt-page-header,
+  div[class*="PageHeader"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  /* H1 hero sur les nouvelles pages : plus compact */
+  .page-pad h1 { font-size: 22px !important; }
+
+  /* Toutes les tables dans /app : scroll horizontal au lieu de overflow */
+  .page-pad table,
+  table.js-table {
+    min-width: 600px;
+  }
+  /* Les wrappers de table doivent permettre scroll-x sans casser */
+  .page-pad table { font-size: 11px !important; }
+
+  /* Sticky top-bar : padding plus compact */
+  .top-bar { padding: 0 12px !important; height: 48px !important; }
+  .top-bar > div { gap: 8px !important; }
+  .top-bar [class*="brand"] { font-size: 12px !important; }
+}
+
+/* === Tables compactes sous 720px : on relaxe le min-width pour éviter
+   le débordement horizontal sur mobile quand il n'y a pas de .table-wrap === */
+@media (max-width: 720px) {
+  .page-pad table,
+  table.js-table {
+    min-width: unset !important;
+    font-size: 12px !important;
+  }
+}
+
 /* Empêcher le scroll horizontal global */
 html, body { overflow-x: hidden; }
 
@@ -234,6 +282,14 @@ html, body { overflow-x: hidden; }
   .lp-steps { grid-template-columns: 1fr !important; }
   .lp-why { grid-template-columns: 1fr !important; gap: 32px !important; }
   .lp-footer { flex-direction: column; text-align: center; gap: 12px !important; }
+  /* ProductSection : padding latéral réduit pour libérer la largeur disponible
+     aux mockups (sinon 24px x 2 = 48px de marge volée à un viewport de 390px) */
+  .lp-product-section { padding: 50px 12px 40px !important; }
+  .lp-product-section h2 { font-size: 22px !important; }
+  .lp-product-section p { font-size: 14px !important; }
+}
+@media (max-width: 480px) {
+  .lp-product-section { padding: 40px 8px 30px !important; }
 }
 @media (max-width: 480px) {
   .lp-mockup-stats { grid-template-columns: repeat(2, 1fr) !important; }

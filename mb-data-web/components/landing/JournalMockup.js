@@ -8,38 +8,14 @@
 //   6 PNL stats cards (Filtré / Mois / Win Rate / Consistency / Trades / Jours)
 //   Calendrier PnL mensuel (heatmap vert/rouge)
 
+import { CAL_DAYS, PNL_MAY, TODAY_MONTH_FR, COLORS } from './mockData'
+
 const C = {
-  surface:   'rgba(20,23,32,0.65)',
-  border:    'rgba(255,255,255,0.07)',
-  border2:   'rgba(255,255,255,0.13)',
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
-  blue:      '#2d6fff',
-  blueLight: '#4d8fff',
-  green:     '#1db87a',
-  red:       '#e8504a',
-  amber:     '#fac775',
+  ...COLORS,
+  border2: 'rgba(255,255,255,0.13)',
 }
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-// === Données calendrier (semaine type, valeurs réalistes) ===
-// Format : { day, pnl, count } | { day } = vide
-const CAL_DAYS = [
-  // Semaine 1 (jours grisés mois précédent)
-  { day: 27, other: true }, { day: 28, other: true }, { day: 29, other: true },
-  { day: 30, other: true }, { day: 1 }, { day: 2 }, { day: 3 },
-  // Semaine 2
-  { day: 4 }, { day: 5, pnl: 245, count: 3 }, { day: 6, pnl: -89, count: 2 },
-  { day: 7, pnl: 178, count: 4 }, { day: 8, pnl: 312, count: 5 }, { day: 9 }, { day: 10 },
-  // Semaine 3
-  { day: 11 }, { day: 12, pnl: 156, count: 3 }, { day: 13, pnl: 432, count: 6, today: true },
-  { day: 14 }, { day: 15 }, { day: 16 }, { day: 17 },
-  // Semaine 4
-  { day: 18 }, { day: 19 }, { day: 20 }, { day: 21 }, { day: 22 }, { day: 23 }, { day: 24 },
-  // Semaine 5
-  { day: 25 }, { day: 26 }, { day: 27 }, { day: 28 }, { day: 29 }, { day: 30 }, { day: 31 },
-]
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
 function fmtMoneyShort(n) {
@@ -133,8 +109,8 @@ export default function JournalMockup() {
         display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)',
         gap: 8, marginBottom: 18,
       }}>
-        <PnlCard label="PNL Filtré"   value="+$3,247" color={C.green} />
-        <PnlCard label="PNL Mai 2026" value="+$2,840" color={C.green} />
+        <PnlCard label="PNL Filtré"   value={PNL_MAY.netDisplay} color={C.green} />
+        <PnlCard label={`PNL ${TODAY_MONTH_FR}`} value={PNL_MAY.netDisplay} color={C.green} />
         <PnlCard label="Win Rate"     value="78.5%"  color={C.green} />
         <PnlCard label="Consistency"  value="22.4%"  />
         <PnlCard label="Trades"       value="42" />
@@ -147,7 +123,7 @@ export default function JournalMockup() {
         marginBottom: 10,
       }}>
         <div style={{ fontSize: 13, fontWeight: 600 }}>
-          Calendrier PnL <span style={{ color: C.text3, fontWeight: 500 }}>— Mai 2026</span>
+          Calendrier PnL <span style={{ color: C.text3, fontWeight: 500 }}>— {TODAY_MONTH_FR}</span>
         </div>
         <div style={{ display: 'flex', gap: 4 }}>
           <NavBtn>◀</NavBtn>

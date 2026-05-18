@@ -20,6 +20,7 @@ import EnhancedSteps from '../components/landing/EnhancedSteps'
 // pour donner de la profondeur et de la spatialisation type Stripe/Linear/Apple.
 import Tilted3DFrame from '../components/landing/Tilted3DFrame'
 import DashboardMockup from '../components/landing/DashboardMockup'
+import AnalyticsMockup from '../components/landing/AnalyticsMockup'
 import JournalMockup from '../components/landing/JournalMockup'
 import EconomicCalendarMockup from '../components/landing/EconomicCalendarMockup'
 import EquityCurveDemo from '../components/landing/EquityCurveDemo'
@@ -120,7 +121,7 @@ const STATS = [
 // ============================================================================
 function ProductSection({ label, labelColor, title, subtitle, children }) {
   return (
-    <section style={{ padding: '80px 24px 60px', position: 'relative' }}>
+    <section className="lp-product-section" style={{ padding: '80px 24px 60px', position: 'relative' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         {/* Intro text centrée */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
@@ -282,7 +283,7 @@ export default function LandingPage() {
       <AnimatedStats stats={STATS} />
 
       {/* ============================================================
-          5 VRAIES PAGES PRODUIT en 3D incliné (Tilted3DFrame).
+          6 VRAIES PAGES PRODUIT en 3D incliné (Tilted3DFrame).
           Chaque section : intro text au-dessus + mockup tilted en dessous.
           Le `flip` alterne le sens du tilt pour rythmer visuellement.
           ============================================================ */}
@@ -299,43 +300,55 @@ export default function LandingPage() {
         </Tilted3DFrame>
       </ProductSection>
 
-      {/* === PAGE 2 : JOURNAL DE TRADING === */}
+      {/* === PAGE 2 : ANALYTICS === */}
+      <ProductSection
+        label="ANALYTICS"
+        labelColor={colors.blueLight}
+        title="L'évolution de tes dépenses, payouts et net cumulés."
+        subtitle="Courbe cumulée 12 mois + bilan annuel + perf mensuelle. Tu vois en un seul écran si tu es rentable, et depuis quand."
+      >
+        <Tilted3DFrame title="quantara.tech/app?p=analytics" flip>
+          <AnalyticsMockup />
+        </Tilted3DFrame>
+      </ProductSection>
+
+      {/* === PAGE 3 : JOURNAL DE TRADING === */}
       <ProductSection
         label="JOURNAL DE TRADING"
         labelColor={colors.green}
         title="Chaque trade. Tracké. Filtré. Analysé."
         subtitle="Date, instrument, side, PnL, notes. Filtre par firm, par date, par instrument. Export CSV à tout moment."
       >
-        <Tilted3DFrame title="quantara.tech/app/journal" flip>
+        <Tilted3DFrame title="quantara.tech/app/journal">
           <JournalMockup />
         </Tilted3DFrame>
       </ProductSection>
 
-      {/* === PAGE 3 : CALENDRIER ÉCONOMIQUE === */}
+      {/* === PAGE 4 : CALENDRIER ÉCONOMIQUE === */}
       <ProductSection
         label="CALENDRIER ÉCONOMIQUE"
         labelColor={colors.amber}
         title="Anticipe les news macro qui bougent les futures."
         subtitle="NFP, FOMC, CPI, jobless claims, Powell speeches. Impact code couleur. Filtre par devise et sévérité. Source ForexFactory en live."
       >
-        <Tilted3DFrame title="quantara.tech/app/calendar">
+        <Tilted3DFrame title="quantara.tech/app/calendar" flip>
           <EconomicCalendarMockup />
         </Tilted3DFrame>
       </ProductSection>
 
-      {/* === PAGE 4 : EQUITY CURVE === */}
+      {/* === PAGE 5 : EQUITY CURVE === */}
       <ProductSection
         label="EQUITY CURVE & DRAWDOWN LIVE"
         labelColor={colors.green}
         title="Vois ton compte vivre — balance + DD trailing en temps réel."
         subtitle="Chaque compte a sa courbe avec la ligne de DD trailing (static, EOD ou intraday selon la firme). Tu sais exactement combien il te reste avant de sauter."
       >
-        <Tilted3DFrame title="quantara.tech/app/equity" flip>
+        <Tilted3DFrame title="quantara.tech/app/equity">
           <EquityCurveDemo />
         </Tilted3DFrame>
       </ProductSection>
 
-      {/* === PAGE 5 : NOTIFICATIONS PUSH === */}
+      {/* === PAGE 6 : NOTIFICATIONS PUSH === */}
       <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
         <NotificationMockup />
       </section>

@@ -2,24 +2,59 @@
 // Structure réelle observée dans app/app/page.js :
 //   eyebrow "TABLEAU DE BORD" + "Bonjour Trader 👋" + (currency/search/+PropFirm)
 //   5 stats cards (PropFirms / Total dépensé / Total payouts / Résultat net / Payouts)
-//   firms-grid (cards 340px) : logo + nom + comptes/payouts + Net + ROI + 3 mini stats
-//                              + liste 3 comptes actifs (pastille + nom + badge + net)
-//                              + badges statuts + bouton 🎓 Diplômes
-// Données 100% fictives (pas de nom personnel).
+//   firms-grid : logo (image réelle propfirm) + nom + comptes/payouts + Net + ROI
+//                + 3 mini stats Dépensé/Payouts/Actifs
+//                + liste comptes (pastille + nom + badge statut + net)
+//                + badges statuts + bouton 🎓 Diplômes
+//
+// LOGOS : on importe getFirmLogo() du même lib utilisé par /app pour avoir
+//          IDENTIQUE les logos PNG réels (Topstep, Apex, Lucid...).
+//
+// MATHS — cohérence stricte (comme sur le vrai dashboard /app) :
+//   * net compte = P&L trading − frais payés sur ce compte (challenge + activation)
+//     → Challenge en cours sans trade  → net = −challenge_fee
+//     → Compte échoué (sans trade lourd) → net = −frais payés sur ce compte
+//     → Compte financé rentable          → net = profit positif (frais déjà absorbés)
+//   * Dépensé firm = Σ (challenges × prix) + (activations × prix)
+//   * Net firm = Σ net comptes
+//   * Payouts firm = Net firm + Dépensé firm   (= P&L brut total reçu de la propfirm)
+//   * ROI firm = Net / Dépensé × 100
+//   * Total global = Σ firms
+//
+// PRIX RÉELS (mai 2026) :
+//   Topstep : challenge $49 — activation $149
+//   Apex    : challenge $30 — activation  $75
+//   Lucid   : challenge $95 — pas d'activation
+//
+// CALCUL FIRM PAR FIRM :
+//   Topstep (3 comptes : 2 Financés + 1 Challenge actif)
+//     Dépensé = 3×49 + 2×149 = $445
+//     Net     = +980 + +860 + (−49) = +$1,791
+//     Payouts = 1791 + 445 = $2,236
+//     ROI     = 1791 / 445 = 402%
+//
+//   Apex Trader Funding (4 comptes : 2 Financés + 2 Échoués)
+//     Dépensé = 4×30 + 2×75 = $270
+//     Net     = +1,450 + +1,420 + (−30) + (−30) = +$2,810
+//     Payouts = 2810 + 270 = $3,080
+//     ROI     = 2810 / 270 = 1040%
+//
+//   Lucid Trading (2 comptes : 1 Financé + 1 Échoué)
+//     Dépensé = 2×95 = $190
+//     Net     = +1,008 + (−95) = +$913
+//     Payouts = 913 + 190 = $1,103
+//     ROI     = 913 / 190 = 480%
+//
+//   GLOBAL
+//     Total dépensé = 445 + 270 + 190 = $905
+//     Total payouts = 2236 + 3080 + 1103 = $6,419
+//     Résultat net  = 6419 − 905 = $5,514  (== somme firm nets : 1791+2810+913)
+//     Payouts count = 2 + 3 + 1 = 6
 
-const C = {
-  surface:   'rgba(20,23,32,0.65)',
-  surface2:  'rgba(28,32,48,0.7)',
-  border:    'rgba(255,255,255,0.07)',
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
-  blue:      '#2d6fff',
-  blueLight: '#4d8fff',
-  green:     '#1db87a',
-  red:       '#e8504a',
-  amber:     '#fac775',
-}
+import { getFirmLogo } from '../../lib/firmLogos'
+import { FIRMS, TOTALS, TRADER_NAME, COLORS } from './mockData'
+
+const C = COLORS
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
 // Helper : pastille colorée pour status compte
@@ -28,60 +63,6 @@ const STATUS_COLORS = {
   'Challenge': C.amber,
   'Échoué':    C.red,
 }
-
-// === Firmes mockées (fictives mais réalistes) ===
-const FIRMS = [
-  {
-    name: 'Topstep',
-    logoColor: '#e8504a',
-    accountsCount: 3,
-    payoutsCount: 2,
-    net: 1840,
-    roi: 92,
-    spent: 198,
-    payouts: 2038,
-    activeCount: 2,
-    accounts: [
-      { name: 'PRO 1', status: 'Financé',   net: 980 },
-      { name: 'PRO 2', status: 'Financé',   net: 860 },
-      { name: 'Combine 50K', status: 'Challenge', net: 0 },
-    ],
-    badges: [{ label: '2 Financés', color: C.green }, { label: '1 Challenge', color: C.amber }],
-  },
-  {
-    name: 'Apex',
-    logoColor: '#2d6fff',
-    accountsCount: 4,
-    payoutsCount: 3,
-    net: 2870,
-    roi: 145,
-    spent: 348,
-    payouts: 3218,
-    activeCount: 2,
-    accounts: [
-      { name: 'PA-389226-04', status: 'Financé', net: 1450 },
-      { name: 'PA-389226-03', status: 'Financé', net: 1420 },
-      { name: 'PA-389226-02', status: 'Échoué',  net: -245 },
-    ],
-    badges: [{ label: '2 Financés', color: C.green }, { label: '2 Échoués', color: C.red }],
-  },
-  {
-    name: 'Lucid',
-    logoColor: '#fac775',
-    accountsCount: 2,
-    payoutsCount: 1,
-    net: 1008,
-    roi: 78,
-    spent: 287,
-    payouts: 1295,
-    activeCount: 1,
-    accounts: [
-      { name: 'PRO 7',   status: 'Financé',  net: 1008 },
-      { name: 'EVAL 17', status: 'Échoué',   net: -210, liquidated: true },
-    ],
-    badges: [{ label: '1 Financé', color: C.green }, { label: '1 Échoué', color: C.red }],
-  },
-]
 
 function fmtMoney(n) {
   return (n >= 0 ? '+' : '-') + '$' + Math.abs(n).toLocaleString('en-US')
@@ -98,18 +79,6 @@ function StatusBadge({ status }) {
         : 'rgba(232,80,74,0.12)',
       color, letterSpacing: '0.3px',
     }}>{status}</span>
-  )
-}
-
-function FirmLogo({ color, letter }) {
-  return (
-    <div style={{
-      width: 36, height: 36, borderRadius: 8,
-      background: `linear-gradient(135deg, ${color}, ${color}cc)`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 14, fontWeight: 800, color: '#fff',
-      flexShrink: 0, letterSpacing: '-0.02em',
-    }}>{letter}</div>
   )
 }
 
@@ -135,7 +104,7 @@ export default function DashboardMockup() {
           <h1 style={{
             fontSize: 22, fontWeight: 700, margin: 0,
             letterSpacing: '-0.025em', lineHeight: 1.1,
-          }}>Bonjour Trader 👋</h1>
+          }}>Bonjour {TRADER_NAME} 👋</h1>
           <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
             Taux EUR/USD : 1.0823 · MàJ il y a 2 min
           </div>
@@ -173,16 +142,16 @@ export default function DashboardMockup() {
         </div>
       </div>
 
-      {/* 5 stats cards — exactement comme /app */}
+      {/* 5 stats cards — totaux strictement cohérents avec FIRMS ci-dessus */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 10, marginBottom: 22,
       }}>
-        <StatCard label="PropFirms" value="3 · 9 comptes" small />
-        <StatCard label="Total dépensé" value="833 $" color={C.red} />
-        <StatCard label="Total payouts" value="6,551 $" color={C.green} />
-        <StatCard label="Résultat net" value="+5,718 $" color={C.green} />
-        <StatCard label="Payouts" value="6" />
+        <StatCard label="PropFirms"      value={`${TOTALS.firmsCount} · ${TOTALS.accountsCount} comptes`} small />
+        <StatCard label="Total dépensé"  value={`${TOTALS.spent.toLocaleString('en-US')} $`}    color={C.red} />
+        <StatCard label="Total payouts"  value={`${TOTALS.payouts.toLocaleString('en-US')} $`}  color={C.green} />
+        <StatCard label="Résultat net"   value={`+${TOTALS.net.toLocaleString('en-US')} $`}    color={C.green} />
+        <StatCard label="Payouts"        value={String(TOTALS.payoutsCount)} />
       </div>
 
       {/* Firms grid — 3 cards en row */}
@@ -230,13 +199,14 @@ function FirmCard({ firm }) {
       borderRadius: 10,
       boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)',
     }}>
-      {/* Header firm : logo + nom + accounts/payouts | net + ROI */}
+      {/* Header firm : logo image PNG réel + nom + accounts/payouts | net + ROI */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-          <FirmLogo color={firm.logoColor} letter={firm.name[0]} />
+          {/* === Logo réel propfirm (IDENTIQUE à /app) === */}
+          {getFirmLogo(firm.name, firm.color, 36)}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '-0.005em' }}>
               {firm.name}
@@ -264,7 +234,7 @@ function FirmCard({ firm }) {
         gap: 6, marginBottom: 10,
       }}>
         {[
-          { l: 'Dépensé', v: '$' + firm.spent, c: C.red },
+          { l: 'Dépensé', v: '$' + firm.spent,   c: C.red },
           { l: 'Payouts', v: '$' + firm.payouts, c: C.green },
           { l: 'Actifs',  v: firm.activeCount },
         ].map((s, i) => (

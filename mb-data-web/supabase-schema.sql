@@ -91,6 +91,14 @@ alter table journal_entries add column if not exists exit_price     numeric(12,5
 alter table journal_entries add column if not exists stop_loss      numeric(12,5);
 alter table journal_entries add column if not exists take_profit    numeric(12,5);
 
+-- Tags trades (mai 2026) — array de slugs pour catégoriser chaque trade.
+-- Tags prédéfinis dans lib/tradeTags.js : a-plus, b-setup, c-setup, fomo,
+-- revenge, overtrading, hesitation, plan-respecte, news-play, breakout,
+-- reversal, scalp. Tags custom autorisés (free-text normalisé client-side).
+alter table journal_entries add column if not exists tags text[] default '{}';
+-- Index GIN pour filtres rapides type "trades avec tag X" (vu que c'est array)
+create index if not exists journal_entries_tags_idx on journal_entries using gin (tags);
+
 -- CERTIFICATS / DIPLÔMES — captures de réussite challenge, payouts, etc.
 create table if not exists certificates (
   id uuid default gen_random_uuid() primary key,

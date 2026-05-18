@@ -80,12 +80,14 @@ Pas de soft-delete : c'est une suppression dure.`,
     title: '6. Sous-traitants',
     body: `Pour fonctionner, Quantara s'appuie sur les sous-traitants suivants (tous conformes RGPD, Data Processing Agreements en place) :
 
-• **Supabase** (États-Unis, instance Frankfurt EU) — hébergement DB, authentification.
-• **Vercel** (États-Unis, edge Frankfurt EU) — hébergement frontend.
-• **Cloudflare** (États-Unis, points présence mondiaux) — Turnstile captcha anti-bot.
+• **Supabase** (États-Unis, instance Frankfurt EU) — hébergement DB, authentification. Stockage EU. DPA signé.
+• **Vercel** (États-Unis, edge Frankfurt EU) — hébergement frontend. DPA signé.
+• **Cloudflare** (États-Unis, points présence mondiaux) — Turnstile captcha anti-bot. DPA signé.
 • **exchangerate-api.com** — taux de change devises (aucune donnée user envoyée).
 • **Finnhub** — calendrier économique (aucune donnée user envoyée).
-• **Resend** (futur) — emails transactionnels.
+• **Resend** (actif — endpoint EU Frankfurt) — emails transactionnels (welcome email, password reset, notifications produit, confirmations waitlist). DPA signé. Stockage des logs email côté Resend EU.
+
+Lieu de stockage des données utilisateur : Supabase EU (Frankfurt) pour les données applicatives, Resend EU (Frankfurt) pour les logs emails transactionnels.
 
 Aucun de ces tiers n'a accès à tes trades ou données personnelles à des fins propres.`,
   },
@@ -156,7 +158,7 @@ export default function PrivacyPage() {
               Politique de Confidentialité
             </h1>
             <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6 }}>
-              Version 1.1 · Mise à jour mai 2026 · Hébergement EU (Frankfurt) · RGPD-compliant
+              Version 1.2 · Mise à jour 18 mai 2026 · Hébergement EU (Frankfurt) · RGPD-compliant
             </p>
           </Reveal>
         </section>
@@ -229,7 +231,7 @@ export default function PrivacyPage() {
                   borderRadius: 10, overflow: 'hidden',
                 }}>
                   {cat.items.map((c, i) => (
-                    <div key={i} style={{
+                    <div key={i} className="qt-cookie-table" style={{
                       padding: '10px 16px',
                       borderTop: i > 0 ? `1px solid ${C.border}` : 'none',
                       display: 'grid',
@@ -243,9 +245,9 @@ export default function PrivacyPage() {
                       }}>{c.name}</code>
                       <span style={{ color: C.text2 }}>{c.desc}</span>
                       <span style={{
-                        color: C.text3, textAlign: 'right',
+                        color: C.text3,
                         fontFamily: 'ui-monospace, monospace', fontSize: 10,
-                      }}>{c.duration}</span>
+                      }} className="qt-cookie-duration">{c.duration}</span>
                     </div>
                   ))}
                 </div>
@@ -276,6 +278,19 @@ export default function PrivacyPage() {
           </Reveal>
         </section>
       </main>
+
+      <style>{`
+        .qt-cookie-table .qt-cookie-duration { text-align: right; }
+        @media (max-width: 540px) {
+          .qt-cookie-table {
+            grid-template-columns: 1fr !important;
+            gap: 4px !important;
+          }
+          .qt-cookie-table .qt-cookie-duration {
+            text-align: left !important;
+          }
+        }
+      `}</style>
 
       <Footer />
     </div>

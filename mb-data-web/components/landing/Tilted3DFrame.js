@@ -67,13 +67,51 @@ export default function Tilted3DFrame({
       ref={ref}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
+      className="t3d-wrapper"
       style={{
         perspective: '2200px',
         perspectiveOrigin: '50% 50%',
         padding: '40px 0',
+        // Sur mobile, on neutralise le tilt 3D pour que le mockup soit lisible plein écran.
       }}
     >
+      {/* Sur mobile : on désactive le tilt 3D (imperceptible sur petit écran)
+          et on REDUIT le mockup avec `zoom` pour qu'il rentre entier dans la viewport
+          (pas de scroll horizontal). Zoom shrink aussi la bounding box, donc le
+          conteneur s'adapte naturellement à la nouvelle taille. */}
+      {/* Style inline via dangerouslySetInnerHTML pour éviter l'encodage React
+          des apostrophes (& #x27;) qui cause un hydration mismatch entre serveur
+          (HTML-escaped) et client (raw chars). */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        /* Mobile : neutralise le tilt 3D + shrink le mockup pour qu il rentre
+           ENTIER dans la viewport sans scroll horizontal.
+           Le mockup le plus large (Dashboard avec 3 firm cards) fait ~900px natif.
+           Sur iPhone 14 Pro (390px viewport - 24px padding section), il reste ~342px.
+           Donc zoom requis = 342/900 = 0.38. */
+        @media (max-width: 900px) {
+          .t3d-wrapper { padding: 12px 0 !important; perspective: none !important; }
+          .t3d-tilt {
+            transform: none !important;
+            border-radius: 10px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+            zoom: 0.7;
+          }
+        }
+        @media (max-width: 700px) {
+          .t3d-tilt { zoom: 0.5; }
+        }
+        @media (max-width: 480px) {
+          .t3d-tilt { zoom: 0.36; }
+        }
+        @media (max-width: 380px) {
+          .t3d-tilt { zoom: 0.32; }
+        }
+        @media (max-width: 340px) {
+          .t3d-tilt { zoom: 0.28; }
+        }
+      ` }} />
       <div
+        className="t3d-tilt"
         style={{
           transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
           transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -138,8 +176,8 @@ export default function Tilted3DFrame({
           <div style={{ width: 54 }} />
         </div>
 
-        {/* Contenu de la page produit */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Contenu de la page produit (sur mobile : permet scroll-x interne sans casser le layout) */}
+        <div className="t3d-content" style={{ position: 'relative', zIndex: 1 }}>
           {children}
         </div>
       </div>
