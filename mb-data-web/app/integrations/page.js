@@ -2,6 +2,7 @@ import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import Reveal from '../../components/Reveal'
 import { getFirmLogo } from '../../lib/firmLogos'
+import { getAffiliateLink, AFFILIATE_DISCLAIMER } from '../../lib/affiliateLinks'
 
 export const metadata = {
   title: 'PropFirms supportées — Quantara',
@@ -127,7 +128,9 @@ export default function IntegrationsPage() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
               gap: 14,
             }}>
-              {FIRMS.map(firm => (
+              {FIRMS.map(firm => {
+                const affLink = getAffiliateLink(firm.name)
+                return (
                 <div key={firm.name} style={{
                   padding: 18,
                   background: C.surface,
@@ -148,8 +151,29 @@ export default function IntegrationsPage() {
                   <div style={{ fontSize: 11, color: C.text2, lineHeight: 1.5 }}>
                     {firm.note}
                   </div>
+
+                  {affLink && (
+                    <a
+                      href={affLink}
+                      target="_blank"
+                      rel="noopener sponsored"
+                      style={{
+                        marginTop: 'auto',
+                        display: 'inline-block',
+                        padding: '8px 12px',
+                        fontSize: 12, fontWeight: 500,
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        color: C.blueLight,
+                        background: 'rgba(45,111,255,0.08)',
+                        border: `1px solid rgba(45,111,255,0.25)`,
+                        borderRadius: 8,
+                      }}
+                    >Ouvrir un compte →</a>
+                  )}
                 </div>
-              ))}
+                )
+              })}
             </div>
           </Reveal>
         </section>
@@ -206,6 +230,13 @@ export default function IntegrationsPage() {
               boxShadow: '0 4px 12px rgba(45,111,255,0.3)',
             }}>Suggérer une PropFirm</a>
           </Reveal>
+        </section>
+
+        {/* Disclaimer affiliation (FTC-friendly) */}
+        <section style={{ padding: '0 24px 40px', maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: C.text3, lineHeight: 1.5, margin: 0 }}>
+            {AFFILIATE_DISCLAIMER}
+          </p>
         </section>
       </main>
 

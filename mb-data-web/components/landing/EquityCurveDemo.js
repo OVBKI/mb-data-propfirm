@@ -8,41 +8,18 @@
 //
 // Données fictives : un compte Lucid Plan 50K Financé qui performe bien.
 
+import { EQUITY_DAYS, EQUITY_BALANCES, EQUITY_DD, COLORS } from './mockData'
+
 const C = {
-  surface:   'rgba(20,23,32,0.65)',
-  surface2:  'rgba(28,32,48,0.7)',
-  border:    'rgba(255,255,255,0.07)',
+  ...COLORS,
   border2:   'rgba(255,255,255,0.13)',
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
-  blue:      '#2d6fff',
-  blueLight: '#4d8fff',
-  green:     '#1db87a',
   greenSoft: 'rgba(29,184,122,0.15)',
-  red:       '#e8504a',
-  amber:     '#fac775',
 }
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-// === Génère 12 jours de balance progressivement haussière ===
-// Start $50K, finit $51,120 (croissance progressive + petits dips réalistes)
-function genBalance() {
-  const days = ['2026-05-08', '2026-05-09', '2026-05-10', '2026-05-11', '2026-05-12',
-                '2026-05-13', '2026-05-14', '2026-05-15', '2026-05-16', '2026-05-17',
-                '2026-05-18', '2026-05-19']
-  const vals = [50000, 50300, 50180, 50890, 51000, 51400, 51280, 51800, 52050, 52240, 51980, 51120]
-  return days.map((d, i) => ({ date: d, balance: vals[i] }))
-}
-
-const DATA = genBalance()
-
-// DD EOD line en step : reste à $48K puis monte progressivement par paliers
-function genDD() {
-  const ddVals = [48000, 48000, 48000, 48000, 48890, 48890, 49400, 49400, 49800, 49964, 49964, 49964]
-  return DATA.map((d, i) => ({ date: d.date, dd: ddVals[i] }))
-}
-const DD = genDD()
+// Données viennent de mockData (12 jours du 7 mai au 18 mai 2026)
+const DATA = EQUITY_DAYS.map((d, i) => ({ date: d, balance: EQUITY_BALANCES[i] }))
+const DD = EQUITY_DAYS.map((d, i) => ({ date: d, dd: EQUITY_DD[i] }))
 
 function fmtDate(s) {
   // "2026-05-08" → "8 mai"
@@ -199,7 +176,7 @@ export default function EquityCurveDemo() {
               width: 16, height: 2,
               backgroundImage: `repeating-linear-gradient(90deg, ${C.red} 0 4px, transparent 4px 7px)`,
             }} />
-            DD EOD ($2,000) → actuellement <span style={{ color: C.text2, fontWeight: 600 }}>$49,964</span>
+            DD EOD ($2,000) → actuellement <span style={{ color: C.text2, fontWeight: 600 }}>${DD[DD.length - 1].dd.toLocaleString('en-US')}</span>
           </span>
         </div>
 

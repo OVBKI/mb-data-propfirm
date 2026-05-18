@@ -7,19 +7,11 @@
 //   filtres impact + devises (pills)
 //   events groupés par jour : Heure · Devise (flag) · Événement · Réel · Prévision · Précédent · Impact
 
+import { ECON_DAYS, COLORS } from './mockData'
+
 const C = {
-  surface:   'rgba(20,23,32,0.65)',
-  surface2:  'rgba(28,32,48,0.7)',
-  border:    'rgba(255,255,255,0.07)',
-  border2:   'rgba(255,255,255,0.13)',
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
-  blue:      '#2d6fff',
-  blueLight: '#4d8fff',
-  green:     '#1db87a',
-  red:       '#e8504a',
-  amber:     '#fac775',
+  ...COLORS,
+  border2: 'rgba(255,255,255,0.13)',
 }
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
@@ -30,26 +22,8 @@ const IMPACT = {
   Low:    { dot: C.text3,  text: C.text3,  bg: 'transparent' },
 }
 
-// === Events mockés (réalistes futures-trader) ===
-const DAYS = [
-  {
-    label: "Aujourd'hui · Jeu 15 mai",
-    events: [
-      { time: '14:30', cc: 'US', cur: 'USD', name: 'CPI m/m',             impact: 'High',   actual: '0.3%', forecast: '0.4%', previous: '0.4%' },
-      { time: '14:30', cc: 'US', cur: 'USD', name: 'Unemployment Claims', impact: 'High',   actual: '229K', forecast: '220K', previous: '231K' },
-      { time: '15:45', cc: 'US', cur: 'USD', name: 'Fed Powell Speech',   impact: 'High',   actual: '—',    forecast: '—',    previous: '—' },
-      { time: '21:30', cc: 'EU', cur: 'EUR', name: 'ECB Lagarde Speech',  impact: 'Medium', actual: '—',    forecast: '—',    previous: '—' },
-    ],
-  },
-  {
-    label: 'Demain · Ven 16 mai',
-    events: [
-      { time: '14:30', cc: 'US', cur: 'USD', name: 'Retail Sales m/m',       impact: 'High',   actual: '—',    forecast: '0.4%', previous: '0.6%' },
-      { time: '16:00', cc: 'US', cur: 'USD', name: 'UoM Consumer Sentiment', impact: 'Medium', actual: '—',    forecast: '77.5', previous: '77.2' },
-      { time: '16:00', cc: 'CA', cur: 'CAD', name: 'BOC Financial Review',   impact: 'Low',    actual: '—',    forecast: '—',    previous: '—' },
-    ],
-  },
-]
+// Events mockés viennent de mockData (aujourd'hui = mardi 18 mai)
+const DAYS = ECON_DAYS
 
 // Mini flag rendu (badge pays code 2 lettres au lieu de fetch image — plus fiable)
 function FlagBadge({ cc, cur }) {

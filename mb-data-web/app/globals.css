@@ -31,6 +31,8 @@ html, body {
   font-size: 14px;
   min-height: 100vh;
   -webkit-text-size-adjust: 100%;
+  /* Lenis (smooth scroll) exige que le scroll container ne soit pas en position static */
+  position: relative;
 }
 
 button { cursor: pointer; font-family: inherit; }
@@ -219,6 +221,15 @@ select { color-scheme: dark; }
   .filter-row .label-min { display: none; }
 }
 
+/* Wrappers de table : autorisent le scroll horizontal sur mobile sans déborder
+   la page. À utiliser autour de toute <table> ayant un min-width. */
+.page-pad .table-wrap,
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
 /* === Mobile fixes globaux pour les nouvelles pages app (import-lab, journal-sync, profile) === */
 @media (max-width: 768px) {
   /* PageHeader (eyebrow + title + actions) : stack vertical */
@@ -244,6 +255,16 @@ select { color-scheme: dark; }
   .top-bar { padding: 0 12px !important; height: 48px !important; }
   .top-bar > div { gap: 8px !important; }
   .top-bar [class*="brand"] { font-size: 12px !important; }
+}
+
+/* === Tables compactes sous 720px : on relaxe le min-width pour éviter
+   le débordement horizontal sur mobile quand il n'y a pas de .table-wrap === */
+@media (max-width: 720px) {
+  .page-pad table,
+  table.js-table {
+    min-width: unset !important;
+    font-size: 12px !important;
+  }
 }
 
 /* Empêcher le scroll horizontal global */

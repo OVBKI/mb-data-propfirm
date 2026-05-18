@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
+import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -136,6 +137,8 @@ export default function RootLayout({ children }) {
             })
           }
         `}</Script>
+        {/* Vercel Analytics — RGPD-friendly, page views + custom events. Pas de Speed Insights. */}
+        <Analytics />
       </body>
     </html>
   )

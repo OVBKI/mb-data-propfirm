@@ -52,20 +52,9 @@
 //     Payouts count = 2 + 3 + 1 = 6
 
 import { getFirmLogo } from '../../lib/firmLogos'
+import { FIRMS, TOTALS, TRADER_NAME, COLORS } from './mockData'
 
-const C = {
-  surface:   'rgba(20,23,32,0.65)',
-  surface2:  'rgba(28,32,48,0.7)',
-  border:    'rgba(255,255,255,0.07)',
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
-  blue:      '#2d6fff',
-  blueLight: '#4d8fff',
-  green:     '#1db87a',
-  red:       '#e8504a',
-  amber:     '#fac775',
-}
+const C = COLORS
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
 // Helper : pastille colorée pour status compte
@@ -74,60 +63,6 @@ const STATUS_COLORS = {
   'Challenge': C.amber,
   'Échoué':    C.red,
 }
-
-// === Firmes — noms IDENTIQUES aux clés FIRM_LOGOS de lib/firmLogos.js ===
-const FIRMS = [
-  {
-    name: 'Topstep',
-    color: '#e8504a',
-    accountsCount: 3,
-    payoutsCount: 2,
-    net: 1791,
-    roi: 402,
-    spent: 445,
-    payouts: 2236,
-    activeCount: 2,
-    accounts: [
-      { name: 'PRO 1',       status: 'Financé',   net:  980 },
-      { name: 'PRO 2',       status: 'Financé',   net:  860 },
-      { name: 'Combine 50K', status: 'Challenge', net:  -49 },
-    ],
-    badges: [{ label: '2 Financés', color: C.green }, { label: '1 Challenge', color: C.amber }],
-  },
-  {
-    name: 'Apex Trader Funding',
-    color: '#d94a3a',
-    accountsCount: 4,
-    payoutsCount: 3,
-    net: 2810,
-    roi: 1040,
-    spent: 270,
-    payouts: 3080,
-    activeCount: 2,
-    accounts: [
-      { name: 'PA-389226-04', status: 'Financé', net:  1450 },
-      { name: 'PA-389226-03', status: 'Financé', net:  1420 },
-      { name: 'PA-389226-02', status: 'Échoué',  net:   -30 },
-    ],
-    badges: [{ label: '2 Financés', color: C.green }, { label: '2 Échoués', color: C.red }],
-  },
-  {
-    name: 'Lucid Trading',
-    color: '#1db87a',
-    accountsCount: 2,
-    payoutsCount: 1,
-    net: 913,
-    roi: 480,
-    spent: 190,
-    payouts: 1103,
-    activeCount: 1,
-    accounts: [
-      { name: 'PRO 7',   status: 'Financé', net: 1008 },
-      { name: 'EVAL 17', status: 'Échoué',  net:  -95, liquidated: true },
-    ],
-    badges: [{ label: '1 Financé', color: C.green }, { label: '1 Échoué', color: C.red }],
-  },
-]
 
 function fmtMoney(n) {
   return (n >= 0 ? '+' : '-') + '$' + Math.abs(n).toLocaleString('en-US')
@@ -169,7 +104,7 @@ export default function DashboardMockup() {
           <h1 style={{
             fontSize: 22, fontWeight: 700, margin: 0,
             letterSpacing: '-0.025em', lineHeight: 1.1,
-          }}>Bonjour Trader 👋</h1>
+          }}>Bonjour {TRADER_NAME} 👋</h1>
           <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
             Taux EUR/USD : 1.0823 · MàJ il y a 2 min
           </div>
@@ -212,11 +147,11 @@ export default function DashboardMockup() {
         display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 10, marginBottom: 22,
       }}>
-        <StatCard label="PropFirms"      value="3 · 9 comptes" small />
-        <StatCard label="Total dépensé"  value="905 $"         color={C.red} />
-        <StatCard label="Total payouts"  value="6,419 $"       color={C.green} />
-        <StatCard label="Résultat net"   value="+5,514 $"      color={C.green} />
-        <StatCard label="Payouts"        value="6" />
+        <StatCard label="PropFirms"      value={`${TOTALS.firmsCount} · ${TOTALS.accountsCount} comptes`} small />
+        <StatCard label="Total dépensé"  value={`${TOTALS.spent.toLocaleString('en-US')} $`}    color={C.red} />
+        <StatCard label="Total payouts"  value={`${TOTALS.payouts.toLocaleString('en-US')} $`}  color={C.green} />
+        <StatCard label="Résultat net"   value={`+${TOTALS.net.toLocaleString('en-US')} $`}    color={C.green} />
+        <StatCard label="Payouts"        value={String(TOTALS.payoutsCount)} />
       </div>
 
       {/* Firms grid — 3 cards en row */}

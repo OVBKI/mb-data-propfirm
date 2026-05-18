@@ -5,6 +5,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { NOTIFICATIONS } from './mockData'
 
 const C = {
   surface: '#141720',
@@ -22,35 +23,8 @@ const C = {
 
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-const messages = [
-  {
-    icon: '⏰',
-    color: C.amber,
-    bg: 'rgba(250,199,117,0.15)',
-    border: 'rgba(250,199,117,0.35)',
-    title: 'Topstep prélève dans 48h',
-    body: 'Ton compte 50K Combine sera renouvelé le 18 mai. Montant : $147.',
-    time: 'IL Y A 1 MIN',
-  },
-  {
-    icon: '💰',
-    color: C.green,
-    bg: 'rgba(16,185,129,0.15)',
-    border: 'rgba(16,185,129,0.35)',
-    title: 'Payout disponible',
-    body: 'Tu peux demander ton payout sur Apex 100K — Consistency OK (34%).',
-    time: 'IL Y A 12 MIN',
-  },
-  {
-    icon: '📊',
-    color: C.blueLight,
-    bg: 'rgba(77,143,255,0.15)',
-    border: 'rgba(77,143,255,0.35)',
-    title: 'Récap mensuel prêt',
-    body: 'Avril 2026 : +$4,840 net après 3 payouts. ROI : 8.2%.',
-    time: 'IL Y A 23 MIN',
-  },
-]
+// Notifications viennent de mockData (cohérentes avec Dashboard/Analytics)
+const messages = NOTIFICATIONS
 
 export default function NotificationMockup() {
   const ref = useRef(null)

@@ -231,12 +231,14 @@ export default function AuthPage({ onAuth }) {
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center',
       justifyContent: 'center', background: 'var(--bg)', padding: '20px',
-      position: 'relative', overflow: 'hidden',
+      position: 'relative', overflow: 'hidden', width: '100%', maxWidth: '100vw',
     }}>
-      {/* Halo cosmic en arrière-plan — rappelle l'identité landing */}
+      {/* Halo cosmic en arrière-plan — rappelle l'identité landing.
+          Taille bornée à 60vmax (max 600px sur mobile) pour éviter tout
+          débordement horizontal sur iPhone SE et autres petits viewports. */}
       <div style={{
         position: 'absolute', top: '-200px', left: '50%', transform: 'translateX(-50%)',
-        width: '900px', height: '900px',
+        width: 'min(900px, 60vmax)', height: 'min(900px, 60vmax)',
         background: 'radial-gradient(circle, rgba(45,111,255,0.15) 0%, rgba(45,111,255,0.06) 30%, transparent 65%)',
         pointerEvents: 'none', filter: 'blur(40px)',
       }} />

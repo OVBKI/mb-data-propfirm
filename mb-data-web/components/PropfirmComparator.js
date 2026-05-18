@@ -15,6 +15,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { PROPFIRM_RULES } from '../lib/constants'
 import { getFirmLogo } from '../lib/firmLogos'
 import { supabase } from '../lib/supabase'
+import { getAffiliateLink, AFFILIATE_DISCLAIMER } from '../lib/affiliateLinks'
 
 const C = {
   bg: '#0d0f14',
@@ -332,10 +333,14 @@ export default function PropfirmComparator({ user }) {
         {visibleFirms.map(firmName => {
           const meta = FIRM_META[firmName] || {}
           const badge = meta.statusBadge ? STATUS_BADGES[meta.statusBadge] : null
+          const affLink = getAffiliateLink(firmName)
           return (
-            <button
+            <div
               key={firmName}
               onClick={() => setDrawerFirm(firmName)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawerFirm(firmName) } }}
               className="qt-firm-card"
               style={{
                 textAlign: 'left',
@@ -422,14 +427,33 @@ export default function PropfirmComparator({ user }) {
                 </div>
               )}
 
-              {/* CTA */}
+              {/* CTAs : affiliate (discret) + voir règles (lien drawer) */}
               <div style={{
                 marginTop: 'auto', paddingTop: 4,
-                fontSize: 12, color: C.blueLight, fontWeight: 500,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 10,
               }}>
-                Voir toutes les règles →
+                <span style={{ fontSize: 12, color: C.blueLight, fontWeight: 500 }}>
+                  Voir toutes les règles →
+                </span>
+                {affLink && (
+                  <a
+                    href={affLink}
+                    target="_blank"
+                    rel="noopener sponsored"
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                      fontSize: 11, fontWeight: 500,
+                      color: C.text3, textDecoration: 'none',
+                      padding: '4px 9px',
+                      border: `1px solid ${C.border2}`,
+                      borderRadius: 6,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >Visiter le site →</a>
+                )}
               </div>
-            </button>
+            </div>
           )
         })}
       </div>
@@ -463,6 +487,14 @@ export default function PropfirmComparator({ user }) {
           🔧 Mode admin · {Object.keys(overrides).length} firmes avec overrides Supabase
         </div>
       )}
+
+      {/* Disclaimer affiliation (FTC-friendly) */}
+      <div style={{
+        marginTop: 28, textAlign: 'center',
+        fontSize: 11, color: C.text3, lineHeight: 1.5,
+      }}>
+        {AFFILIATE_DISCLAIMER}
+      </div>
     </div>
   )
 }
@@ -499,6 +531,7 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
   }, [onClose])
 
   const firmData = PROPFIRM_RULES[firmName]
+  const affLink = getAffiliateLink(firmName)
   if (!firmData) return null
 
   const plans = firmData.plans || []
@@ -553,6 +586,26 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
               fontSize: 16, lineHeight: 1, fontFamily: 'inherit',
             }}>✕</button>
         </div>
+
+        {/* CTA affiliate dans le drawer */}
+        {affLink && (
+          <a
+            href={affLink}
+            target="_blank"
+            rel="noopener sponsored"
+            style={{
+              display: 'inline-block',
+              marginBottom: 20,
+              padding: '10px 16px',
+              fontSize: 12, fontWeight: 500,
+              color: C.blueLight,
+              background: 'rgba(45,111,255,0.08)',
+              border: `1px solid rgba(45,111,255,0.25)`,
+              borderRadius: 8,
+              textDecoration: 'none',
+            }}
+          >Ouvrir un compte chez {meta.displayName || firmName} →</a>
+        )}
 
         {/* Plan selector */}
         <div style={{

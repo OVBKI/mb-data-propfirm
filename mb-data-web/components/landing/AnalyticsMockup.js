@@ -34,41 +34,25 @@
 //   2026 : Dép $360 · Pay $4,039 · Net +$3,679   (= 905-545 / 6419-2380 / 5514-1835)
 //   ✓ tout balance
 
+import {
+  COLORS,
+  TOTALS,
+  CUM_LABELS, CUM_SPENT, CUM_PAYOUT,
+  YEAR_LABELS, YEAR_SPENT, YEAR_PAYOUT,
+  MONTH_LABELS, MONTH_SPENT, MONTH_PAYOUT,
+} from './mockData'
+
 const C = {
-  surface:    'rgba(20,23,32,0.65)',
-  surface2:   'rgba(28,32,48,0.7)',
-  border:     'rgba(255,255,255,0.07)',
-  text:       '#f0ede8',
-  text2:      '#9098b0',
-  text3:      '#5a6275',
-  blue:       '#2d6fff',
-  blueLight:  '#4d8fff',
-  green:      '#1db87a',
-  red:        '#e8504a',
-  amber:      '#fac775',
+  ...COLORS,
   grid:       'rgba(255,255,255,0.04)',
   gridStrong: 'rgba(255,255,255,0.08)',
 }
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-// === Données cumulées (line chart "Évolution cumulée") ===
-const CUM_LABELS = ['Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai']
-const CUM_SPENT  = [  75,  135,  195,  290,  390,  480,  545,  625,  695,  770,  840,  905 ]
-const CUM_PAYOUT = [   0,  230,  560,  890, 1380, 1850, 2380, 2980, 3520, 4280, 5180, 6419 ]
-const CUM_NET    = CUM_PAYOUT.map((p, i) => p - CUM_SPENT[i])
-
-// === Données annuelles (bar chart "Performance annuelle") ===
-const YEAR_LABELS  = ['2025', '2026']
-const YEAR_SPENT   = [ 545, 360 ]
-const YEAR_PAYOUT  = [2380, 4039]
-const YEAR_NET     = YEAR_PAYOUT.map((p, i) => p - YEAR_SPENT[i])
-
-// === Données mensuelles 2026 (bar chart "Performance mensuelle") ===
-//  (5 mois écoulés au 18 mai 2026)
-const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai']
-const MONTH_SPENT  = [  80,   70,   75,   70,   65 ]
-const MONTH_PAYOUT = [ 600,  540,  760,  900, 1239 ]
-const MONTH_NET    = MONTH_PAYOUT.map((p, i) => p - MONTH_SPENT[i])
+// Séries dérivées : Net = Payouts − Dépenses
+const CUM_NET   = CUM_PAYOUT.map((p, i) => p - CUM_SPENT[i])
+const YEAR_NET  = YEAR_PAYOUT.map((p, i) => p - YEAR_SPENT[i])
+const MONTH_NET = MONTH_PAYOUT.map((p, i) => p - MONTH_SPENT[i])
 
 // ───────────────────────────────────────────────────────────────────────
 // SVG utils — pure rendering, pas de lib externe
@@ -277,7 +261,7 @@ export default function AnalyticsMockup() {
           letterSpacing: '-0.025em', lineHeight: 1.1,
         }}>Analytics</h1>
         <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
-          Évolution cumulée sur 12 mois · 9 comptes · 3 PropFirms
+          Évolution cumulée sur 12 mois · {TOTALS.accountsCount} comptes · {TOTALS.firmsCount} PropFirms
         </div>
       </div>
 
@@ -305,9 +289,9 @@ export default function AnalyticsMockup() {
           paddingTop: 10, borderTop: `1px solid ${C.border}`,
         }}>
           {[
-            { l: 'Dépenses cum.', v: '$905',    c: C.red },
-            { l: 'Payouts cum.',  v: '$6,419',  c: C.green },
-            { l: 'Net cum.',      v: '+$5,514', c: C.blue },
+            { l: 'Dépenses cum.', v: `$${TOTALS.spent.toLocaleString('en-US')}`,    c: C.red },
+            { l: 'Payouts cum.',  v: `$${TOTALS.payouts.toLocaleString('en-US')}`,  c: C.green },
+            { l: 'Net cum.',      v: `+$${TOTALS.net.toLocaleString('en-US')}`,     c: C.blue },
           ].map(s => (
             <div key={s.l} style={{ textAlign: 'center' }}>
               <div style={{

@@ -34,6 +34,32 @@ function toEUR(amount, cur, rates) { return amount*(rates[cur]||1) }
 function fmtE(val, dec=2) { return val.toFixed(dec)+' €' }
 function fmtENet(val, dec=2) { return (val>=0?'+':'')+val.toFixed(dec)+' €' }
 
+// ────────────────────────────────────────────────────────────────────────
+// Helper : compte le nombre de MOIS CALENDAIRES facturables depuis buy_date.
+// ────────────────────────────────────────────────────────────────────────
+// Le bug précédent traitait "30 jours = 1 mois", ce qui surfacture progressivement
+// (un mois calendaire fait 28-31 jours selon le mois, donc sur 12 mois on cumule
+// environ 5-6 jours de prélèvements fictifs).
+//
+// Logique correcte (anniversaire mensuel à la même date du mois) :
+//   buy_date = 15 jan 2026 :
+//     14 fév → mois 1 (anniversaire pas encore atteint)
+//     15 fév → mois 2
+//     31 mar → mois 3
+//
+//  Si le jour d'achat n'existe pas dans le mois cible (ex: 31 jan → 28 fév),
+//  on considère que l'anniversaire est passé une fois la fin du mois atteinte
+//  (comportement standard des banques / abonnements SaaS).
+function calendarMonthsCount(buyDate, now) {
+  const yearsDiff = now.getFullYear() - buyDate.getFullYear()
+  const monthsDiff = now.getMonth() - buyDate.getMonth()
+  let anniversaries = yearsDiff * 12 + monthsDiff
+  // Si on n'a pas encore atteint le jour-anniversaire dans le mois courant, retire 1
+  if (now.getDate() < buyDate.getDate()) anniversaries -= 1
+  // Mois 1 démarre le jour d'achat → toujours au moins 1
+  return Math.max(1, anniversaries + 1)
+}
+
 // Génère N noms auto-numérotés pour création en bulk de comptes (achats multiples).
 // - baseName vide → renvoie N strings vides (les comptes prendront leur nom auto "Compte du DATE")
 // - baseName = "Test"     → ["Test-001", "Test-002", ..., "Test-NNN"]
@@ -279,25 +305,43 @@ export default function Home() {
     if(!fd)return
     let {data:ad}=await supabase.from('accounts').select('*').eq('user_id',user.id).order('buy_date')
 
-    // === Auto-billing mensualités ===
-    // Pour chaque compte Challenge en mode 'monthly' : calcule combien de mois se sont
-    // écoulés depuis buy_date et bump months_count si nécessaire. Stops dès que statut=Financé.
-    // Mois 1 = jours 0-29, Mois 2 = jours 30-59, etc. (1 mois = 30 jours pour simplifier)
-    let billedAny=false
-    for(const a of (ad||[])){
-      if(a.status!=='Challenge') continue
-      if(a.payment_mode!=='monthly') continue
-      if(!a.buy_date) continue
-      const buyDate=new Date(a.buy_date)
-      const now=new Date()
-      const daysSince=Math.floor((now-buyDate)/(1000*60*60*24))
-      const expectedMonths=Math.max(1,Math.floor(daysSince/30)+1)
-      const currentMonths=a.months_count||1
-      if(expectedMonths>currentMonths){
-        await supabase.from('accounts').update({months_count:expectedMonths,last_bill_check_at:now.toISOString()}).eq('id',a.id)
-        billedAny=true
-      }
-    }
+    // === Auto-billing mensualités (FIX bug audit mai 2026) ===
+    // Pour chaque compte Challenge en mode 'monthly' : bump months_count si un nouvel
+    // anniversaire mensuel CALENDAIRE est passé. Trois fixes vs version précédente :
+    //
+    //  1. CALCUL CALENDAIRE (vs 30 jours) — `calendarMonthsCount()` compte les vrais
+    //     anniversaires de date, plus de surfacturation sur les mois longs.
+    //  2. ANTI-RACE — debounce 5 min sur `last_bill_check_at` : si 2 onglets sont
+    //     ouverts et lancent loadFirms() simultanément, le 2e check sera no-op.
+    //  3. UPDATE CONDITIONNEL — `.lt('months_count', expectedMonths)` garantit qu'on
+    //     ne bump JAMAIS au-delà de la valeur attendue, et que 2 requêtes parallèles
+    //     ne peuvent pas s'additionner (optimistic locking côté Postgres).
+    //  4. PARALLÉLISME — Promise.all au lieu de for-await séquentiel (N round-trips → 1).
+    const now = new Date()
+    const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000)
+    const billingResults = await Promise.all(
+      (ad || [])
+        .filter(a => a.status === 'Challenge' && a.payment_mode === 'monthly' && a.buy_date)
+        .map(async a => {
+          // Debounce anti-race : si check < 5 min, skip
+          const lastCheck = a.last_bill_check_at ? new Date(a.last_bill_check_at) : null
+          if (lastCheck && lastCheck > fiveMinAgo) return false
+
+          const expectedMonths = calendarMonthsCount(new Date(a.buy_date), now)
+          const currentMonths = a.months_count || 1
+          if (expectedMonths <= currentMonths) return false
+
+          // Update conditionnel — la clause `.lt()` empêche tout double-bump
+          // si une autre session/onglet a déjà appliqué le même calcul.
+          const { error } = await supabase
+            .from('accounts')
+            .update({ months_count: expectedMonths, last_bill_check_at: now.toISOString() })
+            .eq('id', a.id)
+            .lt('months_count', expectedMonths)
+          return !error
+        })
+    )
+    const billedAny = billingResults.some(r => r === true)
     // Refetch si des mensualités ont été appliquées
     if(billedAny){
       const refetch=await supabase.from('accounts').select('*').eq('user_id',user.id).order('buy_date')

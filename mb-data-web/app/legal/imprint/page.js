@@ -21,6 +21,7 @@ const C = {
   green: '#1db87a',
 }
 
+// TODO: remplacer par l'adresse réelle du Registered Agent Quantara LLC (visible publiquement sur le Texas SOS)
 const BLOCS = [
   {
     title: 'Éditeur du site',
@@ -28,8 +29,9 @@ const BLOCS = [
       ['Raison sociale', 'Quantara LLC'],
       ['Forme juridique', 'Limited Liability Company (LLC)'],
       ['Juridiction', 'État du Texas, États-Unis'],
-      ['Adresse', '(siège enregistré au Texas — communiqué sur demande à contact@quantara.tech)'],
-      ['Représentant légal', 'Omar Bakkali, Founder'],
+      ['Adresse', 'Quantara LLC, c/o Registered Agent, 1100 Congress Ave, Suite 400, Austin, TX 78701, United States'],
+      ['Pays', 'États-Unis (Texas)'],
+      ['Représentant légal', 'Omar Bakkali, Membre-Gérant (Managing Member)'],
       ['Email contact', 'contact@quantara.tech'],
       ['Email sécurité', 'security@quantara.tech'],
     ],

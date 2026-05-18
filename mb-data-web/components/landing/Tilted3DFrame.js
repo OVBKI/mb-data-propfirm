@@ -79,8 +79,11 @@ export default function Tilted3DFrame({
           et on REDUIT le mockup avec `zoom` pour qu'il rentre entier dans la viewport
           (pas de scroll horizontal). Zoom shrink aussi la bounding box, donc le
           conteneur s'adapte naturellement à la nouvelle taille. */}
-      <style>{`
-        /* Mobile : neutralise le tilt 3D + shrink le mockup pour qu'il rentre
+      {/* Style inline via dangerouslySetInnerHTML pour éviter l'encodage React
+          des apostrophes (& #x27;) qui cause un hydration mismatch entre serveur
+          (HTML-escaped) et client (raw chars). */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        /* Mobile : neutralise le tilt 3D + shrink le mockup pour qu il rentre
            ENTIER dans la viewport sans scroll horizontal.
            Le mockup le plus large (Dashboard avec 3 firm cards) fait ~900px natif.
            Sur iPhone 14 Pro (390px viewport - 24px padding section), il reste ~342px.
@@ -106,7 +109,7 @@ export default function Tilted3DFrame({
         @media (max-width: 340px) {
           .t3d-tilt { zoom: 0.28; }
         }
-      `}</style>
+      ` }} />
       <div
         className="t3d-tilt"
         style={{
