@@ -34,7 +34,7 @@ export const ORGANIZATION_SCHEMA = {
   name: 'Quantara LLC',
   alternateName: 'Quantara',
   url: SITE,
-  logo: `${SITE}/quantara-logo.png`,
+  logo: `${SITE}/quantara-logo.webp`,
   description: 'Éditeur de Quantara, le journal de trading SaaS pour traders PropFirm futures.',
   foundingDate: '2026',
   address: {
@@ -80,7 +80,7 @@ export const SOFTWARE_SCHEMA = {
   applicationSubCategory: 'Trading Journal',
   operatingSystem: 'Web, iOS Safari, Android Chrome',
   url: SITE,
-  image: `${SITE}/og-image.png`,
+  image: `${SITE}/og-image.webp`,
   publisher: { '@id': `${SITE}/#org` },
   offers: {
     '@type': 'Offer',

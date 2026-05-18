@@ -11,9 +11,9 @@
   "lang": "fr",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon.webp",
       "sizes": "192x192 512x512",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "any maskable"
     }
   ]

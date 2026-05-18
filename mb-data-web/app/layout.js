@@ -69,7 +69,7 @@ export const metadata = {
     description: 'Track drawdowns trailing, ROI et payouts. Topstep, Apex, Lucid, MFFU et + de 8 PropFirms supportées. Beta gratuit.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.webp',
         width: 1200,
         height: 630,
         alt: 'Quantara — Dashboard PropFirm avec suivi trailing drawdown et consistency',
@@ -84,7 +84,7 @@ export const metadata = {
     creator: '@quantara_tech',
     title: 'Quantara — Journal PropFirm Futures',
     description: 'Track. Analyze. Grow. Le tableau de bord pensé pour les traders PropFirm futures.',
-    images: ['/og-image.png'],
+    images: ['/og-image.webp'],
   },
 
   // Verification (à compléter après setup GSC/Bing)
@@ -93,12 +93,12 @@ export const metadata = {
     // bing: 'TOKEN_BING_ICI',
   },
 
-  // Icons explicites
+  // Icons explicites — WebP (compatible navigateurs modernes, ÷6 plus léger)
   icons: {
     icon: [
-      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon.webp', sizes: '32x32 192x192 512x512', type: 'image/webp' },
     ],
-    apple: '/icon.png',
+    apple: '/icon.webp',
   },
 
   // Format detection — éviter que iOS transforme les nombres en téléphone
