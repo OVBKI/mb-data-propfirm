@@ -869,7 +869,17 @@ export default function JournalPage({
             {decoratedEntries.length} trade{decoratedEntries.length>1?'s':''} enregistré{decoratedEntries.length>1?'s':''} · {pageSubtitleSuffix}
           </div>
         </div>
-        <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
+        <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
+          {/* Bouton vers la nouvelle page Trade Log (vue cards analytique) */}
+          <a href="/app?p=trades" style={{
+            ...btnGhost,
+            textDecoration:'none',display:'inline-flex',alignItems:'center',gap:'5px',
+            background:'rgba(45,111,255,0.08)',
+            borderColor:'rgba(45,111,255,0.25)',
+            color:'var(--blue-light)',
+          }}>
+            ⊞ Trade Log détaillé →
+          </a>
           <button onClick={exportJournalCSV} disabled={!filteredEntries.length} style={{...btnGhost,opacity:filteredEntries.length?1:0.5}}>↓ CSV</button>
           {/* Bouton + Trade :
                 - Mode SYNC (addTradeHref défini) : <a href> vers l'import-lab

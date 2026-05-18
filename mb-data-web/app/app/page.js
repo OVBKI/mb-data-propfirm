@@ -16,6 +16,7 @@ function suggestProfitSplit(firmName, plan){
 }
 import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
+import TradesPage from '../../components/TradesPage'
 import QLogoIcon from '../../components/QLogoIcon'
 import CertificatesModal from '../../components/CertificatesModal'
 import OnboardingModal from '../../components/OnboardingModal'
@@ -212,7 +213,7 @@ export default function Home() {
   const [page,setPage]=useState(()=>{
     if(typeof window==='undefined') return 'dashboard'
     const p=new URLSearchParams(window.location.search).get('p')
-    const valid=['dashboard','analytics','journal','rules','alerts','calendar','sync']
+    const valid=['dashboard','analytics','journal','trades','rules','alerts','calendar','sync']
     return valid.includes(p) ? p : 'dashboard'
   })
   const [currency,setCurrencyMode]=useState('native')
@@ -736,6 +737,7 @@ export default function Home() {
     {key:'dashboard',icon:'◫',label:'Tableau de bord',section:'Principal'},
     {key:'analytics',icon:'◐',label:'Analytics',section:'Principal'},
     {key:'journal',icon:'☰',label:'Journal manuel',section:'Principal'},
+    {key:'trades',icon:'⊞',label:'Trade Log',section:'Principal'},
     {key:'rules',icon:'◊',label:'Règles firmes',section:'PropFirm'},
     {key:'alerts',icon:'◉',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
     {key:'calendar',icon:'◳',label:'Calendrier Éco.',section:'Live Data'},
@@ -1195,6 +1197,17 @@ export default function Home() {
               showToast={showToast}
               onReload={loadFirms}
               hideRithmicEntries={true}
+            />
+          )}
+
+          {page==='trades'&&(
+            // Trade Log : vue cards de TOUS les trades (manuels + sync) avec filtres avancés.
+            // Pas de filtrage rithmic ici — on veut tout voir dans la vue analytique globale.
+            <TradesPage
+              firms={firms}
+              user={user}
+              showToast={showToast}
+              onReload={loadFirms}
             />
           )}
 
