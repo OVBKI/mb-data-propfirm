@@ -75,14 +75,28 @@ export default function Tilted3DFrame({
         // Sur mobile, on neutralise le tilt 3D pour que le mockup soit lisible plein écran.
       }}
     >
-      {/* Sur mobile : on désactive le tilt 3D (impossible à apprécier sur petit écran)
-          et on permet au mockup d'utiliser toute la largeur disponible avec scroll-x si besoin */}
+      {/* Sur mobile : on désactive le tilt 3D (imperceptible sur petit écran)
+          et on REDUIT le mockup avec `zoom` pour qu'il rentre entier dans la viewport
+          (pas de scroll horizontal). Zoom shrink aussi la bounding box, donc le
+          conteneur s'adapte naturellement à la nouvelle taille. */}
       <style>{`
-        @media (max-width: 768px) {
-          .t3d-wrapper { padding: 16px 0 !important; perspective: none !important; }
-          .t3d-tilt { transform: none !important; border-radius: 10px !important; }
-          .t3d-content { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-          .t3d-content > * { min-width: 640px; }
+        @media (max-width: 900px) {
+          .t3d-wrapper { padding: 12px 0 !important; perspective: none !important; }
+          .t3d-tilt {
+            transform: none !important;
+            border-radius: 10px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+            zoom: 0.75;
+          }
+        }
+        @media (max-width: 700px) {
+          .t3d-tilt { zoom: 0.6; }
+        }
+        @media (max-width: 480px) {
+          .t3d-tilt { zoom: 0.46; }
+        }
+        @media (max-width: 380px) {
+          .t3d-tilt { zoom: 0.38; }
         }
       `}</style>
       <div
