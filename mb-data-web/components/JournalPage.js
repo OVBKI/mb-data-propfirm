@@ -5,6 +5,7 @@ import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSpli
 import { uploadFile } from '../lib/uploadFile'
 import { TooltipIcon } from './Tooltip'
 import TagSelector, { TagDisplay } from './TagSelector'
+import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -828,12 +829,19 @@ export default function JournalPage({
     if(onReload) await onReload()
   }
 
-  // Export CSV des trades filtrés (avec BOM UTF-8 pour Excel Windows + tags)
+  // Export CSV des trades filtrés (avec BOM UTF-8 pour Excel Windows + tags + R-multiple)
   function exportJournalCSV(){
-    const rows = [['Date','Firme','Compte','Instrument','Side','PnL','Tags','Notes']]
+    const rows = [['Date','Firme','Compte','Instrument','Side','PnL','Entry','Exit','Stop','TP','R réalisé','R:R visé','Tags','Notes']]
     filteredEntries.forEach(e=>{
       const tagsStr = Array.isArray(e.tags) ? e.tags.join(', ') : ''
-      rows.push([e.date, e._firmName, e._accountLabel, e.instrument||'', e.side||'', String(e.pnl), tagsStr, e.notes||''])
+      const r = computeRMultiple({ entry:e.entry_price, exit:e.exit_price, stop:e.stop_loss, side:e.side, pnl:e.pnl })
+      const rr = computeRiskReward({ entry:e.entry_price, takeProfit:e.take_profit, stop:e.stop_loss, side:e.side, pnl:e.pnl, exit:e.exit_price })
+      rows.push([
+        e.date, e._firmName, e._accountLabel, e.instrument||'', e.side||'', String(e.pnl),
+        e.entry_price ?? '', e.exit_price ?? '', e.stop_loss ?? '', e.take_profit ?? '',
+        r != null ? r.toFixed(2) : '', rr != null ? rr.toFixed(2) : '',
+        tagsStr, e.notes||'',
+      ])
     })
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
     // BOM UTF-8 préfixé : permet à Excel Windows d'afficher correctement les accents
@@ -1229,6 +1237,28 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                               {e.take_profit && <span>🎯 TP : <strong style={{color:'var(--green-text)'}}>{e.take_profit}</strong></span>}
                             </div>
                           )}
+                          {/* R-multiple + Risk:Reward — affiché uniquement si données dispo */}
+                          {(() => {
+                            const r = computeRMultiple({
+                              entry: e.entry_price, exit: e.exit_price, stop: e.stop_loss,
+                              side: e.side, pnl: e.pnl,
+                            })
+                            const rr = computeRiskReward({
+                              entry: e.entry_price, takeProfit: e.take_profit, stop: e.stop_loss,
+                              side: e.side, pnl: e.pnl, exit: e.exit_price,
+                            })
+                            if (r == null && rr == null) return null
+                            return (
+                              <div style={{display:'flex',gap:'10px',flexWrap:'wrap',fontSize:'10px',color:'var(--text3)',marginTop:'4px'}}>
+                                {r != null && (
+                                  <span>📐 R réalisé : <strong style={{color: r>=0?'var(--green)':'var(--red)'}}>{formatR(r)}</strong></span>
+                                )}
+                                {rr != null && (
+                                  <span>⚖ R:R visé : <strong style={{color: rr>=2?'var(--green)':rr>=1?'var(--amber-text)':'var(--red)'}}>{formatRR(rr)}</strong></span>
+                                )}
+                              </div>
+                            )
+                          })()}
                           {/* Tags trades : badges colorés (max 4 visibles, le reste en +N) */}
                           {Array.isArray(e.tags) && e.tags.length > 0 && (
                             <div style={{marginTop:'5px'}}>
@@ -1252,6 +1282,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
 
         {/* Stats avancées */}
         {stats.total>0 && (
+          <>
           <div className="stats-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px',marginTop:'20px'}}>
             <div style={{...card, padding:'16px'}}>
               <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>Gain moyen</div>
@@ -1262,7 +1293,10 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               <div style={{fontSize:'18px',fontWeight:'600',color:'var(--red)'}}>{fmtMoney(stats.avgLoss)}</div>
             </div>
             <div style={{...card, padding:'16px'}}>
-              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>Ratio R</div>
+              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px',display:'flex',alignItems:'center',gap:'4px'}}>
+                RRR empirique
+                <TooltipIcon text="Ratio Récompense:Risque empirique = |gain moyen / perte moyenne|. Mesure le rapport entre tes gains et tes pertes moyennes. Idéal > 1.5." maxWidth={280} />
+              </div>
               <div style={{fontSize:'18px',fontWeight:'600'}}>
                 {stats.avgLoss !== 0
                   ? (Math.abs(stats.avgWin / stats.avgLoss)).toFixed(2)
@@ -1270,6 +1304,54 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               </div>
             </div>
           </div>
+
+          {/* === Stats R-multiple (nécessite entry + exit + stop sur les trades) === */}
+          {(() => {
+            const rStats = computeRStats(filteredEntries)
+            if (rStats.rCount === 0) {
+              return (
+                <div style={{...card, padding:'14px 18px', marginTop:'12px', display:'flex',alignItems:'center',gap:'10px',fontSize:'12px',color:'var(--text3)'}}>
+                  <span style={{fontSize:'14px'}}>📐</span>
+                  <span>Renseigne <strong style={{color:'var(--text2)'}}>Entry, Exit et Stop Loss</strong> sur tes trades pour voir ton R-multiple moyen et ton expectancy.</span>
+                </div>
+              )
+            }
+            return (
+              <div className="stats-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px',marginTop:'12px'}}>
+                <div style={{...card, padding:'16px'}}>
+                  <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px',display:'flex',alignItems:'center',gap:'4px'}}>
+                    R moyen
+                    <TooltipIcon text="Moyenne des R-multiples réalisés. Un R = ton risque planifié. +1R = tu as gagné autant que ce que tu risquais. Idéal > 0.5R en moyenne." maxWidth={280} />
+                  </div>
+                  <div style={{fontSize:'18px',fontWeight:'600',color: rStats.avgR>=0.5?'var(--green)':rStats.avgR>=0?'var(--amber-text)':'var(--red)'}}>
+                    {formatR(rStats.avgR)}
+                  </div>
+                  <div style={{fontSize:'10px',color:'var(--text3)',marginTop:'3px'}}>
+                    sur {rStats.rCount} trade{rStats.rCount>1?'s':''} avec R calculable
+                  </div>
+                </div>
+                <div style={{...card, padding:'16px'}}>
+                  <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px',display:'flex',alignItems:'center',gap:'4px'}}>
+                    Best R
+                    <TooltipIcon text="Meilleur trade exprimé en R-multiple. Montre ta capacité à laisser courir les gagnants." maxWidth={240} />
+                  </div>
+                  <div style={{fontSize:'18px',fontWeight:'600',color:'var(--green)'}}>
+                    {formatR(rStats.bestR)}
+                  </div>
+                </div>
+                <div style={{...card, padding:'16px'}}>
+                  <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px',display:'flex',alignItems:'center',gap:'4px'}}>
+                    Worst R
+                    <TooltipIcon text="Pire trade exprimé en R-multiple. Idéalement proche de −1R (tu as bien respecté ton stop). Si très inférieur à −1R, ton risk management déraille." maxWidth={280} />
+                  </div>
+                  <div style={{fontSize:'18px',fontWeight:'600',color:'var(--red)'}}>
+                    {formatR(rStats.worstR)}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+          </>
         )}
 
         {/* === Courbes de balance par compte === */}
@@ -1400,6 +1482,38 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 <label style={labelS}>Take Profit</label>
                 <input type="number" step="0.0001" value={form.takeProfit} onChange={e=>setForm(p=>({...p,takeProfit:e.target.value}))} placeholder="ex : 5440.00" style={inputS} />
               </div>
+
+              {/* === Aperçu R-multiple & R:R en temps réel === */}
+              {(() => {
+                const r = computeRMultiple({
+                  entry: form.entryPrice, exit: form.exitPrice, stop: form.stopLoss,
+                  side: form.side, pnl: form.pnl,
+                })
+                const rr = computeRiskReward({
+                  entry: form.entryPrice, takeProfit: form.takeProfit, stop: form.stopLoss,
+                  side: form.side, pnl: form.pnl, exit: form.exitPrice,
+                })
+                if (r == null && rr == null) return null
+                return (
+                  <div style={{gridColumn:'1/-1',marginTop:'4px',padding:'10px 14px',background:'rgba(45,111,255,0.06)',border:'1px solid rgba(45,111,255,0.20)',borderRadius:'8px',display:'flex',gap:'18px',flexWrap:'wrap',alignItems:'center',fontSize:'12px'}}>
+                    <span style={{fontWeight:'700',color:'var(--blue-light)',fontSize:'10px',letterSpacing:'0.5px',textTransform:'uppercase'}}>
+                      📐 Aperçu
+                    </span>
+                    {r != null && (
+                      <span style={{color:'var(--text2)'}}>
+                        R réalisé : <strong style={{color: r>=0?'var(--green)':'var(--red)',fontSize:'13px'}}>{formatR(r)}</strong>
+                      </span>
+                    )}
+                    {rr != null && (
+                      <span style={{color:'var(--text2)'}}>
+                        R:R visé : <strong style={{color: rr>=2?'var(--green)':rr>=1?'var(--amber-text)':'var(--red)',fontSize:'13px'}}>{formatRR(rr)}</strong>
+                        {rr < 1 && <span style={{marginLeft:'6px',fontSize:'10px',color:'var(--red)'}}>⚠ setup risqué (R:R &lt; 1)</span>}
+                        {rr >= 2 && <span style={{marginLeft:'6px',fontSize:'10px',color:'var(--green)'}}>✓ bon setup</span>}
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* === Tags trades (psychologie + setup + contexte) === */}
               <div style={{gridColumn:'1/-1',marginTop:'8px',paddingTop:'16px',borderTop:'1px solid var(--border)'}}>
