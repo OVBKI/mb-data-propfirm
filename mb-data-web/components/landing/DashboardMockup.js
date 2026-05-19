@@ -53,23 +53,42 @@
 
 import { getFirmLogo } from '../../lib/firmLogos'
 import { FIRMS, TOTALS, TRADER_NAME, COLORS } from './mockData'
+import { useT } from '../LanguageProvider'
 
 const C = COLORS
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-// Helper : pastille colorée pour status compte
+// Helper : pastille colorée pour status compte (clé status FR utilisée comme lookup)
 const STATUS_COLORS = {
   'Financé':   C.green,
   'Challenge': C.amber,
   'Échoué':    C.red,
 }
 
+// Map status FR (source) → key i18n
+const STATUS_I18N_KEY = {
+  'Financé':   'mockups.common.statusFinance',
+  'Challenge': 'mockups.common.statusChallenge',
+  'Échoué':    'mockups.common.statusEchoue',
+}
+
+// Map badge FR (source) → key i18n
+const BADGE_I18N_KEY = {
+  '1 Financé':    'mockups.common.badge1Funded',
+  '2 Financés':   'mockups.common.badge2Funded',
+  '1 Challenge':  'mockups.common.badge1Challenge',
+  '2 Challenges': 'mockups.common.badge2Challenge',
+  '1 Échoué':     'mockups.common.badge1Failed',
+  '2 Échoués':    'mockups.common.badge2Failed',
+}
+
 function fmtMoney(n) {
   return (n >= 0 ? '+' : '-') + '$' + Math.abs(n).toLocaleString('en-US')
 }
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, t }) {
   const color = STATUS_COLORS[status] || C.text3
+  const label = t(STATUS_I18N_KEY[status] || '') || status
   return (
     <span style={{
       display: 'inline-block', fontSize: 9, fontWeight: 600,
@@ -78,11 +97,12 @@ function StatusBadge({ status }) {
         : status === 'Challenge' ? 'rgba(250,199,117,0.12)'
         : 'rgba(232,80,74,0.12)',
       color, letterSpacing: '0.3px',
-    }}>{status}</span>
+    }}>{label}</span>
   )
 }
 
 export default function DashboardMockup() {
+  const t = useT()
   return (
     <div style={{
       background: '#0a0c10',
@@ -100,13 +120,13 @@ export default function DashboardMockup() {
             fontSize: 10, color: C.blueLight,
             letterSpacing: '0.16em', textTransform: 'uppercase',
             fontWeight: 600, marginBottom: 8,
-          }}>Tableau de bord</div>
+          }}>{t('mockups.dashboard.eyebrow')}</div>
           <h1 style={{
             fontSize: 22, fontWeight: 700, margin: 0,
             letterSpacing: '-0.025em', lineHeight: 1.1,
-          }}>Bonjour {TRADER_NAME} 👋</h1>
+          }}>{t('mockups.dashboard.greeting').replace('{name}', TRADER_NAME)}</h1>
           <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
-            Taux EUR/USD : 1.0823 · MàJ il y a 2 min
+            {t('mockups.dashboard.rateInfo')}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -132,13 +152,13 @@ export default function DashboardMockup() {
             background: 'rgba(255,255,255,0.025)',
             border: '0.5px solid rgba(255,255,255,0.10)',
             borderRadius: 6, color: C.text3,
-          }}>🔍 Rechercher...</div>
+          }}>{t('mockups.dashboard.searchPlaceholder')}</div>
           {/* Primary CTA */}
           <span style={{
             padding: '6px 12px', fontSize: 10, fontWeight: 500,
             background: C.text, color: '#0a0c10', borderRadius: 6,
             boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
-          }}>+ Ajouter PropFirm</span>
+          }}>{t('mockups.dashboard.addPropfirm')}</span>
         </div>
       </div>
 
@@ -147,11 +167,11 @@ export default function DashboardMockup() {
         display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 10, marginBottom: 22,
       }}>
-        <StatCard label="PropFirms"      value={`${TOTALS.firmsCount} · ${TOTALS.accountsCount} comptes`} small />
-        <StatCard label="Total dépensé"  value={`${TOTALS.spent.toLocaleString('en-US')} $`}    color={C.red} />
-        <StatCard label="Total payouts"  value={`${TOTALS.payouts.toLocaleString('en-US')} $`}  color={C.green} />
-        <StatCard label="Résultat net"   value={`+${TOTALS.net.toLocaleString('en-US')} $`}    color={C.green} />
-        <StatCard label="Payouts"        value={String(TOTALS.payoutsCount)} />
+        <StatCard label={t('mockups.dashboard.statPropfirms')}    value={`${TOTALS.firmsCount} · ${TOTALS.accountsCount} ${t('mockups.dashboard.accountsLabel')}`} small />
+        <StatCard label={t('mockups.dashboard.statSpent')}        value={`${TOTALS.spent.toLocaleString('en-US')} $`}    color={C.red} />
+        <StatCard label={t('mockups.dashboard.statPayouts')}      value={`${TOTALS.payouts.toLocaleString('en-US')} $`}  color={C.green} />
+        <StatCard label={t('mockups.dashboard.statNet')}          value={`+${TOTALS.net.toLocaleString('en-US')} $`}    color={C.green} />
+        <StatCard label={t('mockups.dashboard.statPayoutCount')}  value={String(TOTALS.payoutsCount)} />
       </div>
 
       {/* Firms grid — 3 cards en row */}
@@ -161,7 +181,7 @@ export default function DashboardMockup() {
         gap: 12,
       }}>
         {FIRMS.map(f => (
-          <FirmCard key={f.name} firm={f} />
+          <FirmCard key={f.name} firm={f} t={t} />
         ))}
       </div>
     </div>
@@ -190,7 +210,7 @@ function StatCard({ label, value, color, small }) {
   )
 }
 
-function FirmCard({ firm }) {
+function FirmCard({ firm, t }) {
   return (
     <div style={{
       padding: 14,
@@ -212,7 +232,7 @@ function FirmCard({ firm }) {
               {firm.name}
             </div>
             <div style={{ fontSize: 9, color: C.text3, marginTop: 2 }}>
-              {firm.accountsCount} comptes · {firm.payoutsCount} payouts
+              {firm.accountsCount} {t('mockups.dashboard.accountsLabel')} · {firm.payoutsCount} {t('mockups.dashboard.payoutsLabel')}
             </div>
           </div>
         </div>
@@ -234,9 +254,9 @@ function FirmCard({ firm }) {
         gap: 6, marginBottom: 10,
       }}>
         {[
-          { l: 'Dépensé', v: '$' + firm.spent,   c: C.red },
-          { l: 'Payouts', v: '$' + firm.payouts, c: C.green },
-          { l: 'Actifs',  v: firm.activeCount },
+          { l: t('mockups.dashboard.miniSpent'),    v: '$' + firm.spent,   c: C.red },
+          { l: t('mockups.dashboard.miniPayouts'),  v: '$' + firm.payouts, c: C.green },
+          { l: t('mockups.dashboard.miniActive'),   v: firm.activeCount },
         ].map((s, i) => (
           <div key={i} style={{
             background: 'rgba(255,255,255,0.025)',
@@ -275,7 +295,7 @@ function FirmCard({ firm }) {
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               fontFamily: mono,
             }}>{a.name}</span>
-            <StatusBadge status={a.status} />
+            <StatusBadge status={a.status} t={t} />
             {a.liquidated && <span style={{ fontSize: 9 }}>🔥</span>}
           </div>
           <span style={{
@@ -290,21 +310,24 @@ function FirmCard({ firm }) {
         display: 'flex', gap: 5, marginTop: 10,
         flexWrap: 'wrap', alignItems: 'center',
       }}>
-        {firm.badges.map((b, i) => (
-          <span key={i} style={{
-            fontSize: 8, fontWeight: 600,
-            padding: '2px 6px', borderRadius: 99,
-            background: `${b.color}1f`, color: b.color,
-            letterSpacing: '0.3px',
-          }}>{b.label}</span>
-        ))}
+        {firm.badges.map((b, i) => {
+          const badgeLabel = BADGE_I18N_KEY[b.label] ? t(BADGE_I18N_KEY[b.label]) : b.label
+          return (
+            <span key={i} style={{
+              fontSize: 8, fontWeight: 600,
+              padding: '2px 6px', borderRadius: 99,
+              background: `${b.color}1f`, color: b.color,
+              letterSpacing: '0.3px',
+            }}>{badgeLabel}</span>
+          )
+        })}
         <span style={{
           marginLeft: 'auto', fontSize: 9, padding: '2px 7px',
           borderRadius: 99,
           background: 'rgba(45,111,255,0.10)',
           border: '1px solid rgba(45,111,255,0.30)',
           color: C.blueLight, fontWeight: 600,
-        }}>🎓 Diplômes</span>
+        }}>{t('mockups.dashboard.diplomas')}</span>
       </div>
     </div>
   )

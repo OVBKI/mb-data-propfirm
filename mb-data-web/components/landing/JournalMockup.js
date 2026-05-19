@@ -9,6 +9,7 @@
 //   Calendrier PnL mensuel (heatmap vert/rouge)
 
 import { CAL_DAYS, PNL_MAY, TODAY_MONTH_FR, COLORS } from './mockData'
+import { useT } from '../LanguageProvider'
 
 const C = {
   ...COLORS,
@@ -16,13 +17,22 @@ const C = {
 }
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace'
 
-const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-
 function fmtMoneyShort(n) {
   return (n >= 0 ? '+' : '-') + '$' + Math.abs(n)
 }
 
 export default function JournalMockup() {
+  const t = useT()
+  const DAYS = [
+    t('mockups.journal.dayMon'),
+    t('mockups.journal.dayTue'),
+    t('mockups.journal.dayWed'),
+    t('mockups.journal.dayThu'),
+    t('mockups.journal.dayFri'),
+    t('mockups.journal.daySat'),
+    t('mockups.journal.daySun'),
+  ]
+  const monthLabel = t('mockups.journal.monthMay2026')
   return (
     <div style={{
       background: '#0a0c10',
@@ -40,14 +50,14 @@ export default function JournalMockup() {
             fontSize: 10, color: C.blueLight,
             letterSpacing: '0.16em', textTransform: 'uppercase',
             fontWeight: 600, marginBottom: 8,
-          }}>Journal de trading</div>
+          }}>{t('mockups.journal.eyebrow')}</div>
           <h1 style={{
             fontSize: 22, fontWeight: 700, margin: 0,
             letterSpacing: '-0.025em', lineHeight: 1.1,
             marginBottom: 4,
-          }}>Chaque trade. Tracké. Analysé.</h1>
+          }}>{t('mockups.journal.title')}</h1>
           <div style={{ fontSize: 11, color: C.text3 }}>
-            42 trades enregistrés · saisie manuelle
+            {t('mockups.journal.subtitle')}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -56,12 +66,12 @@ export default function JournalMockup() {
             background: 'rgba(255,255,255,0.025)',
             border: '1px solid rgba(255,255,255,0.10)',
             color: C.text2, borderRadius: 6,
-          }}>↓ CSV</span>
+          }}>{t('mockups.journal.btnCsv')}</span>
           <span style={{
             padding: '6px 12px', fontSize: 10, fontWeight: 500,
             background: C.text, color: '#0a0c10', borderRadius: 6,
             boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
-          }}>+ Ajouter trade</span>
+          }}>{t('mockups.journal.btnAddTrade')}</span>
         </div>
       </div>
 
@@ -79,11 +89,11 @@ export default function JournalMockup() {
             fontSize: 9, fontWeight: 700, color: C.text3,
             textTransform: 'uppercase', letterSpacing: '0.5px',
             minWidth: 50,
-          }}>Statut</span>
-          <StatusPill label="Tous" active />
-          <StatusPill label="Challenge" dot={C.amber} />
-          <StatusPill label="Financé" dot={C.green} />
-          <StatusPill label="Échoué" dot={C.red} />
+          }}>{t('mockups.journal.filterStatus')}</span>
+          <StatusPill label={t('mockups.journal.pillAll')} active />
+          <StatusPill label={t('mockups.common.statusChallenge')} dot={C.amber} />
+          <StatusPill label={t('mockups.common.statusFinance')} dot={C.green} />
+          <StatusPill label={t('mockups.common.statusEchoue')} dot={C.red} />
         </div>
         {/* Firme + Compte */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -91,15 +101,15 @@ export default function JournalMockup() {
             <span style={{
               fontSize: 9, fontWeight: 700, color: C.text3,
               textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 50,
-            }}>Firme</span>
-            <FakeSelect value="🏢 Toutes les firmes" />
+            }}>{t('mockups.journal.filterFirm')}</span>
+            <FakeSelect value={t('mockups.journal.selectAllFirms')} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 200 }}>
             <span style={{
               fontSize: 9, fontWeight: 700, color: C.text3,
               textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 50,
-            }}>Compte</span>
-            <FakeSelect value="Tous les comptes" />
+            }}>{t('mockups.journal.filterAccount')}</span>
+            <FakeSelect value={t('mockups.journal.selectAllAccts')} />
           </div>
         </div>
       </div>
@@ -109,12 +119,12 @@ export default function JournalMockup() {
         display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)',
         gap: 8, marginBottom: 18,
       }}>
-        <PnlCard label="PNL Filtré"   value={PNL_MAY.netDisplay} color={C.green} />
-        <PnlCard label={`PNL ${TODAY_MONTH_FR}`} value={PNL_MAY.netDisplay} color={C.green} />
-        <PnlCard label="Win Rate"     value="78.5%"  color={C.green} />
-        <PnlCard label="Consistency"  value="22.4%"  />
-        <PnlCard label="Trades"       value="42" />
-        <PnlCard label="Jours tradés" value="11" />
+        <PnlCard label={t('mockups.journal.pnlFiltered')}   value={PNL_MAY.netDisplay} color={C.green} />
+        <PnlCard label={t('mockups.journal.pnlMonth').replace('{month}', monthLabel)} value={PNL_MAY.netDisplay} color={C.green} />
+        <PnlCard label={t('mockups.journal.pnlWinRate')}     value="78.5%"  color={C.green} />
+        <PnlCard label={t('mockups.journal.pnlConsistency')} value="22.4%"  />
+        <PnlCard label={t('mockups.journal.pnlTrades')}      value="42" />
+        <PnlCard label={t('mockups.journal.pnlTradedDays')}  value="11" />
       </div>
 
       {/* Calendrier PnL */}
@@ -123,7 +133,7 @@ export default function JournalMockup() {
         marginBottom: 10,
       }}>
         <div style={{ fontSize: 13, fontWeight: 600 }}>
-          Calendrier PnL <span style={{ color: C.text3, fontWeight: 500 }}>— {TODAY_MONTH_FR}</span>
+          {t('mockups.journal.calendarTitle')} <span style={{ color: C.text3, fontWeight: 500 }}>— {monthLabel}</span>
         </div>
         <div style={{ display: 'flex', gap: 4 }}>
           <NavBtn>◀</NavBtn>
@@ -132,7 +142,7 @@ export default function JournalMockup() {
             background: 'rgba(255,255,255,0.025)',
             border: `1px solid ${C.border}`, borderRadius: 5,
             color: C.text2, letterSpacing: '0.08em', textTransform: 'uppercase',
-          }}>Aujourd'hui</span>
+          }}>{t('mockups.journal.todayBtn')}</span>
           <NavBtn>▶</NavBtn>
         </div>
       </div>
@@ -142,7 +152,7 @@ export default function JournalMockup() {
         display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
         gap: 4, marginBottom: 4,
       }}>
-        {DAYS_FR.map(d => (
+        {DAYS.map(d => (
           <div key={d} style={{
             fontSize: 9, color: C.text3, textAlign: 'center', padding: '4px 0',
             fontFamily: mono, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -188,7 +198,7 @@ export default function JournalMockup() {
                 <div style={{
                   fontSize: 7, color: C.text3,
                   textAlign: 'right', fontFamily: mono, marginTop: 1,
-                }}>{c.count} trade{c.count > 1 ? 's' : ''}</div>
+                }}>{c.count} {c.count > 1 ? t('mockups.journal.tradePlural') : t('mockups.journal.tradeSingular')}</div>
               )}
             </div>
           )

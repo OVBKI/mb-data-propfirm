@@ -1,4 +1,7 @@
 'use client'
+// TODO i18n v3.1 — Composant non traduit. Strings FR : titres "Règles firmes",
+// filtres (Drawdown, Profit split, Payout target…), drawer détail, libellés
+// règles (Trailing/EOD/Static, Mini/Pro plans).
 // Comparateur PropFirms — vue CARDS GRID avec filtres + drawer détail.
 // Remplace l'ancienne table horizontale (UX galère pour comparer + mobile cassé).
 //

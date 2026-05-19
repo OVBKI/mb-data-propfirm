@@ -22,6 +22,7 @@
 
 import { TagDisplay } from './TagSelector'
 import { computeRMultiple, computeRiskReward, formatR, formatRR } from '../lib/tradeMath'
+import { useT } from './LanguageProvider'
 
 function fmtMoney(n, dec = 2) {
   const v = Number(n) || 0
@@ -49,6 +50,7 @@ const C = {
 }
 
 export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLightbox }) {
+  const t = useT()
   const e = entry
   const pnl = Number(e.pnl) || 0
   const isWin = pnl > 0
@@ -63,12 +65,13 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
     side: e.side, pnl: e.pnl, exit: e.exit_price,
   })
 
-  // Prix : on affiche uniquement ceux renseignés
+  // Prix : on affiche uniquement ceux renseignés. `key` reste stable (React key),
+  // `label` est traduit pour l'affichage.
   const prices = [
-    { label: 'Entry',  value: e.entry_price,  icon: '📍', color: C.text2 },
-    { label: 'Exit',   value: e.exit_price,   icon: '🏁', color: C.text2 },
-    { label: 'Stop',   value: e.stop_loss,    icon: '🛡', color: C.red },
-    { label: 'TP',     value: e.take_profit,  icon: '🎯', color: C.green },
+    { key: 'entry', label: t('app.trade.cardEntry'),  value: e.entry_price,  icon: '📍', color: C.text2 },
+    { key: 'exit',  label: t('app.trade.cardExit'),   value: e.exit_price,   icon: '🏁', color: C.text2 },
+    { key: 'stop',  label: t('app.trade.cardStop'),   value: e.stop_loss,    icon: '🛡', color: C.red },
+    { key: 'tp',    label: t('app.trade.cardTP'),     value: e.take_profit,  icon: '🎯', color: C.green },
   ].filter(p => p.value != null && p.value !== '')
 
   return (
@@ -102,7 +105,7 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
               color: e.side === 'Long' ? C.green : C.red,
               letterSpacing: '0.05em', textTransform: 'uppercase',
             }}>
-              {e.side === 'Long' ? '↑ Long' : '↓ Short'}
+              {e.side === 'Long' ? `↑ ${t('app.trade.sideLong')}` : `↓ ${t('app.trade.sideShort')}`}
             </span>
           )}
         </div>
@@ -117,7 +120,7 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
           </span>
           <button
             onClick={onEdit}
-            title="Modifier"
+            title={t('app.trade.modalEditTitle')}
             style={{
               padding: '4px 8px', fontSize: 11,
               background: 'rgba(255,255,255,0.04)', color: C.text2,
@@ -174,7 +177,7 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
               gap: 6, marginBottom: 10,
             }}>
               {prices.map(p => (
-                <div key={p.label} style={{
+                <div key={p.key} style={{
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: '5px 8px',
                   background: 'rgba(255,255,255,0.02)',

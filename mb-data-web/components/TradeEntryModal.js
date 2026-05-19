@@ -1,5 +1,11 @@
 'use client'
 // components/TradeEntryModal.js
+// TODO i18n v3.1 — Strings encore FR-only :
+//   • Placeholders (ex: 5430.25, Optionnel, ex: 250  ou  -125)
+//   • Messages d'erreur showToast (Date requise, PnL requis…)
+//   • Aperçus calculés (R réalisé, R:R visé, Gross, Décomposition…)
+//   • Bouton Upload screenshot ("Cliquer pour uploader (PNG/JPG, max 5 Mo)")
+//   • confirm() de suppression
 // Modal standalone pour créer / éditer / supprimer un trade.
 // Utilisé par JournalPage (vue calendrier) ET TradesPage (vue cards).
 //
@@ -26,6 +32,7 @@ import { uploadFile } from '../lib/uploadFile'
 import { accountLabel } from '../lib/constants'
 import { computeRMultiple, computeRiskReward, formatR, formatRR } from '../lib/tradeMath'
 import TagSelector from './TagSelector'
+import { useT } from './LanguageProvider'
 
 // Styles cosmic dark (cohérents avec JournalPage)
 const card = { background:'var(--surface)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }
@@ -76,6 +83,7 @@ export default function TradeEntryModal({
   onLightbox,
   showToast,
 }) {
+  const t = useT()
   const [form, setForm] = useState(EMPTY_FORM)
   const [uploadingScreen, setUploadingScreen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -185,13 +193,13 @@ export default function TradeEntryModal({
         style={{ ...card, padding: '28px', width: '560px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
       >
         <h3 style={{ fontSize: '17px', fontWeight: '600', marginBottom: '20px' }}>
-          {entry ? 'Modifier le trade' : 'Nouveau trade'}
+          {entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
         </h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           {/* Compte */}
           <div style={{ gridColumn: '1/-1' }}>
-            <label style={labelS}>Compte</label>
+            <label style={labelS}>{t('app.trade.fieldAccount')}</label>
             <select
               value={form.accountId}
               onChange={e => setForm(p => ({ ...p, accountId: e.target.value }))}
@@ -212,7 +220,7 @@ export default function TradeEntryModal({
 
           {/* Date + PnL */}
           <div>
-            <label style={labelS}>Date</label>
+            <label style={labelS}>{t('app.trade.fieldDate')}</label>
             <input
               type="date"
               value={form.date}
@@ -221,7 +229,7 @@ export default function TradeEntryModal({
             />
           </div>
           <div>
-            <label style={labelS}>PnL ($)</label>
+            <label style={labelS}>{t('app.trade.fieldPnL')}</label>
             <input
               type="number" step="0.01"
               value={form.pnl}
@@ -234,7 +242,7 @@ export default function TradeEntryModal({
 
           {/* Instrument + Side */}
           <div>
-            <label style={labelS}>Instrument</label>
+            <label style={labelS}>{t('app.trade.fieldInstrument')}</label>
             <input
               list="instrSuggModal"
               value={form.instrument}
@@ -248,48 +256,48 @@ export default function TradeEntryModal({
             </datalist>
           </div>
           <div>
-            <label style={labelS}>Side</label>
+            <label style={labelS}>{t('app.trade.fieldSide')}</label>
             <select
               value={form.side}
               onChange={e => setForm(p => ({ ...p, side: e.target.value }))}
               style={inputS}
             >
               <option value="">—</option>
-              <option value="Long">Long</option>
-              <option value="Short">Short</option>
+              <option value="Long">{t('app.trade.sideLong')}</option>
+              <option value="Short">{t('app.trade.sideShort')}</option>
             </select>
           </div>
 
           {/* Détails approfondis */}
           <div style={{ gridColumn: '1/-1', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
             <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
-              📊 Détails du trade (optionnel)
+              {t('app.trade.sectionDetails')}
             </div>
           </div>
           <div>
-            <label style={labelS}>Prix d'entrée</label>
+            <label style={labelS}>{t('app.trade.fieldEntry')}</label>
             <input type="number" step="0.0001" value={form.entryPrice} onChange={e => setForm(p => ({ ...p, entryPrice: e.target.value }))} placeholder="ex : 5430.25" style={inputS} />
           </div>
           <div>
-            <label style={labelS}>Prix de sortie</label>
+            <label style={labelS}>{t('app.trade.fieldExit')}</label>
             <input type="number" step="0.0001" value={form.exitPrice} onChange={e => setForm(p => ({ ...p, exitPrice: e.target.value }))} placeholder="ex : 5435.50" style={inputS} />
           </div>
           <div>
-            <label style={labelS}>Stop Loss</label>
+            <label style={labelS}>{t('app.trade.fieldStop')}</label>
             <input type="number" step="0.0001" value={form.stopLoss} onChange={e => setForm(p => ({ ...p, stopLoss: e.target.value }))} placeholder="ex : 5425.00" style={inputS} />
           </div>
           <div>
-            <label style={labelS}>Take Profit</label>
+            <label style={labelS}>{t('app.trade.fieldTP')}</label>
             <input type="number" step="0.0001" value={form.takeProfit} onChange={e => setForm(p => ({ ...p, takeProfit: e.target.value }))} placeholder="ex : 5440.00" style={inputS} />
           </div>
 
           {/* Commissions / Slippage */}
           <div>
-            <label style={labelS}>Commissions ($)</label>
+            <label style={labelS}>{t('app.trade.fieldCommissions')}</label>
             <input type="number" step="0.01" min="0" value={form.commissions} onChange={e => setForm(p => ({ ...p, commissions: e.target.value }))} placeholder="ex : 5.40" style={inputS} />
           </div>
           <div>
-            <label style={labelS}>Slippage ($)</label>
+            <label style={labelS}>{t('app.trade.fieldSlippage')}</label>
             <input type="number" step="0.01" min="0" value={form.slippage} onChange={e => setForm(p => ({ ...p, slippage: e.target.value }))} placeholder="ex : 2.50" style={inputS} />
           </div>
 
@@ -340,7 +348,7 @@ export default function TradeEntryModal({
           {/* Tags */}
           <div style={{ gridColumn: '1/-1', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
             <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
-              🏷 Tags du trade (optionnel)
+              {t('app.trade.sectionTags')}
               <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 'normal', color: 'var(--text3)', fontSize: '10px', marginLeft: '6px' }}>
                 — pour analyser ta psycho &amp; tes setups
               </span>
@@ -350,7 +358,7 @@ export default function TradeEntryModal({
 
           {/* Screenshot */}
           <div style={{ gridColumn: '1/-1' }}>
-            <label style={labelS}>📷 Screenshot du graphique</label>
+            <label style={labelS}>{t('app.trade.sectionScreenshot')}</label>
             {form.screenshotUrl ? (
               <div style={{ position: 'relative', marginBottom: '8px' }}>
                 <img
@@ -379,7 +387,7 @@ export default function TradeEntryModal({
 
           {/* Notes */}
           <div style={{ gridColumn: '1/-1' }}>
-            <label style={labelS}>Notes (setup, émotion, erreur…)</label>
+            <label style={labelS}>{t('app.trade.fieldNotes')}</label>
             <textarea
               rows={3}
               value={form.notes}
@@ -398,14 +406,14 @@ export default function TradeEntryModal({
                 onClick={deleteEntry}
                 style={{ ...btnGhost, color: 'var(--red-text)', borderColor: 'var(--red-bg)' }}
               >
-                Supprimer
+                {t('app.trade.btnDelete')}
               </button>
             )}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={onClose} style={btnGhost} disabled={saving}>Annuler</button>
+            <button onClick={onClose} style={btnGhost} disabled={saving}>{t('app.trade.btnCancel')}</button>
             <button onClick={saveEntry} style={btnPrimary} disabled={saving}>
-              {saving ? '...' : entry ? 'Enregistrer' : 'Ajouter'}
+              {saving ? '...' : entry ? t('app.trade.btnSave') : t('app.trade.btnAdd')}
             </button>
           </div>
         </div>

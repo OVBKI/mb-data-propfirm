@@ -1,11 +1,13 @@
 'use client'
-// Header partagé entre les pages annexes (security, docs, integrations, legal).
-// Sticky avec backdrop blur, logo Quantara à gauche, nav + CTAs à droite.
+// Header partagé entre les pages annexes (security, docs, integrations, legal, pricing).
+// Sticky avec backdrop blur, logo Quantara à gauche, nav + CTAs + LanguageSwitcher à droite.
 // Sur mobile : nav devient un dropdown sous la topbar (toggle via burger).
 
 import Link from 'next/link'
 import { useState } from 'react'
 import QLogoIcon from './QLogoIcon'
+import LanguageSwitcher from './LanguageSwitcher'
+import { useT } from './LanguageProvider'
 
 const C = {
   border: 'rgba(255,255,255,0.07)',
@@ -17,15 +19,17 @@ const C = {
   blueLight: '#4d8fff',
 }
 
-const NAV_LINKS = [
-  { href: '/integrations', label: 'PropFirms', key: 'integrations' },
-  { href: '/security',     label: 'Sécurité',  key: 'security' },
-  { href: '/docs',         label: 'Docs',      key: 'docs' },
-  { href: '/#features',    label: 'Fonctionnalités', key: 'features' },
-]
-
 export default function PageHeader({ active }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const t = useT()
+
+  // NAV_LINKS construit dynamiquement pour récupérer les labels traduits à chaque render.
+  const NAV_LINKS = [
+    { href: '/integrations', label: t('pages.header.integrations'), key: 'integrations' },
+    { href: '/security',     label: t('pages.header.security'),     key: 'security' },
+    { href: '/docs',         label: t('pages.header.docs'),         key: 'docs' },
+    { href: '/#features',    label: t('pages.header.features'),     key: 'features' },
+  ]
 
   return (
     <>
@@ -66,6 +70,9 @@ export default function PageHeader({ active }) {
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {/* Language switcher compact — visible desktop ET mobile (sauf très petit) */}
+            <span className="ph-lang"><LanguageSwitcher compact /></span>
+
             {/* CTAs : sur mobile, on cache "Se connecter" pour économiser de la place */}
             <Link href="/app" className="ph-cta-ghost" style={{
               display: 'inline-block', padding: '8px 14px',
@@ -74,7 +81,7 @@ export default function PageHeader({ active }) {
               background: 'transparent', color: C.text,
               border: `1px solid ${C.border2}`,
               whiteSpace: 'nowrap',
-            }}>Se connecter</Link>
+            }}>{t('pages.header.login')}</Link>
             <Link href="/app" style={{
               display: 'inline-block', padding: '8px 16px',
               fontSize: 13, fontWeight: 500, borderRadius: 8,
@@ -82,12 +89,12 @@ export default function PageHeader({ active }) {
               background: C.text, color: '#0a0c10',
               boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
               whiteSpace: 'nowrap',
-            }}>Démarrer →</Link>
+            }}>{t('pages.header.cta')} →</Link>
 
             {/* Burger menu — visible seulement sur mobile */}
             <button
               className="ph-burger"
-              aria-label="Menu"
+              aria-label={t('pages.header.menu')}
               onClick={() => setMobileOpen(o => !o)}
               style={{
                 display: 'none',  // CSS .ph-burger media query force display flex sur mobile
@@ -138,7 +145,8 @@ export default function PageHeader({ active }) {
           .ph-brand-sub { display: none; }
           .ph-cta-ghost { display: none !important; }
         }
-        @media (max-width: 480px) {
+        @media (max-width: 420px) {
+          .ph-lang { display: none; }
           .lp-nav { padding: 12px 14px !important; gap: 8px !important; }
         }
       `}</style>

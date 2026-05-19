@@ -1,4 +1,13 @@
 'use client'
+// TODO i18n v3.1 — Strings encore FR-only dans ce fichier :
+//   • Drawers (firmDrawer, accountDrawer) — labels champs, statuts, hints
+//   • Modals (firmModal, payoutModal, certsModal) — formulaires de création
+//   • Calendrier dashboard (jours Lun/Mar/…, Aujourd'hui, Sélectionnez un jour)
+//   • Section stats sidebar (Taux de réussite, Meilleur payout, Coût moyen…)
+//   • Page Alertes — upcoming bills (jours restants, hints)
+//   • Messages d'erreur catch + toast/notif (acceptable de garder FR pour l'instant)
+// v3 a traduit : top bar, sidebar nav, dashboard hero+stats+empty state, status
+// pills firm cards, analytics hero+stats+empty, alerts header.
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import AuthPage from '../../components/AuthPage'
@@ -31,6 +40,7 @@ import PushNotificationToggle from '../../components/PushNotificationToggle'
 import SpaceBackground from '../../components/dashboard/SpaceBackground'
 import ProfileModal from '../../components/ProfileModal'
 import { FIRM_LOGOS, getFirmLogo } from '../../lib/firmLogos'
+import { useT } from '../../components/LanguageProvider'
 
 
 function toEUR(amount, cur, rates) { return amount*(rates[cur]||1) }
@@ -204,6 +214,7 @@ function AnalyticsCharts({cLabels,cSpent,cPayout,cNet,yLabels,ySpent,yPayout,yNe
 }
 
 export default function Home() {
+  const t = useT()
   const [user,setUser]=useState(null)
   const [loading,setLoading]=useState(true)
   const [firms,setFirms]=useState([])
@@ -738,17 +749,26 @@ export default function Home() {
   // ◫ dashboard / ◐ analytics / ☰ journal / ◊ rules / ◉ alerts / ◳ calendar / ↓ import / ◰ journal sync
   // Items avec `key` = navigation interne (setPage). Items avec `href` = navigation
   // externe vers une autre route Next.js (Link).
+  // Sections en clé constante (utilisée pour grouper + match côté UI). Le label
+  // affiché passe par t() au moment du render.
   const navItems=[
-    {key:'dashboard',icon:'◫',label:'Tableau de bord',section:'Principal'},
-    {key:'analytics',icon:'◐',label:'Analytics',section:'Principal'},
-    {key:'journal',icon:'☰',label:'Journal manuel',section:'Principal'},
-    {key:'trades',icon:'⊞',label:'Trade Log',section:'Principal'},
-    {key:'rules',icon:'◊',label:'Règles firmes',section:'PropFirm'},
-    {key:'alerts',icon:'◉',label:'Alertes',section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
-    {key:'calendar',icon:'◳',label:'Calendrier Éco.',section:'Live Data'},
-    {href:'/app/import-lab',  icon:'↓',label:'Import CSV',   section:'Sync',badgeLabel:'BETA'},
-    {href:'/app/journal-sync',icon:'◰',label:'Journal Sync', section:'Sync'},
+    {key:'dashboard',icon:'◫',label:t('app.sidebar.dashboard'),section:'Principal'},
+    {key:'analytics',icon:'◐',label:t('app.sidebar.analytics'),section:'Principal'},
+    {key:'journal',icon:'☰',label:t('app.sidebar.journal'),section:'Principal'},
+    {key:'trades',icon:'⊞',label:t('app.sidebar.trades'),section:'Principal'},
+    {key:'rules',icon:'◊',label:t('app.sidebar.rules'),section:'PropFirm'},
+    {key:'alerts',icon:'◉',label:t('app.sidebar.alerts'),section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
+    {key:'calendar',icon:'◳',label:t('app.sidebar.calendar'),section:'Live Data'},
+    {href:'/app/import-lab',  icon:'↓',label:t('app.sidebar.importCsv'),   section:'Sync',badgeLabel:t('app.sidebar.badgeBeta')},
+    {href:'/app/journal-sync',icon:'◰',label:t('app.sidebar.journalSync'), section:'Sync'},
   ]
+  // Map section key → label affiché (traduit)
+  const SECTION_LABELS={
+    'Principal': t('app.sidebar.sectionPrincipal'),
+    'Live Data': t('app.sidebar.sectionLiveData'),
+    'PropFirm':  t('app.sidebar.sectionPropFirm'),
+    'Sync':      t('app.sidebar.sectionSync'),
+  }
 
   return(
     <div style={{minHeight:'100vh',background:'transparent',position:'relative'}}>
@@ -758,7 +778,7 @@ export default function Home() {
       <AnnouncementBanner />
       <div className="top-bar" style={{height:'52px',background:'rgba(13,15,20,0.78)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px',position:'sticky',top:0,zIndex:200}}>
         <div style={{display:'flex',alignItems:'center',gap:'14px'}}>
-          <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
+          <button className="nav-burger" aria-label={t('app.topbar.menu')} onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
           <QLogoIcon size={44} color="#4d8fff" />
           <div style={{display:'flex',alignItems:'baseline',gap:'10px'}}>
             <div style={{fontWeight:'700',fontSize:'14px',letterSpacing:'0.14em',color:'var(--text)'}}>QUANTARA</div>
@@ -766,8 +786,8 @@ export default function Home() {
           </div>
         </div>
         <div className="top-bar-actions" style={{display:'flex',gap:'8px',alignItems:'center'}}>
-          <button onClick={exportCSV} style={{...S.btnGhost,fontSize:'12px',padding:'7px 14px'}}>↓ CSV</button>
-          <button onClick={signOut} style={{...S.btnGhost,fontSize:'12px',padding:'7px 14px'}}>Déconnexion</button>
+          <button onClick={exportCSV} style={{...S.btnGhost,fontSize:'12px',padding:'7px 14px'}}>{t('app.topbar.csvExport')}</button>
+          <button onClick={signOut} style={{...S.btnGhost,fontSize:'12px',padding:'7px 14px'}}>{t('app.topbar.logout')}</button>
         </div>
       </div>
 
@@ -775,7 +795,7 @@ export default function Home() {
         <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'210px',flexShrink:0,background:'rgba(13,15,20,0.65)',backdropFilter:'blur(26px)',WebkitBackdropFilter:'blur(26px)',borderRight:'1px solid rgba(255,255,255,0.05)',padding:'18px 0',position:'sticky',top:'52px',height:'calc(100vh - 52px)',overflowY:'auto'}}>
           {['Principal','Live Data','PropFirm','Sync'].map(section=>(
             <div key={section}>
-              <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em'}}>{section}</div>
+              <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em'}}>{SECTION_LABELS[section]}</div>
               {navItems.filter(i=>i.section===section).map(item=>{
                 // Navigation externe (autre route Next.js) → <a href> client-side via Next Link
                 if(item.href){
@@ -800,13 +820,13 @@ export default function Home() {
           {user && isAdmin(user.email) && (
             <div style={{padding:'8px 12px',marginTop:'12px',borderTop:'1px solid var(--border)'}}>
               <a href="/admin" style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'8px',background:'rgba(232,80,74,0.08)',border:'1px solid rgba(232,80,74,0.25)',color:'var(--red-text)',fontSize:'12px',fontWeight:'600',textDecoration:'none'}}>
-                🔧 Admin Panel
+                {t('app.sidebar.adminPanel')}
               </a>
             </div>
           )}
           <div style={{padding:'8px 12px',marginTop:'12px'}}>
             <button onClick={()=>setShowTutorial(true)} style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',width:'100%',background:'rgba(45,111,255,0.08)',border:'1px solid rgba(45,111,255,0.22)',borderRadius:'8px',color:'var(--blue-light)',fontSize:'12px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.14)';e.currentTarget.style.borderColor='rgba(45,111,255,0.4)'}} onMouseLeave={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.22)'}}>
-              <span>🎓</span> Lancer le tutoriel
+              <span>🎓</span> {t('app.sidebar.launchTutorial')}
             </button>
           </div>
           {/* Footer sidebar : carte profil split — clic sur la zone principale = page profil complète,
@@ -832,7 +852,7 @@ export default function Home() {
                 color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
               }}>
-                {profile?.display_name || (profile?.username ? `@${profile.username}` : '⊕ Définir un pseudo')}
+                {profile?.display_name || (profile?.username ? `@${profile.username}` : t('app.sidebar.definePseudo'))}
               </div>
               <div style={{
                 fontSize:'10px',color:'var(--text3)',marginTop:'2px',
@@ -842,7 +862,7 @@ export default function Home() {
             </a>
             <button
               onClick={()=>setShowProfileModal(true)}
-              title="Édition rapide (pseudo, bio)"
+              title={t('app.sidebar.quickEdit')}
               style={{
                 width:36,padding:'9px 0',
                 background:'rgba(255,255,255,0.025)',
@@ -865,10 +885,10 @@ export default function Home() {
               <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'32px',gap:'24px',flexWrap:'wrap'}}>
                 <div>
                   <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
-                    Tableau de bord
+                    {t('app.dashboard.eyebrow')}
                   </div>
                   <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>
-                    Bonjour {profile?.display_name || profile?.username || user?.email?.split('@')[0] || 'Trader'} 👋
+                    {t('app.dashboard.greeting').replace('{name}', profile?.display_name || profile?.username || user?.email?.split('@')[0] || t('app.dashboard.defaultName'))}
                   </h1>
                   <div style={{fontSize:'13px',color:'var(--text3)'}}>{rateInfo}</div>
                 </div>
@@ -876,18 +896,18 @@ export default function Home() {
                   <div style={{display:'flex',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'8px',overflow:'hidden',background:'rgba(255,255,255,0.02)'}}>
                     {['native','eur'].map(c=><button key={c} onClick={()=>setCurrencyMode(c)} style={{padding:'7px 14px',fontSize:'12px',border:'none',background:currency===c?'var(--blue)':'transparent',color:currency===c?'#fff':'var(--text2)',cursor:'pointer',fontWeight:'600',letterSpacing:'0.05em'}}>{c==='native'?'USD':'EUR'}</button>)}
                   </div>
-                  <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 Rechercher..." style={{...S.input,width:'180px'}} />
-                  <button data-tour="add-firm-btn" onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>+ Ajouter PropFirm</button>
+                  <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{...S.input,width:'180px'}} />
+                  <button data-tour="add-firm-btn" onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
                 </div>
               </div>
 
               <div className="stats-5" data-tour="stats-cards" style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'28px'}}>
                 {[
-                  {label:'PropFirms',value:`${firms.length} · ${accts.length} comptes`,small:true},
-                  {label:'Total dépensé',value:currency==='eur'?fmtE(totalSpentEUR):(totalSpentEUR/rates.USD).toFixed(2)+' $',color:'var(--red)'},
-                  {label:'Total payouts',value:currency==='eur'?fmtE(totalPayoutsEUR2):(totalPayoutsEUR2/rates.USD).toFixed(2)+' $',color:'var(--green)'},
-                  {label:'Résultat net',value:currency==='eur'?fmtENet(totalNet):(totalNet>=0?'+':'')+(totalNet/rates.USD).toFixed(2)+' $',color:totalNet>=0?'var(--green)':'var(--red)'},
-                  {label:'Payouts',value:totalPayoutCount},
+                  {label:t('app.dashboard.statPropfirms'),value:`${firms.length} · ${accts.length} ${t('app.dashboard.accountsLabel')}`,small:true},
+                  {label:t('app.dashboard.statTotalSpent'),value:currency==='eur'?fmtE(totalSpentEUR):(totalSpentEUR/rates.USD).toFixed(2)+' $',color:'var(--red)'},
+                  {label:t('app.dashboard.statTotalPayouts'),value:currency==='eur'?fmtE(totalPayoutsEUR2):(totalPayoutsEUR2/rates.USD).toFixed(2)+' $',color:'var(--green)'},
+                  {label:t('app.dashboard.statNetResult'),value:currency==='eur'?fmtENet(totalNet):(totalNet>=0?'+':'')+(totalNet/rates.USD).toFixed(2)+' $',color:totalNet>=0?'var(--green)':'var(--red)'},
+                  {label:t('app.dashboard.statPayouts'),value:totalPayoutCount},
                 ].map((k,i)=>(
                   <div key={i} className="qt-stat-card" style={{...S.card,padding:'18px 18px',transition:'border-color 0.2s, transform 0.2s'}}>
                     <div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'12px',fontWeight:'600'}}>{k.label}</div>
@@ -925,18 +945,18 @@ export default function Home() {
                       })}
                       {activeAccts.length>3&&<div style={{fontSize:'11px',color:'var(--text3)',padding:'4px 0'}}>+{activeAccts.length-3} autre{activeAccts.length-3>1?'s':''}...</div>}
                       <div style={{display:'flex',gap:'6px',marginTop:'10px',flexWrap:'wrap',alignItems:'center'}}>
-                        {challengeCount>0&&<span style={S.badge('Challenge')}>{challengeCount} Challenge{challengeCount>1?'s':''}</span>}
-                        {financedCount>0&&<span style={S.badge('Financé')}>{financedCount} Financé{financedCount>1?'s':''}</span>}
-                        {failedCount>0&&<span style={S.badge('Échoué')}>{failedCount} Échoué{failedCount>1?'s':''}</span>}
+                        {challengeCount>0&&<span style={S.badge('Challenge')}>{challengeCount} {t('app.status.challenge')}{challengeCount>1?'s':''}</span>}
+                        {financedCount>0&&<span style={S.badge('Financé')}>{financedCount} {t('app.status.funded')}{financedCount>1?'s':''}</span>}
+                        {failedCount>0&&<span style={S.badge('Échoué')}>{failedCount} {t('app.status.failed')}{failedCount>1?'s':''}</span>}
                         <button
                           onClick={(e)=>{e.stopPropagation();setCertsFirm(firm)}}
-                          title="Voir / ajouter les diplômes (challenge passed, payouts...)"
+                          title={t('app.dashboard.diplomasTitle')}
                           style={{
                             marginLeft:'auto',fontSize:'11px',padding:'3px 9px',borderRadius:'99px',
                             background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.30)',
                             color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',
                           }}
-                        >🎓 Diplômes</button>
+                        >{t('app.dashboard.diplomas')}</button>
                       </div>
                     </div>
                   )
@@ -944,14 +964,13 @@ export default function Home() {
                 {!firms.length && (
                   <div style={{gridColumn:'1/-1',textAlign:'center',padding:'80px 24px',background:'var(--surface2)',borderRadius:'var(--radius-lg)',border:'1px dashed var(--border2)'}}>
                     <div style={{fontSize:'48px',marginBottom:'16px',opacity:0.6}}>📊</div>
-                    <h2 style={{fontSize:'18px',fontWeight:'700',marginBottom:'8px'}}>Aucune PropFirm pour l'instant</h2>
+                    <h2 style={{fontSize:'18px',fontWeight:'700',marginBottom:'8px'}}>{t('app.dashboard.noPropfirmTitle')}</h2>
                     <p style={{fontSize:'13px',color:'var(--text3)',marginBottom:'20px',maxWidth:'420px',margin:'0 auto 20px',lineHeight:1.6}}>
-                      Ajoute ta première PropFirm (Topstep, Apex, Lucid...) pour commencer à tracker tes comptes,
-                      tes drawdowns trailing et tes payouts en temps réel.
+                      {t('app.dashboard.noPropfirmBody')}
                     </p>
                     <div style={{display:'flex',gap:'10px',justifyContent:'center',flexWrap:'wrap'}}>
-                      <button onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>+ Ajouter ma 1ère PropFirm</button>
-                      <button onClick={()=>{localStorage.removeItem('quantara_onboarding_dismissed');setShowOnboarding(true)}} style={S.btnGhost}>🎮 Voir avec données démo</button>
+                      <button onClick={()=>{setFirmModal(true);setNewFirmName('')}} style={S.btnPrimary}>{t('app.dashboard.btnAddFirstPropfirm')}</button>
+                      <button onClick={()=>{localStorage.removeItem('quantara_onboarding_dismissed');setShowOnboarding(true)}} style={S.btnGhost}>{t('app.dashboard.btnDemoData')}</button>
                     </div>
                   </div>
                 )}
@@ -1085,17 +1104,17 @@ export default function Home() {
           {page==='analytics'&&(
             <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'32px 24px 60px'}}>
               <div style={{marginBottom:'28px'}}>
-                <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>Performance</div>
-                <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>Analytics</h1>
-                <div style={{fontSize:'13px',color:'var(--text3)'}}>Vue agrégée de tes performances trading propfirm</div>
+                <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>{t('app.analytics.eyebrow')}</div>
+                <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{t('app.analytics.title')}</h1>
+                <div style={{fontSize:'13px',color:'var(--text3)'}}>{t('app.analytics.subtitle')}</div>
               </div>
               <div className="stats-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px',marginBottom:'24px'}}>
-                {[{l:'Net global',v:fmtMoneyNet(totalNet),c:totalNet>=0?'var(--green)':'var(--red)'},{l:'Total dépensé',v:fmtMoney(totalSpentEUR),c:'var(--red)'},{l:'Total payouts',v:fmtMoney(totalPayoutsEUR2),c:'var(--green)'},{l:'Payout moyen',v:totalPayoutCount>0?fmtMoney(totalPayoutsEUR2/totalPayoutCount):'—',c:'var(--green)'}].map((k,i)=>(
+                {[{l:t('app.analytics.statNetGlobal'),v:fmtMoneyNet(totalNet),c:totalNet>=0?'var(--green)':'var(--red)'},{l:t('app.analytics.statTotalSpent'),v:fmtMoney(totalSpentEUR),c:'var(--red)'},{l:t('app.analytics.statTotalPayouts'),v:fmtMoney(totalPayoutsEUR2),c:'var(--green)'},{l:t('app.analytics.statAvgPayout'),v:totalPayoutCount>0?fmtMoney(totalPayoutsEUR2/totalPayoutCount):'—',c:'var(--green)'}].map((k,i)=>(
                   <div key={i} style={{...S.card,padding:'18px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'12px',fontWeight:'600'}}>{k.l}</div><div style={{fontSize:'22px',fontWeight:'700',color:k.c,letterSpacing:'-0.015em'}}>{k.v}</div></div>
                 ))}
               </div>
               {!cLabels.length
-                ?<div style={{...S.card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>Ajoutez des comptes pour voir les analytics.</div>
+                ?<div style={{...S.card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>{t('app.analytics.empty')}</div>
                 :<>
                   <AnalyticsCharts cLabels={cLabels} cSpent={cSpent} cPayout={cPayout} cNet={cNet} yLabels={yLabels} ySpent={ySpent} yPayout={yPayout} yNet={yNet} mLabels={mLabels} mSpent={mSpent} mPayout={mPayout} mNet={mNet} />
                   {/* Phase 5 : Overlay multi-comptes — comparer 2-5 equity curves côte à côte */}
@@ -1112,9 +1131,9 @@ export default function Home() {
           {page==='alerts'&&(
             <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'32px 24px 60px'}}>
               <div style={{marginBottom:'28px'}}>
-                <div style={{fontSize:'11px',color:'var(--amber)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>Notifications</div>
-                <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>Alertes</h1>
-                <p style={{fontSize:'13px',color:'var(--text3)',margin:0}}>Rappels de prélèvements mensuels, milestones et opportunités de payout</p>
+                <div style={{fontSize:'11px',color:'var(--amber)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>{t('app.alerts.eyebrow')}</div>
+                <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{t('app.alerts.title')}</h1>
+                <p style={{fontSize:'13px',color:'var(--text3)',margin:0}}>{t('app.alerts.subtitle')}</p>
               </div>
 
               {/* Toggle Push notifications */}

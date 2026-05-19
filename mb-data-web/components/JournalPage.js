@@ -1,4 +1,10 @@
 'use client'
+// TODO i18n v3.1 — Composant non traduit (taille ~1600 lignes).
+// Strings FR encore présentes : header eyebrow/title/subtitle, filtres (Statut,
+// Firme, Compte, Tous), stats (PNL Filtré, Win Rate, Consistency, Jours tradés),
+// calendrier (Lun/Mar/…, Aujourd'hui), libellés CSV export, toasts, modal.
+// La traduction se fera via les props `pageEyebrow`/`pageTitle`/`pageSubtitleSuffix`
+// passées par le parent + un useT() local pour les filtres et stats internes.
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'

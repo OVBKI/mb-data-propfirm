@@ -3,6 +3,7 @@ import { useState } from 'react'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import Reveal from '../../components/Reveal'
+import { useT, useLanguage } from '../../components/LanguageProvider'
 
 const C = {
   bg: '#0d0f14',
@@ -21,10 +22,10 @@ const C = {
 }
 
 // === SECTIONS DOCUMENTATION ===
-// FAQ organisée par thème pour qu'un visiteur trouve sa réponse rapidement.
-// Mise à jour après l'ajout des features import-lab, journal-sync, profile,
-// pseudo login (session mai 2026).
-const SECTIONS = [
+// Pour le contenu détaillé FAQ + roadmap, on utilise un bloc locale-aware
+// plutôt que d'éparpiller en clés i18n granulaires (option B du brief).
+
+const SECTIONS_FR = [
   {
     id: 'getting-started',
     title: 'Démarrage rapide',
@@ -95,9 +96,81 @@ const SECTIONS = [
   },
 ]
 
-// === ROADMAP ===
-// Updated mai 2026 après ajout import-lab + journal-sync + profile + pseudo + multi-langue prévu
-const ROADMAP = [
+const SECTIONS_EN = [
+  {
+    id: 'getting-started',
+    title: 'Quick start',
+    items: [
+      { q: 'How do I create my first PropFirm account?', a: 'Dashboard → "+ Add PropFirm" → pick your firm (Topstep, Lucid, Apex…) or type a custom name → add your first account with its size (50K, 100K…). Rules (drawdown, profit target, min days) are auto-filled.' },
+      { q: 'Which currencies are supported?', a: 'USD, EUR, GBP, CHF. Conversions happen automatically. You can switch between native USD and EUR via the toggle at the top right of the dashboard.' },
+      { q: 'Do I need a credit card to sign up?', a: 'No. Quantara is free during beta — no card required.' },
+      { q: 'Can I log in with my username instead of email?', a: 'Yes. Set your username in /app/profile → "Edit profile". Then you can log in with username OR email — your choice.' },
+    ],
+  },
+  {
+    id: 'import-csv',
+    title: 'Rithmic CSV import (new)',
+    items: [
+      { q: 'How do I import my trades from Rithmic?', a: 'Go to /app/import-lab (from the SYNC sidebar). Two tabs: (1) "Account state" — drag a Trader Dashboard export, accounts are auto-created with balance/DD/status. (2) "Trades" — drag a Performance Statement export to add trades to existing accounts.' },
+      { q: 'Which CSV format should I export from Rithmic?', a: 'In R|Trader Pro → Performance → Export CSV (for detailed trades). In Trader Dashboard → Export (for account balance/DD/status). Both are supported.' },
+      { q: 'Where do I see my imported trades?', a: 'In /app/journal-sync — separated from the manual journal to avoid mixing them. You\'ll find firm/account filters, PnL calendar, equity + DD curves, and full tabular history.' },
+      { q: 'What if I re-import the same CSV multiple times?', a: 'The system automatically dedupes via a [rithmic:ENTRY_ID/EXIT_ID] marker in the trade notes. No duplicates created.' },
+      { q: 'Do imported trades show up in the manual journal?', a: 'No, they are strictly isolated. Manual journal = manually entered accounts/trades. Sync journal = CSV-imported accounts/trades. The two never mix.' },
+    ],
+  },
+  {
+    id: 'journal',
+    title: 'Manual trading journal',
+    items: [
+      { q: 'How do I log a trade?', a: 'Journal → "+ Add trade" (top right or on each account card). Enter date, PnL, optional instrument. You can also add entry/exit prices, SL/TP, and a chart screenshot.' },
+      { q: "Why doesn't my balance reset when I move to Funded?", a: 'Quantara resets the balance automatically when you change an account status from Challenge → Funded. You can also do it manually with the "↻ Reset balance" button on the account card.' },
+      { q: 'What are "Validated days"?', a: 'The number of days whose net PnL hits the minimum required by the PropFirm to count as a valid trading day (e.g. Lucid requires $150 min/day). Different from a simple traded-days counter.' },
+      { q: 'How does consistency work?', a: "It's the ratio best-day ÷ total positive gains. Lower is better. Most PropFirms require ≤ 30-50% to validate payouts. Quantara computes it automatically.",
+      },
+    ],
+  },
+  {
+    id: 'payouts',
+    title: 'Payouts & profit split',
+    items: [
+      { q: 'What amount should I enter for a payout?', a: 'The NET amount you receive on your bank account (after the profit split). Quantara computes the gross amount automatically (= net / split%) to deduct from your simulated balance. E.g. you receive $1,800 on Lucid 90/10 → balance drops by $2,000.' },
+      { q: 'Why does my balance drop by more than I received?', a: 'Because Quantara deducts the GROSS amount (what actually leaves the funded account), not the net (what you receive). The difference is the PropFirm\'s share. Consistent with what happens on your account at the firm.' },
+      { q: 'How does Quantara know my profit split?', a: "It's defined in the firm rules (e.g. Lucid = 90% trader, Apex = 100% first $25K then 90/10). See the Rules page in the app for the full list.",
+      },
+    ],
+  },
+  {
+    id: 'rules',
+    title: 'PropFirm rules',
+    items: [
+      { q: 'Which PropFirms are supported?', a: '10 firms pre-configured: Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite. See /integrations for the details (CSV sync status vs manual entry).' },
+      { q: 'My rules are out of date, is that normal?', a: 'PropFirms change their rules regularly. Quantara does its best to stay up to date. If you see an inconsistency, you can always edit the rules of an individual account directly in the create/edit form. Otherwise, report it to contact@quantara.tech.' },
+      { q: 'How do I know if I\'m within the trailing drawdown rules?', a: 'The dashboard displays your current balance and the live-computed DD threshold for each account. Journal equity curves show the trailing DD line (static, EOD or intraday per firm).' },
+    ],
+  },
+  {
+    id: 'profile',
+    title: 'Profile & social (new)',
+    items: [
+      { q: 'What is the Profile page for?', a: '/app/profile lets you set your username (for login), display name, bio, country and trading style. Also shows your aggregated public stats (total payouts, win rate, funded accounts, traded days).' },
+      { q: 'What is the "public profile" toggle?', a: 'If enabled, your profile becomes visible to other traders (URL /u/[your-username]) — feature in development. Your detailed trades and individual accounts always stay private.' },
+      { q: 'Will there be a social network for traders?', a: "Yes, on the roadmap (Q4 2026). You'll be able to post trades, share payouts, follow other traders, and comment on their results. The feed will be reserved for public profiles.",
+      },
+    ],
+  },
+  {
+    id: 'security',
+    title: 'Security & data',
+    items: [
+      { q: 'Is my data private?', a: 'Yes. Quantara uses Supabase Row Level Security policies: every user can ONLY see/modify their own accounts, trades, payouts and profile. EU hosting (Vercel + Supabase Frankfurt).' },
+      { q: 'Do you have access to my broker APIs?', a: 'No. Quantara does not connect to your broker. You import manually (drag CSV) or enter by hand. We store no broker token/password.' },
+      { q: 'If I delete my account, what happens to my data?', a: 'All your data (firms, accounts, trades, payouts, profile) is deleted in cascade via Postgres ON DELETE CASCADE. Retention: 0 days after deletion.' },
+      { q: 'And the captcha?', a: 'Cloudflare Turnstile on signup/login to block bots. No user tracking.' },
+    ],
+  },
+]
+
+const ROADMAP_FR = [
   {
     quarter: 'Fait — Mai 2026',
     status: 'done',
@@ -153,6 +226,62 @@ const ROADMAP = [
   },
 ]
 
+const ROADMAP_EN = [
+  {
+    quarter: 'Done — May 2026',
+    status: 'done',
+    items: [
+      'Rithmic CSV import (Performance + Trader Dashboard)',
+      'Sync journal separated from manual journal',
+      'User profile + username login',
+      'Smart multi-strategy auto-mapping',
+      'Auto-rename accounts (PRO 7, EVAL 17)',
+      'Trade dedup via rithmic marker',
+      'Auto-detect liquidated accounts (🔥 badge)',
+      'Monthly PnL heatmap calendar',
+      'Equity curves with live trailing DD line',
+    ],
+  },
+  {
+    quarter: 'Q3 2026 (Jul-Sep)',
+    status: 'next',
+    items: [
+      'ProjectX API integration (TopstepX, Tradeify, TPT, MFFU)',
+      'Stripe paywall + freemium/pro plans',
+      'PropFirm affiliates on the comparator',
+      'Multi-language: English + Spanish',
+      'Transactional emails (welcome, monthly recap)',
+      'Full mobile responsive (audit + fixes)',
+      'Public profile page /u/[username]',
+    ],
+  },
+  {
+    quarter: 'Q4 2026 (Oct-Dec)',
+    status: 'planned',
+    items: [
+      'AI Coach (trading pattern analysis + Claude insights)',
+      'Active social network: follows, posts, leaderboard',
+      'Advanced heatmaps (by hour, instrument, session)',
+      'Monthly PDF export (useful for taxes)',
+      'Proactive push notifications (DD warning, payout available)',
+      'Per-session mood tracker',
+      'Discord integration (automatic role based on stats)',
+    ],
+  },
+  {
+    quarter: '2027 and beyond',
+    status: 'wishlist',
+    items: [
+      'Direct Rithmic API (no CSV)',
+      'Tradovate / NinjaTrader API',
+      'Crypto futures module (Binance, Bybit)',
+      'Propfirm courses and training',
+      'Native iOS/Android mobile app',
+      'Strategy marketplace (anonymized)',
+    ],
+  },
+]
+
 function ChevronIcon({ open }) {
   return (
     <span style={{
@@ -193,6 +322,12 @@ function FaqItem({ q, a }) {
 }
 
 export default function DocsPage() {
+  const t = useT()
+  const { locale } = useLanguage()
+  const SECTIONS = locale === 'en' ? SECTIONS_EN : SECTIONS_FR
+  const ROADMAP = locale === 'en' ? ROADMAP_EN : ROADMAP_FR
+  const badges = t('pages.docs.statusBadges')
+
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader active="docs" />
@@ -202,13 +337,13 @@ export default function DocsPage() {
         <section style={{ padding: '80px 24px 40px', textAlign: 'center', maxWidth: 800, margin: '0 auto' }}>
           <Reveal>
             <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 18 }}>
-              Documentation
+              {t('pages.docs.eyebrow')}
             </div>
             <h1 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', margin: 0, marginBottom: 18 }}>
-              Comment ça marche, <span style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.green})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>tout en clair</span>
+              {t('pages.docs.titleA')} <span style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.green})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('pages.docs.titleB')}</span>
             </h1>
             <p style={{ fontSize: 16, color: C.text2, lineHeight: 1.6 }}>
-              Tout ce qu'il faut savoir pour démarrer, importer tes CSV, comprendre les calculs de drawdown trailing et payouts.
+              {t('pages.docs.subtitle')}
             </p>
           </Reveal>
         </section>
@@ -218,10 +353,10 @@ export default function DocsPage() {
           <Reveal>
             <div style={{ marginBottom: 32 }}>
               <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
-                FAQ
+                {t('pages.docs.faqEyebrow')}
               </div>
               <h2 style={{ fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: '-0.015em' }}>
-                Questions fréquentes
+                {t('pages.docs.faqHeading')}
               </h2>
             </div>
 
@@ -255,23 +390,23 @@ export default function DocsPage() {
           <Reveal>
             <div style={{ paddingTop: 40, marginBottom: 32 }}>
               <div style={{ fontSize: 11, color: C.green, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
-                Roadmap
+                {t('pages.docs.roadmapEyebrow')}
               </div>
               <h2 style={{ fontSize: 26, fontWeight: 700, margin: 0, marginBottom: 6, letterSpacing: '-0.015em' }}>
-                Ce qui est prévu
+                {t('pages.docs.roadmapHeading')}
               </h2>
               <p style={{ fontSize: 13, color: C.text3, margin: 0 }}>
-                Roadmap publique mise à jour mai 2026. Les features Q3 et après peuvent bouger selon priorités.
+                {t('pages.docs.roadmapSub')}
               </p>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {ROADMAP.map(q => {
                 const tone = {
-                  done:     { color: C.green,  bg: 'rgba(29,184,122,0.08)', border: 'rgba(29,184,122,0.30)', label: '✓ Fait' },
-                  next:     { color: C.blueLight, bg: 'rgba(45,111,255,0.08)', border: 'rgba(45,111,255,0.30)', label: '⚡ En cours' },
-                  planned:  { color: C.amber,  bg: 'rgba(250,199,117,0.08)', border: 'rgba(250,199,117,0.30)', label: '📅 Planifié' },
-                  wishlist: { color: C.text3,  bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.10)', label: '✨ Wishlist' },
+                  done:     { color: C.green,    bg: 'rgba(29,184,122,0.08)', border: 'rgba(29,184,122,0.30)', label: badges?.done || '✓' },
+                  next:     { color: C.blueLight, bg: 'rgba(45,111,255,0.08)', border: 'rgba(45,111,255,0.30)', label: badges?.next || '⚡' },
+                  planned:  { color: C.amber,   bg: 'rgba(250,199,117,0.08)', border: 'rgba(250,199,117,0.30)', label: badges?.planned || '📅' },
+                  wishlist: { color: C.text3,   bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.10)', label: badges?.wishlist || '✨' },
                 }[q.status]
                 return (
                   <div key={q.quarter} style={{
@@ -317,10 +452,10 @@ export default function DocsPage() {
         <section style={{ padding: '40px 24px 80px', maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
           <Reveal>
             <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, marginBottom: 12, letterSpacing: '-0.015em' }}>
-              Une question pas dans la FAQ ?
+              {t('pages.docs.ctaTitle')}
             </h2>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 20 }}>
-              Écris à <a href="mailto:contact@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none' }}>contact@quantara.tech</a> ou rejoins le Discord (bientôt). Réponse sous 48h.
+              {t('pages.docs.ctaBodyBefore')} <a href="mailto:contact@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none' }}>contact@quantara.tech</a> {t('pages.docs.ctaBodyAfter')}
             </p>
           </Reveal>
         </section>

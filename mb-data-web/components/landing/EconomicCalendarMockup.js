@@ -8,6 +8,7 @@
 //   events groupés par jour : Heure · Devise (flag) · Événement · Réel · Prévision · Précédent · Impact
 
 import { ECON_DAYS, COLORS } from './mockData'
+import { useT } from '../LanguageProvider'
 
 const C = {
   ...COLORS,
@@ -20,6 +21,12 @@ const IMPACT = {
   High:   { dot: C.red,    text: C.red,    bg: 'rgba(232,80,74,0.03)' },
   Medium: { dot: C.amber,  text: C.amber,  bg: 'transparent' },
   Low:    { dot: C.text3,  text: C.text3,  bg: 'transparent' },
+}
+
+// Map label FR du jour (source mockData) → key i18n
+const DAY_LABEL_I18N = {
+  "Aujourd'hui · Mar 18 mai": 'mockups.calendar.dayTodayLabel',
+  'Demain · Mer 19 mai':      'mockups.calendar.dayTomorrowLabel',
 }
 
 // Events mockés viennent de mockData (aujourd'hui = mardi 18 mai)
@@ -42,8 +49,13 @@ function FlagBadge({ cc, cur }) {
   )
 }
 
-function ImpactDot({ impact }) {
+function ImpactDot({ impact, t }) {
   const s = IMPACT[impact] || IMPACT.Low
+  const label = impact === 'High'
+    ? t('mockups.calendar.impactHighLabel')
+    : impact === 'Medium'
+      ? t('mockups.calendar.impactMediumLabel')
+      : t('mockups.calendar.impactLowLabel')
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -55,7 +67,7 @@ function ImpactDot({ impact }) {
         background: s.dot,
         boxShadow: impact === 'High' ? `0 0 6px ${s.dot}` : 'none',
       }} />
-      {impact === 'High' ? 'Fort' : impact === 'Medium' ? 'Moyen' : 'Faible'}
+      {label}
     </span>
   )
 }
@@ -82,6 +94,7 @@ function StatVal({ label, value, isActual }) {
 }
 
 export default function EconomicCalendarMockup() {
+  const t = useT()
   return (
     <div style={{
       background: '#0a0c10',
@@ -99,20 +112,20 @@ export default function EconomicCalendarMockup() {
             fontSize: 10, color: C.amber,
             letterSpacing: '0.16em', textTransform: 'uppercase',
             fontWeight: 600, marginBottom: 8,
-          }}>Calendrier Économique</div>
+          }}>{t('mockups.calendar.eyebrow')}</div>
           <h1 style={{
             fontSize: 22, fontWeight: 700, margin: 0,
             letterSpacing: '-0.025em', lineHeight: 1.1,
-          }}>Calendrier Économique</h1>
+          }}>{t('mockups.calendar.title')}</h1>
           <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
-            Données Finnhub · heures Paris (CET) — actualisé toutes les minutes · MàJ : il y a 32s
+            {t('mockups.calendar.subtitle')}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Langue toggle */}
           <Toggle items={['FR', 'EN', 'ES']} active="FR" />
           {/* Période toggle */}
-          <Toggle items={['Cette semaine', 'Semaine prochaine']} active="Cette semaine" pill />
+          <Toggle items={[t('mockups.calendar.thisWeek'), t('mockups.calendar.nextWeek')]} active={t('mockups.calendar.thisWeek')} pill />
         </div>
       </div>
 
@@ -128,18 +141,18 @@ export default function EconomicCalendarMockup() {
           <span style={{
             fontSize: 9, fontWeight: 700, color: C.text3,
             textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60,
-          }}>Impact</span>
-          <FilterPill label="Toutes" active />
-          <FilterPill label="🔴 Fort" />
-          <FilterPill label="🟠 Moyen" />
-          <FilterPill label="🟡 Faible" />
+          }}>{t('mockups.calendar.filterImpact')}</span>
+          <FilterPill label={t('mockups.calendar.pillAll')} active />
+          <FilterPill label={t('mockups.calendar.impactHigh')} />
+          <FilterPill label={t('mockups.calendar.impactMedium')} />
+          <FilterPill label={t('mockups.calendar.impactLow')} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{
             fontSize: 9, fontWeight: 700, color: C.text3,
             textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60,
-          }}>Devises</span>
-          <FilterPill label="Toutes" active />
+          }}>{t('mockups.calendar.filterCurrencies')}</span>
+          <FilterPill label={t('mockups.calendar.pillAll')} active />
           <FilterPill label="USD" />
           <FilterPill label="EUR" />
           <FilterPill label="GBP" />
@@ -148,17 +161,20 @@ export default function EconomicCalendarMockup() {
       </div>
 
       {/* Events grouped by day */}
-      {DAYS.map((day, di) => (
+      {DAYS.map((day, di) => {
+        const dayKey = DAY_LABEL_I18N[day.label]
+        const dayLabel = dayKey ? t(dayKey) : day.label
+        return (
         <div key={di} style={{ marginBottom: 14 }}>
           <div style={{
             display: 'flex', alignItems: 'baseline', gap: 8,
             marginBottom: 8, paddingLeft: 4,
           }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>{day.label}</span>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>{dayLabel}</span>
             <span style={{
               fontSize: 9, color: C.text3, fontFamily: mono,
               letterSpacing: '0.1em', textTransform: 'uppercase',
-            }}>· {day.events.length} évènements</span>
+            }}>· {day.events.length} {t('mockups.calendar.eventsLabel')}</span>
           </div>
           <div style={{
             background: C.surface,
@@ -181,15 +197,16 @@ export default function EconomicCalendarMockup() {
                 <span style={{
                   fontSize: 12, color: C.text, fontWeight: 500,
                 }}>{e.name}</span>
-                <ImpactDot impact={e.impact} />
-                <StatVal label="Réel"      value={e.actual} isActual />
-                <StatVal label="Prévision" value={e.forecast} />
-                <StatVal label="Précédent" value={e.previous} />
+                <ImpactDot impact={e.impact} t={t} />
+                <StatVal label={t('mockups.calendar.colReal')}     value={e.actual} isActual />
+                <StatVal label={t('mockups.calendar.colForecast')} value={e.forecast} />
+                <StatVal label={t('mockups.calendar.colPrevious')} value={e.previous} />
               </div>
             ))}
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

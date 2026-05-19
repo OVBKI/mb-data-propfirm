@@ -8,6 +8,7 @@ import Link from 'next/link'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import Reveal from '../../components/Reveal'
+import { useT } from '../../components/LanguageProvider'
 
 const C = {
   bg: '#0d0f14',
@@ -25,36 +26,29 @@ const C = {
 }
 
 // Le compteur de places restantes pour Lifetime est statique pour l'instant.
-// À terme on pourra l'alimenter depuis Supabase (count plan='lifetime').
 const LIFETIME_TOTAL = 100
-const LIFETIME_TAKEN = 0 // l'user peut bump ce nombre quand des places partent
-
-const FAQ = [
-  {
-    q: 'Pourquoi Quantara est gratuit aujourd\'hui ?',
-    a: 'On est en beta publique. L\'objectif : valider le produit avec de vrais traders PropFirm avant de monétiser. Aucun risque de te retrouver bloqué·e demain — tu garderas un accès gratuit à toutes les fonctions actuelles à vie, même quand le Pro sortira.',
-  },
-  {
-    q: 'Quand le plan Pro sort ?',
-    a: 'Q3 2026 (juillet-septembre). Il ajoutera la sync API broker auto (Rithmic puis ProjectX), des alertes push avancées, l\'analytics multi-comptes consolidée, l\'export PDF mensuel et le support prioritaire.',
-  },
-  {
-    q: 'Que devient mon historique si je passe Pro ?',
-    a: 'Tout est conservé. Le passage Free → Pro débloque juste de nouvelles fonctions sans toucher à tes données. Et si tu rétrogrades, tu gardes l\'accès à tout ce que tu as déjà loggé.',
-  },
-  {
-    q: 'Je peux annuler quand je veux ?',
-    a: 'Oui, abonnement mensuel résiliable en un clic depuis ton dashboard. Le Lifetime (one-time) n\'a évidemment rien à annuler — c\'est à vie. Pas de carte bancaire requise pour s\'inscrire à la waitlist.',
-  },
-]
+const LIFETIME_TAKEN = 0
 
 export default function PricingPage() {
+  const t = useT()
   const [waitlistPlan, setWaitlistPlan] = useState('pro')
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [submitResult, setSubmitResult] = useState(null) // {type: 'ok'|'error', msg: string}
+  const [submitResult, setSubmitResult] = useState(null)
 
   const lifetimeRemaining = Math.max(0, LIFETIME_TOTAL - LIFETIME_TAKEN)
+
+  // Récupération des listes de features depuis i18n (objet retourné par translate).
+  const freeFeatures = t('pages.pricing.planFree.features')
+  const proFeatures = t('pages.pricing.planPro.features')
+  const lifetimeBaseFeatures = t('pages.pricing.planLifetime.features')
+  const lifetimeLimitTpl = t('pages.pricing.planLifetime.featureLimitTemplate')
+  // Concatène la feature dynamique avec le nombre de places à vie.
+  const lifetimeFeatures = Array.isArray(lifetimeBaseFeatures)
+    ? [...lifetimeBaseFeatures, String(lifetimeLimitTpl).replace('{n}', LIFETIME_TOTAL)]
+    : []
+
+  const faqItems = t('pages.pricing.faq.items')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -69,15 +63,15 @@ export default function PricingPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setSubmitResult({ type: 'error', msg: data?.error || 'Erreur — réessaie dans un instant.' })
+        setSubmitResult({ type: 'error', msg: data?.error || t('pages.pricing.waitlist.errorGeneric') })
       } else if (data.alreadyRegistered) {
-        setSubmitResult({ type: 'ok', msg: 'Tu es déjà inscrit·e ✓ On te tient au courant.' })
+        setSubmitResult({ type: 'ok', msg: t('pages.pricing.waitlist.already') })
       } else {
-        setSubmitResult({ type: 'ok', msg: 'Inscrit·e ✓ Check tes mails pour la confirmation.' })
+        setSubmitResult({ type: 'ok', msg: t('pages.pricing.waitlist.success') })
         setEmail('')
       }
     } catch (err) {
-      setSubmitResult({ type: 'error', msg: 'Erreur réseau — réessaie.' })
+      setSubmitResult({ type: 'error', msg: t('pages.pricing.waitlist.errorNetwork') })
     } finally {
       setSubmitting(false)
     }
@@ -85,7 +79,6 @@ export default function PricingPage() {
 
   function selectPlanFromCard(plan) {
     setWaitlistPlan(plan)
-    // Scroll vers le formulaire
     if (typeof window !== 'undefined') {
       const el = document.getElementById('waitlist-form')
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -101,14 +94,14 @@ export default function PricingPage() {
         <section style={{ padding: '80px 24px 50px', textAlign: 'center', maxWidth: 760, margin: '0 auto' }}>
           <Reveal>
             <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 18 }}>
-              Tarifs
+              {t('pages.pricing.eyebrow')}
             </div>
             <h1 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', margin: 0, marginBottom: 18 }}>
-              <span style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.green})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Gratuit aujourd'hui</span>,<br />
-              <span style={{ color: C.text }}>50% off à vie demain</span>
+              <span style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.green})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('pages.pricing.titleA')}</span>,<br />
+              <span style={{ color: C.text }}>{t('pages.pricing.titleB')}</span>
             </h1>
             <p style={{ fontSize: 16, color: C.text2, lineHeight: 1.6, maxWidth: 600, margin: '0 auto' }}>
-              Quantara reste gratuit pendant la beta. Inscris-toi à la waitlist pour avoir <strong style={{ color: C.text }}>50% off à vie</strong> sur le plan Pro quand il sortira.
+              {t('pages.pricing.subtitle')} <strong style={{ color: C.text }}>{t('pages.pricing.subtitleHighlight')}</strong> {t('pages.pricing.subtitleSuffix')}
             </p>
           </Reveal>
         </section>
@@ -124,69 +117,50 @@ export default function PricingPage() {
             }}>
               {/* FREE */}
               <PricingCard
-                badge="Disponible maintenant"
+                badge={t('pages.pricing.planFree.badge')}
                 badgeColor={C.green}
-                title="Free"
-                price="0€"
-                priceSub="à vie pendant la beta"
-                description="Tout ce qu'il faut pour traquer ton activité PropFirm et survivre tes premiers payouts."
-                features={[
-                  'Tracking illimité comptes & trades',
-                  'Import CSV manuel (Rithmic)',
-                  'Calendrier trading + journal',
-                  'Comparateur PropFirms complet',
-                  'Support communauté Discord',
-                ]}
+                title={t('pages.pricing.planFree.name')}
+                price={t('pages.pricing.planFree.price')}
+                priceSub={t('pages.pricing.planFree.priceSub')}
+                description={t('pages.pricing.planFree.description')}
+                features={freeFeatures}
                 cta={
                   <Link href="/auth?mode=signup" style={ctaPrimaryStyle()}>
-                    Disponible maintenant →
+                    {t('pages.pricing.planFree.cta')}
                   </Link>
                 }
               />
 
-              {/* PRO (recommandée — gradient bleu) */}
+              {/* PRO */}
               <PricingCard
-                badge="Recommandé · Q3 2026"
+                badge={t('pages.pricing.planPro.badge')}
                 badgeColor={C.blueLight}
                 highlighted="blue"
-                title="Pro"
-                price="9€"
-                priceSub="/mois · ou 89€/an (-20%)"
-                description="Pour les traders sérieux qui veulent la sync auto et l'analytics multi-comptes."
-                features={[
-                  'Tout le plan Free, plus :',
-                  'Sync API Rithmic automatique',
-                  'Alertes push avancées (drawdown, payout, breach)',
-                  'Analytics multi-comptes consolidée',
-                  'Export PDF mensuel auto',
-                  'Support prioritaire (réponse < 24h)',
-                ]}
+                title={t('pages.pricing.planPro.name')}
+                price={t('pages.pricing.planPro.price')}
+                priceSub={t('pages.pricing.planPro.priceSub')}
+                description={t('pages.pricing.planPro.description')}
+                features={proFeatures}
                 cta={
                   <button onClick={() => selectPlanFromCard('pro')} style={ctaPrimaryStyle()}>
-                    Rejoindre la waitlist
+                    {t('pages.pricing.planPro.cta')}
                   </button>
                 }
               />
 
-              {/* LIFETIME (early bird) */}
+              {/* LIFETIME */}
               <PricingCard
-                badge={`Early bird · ${lifetimeRemaining}/${LIFETIME_TOTAL} places`}
+                badge={`${t('pages.pricing.planLifetime.badgePrefix')} ${lifetimeRemaining}/${LIFETIME_TOTAL} ${t('pages.pricing.planLifetime.badgeSuffix')}`}
                 badgeColor={C.amber}
                 highlighted="lifetime"
-                title="Lifetime"
-                price="99€"
-                priceSub="one-time · à vie"
-                description="Pour les 100 premiers users. Toutes les fonctions Pro pour toujours, jamais d'abo."
-                features={[
-                  'Tout le plan Pro, à vie',
-                  'Accès aux futures features sans surcoût',
-                  'Badge "Founding member" sur Discord',
-                  'Influence directe sur la roadmap',
-                  `Limité à ${LIFETIME_TOTAL} places — first come, first served`,
-                ]}
+                title={t('pages.pricing.planLifetime.name')}
+                price={t('pages.pricing.planLifetime.price')}
+                priceSub={t('pages.pricing.planLifetime.priceSub')}
+                description={t('pages.pricing.planLifetime.description')}
+                features={lifetimeFeatures}
                 cta={
                   <button onClick={() => selectPlanFromCard('lifetime')} style={ctaPrimaryStyle('lifetime')}>
-                    Rejoindre la waitlist VIP
+                    {t('pages.pricing.planLifetime.cta')}
                   </button>
                 }
               />
@@ -205,27 +179,26 @@ export default function PricingPage() {
               boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
             }}>
               <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, marginBottom: 8, letterSpacing: '-0.015em', textAlign: 'center' }}>
-                Rejoins la waitlist
+                {t('pages.pricing.waitlist.title')}
               </h2>
               <p style={{ fontSize: 13, color: C.text2, margin: 0, marginBottom: 22, lineHeight: 1.6, textAlign: 'center' }}>
-                Aucune carte bancaire. On t'envoie un mail quand le plan est dispo, c'est tout.
+                {t('pages.pricing.waitlist.subtitle')}
               </p>
 
               <form onSubmit={handleSubmit}>
-                {/* Plan radio */}
                 <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
                   <PlanRadio
                     value="pro"
-                    label="Pro"
-                    sub="9€/mois — 50% off à vie"
+                    label={t('pages.pricing.waitlist.radioProLabel')}
+                    sub={t('pages.pricing.waitlist.radioProSub')}
                     checked={waitlistPlan === 'pro'}
                     onChange={() => setWaitlistPlan('pro')}
                     color={C.blueLight}
                   />
                   <PlanRadio
                     value="lifetime"
-                    label="Lifetime"
-                    sub="99€ une fois — early bird"
+                    label={t('pages.pricing.waitlist.radioLifetimeLabel')}
+                    sub={t('pages.pricing.waitlist.radioLifetimeSub')}
                     checked={waitlistPlan === 'lifetime'}
                     onChange={() => setWaitlistPlan('lifetime')}
                     color={C.amber}
@@ -235,7 +208,7 @@ export default function PricingPage() {
                 <input
                   type="email"
                   required
-                  placeholder="ton@email.com"
+                  placeholder={t('pages.pricing.waitlist.emailPlaceholder')}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   disabled={submitting}
@@ -272,7 +245,7 @@ export default function PricingPage() {
                     opacity: (!email || submitting) ? 0.7 : 1,
                   }}
                 >
-                  {submitting ? 'Inscription…' : 'M\'inscrire'}
+                  {submitting ? t('pages.pricing.waitlist.submitting') : t('pages.pricing.waitlist.submit')}
                 </button>
 
                 {submitResult && (
@@ -299,14 +272,14 @@ export default function PricingPage() {
           <Reveal>
             <div style={{ paddingTop: 48 }}>
               <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8, textAlign: 'center' }}>
-                FAQ Pricing
+                {t('pages.pricing.faq.eyebrow')}
               </div>
               <h2 style={{ fontSize: 26, fontWeight: 700, margin: 0, marginBottom: 32, letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Tes questions, nos réponses
+                {t('pages.pricing.faq.heading')}
               </h2>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {FAQ.map((item, i) => (
+                {Array.isArray(faqItems) && faqItems.map((item, i) => (
                   <details key={i} style={{
                     padding: '18px 20px',
                     background: C.surface,
@@ -394,7 +367,7 @@ function PricingCard({ badge, badgeColor, highlighted, title, price, priceSub, d
       <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.55, margin: 0 }}>{description}</p>
 
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {features.map((f, i) => (
+        {(features || []).map((f, i) => (
           <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: C.text, lineHeight: 1.5 }}>
             <span style={{ color: isLifetime ? C.amber : C.green, flexShrink: 0, fontWeight: 700 }}>✓</span>
             <span>{f}</span>

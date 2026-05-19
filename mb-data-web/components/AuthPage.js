@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase, setSessionPersistence } from '../lib/supabase'
 import QLogoIcon from './QLogoIcon'
+import { useT } from './LanguageProvider'
 
 // Site key publique Turnstile — exposée côté client (pas un secret)
 // La secret key correspondante est configurée dans Supabase Auth → CAPTCHA Protection
@@ -13,6 +14,7 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
 const EMAIL_REGEX = /@/
 
 export default function AuthPage({ onAuth }) {
+  const t = useT()
   const [mode, setMode]       = useState('login') // login | register
   // En mode login : peut contenir un email OU un pseudo
   // En mode register : email uniquement
@@ -274,7 +276,7 @@ export default function AuthPage({ onAuth }) {
                 color: mode === m ? 'var(--blue-light)' : 'var(--text2)',
                 transition: 'all 0.15s', fontFamily: 'inherit',
               }}>
-              {m === 'login' ? 'Connexion' : 'Créer un compte'}
+              {m === 'login' ? t('app.auth.login') : t('app.auth.register')}
             </button>
           ))}
         </div>
@@ -282,13 +284,13 @@ export default function AuthPage({ onAuth }) {
         <form onSubmit={handleSubmit} autoComplete="on">
           <div style={{ marginBottom: '14px' }}>
             <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
-              {mode === 'login' ? 'Email ou pseudo' : 'Email'}
+              {mode === 'login' ? t('app.auth.emailOrUsername') : t('app.auth.email')}
             </label>
             <input
               type={mode === 'login' ? 'text' : 'email'}
               value={emailOrUsername} onChange={e => setEmailOrUsername(e.target.value)} required
               autoComplete={mode === 'login' ? 'username' : 'email'}
-              placeholder={mode === 'login' ? 'votre@email.com ou votre_pseudo' : 'votre@email.com'}
+              placeholder={mode === 'login' ? t('app.auth.placeholderEmailOrUsername') : t('app.auth.placeholderEmail')}
               style={{ width: '100%', padding: '10px 12px', fontSize: '14px', background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 'var(--radius)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} />
           </div>
 
@@ -296,12 +298,12 @@ export default function AuthPage({ onAuth }) {
           {mode === 'register' && (
             <div style={{ marginBottom: '14px' }}>
               <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
-                Pseudo <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>(optionnel)</span>
+                {t('app.auth.username')} <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>{t('app.auth.usernameOptional')}</span>
               </label>
               <input
                 type="text" value={username} onChange={e => setUsername(e.target.value)}
                 autoComplete="off" maxLength={20}
-                placeholder="trader_pro_2026"
+                placeholder={t('app.auth.placeholderUsername')}
                 style={{
                   width: '100%', padding: '10px 12px', fontSize: '14px',
                   background: 'var(--surface2)',
@@ -313,26 +315,26 @@ export default function AuthPage({ onAuth }) {
                   borderRadius: 'var(--radius)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit',
                 }} />
               <div style={{ fontSize: '10px', marginTop: '4px', minHeight: '14px', color: 'var(--text3)' }}>
-                {!username && '3-20 caractères · lettres, chiffres, _ et - · Permettra de te connecter avec ce pseudo'}
-                {username && usernameCheck === 'invalid' && <span style={{ color: 'var(--red-text)' }}>✗ Format invalide</span>}
-                {username && usernameCheck === 'checking' && <span style={{ color: 'var(--text3)' }}>⋯ Vérification...</span>}
-                {username && usernameCheck === 'available' && <span style={{ color: 'var(--green-text)' }}>✓ Pseudo disponible</span>}
-                {username && usernameCheck === 'taken' && <span style={{ color: 'var(--red-text)' }}>✗ Pseudo déjà pris</span>}
+                {!username && t('app.auth.usernameHint')}
+                {username && usernameCheck === 'invalid' && <span style={{ color: 'var(--red-text)' }}>{t('app.auth.usernameInvalid')}</span>}
+                {username && usernameCheck === 'checking' && <span style={{ color: 'var(--text3)' }}>{t('app.auth.usernameChecking')}</span>}
+                {username && usernameCheck === 'available' && <span style={{ color: 'var(--green-text)' }}>{t('app.auth.usernameAvailable')}</span>}
+                {username && usernameCheck === 'taken' && <span style={{ color: 'var(--red-text)' }}>{t('app.auth.usernameTaken')}</span>}
               </div>
             </div>
           )}
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
-              Mot de passe
+              {t('app.auth.password')}
             </label>
             <input type="password" value={password} onChange={e => setPass(e.target.value)} required
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              placeholder="••••••••" minLength={8}
+              placeholder={t('app.auth.placeholderPassword')} minLength={8}
               style={{ width: '100%', padding: '10px 12px', fontSize: '14px', background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 'var(--radius)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} />
             {mode === 'register' && (
               <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>
-                Min 8 caractères. Utilise une combinaison de lettres, chiffres, symboles.
+                {t('app.auth.passwordHint')}
               </div>
             )}
           </div>
@@ -345,7 +347,7 @@ export default function AuthPage({ onAuth }) {
               width: '1px', height: '1px', overflow: 'hidden', opacity: 0,
             }}
           >
-            <label htmlFor="website_url">Site web (laissez vide)</label>
+            <label htmlFor="website_url">{t('app.auth.hiddenLabel')}</label>
             <input
               type="text" id="website_url" name="website_url"
               tabIndex="-1" autoComplete="off"
@@ -369,9 +371,9 @@ export default function AuthPage({ onAuth }) {
                   cursor: 'pointer', flexShrink: 0,
                 }}
               />
-              Rester connecté
+              {t('app.auth.stayLogged')}
               <span style={{ fontSize: '10px', color: 'var(--text3)', marginLeft: 'auto' }}>
-                {stayLogged ? '✓ Session conservée' : 'Session temporaire'}
+                {stayLogged ? t('app.auth.sessionKept') : t('app.auth.sessionTemp')}
               </span>
             </label>
           )}
@@ -385,7 +387,7 @@ export default function AuthPage({ onAuth }) {
                 padding: '10px 12px', fontSize: '11px', color: 'var(--amber-text)',
                 background: 'var(--amber-bg)', borderRadius: 'var(--radius)',
               }}>
-                ⚠ Captcha non configuré (NEXT_PUBLIC_TURNSTILE_SITE_KEY manquant).
+                {t('app.auth.captchaMissing')}
               </div>
             )}
           </div>
@@ -412,7 +414,7 @@ export default function AuthPage({ onAuth }) {
               boxShadow: loading ? 'none' : '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
               letterSpacing: '0.005em',
             }}>
-            {loading ? '⏳ Chargement...' : mode === 'login' ? 'Se connecter →' : 'Créer mon compte →'}
+            {loading ? t('app.auth.loading') : mode === 'login' ? t('app.auth.submitLogin') : t('app.auth.submitRegister')}
           </button>
         </form>
 
@@ -449,18 +451,18 @@ export default function AuthPage({ onAuth }) {
                 fontSize: '11px', cursor: 'pointer', textDecoration: 'underline',
                 fontFamily: 'inherit',
               }}
-            >Mot de passe oublié ?</button>
+            >{t('app.auth.forgotPassword')}</button>
           </div>
         )}
 
         <div style={{ marginTop: '20px', fontSize: '11px', color: 'var(--text3)', textAlign: 'center', lineHeight: 1.5 }}>
-          🔒 Vos données sont sécurisées et accessibles uniquement par vous.<br />
+          {t('app.auth.secureLine')}<br />
           {mode === 'register' && (
             <>
-              En créant un compte, vous acceptez nos{' '}
-              <a href="/legal/cgu" style={{ color: 'var(--blue-light)', textDecoration: 'none' }}>CGU</a>
-              {' '}et notre{' '}
-              <a href="/legal/privacy" style={{ color: 'var(--blue-light)', textDecoration: 'none' }}>Politique de confidentialité</a>.
+              {t('app.auth.acceptPrefix')}{' '}
+              <a href="/legal/cgu" style={{ color: 'var(--blue-light)', textDecoration: 'none' }}>{t('app.auth.acceptCgu')}</a>
+              {' '}{t('app.auth.acceptAnd')}{' '}
+              <a href="/legal/privacy" style={{ color: 'var(--blue-light)', textDecoration: 'none' }}>{t('app.auth.acceptPrivacy')}</a>.
             </>
           )}
         </div>

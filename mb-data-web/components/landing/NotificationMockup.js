@@ -6,6 +6,14 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { NOTIFICATIONS } from './mockData'
+import { useT } from '../LanguageProvider'
+
+// Map title FR (source mockData) → set de keys i18n pour la notif
+const NOTIF_I18N = {
+  'Topstep prélève dans 48h': { title: 'mockups.notifications.n1Title', body: 'mockups.notifications.n1Body', time: 'mockups.notifications.n1Time' },
+  'Payout disponible':        { title: 'mockups.notifications.n2Title', body: 'mockups.notifications.n2Body', time: 'mockups.notifications.n2Time' },
+  'Récap mensuel prêt':       { title: 'mockups.notifications.n3Title', body: 'mockups.notifications.n3Body', time: 'mockups.notifications.n3Time' },
+}
 
 const C = {
   surface: '#141720',
@@ -27,6 +35,7 @@ const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monosp
 const messages = NOTIFICATIONS
 
 export default function NotificationMockup() {
+  const t = useT()
   const ref = useRef(null)
   const inView = useInView(ref, { once: false, margin: '-100px' })
   const [idx, setIdx] = useState(0)
@@ -59,32 +68,30 @@ export default function NotificationMockup() {
           color: C.amber,
           marginBottom: 24,
         }}>
-          NOTIFICATIONS
+          {t('mockups.notifications.eyebrow')}
         </div>
         <h2 style={{
           fontSize: 'clamp(28px, 3.5vw, 38px)',
           fontWeight: 800, letterSpacing: '-0.025em',
           marginBottom: 18, color: C.text, lineHeight: 1.15,
         }}>
-          Plus jamais surpris<br />
-          par un prélèvement.
+          {t('mockups.notifications.headingP1')}<br />
+          {t('mockups.notifications.headingP2')}
         </h2>
         <p style={{
           fontSize: 15, color: C.text2, lineHeight: 1.6, marginBottom: 24,
         }}>
-          Notifications push browser 48h avant chaque facture mensuelle Topstep,
-          Apex, MFFU. Alertes payout dispo, récap auto, milestones —
-          tout ce qui doit savoir, sans spam.
+          {t('mockups.notifications.lead')}
         </p>
         <ul style={{
           listStyle: 'none', padding: 0, margin: 0,
           display: 'flex', flexDirection: 'column', gap: 10,
         }}>
           {[
-            'Alerte 48h avant chaque billing mensuel',
-            'Notif quand un payout devient demandable',
-            'Récap email automatique chaque 1er du mois',
-          ].map((t, i) => (
+            t('mockups.notifications.bullet1'),
+            t('mockups.notifications.bullet2'),
+            t('mockups.notifications.bullet3'),
+          ].map((txt, i) => (
             <li key={i} style={{
               display: 'flex', alignItems: 'flex-start', gap: 10,
               fontSize: 14, color: C.text,
@@ -95,7 +102,7 @@ export default function NotificationMockup() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: 700, marginTop: 1,
               }}>✓</span>
-              {t}
+              {txt}
             </li>
           ))}
         </ul>
@@ -207,26 +214,26 @@ export default function NotificationMockup() {
                   <div style={{
                     fontSize: 11, fontWeight: 600, color: C.text,
                   }}>
-                    Quantara
+                    {t('mockups.notifications.brand')}
                   </div>
                 </div>
                 <div style={{
                   fontSize: 9, color: C.text3, fontFamily: mono,
                   letterSpacing: '0.05em',
                 }}>
-                  {messages[idx].time}
+                  {NOTIF_I18N[messages[idx].title] ? t(NOTIF_I18N[messages[idx].title].time) : messages[idx].time}
                 </div>
               </div>
               <div style={{
                 fontSize: 13, fontWeight: 600, color: C.text,
                 marginBottom: 4, lineHeight: 1.3,
               }}>
-                {messages[idx].title}
+                {NOTIF_I18N[messages[idx].title] ? t(NOTIF_I18N[messages[idx].title].title) : messages[idx].title}
               </div>
               <div style={{
                 fontSize: 12, color: C.text2, lineHeight: 1.45,
               }}>
-                {messages[idx].body}
+                {NOTIF_I18N[messages[idx].title] ? t(NOTIF_I18N[messages[idx].title].body) : messages[idx].body}
               </div>
             </motion.div>
           </AnimatePresence>

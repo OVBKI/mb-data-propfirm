@@ -41,6 +41,7 @@ import {
   YEAR_LABELS, YEAR_SPENT, YEAR_PAYOUT,
   MONTH_LABELS, MONTH_SPENT, MONTH_PAYOUT,
 } from './mockData'
+import { useT } from '../LanguageProvider'
 
 const C = {
   ...COLORS,
@@ -235,6 +236,7 @@ function GroupedBarChart({ labels, spent, payout, net, height = 220 }) {
 // Composant principal
 // ───────────────────────────────────────────────────────────────────────
 export default function AnalyticsMockup() {
+  const t = useT()
   const cardS = {
     background: C.surface,
     border: `1px solid ${C.border}`,
@@ -255,13 +257,15 @@ export default function AnalyticsMockup() {
           fontSize: 10, color: C.blueLight,
           letterSpacing: '0.16em', textTransform: 'uppercase',
           fontWeight: 600, marginBottom: 8,
-        }}>Analytics</div>
+        }}>{t('mockups.analytics.eyebrow')}</div>
         <h1 style={{
           fontSize: 22, fontWeight: 700, margin: 0,
           letterSpacing: '-0.025em', lineHeight: 1.1,
-        }}>Analytics</h1>
+        }}>{t('mockups.analytics.title')}</h1>
         <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
-          Évolution cumulée sur 12 mois · {TOTALS.accountsCount} comptes · {TOTALS.firmsCount} PropFirms
+          {t('mockups.analytics.subtitle')
+            .replace('{accounts}', String(TOTALS.accountsCount))
+            .replace('{firms}', String(TOTALS.firmsCount))}
         </div>
       </div>
 
@@ -272,12 +276,12 @@ export default function AnalyticsMockup() {
           marginBottom: 10, gap: 10, flexWrap: 'wrap',
         }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: C.text2 }}>
-            Évolution cumulée
+            {t('mockups.analytics.cardCumulative')}
           </div>
           <Legend items={[
-            { l: 'Dépenses', c: C.red },
-            { l: 'Payouts',  c: C.green },
-            { l: 'Net',      c: C.blue, dashed: true },
+            { l: t('mockups.analytics.legendSpent'),   c: C.red },
+            { l: t('mockups.analytics.legendPayouts'), c: C.green },
+            { l: t('mockups.analytics.legendNet'),     c: C.blue, dashed: true },
           ]} />
         </div>
         <CumulativeLineChart />
@@ -289,9 +293,9 @@ export default function AnalyticsMockup() {
           paddingTop: 10, borderTop: `1px solid ${C.border}`,
         }}>
           {[
-            { l: 'Dépenses cum.', v: `$${TOTALS.spent.toLocaleString('en-US')}`,    c: C.red },
-            { l: 'Payouts cum.',  v: `$${TOTALS.payouts.toLocaleString('en-US')}`,  c: C.green },
-            { l: 'Net cum.',      v: `+$${TOTALS.net.toLocaleString('en-US')}`,     c: C.blue },
+            { l: t('mockups.analytics.footerSpent'),    v: `$${TOTALS.spent.toLocaleString('en-US')}`,    c: C.red },
+            { l: t('mockups.analytics.footerPayouts'),  v: `$${TOTALS.payouts.toLocaleString('en-US')}`,  c: C.green },
+            { l: t('mockups.analytics.footerNet'),      v: `+$${TOTALS.net.toLocaleString('en-US')}`,     c: C.blue },
           ].map(s => (
             <div key={s.l} style={{ textAlign: 'center' }}>
               <div style={{
@@ -319,12 +323,12 @@ export default function AnalyticsMockup() {
             marginBottom: 10, gap: 10, flexWrap: 'wrap',
           }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.text2 }}>
-              Performance annuelle
+              {t('mockups.analytics.cardYearly')}
             </div>
             <Legend items={[
-              { l: 'Dép', c: C.red },
-              { l: 'Pay', c: C.green },
-              { l: 'Net', c: 'rgba(45,111,255,0.75)' },
+              { l: t('mockups.analytics.legendSpentShort'),    c: C.red },
+              { l: t('mockups.analytics.legendPayoutsShort'),  c: C.green },
+              { l: t('mockups.analytics.legendNetShort'),      c: 'rgba(45,111,255,0.75)' },
             ]} />
           </div>
           <GroupedBarChart
@@ -342,12 +346,12 @@ export default function AnalyticsMockup() {
             marginBottom: 10, gap: 10, flexWrap: 'wrap',
           }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.text2 }}>
-              Performance mensuelle
+              {t('mockups.analytics.cardMonthly')}
             </div>
             <Legend items={[
-              { l: 'Dép', c: C.red },
-              { l: 'Pay', c: C.green },
-              { l: 'Net', c: 'rgba(45,111,255,0.75)' },
+              { l: t('mockups.analytics.legendSpentShort'),    c: C.red },
+              { l: t('mockups.analytics.legendPayoutsShort'),  c: C.green },
+              { l: t('mockups.analytics.legendNetShort'),      c: 'rgba(45,111,255,0.75)' },
             ]} />
           </div>
           <GroupedBarChart

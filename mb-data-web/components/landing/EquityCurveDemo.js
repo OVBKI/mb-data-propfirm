@@ -9,6 +9,7 @@
 // Données fictives : un compte Lucid Plan 50K Financé qui performe bien.
 
 import { EQUITY_DAYS, EQUITY_BALANCES, EQUITY_DD, COLORS } from './mockData'
+import { useT } from '../LanguageProvider'
 
 const C = {
   ...COLORS,
@@ -21,14 +22,17 @@ const mono = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monosp
 const DATA = EQUITY_DAYS.map((d, i) => ({ date: d, balance: EQUITY_BALANCES[i] }))
 const DD = EQUITY_DAYS.map((d, i) => ({ date: d, dd: EQUITY_DD[i] }))
 
-function fmtDate(s) {
-  // "2026-05-08" → "8 mai"
+const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+
+function fmtDate(s, t) {
+  // "2026-05-08" → "8 mai" (FR) ou "8 May" (EN)
   const [, m, d] = s.split('-')
-  const months = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc']
-  return `${parseInt(d)} ${months[parseInt(m) - 1]}`
+  const monthLabel = t(`mockups.equity.months.${MONTH_KEYS[parseInt(m) - 1]}`)
+  return `${parseInt(d)} ${monthLabel}`
 }
 
 export default function EquityCurveDemo() {
+  const t = useT()
   // Chart dimensions
   const W = 700, H = 280
   const P = { l: 50, r: 16, t: 18, b: 32 }
@@ -94,7 +98,7 @@ export default function EquityCurveDemo() {
             <div>
               <div style={{ fontSize: 14, fontWeight: 700 }}>PRO 7</div>
               <div style={{ fontSize: 10, color: C.text3, marginTop: 1 }}>
-                Lucid Trading · Plan 50K · DD EOD
+                {t('mockups.equity.accountMeta')}
               </div>
             </div>
             {/* + Trade button */}
@@ -104,7 +108,7 @@ export default function EquityCurveDemo() {
               background: 'rgba(45,111,255,0.10)',
               border: '1px solid rgba(45,111,255,0.35)',
               color: C.blueLight, fontWeight: 600,
-            }}>+ Trade</span>
+            }}>{t('mockups.equity.btnTrade')}</span>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{
@@ -125,8 +129,8 @@ export default function EquityCurveDemo() {
           background: 'rgba(255,255,255,0.025)',
           borderRadius: 6, fontFamily: mono,
         }}>
-          💰 1 payout : net <span style={{ color: C.green, fontWeight: 600 }}>+$1,008</span>
-          <span style={{ color: C.text3 }}> (brut +$1,120 · split 90%)</span>
+          {t('mockups.equity.payoutLine')} <span style={{ color: C.green, fontWeight: 600 }}>+$1,008</span>
+          <span style={{ color: C.text3 }}> {t('mockups.equity.payoutDetail')}</span>
         </div>
 
         {/* Jours validés progress */}
@@ -141,9 +145,9 @@ export default function EquityCurveDemo() {
             marginBottom: 7,
           }}>
             <div style={{ fontSize: 10, fontFamily: mono, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
-              📅 Jours validés (≥$150)
+              {t('mockups.equity.validatedDays')}
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.green, fontFamily: mono }}>3 / 5 · 60%</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.green, fontFamily: mono }}>{t('mockups.equity.validatedCounter')}</div>
           </div>
           <div style={{
             height: 6, borderRadius: 99,
@@ -157,7 +161,7 @@ export default function EquityCurveDemo() {
             }} />
           </div>
           <div style={{ fontSize: 9, color: C.text3, marginTop: 5, fontFamily: mono }}>
-            Encore 2 jours à ≥$150 pour ton prochain payout
+            {t('mockups.equity.validatedHint')}
           </div>
         </div>
 
@@ -169,14 +173,14 @@ export default function EquityCurveDemo() {
         }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 16, height: 2, background: C.green, borderRadius: 2 }} />
-            Balance
+            {t('mockups.equity.legendBalance')}
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <span style={{
               width: 16, height: 2,
               backgroundImage: `repeating-linear-gradient(90deg, ${C.red} 0 4px, transparent 4px 7px)`,
             }} />
-            DD EOD ($2,000) → actuellement <span style={{ color: C.text2, fontWeight: 600 }}>${DD[DD.length - 1].dd.toLocaleString('en-US')}</span>
+            {t('mockups.equity.legendDdPrefix')} <span style={{ color: C.text2, fontWeight: 600 }}>${DD[DD.length - 1].dd.toLocaleString('en-US')}</span>
           </span>
         </div>
 
@@ -225,7 +229,7 @@ export default function EquityCurveDemo() {
             <text key={i} x={x(i)} y={H - 10}
               fill={C.text3} fontSize="9" fontFamily={mono}
               textAnchor="middle" letterSpacing="0.04em">
-              {fmtDate(DATA[i].date)}
+              {fmtDate(DATA[i].date, t)}
             </text>
           ))}
         </svg>

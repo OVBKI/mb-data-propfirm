@@ -1,4 +1,7 @@
 'use client'
+// TODO i18n v3.1 — Composant non traduit. Strings FR : header (Trade Log,
+// Toutes tes opérations…), filtres (Période, Compte, Tags, Search), stats
+// rapides, vide état, bouton "Nouveau trade".
 // components/TradesPage.js — Vue analytique de TOUS les trades en cards.
 //
 // Architecture :
