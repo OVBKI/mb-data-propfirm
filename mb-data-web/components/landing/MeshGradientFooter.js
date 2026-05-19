@@ -6,6 +6,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import QLogoIcon from '../QLogoIcon'
+import { useT } from '../LanguageProvider'
 
 const C = {
   text: '#f0ede8',
@@ -18,48 +19,53 @@ const C = {
   border: 'rgba(255,255,255,0.07)',
 }
 
-// === Sections nav — identiques à components/Footer.js pour cohérence ===
-const SECTIONS = [
-  {
-    title: 'Produit',
-    links: [
-      { label: 'Fonctionnalités', href: '/#features' },
-      { label: 'Tableau de bord', href: '/app' },
-      { label: 'Calendrier économique', href: '/app' },
-      { label: 'Roadmap', href: '/docs#roadmap' },
-    ],
-  },
-  {
-    title: 'Ressources',
-    links: [
-      { label: 'Documentation', href: '/docs' },
-      { label: 'PropFirms supportées', href: '/integrations' },
-      { label: 'FAQ', href: '/docs#faq' },
-      { label: 'Statut système', href: 'https://www.vercel-status.com/', external: true },
-    ],
-  },
-  {
-    title: 'Sécurité & Légal',
-    links: [
-      { label: 'Sécurité', href: '/security' },
-      { label: 'CGU', href: '/legal/cgu' },
-      { label: 'Confidentialité', href: '/legal/privacy' },
-      { label: 'Mentions légales', href: '/legal/imprint' },
-      { label: 'Cookies', href: '/legal/privacy#cookies' },
-    ],
-  },
-  {
-    title: 'Société',
-    links: [
-      { label: 'À propos', href: '/#why' },
-      { label: 'Contact', href: 'mailto:contact@quantara.tech', external: true },
-      { label: 'Sécurité (signaler)', href: 'mailto:security@quantara.tech', external: true },
-      { label: 'Discord', href: '#', external: true, soon: true },
-    ],
-  },
-]
+// Sections nav — construites dynamiquement depuis i18n (FR/EN).
+// Chaque clé i18n est dans lib/i18n.js sous footer.sections + footer.links.
+function buildSections(t) {
+  return [
+    {
+      title: t('footer.sections.product'),
+      links: [
+        { label: t('footer.links.features'),   href: '/#features' },
+        { label: t('footer.links.dashboard'),  href: '/app' },
+        { label: t('footer.links.calendar'),   href: '/app' },
+        { label: t('footer.links.pricing'),    href: '/pricing' },
+      ],
+    },
+    {
+      title: t('footer.sections.resources'),
+      links: [
+        { label: t('footer.links.docs'),         href: '/docs' },
+        { label: t('footer.links.integrations'), href: '/integrations' },
+        { label: t('footer.links.faq'),          href: '/docs#faq' },
+        { label: t('footer.links.status'),       href: 'https://www.vercel-status.com/', external: true },
+      ],
+    },
+    {
+      title: t('footer.sections.legal'),
+      links: [
+        { label: t('footer.links.security'), href: '/security' },
+        { label: t('footer.links.cgu'),      href: '/legal/cgu' },
+        { label: t('footer.links.privacy'),  href: '/legal/privacy' },
+        { label: t('footer.links.imprint'),  href: '/legal/imprint' },
+        { label: t('footer.links.cookies'),  href: '/legal/privacy#cookies' },
+      ],
+    },
+    {
+      title: t('footer.sections.company'),
+      links: [
+        { label: t('footer.links.about'),     href: '/#why' },
+        { label: t('footer.links.contact'),   href: 'mailto:contact@quantara.tech', external: true },
+        { label: t('footer.links.reportSec'), href: 'mailto:security@quantara.tech', external: true },
+        { label: t('footer.links.discord'),   href: '#', external: true, soon: true },
+      ],
+    },
+  ]
+}
 
 export default function MeshGradientFooter() {
+  const t = useT()
+  const SECTIONS = buildSections(t)
   return (
     <footer style={{
       position: 'relative',
@@ -149,8 +155,7 @@ export default function MeshGradientFooter() {
               fontSize: 12, color: C.text2, lineHeight: 1.55, marginTop: 12,
               maxWidth: 280,
             }}>
-              Le journal de trading des PropFirms futures.
-              Suis tes drawdowns trailing, ta consistency, et tes payouts en temps réel.
+              {t('footer.tagline')}
             </p>
           </div>
 
@@ -185,7 +190,7 @@ export default function MeshGradientFooter() {
                           <span style={{
                             fontSize: 9, padding: '1px 6px', borderRadius: 99,
                             background: 'rgba(45,111,255,0.15)', color: C.blueLight,
-                          }}>Bientôt</span>
+                          }}>{t('footer.badges.soon')}</span>
                         )}
                       </a>
                     ) : (
@@ -214,20 +219,18 @@ export default function MeshGradientFooter() {
           fontSize: 11, color: C.text3,
         }}>
           <div>
-            © {new Date().getFullYear()} <strong style={{ color: C.text2 }}>Quantara LLC</strong> — Track. Analyze. Grow.
-            <span style={{ marginLeft: 8, opacity: 0.7 }}>A Texas limited liability company.</span>
+            © {new Date().getFullYear()} <strong style={{ color: C.text2 }}>Quantara LLC</strong> — {t('footer.bottom.copyright').replace('Quantara LLC — ', '')}
+            <span style={{ marginLeft: 8, opacity: 0.7 }}>{t('footer.bottom.texas')}</span>
           </div>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span>🇫🇷 Français</span>
-            <span>·</span>
-            <span>🇺🇸 Quantara LLC · 🇪🇺 Hébergé en EU</span>
+            <span>🇺🇸 Quantara LLC · 🇪🇺 {t('footer.bottom.eu')}</span>
             <span>·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <span style={{
                 width: 7, height: 7, borderRadius: '50%', background: '#1db87a',
                 boxShadow: '0 0 6px rgba(29,184,122,0.6)',
               }} />
-              Tous les services opérationnels
+              {t('footer.bottom.allOk')}
             </span>
           </div>
         </div>
@@ -239,9 +242,7 @@ export default function MeshGradientFooter() {
           border: '1px solid rgba(250,199,117,0.15)',
           borderRadius: 8, fontSize: 11, color: C.text3, lineHeight: 1.55,
         }}>
-          <strong style={{ color: C.amber }}>⚠️ Avertissement :</strong> Quantara est un outil de journalisation et d'analyse.
-          Il ne fournit pas de conseil financier ni d'investissement. Le trading de futures comporte des risques substantiels
-          et n'est pas adapté à tous les investisseurs. Les performances passées ne préjugent pas des résultats futurs.
+          <strong style={{ color: C.amber }}>{t('footer.disclaimer.title')}</strong> {t('footer.disclaimer.body')}
         </div>
       </div>
     </footer>

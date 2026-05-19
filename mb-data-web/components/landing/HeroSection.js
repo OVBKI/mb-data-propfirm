@@ -6,6 +6,7 @@
 import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import AnimatedQLogo from './AnimatedQLogo'
+import { useT } from '../LanguageProvider'
 
 const C = {
   text: '#f0ede8',
@@ -60,6 +61,7 @@ export default function HeroSection({ children, hideLogo = false }) {
     }
   }, [mouseX, mouseY])
 
+  const t = useT()
   const words = ['Track.', 'Analyze.', 'Grow.']
   const wordColors = [C.blue, C.blueLight, '#7ba9ff']
 
@@ -193,8 +195,7 @@ export default function HeroSection({ children, hideLogo = false }) {
           marginBottom: 40,
         }}
       >
-        Le journal de trading pensé pour les traders PropFirm futures.<br />
-        Drawdown trailing, profit split, payouts — tout est tracké automatiquement.
+        {t('hero.subtitle')}
       </motion.p>
 
       {/* CTA children (boutons passés depuis le parent) */}

@@ -1,9 +1,18 @@
+'use client'
 // Landing page Quantara — V1 (ton identité d'origine)
 // Logo + particules + hero centré + ton layout existant
 // Tous les composants V1 sont actifs et utilisés.
+//
+// CLIENT COMPONENT (mai 2026) : converti en client pour permettre le switch
+// FR/EN à la volée via useT(). Le metadata SEO est géré par app/layout.js.
+// Trade-off accepté : SSR du contenu landing (pour bots) reste, mais la locale
+// affichée est toujours FR au premier paint, puis bascule en EN après hydratation
+// si navigator.language === 'en' ou localStorage 'quantara_lang' === 'en'.
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { useT, useLanguage } from '../components/LanguageProvider'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import ParticlesField from '../components/landing/ParticlesField'
 import HeroSection from '../components/landing/HeroSection'
 import MagneticButton from '../components/landing/MagneticButton'
@@ -35,10 +44,8 @@ const StarField3D = dynamic(() => import('../components/landing/StarField3D'), {
   loading: () => null, // pas de loader visible — le fond reste juste noir le temps que ça charge
 })
 
-export const metadata = {
-  title: 'Quantara — Track. Analyze. Grow.',
-  description: 'Le journal de trading pensé pour les traders PropFirm futures. Drawdown trailing, profit split, payouts — tout est tracké automatiquement.',
-}
+// NB : `export const metadata` retiré (incompatible avec 'use client').
+//      Le metadata SEO complet est centralisé dans app/layout.js.
 
 const colors = {
   bg: '#0d0f14',
@@ -56,69 +63,46 @@ const colors = {
   amber: '#fac775',
 }
 
-const FEATURES = [
-  {
-    icon: '🏢',
-    title: 'Suivi multi-PropFirms',
-    desc: 'Topstep, Apex, Bulenox, Lucid, Tradeify, MFFU, Phidias, TPT et plus. Règles drawdown / profit split / payout target pré-remplies pour 10+ firmes.',
-  },
-  {
-    icon: '📔',
-    title: 'Journal de trading complet',
-    desc: 'PnL, prix entry/exit, instrument, side, screenshot. Calendrier mensuel coloré vert/rouge. Filtres par compte, par PropFirm, par période.',
-  },
-  {
-    icon: '📈',
-    title: 'Equity curve & drawdown live',
-    desc: 'Visualise l\'évolution de chaque compte. Ligne de DD intelligent : Static, EOD (End of Day) ou Trailing intraday selon les règles de ta firme.',
-  },
-  {
-    icon: '💰',
-    title: 'Payouts & cash flow',
-    desc: 'Suis chaque payout reçu, calcule ton ROI réel, vois ton bilan net (payouts − dépenses). Recap email automatique chaque 1er du mois.',
-  },
-  {
-    icon: '🔔',
-    title: 'Notifications intelligentes',
-    desc: 'Push browser 2 jours avant chaque prélèvement mensuel. Alerts in-app pour payout dispo, challenges trop longs, ROI excellent. Plus jamais de surprise.',
-  },
-  {
-    icon: '📅',
-    title: 'Calendrier économique intégré',
-    desc: 'NFP, FOMC, CPI, jobless claims — les news macro à fort impact sur futures. Filtre par devise & sévérité. Évite de trader pendant les pièges.',
-  },
+// Keys i18n pour les 6 features/3 steps/4 stats (résolues via useT dans le composant).
+// On garde icons + numéros ici (non traduits), le texte vient de lib/i18n.js.
+const FEATURE_KEYS = [
+  { icon: '🏢', key: 'multipropfirms' },
+  { icon: '📔', key: 'journal' },
+  { icon: '📈', key: 'equity' },
+  { icon: '💰', key: 'payouts' },
+  { icon: '🔔', key: 'notifications' },
+  { icon: '📅', key: 'calendar' },
 ]
 
-const STEPS = [
-  {
-    n: 1,
-    title: 'Crée ton compte',
-    desc: 'Inscription en 30 secondes. Aucune carte bancaire. L\'outil reste gratuit pendant la beta.',
-  },
-  {
-    n: 2,
-    title: 'Configure tes PropFirms',
-    desc: 'Tape "Topstep", choisis ton plan. Les règles drawdown, profit split et payout target sont déjà pré-remplies.',
-  },
-  {
-    n: 3,
-    title: 'Trade & analyse',
-    desc: 'Logge tes trades, vois ta courbe en temps réel, reçois des alertes proactives, optimise ta consistency.',
-  },
+const STEP_KEYS = [
+  { n: 1, key: 'step1' },
+  { n: 2, key: 'step2' },
+  { n: 3, key: 'step3' },
 ]
 
-const STATS = [
-  { v: '10+', l: 'PropFirms supportées' },
-  { v: '∞', l: 'Comptes par utilisateur' },
-  { v: '3', l: 'Langues (FR/EN/ES)' },
-  { v: '100%', l: 'Tes données t\'appartiennent' },
-]
+const STAT_KEYS = ['propfirms', 'accounts', 'langs', 'privacy']
 
 // ============================================================================
 // Helper layout pour chaque section "vraie page produit" :
 // label monospace + titre + sous-titre + mockup 3D tilt en dessous.
-// Utilisé par les 3 premières pages (Dashboard, Journal, Calendrier éco).
+// Utilisé par les 6 pages (Dashboard, Analytics, Journal, Calendar, Equity, Notif).
 // ============================================================================
+// Helper compact pour rendre une section via sa clé i18n (ex: sectionKey="dashboard"
+// → translate sections.dashboard.label, .title, .subtitle automatiquement).
+function I18nProductSection({ sectionKey, labelColor, children }) {
+  const t = useT()
+  return (
+    <ProductSection
+      label={t(`sections.${sectionKey}.label`)}
+      labelColor={labelColor}
+      title={t(`sections.${sectionKey}.title`)}
+      subtitle={t(`sections.${sectionKey}.subtitle`)}
+    >
+      {children}
+    </ProductSection>
+  )
+}
+
 function ProductSection({ label, labelColor, title, subtitle, children }) {
   return (
     <section className="lp-product-section" style={{ padding: '80px 24px 60px', position: 'relative' }}>
@@ -155,6 +139,7 @@ function ProductSection({ label, labelColor, title, subtitle, children }) {
 }
 
 export default function LandingPage() {
+  const t = useT()
   return (
     <div style={{
       minHeight: '100vh',
@@ -191,6 +176,8 @@ export default function LandingPage() {
       }}>
         <div style={{ fontWeight: 800, letterSpacing: '0.12em', fontSize: 13, color: colors.text }}>QUANTARA</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Switcher FR ↔ EN */}
+          <LanguageSwitcher compact />
           {/* Se connecter — ghost subtle */}
           <Link href="/app" className="qt-topbtn-ghost" style={{
             padding: '8px 16px', fontSize: 12.5, fontWeight: 500,
@@ -201,7 +188,7 @@ export default function LandingPage() {
             background: 'rgba(255,255,255,0.02)',
             transition: 'color 0.2s, border-color 0.2s, background 0.2s',
             letterSpacing: '0.005em',
-          }}>Se connecter</Link>
+          }}>{t('nav.login')}</Link>
           {/* Démarrer — INVERSÉ premium (off-white sur sombre) */}
           <Link href="/app" className="qt-topbtn-primary" style={{
             padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
@@ -215,7 +202,7 @@ export default function LandingPage() {
             letterSpacing: '0.005em',
             display: 'inline-flex', alignItems: 'center', gap: 6,
           }}>
-            Démarrer
+            {t('nav.start')}
             <span style={{
               fontFamily: 'monospace', fontSize: 11, opacity: 0.7,
               transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
@@ -258,10 +245,10 @@ export default function LandingPage() {
         <HeroSection>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
             <MagneticButton href="/app" primary large>
-              Démarrer gratuitement
+              {t('hero.ctaPrimary')}
             </MagneticButton>
             <MagneticButton href="#features" large>
-              Voir les features
+              {t('hero.ctaSecondary')}
             </MagneticButton>
           </div>
         </HeroSection>
@@ -275,12 +262,15 @@ export default function LandingPage() {
           textTransform: 'uppercase',
           animation: 'qtFloat 2s ease-in-out infinite',
         }}>
-          ↓ Scroll
+          {t('hero.scrollHint')}
         </div>
       </section>
 
       {/* === STATS strip avec compteurs animés au scroll === */}
-      <AnimatedStats stats={STATS} />
+      <AnimatedStats stats={STAT_KEYS.map(k => ({
+        v: t(`stats.${k}.value`),
+        l: t(`stats.${k}.label`),
+      }))} />
 
       {/* ============================================================
           6 VRAIES PAGES PRODUIT en 3D incliné (Tilted3DFrame).
@@ -289,64 +279,39 @@ export default function LandingPage() {
           ============================================================ */}
 
       {/* === PAGE 1 : TABLEAU DE BORD === */}
-      <ProductSection
-        label="TABLEAU DE BORD"
-        labelColor={colors.blueLight}
-        title="Tous tes comptes PropFirm en un coup d'œil."
-        subtitle="Balance, drawdown, consistency, status. Sur 8+ PropFirms. Mis à jour en temps réel."
-      >
+      <I18nProductSection sectionKey="dashboard" labelColor={colors.blueLight}>
         <Tilted3DFrame title="quantara.tech/app">
           <DashboardMockup />
         </Tilted3DFrame>
-      </ProductSection>
+      </I18nProductSection>
 
       {/* === PAGE 2 : ANALYTICS === */}
-      <ProductSection
-        label="ANALYTICS"
-        labelColor={colors.blueLight}
-        title="L'évolution de tes dépenses, payouts et net cumulés."
-        subtitle="Courbe cumulée 12 mois + bilan annuel + perf mensuelle. Tu vois en un seul écran si tu es rentable, et depuis quand."
-      >
+      <I18nProductSection sectionKey="analytics" labelColor={colors.blueLight}>
         <Tilted3DFrame title="quantara.tech/app?p=analytics" flip>
           <AnalyticsMockup />
         </Tilted3DFrame>
-      </ProductSection>
+      </I18nProductSection>
 
       {/* === PAGE 3 : JOURNAL DE TRADING === */}
-      <ProductSection
-        label="JOURNAL DE TRADING"
-        labelColor={colors.green}
-        title="Chaque trade. Tracké. Filtré. Analysé."
-        subtitle="Date, instrument, side, PnL, notes. Filtre par firm, par date, par instrument. Export CSV à tout moment."
-      >
+      <I18nProductSection sectionKey="journal" labelColor={colors.green}>
         <Tilted3DFrame title="quantara.tech/app/journal">
           <JournalMockup />
         </Tilted3DFrame>
-      </ProductSection>
+      </I18nProductSection>
 
       {/* === PAGE 4 : CALENDRIER ÉCONOMIQUE === */}
-      <ProductSection
-        label="CALENDRIER ÉCONOMIQUE"
-        labelColor={colors.amber}
-        title="Anticipe les news macro qui bougent les futures."
-        subtitle="NFP, FOMC, CPI, jobless claims, Powell speeches. Impact code couleur. Filtre par devise et sévérité. Source ForexFactory en live."
-      >
+      <I18nProductSection sectionKey="calendar" labelColor={colors.amber}>
         <Tilted3DFrame title="quantara.tech/app/calendar" flip>
           <EconomicCalendarMockup />
         </Tilted3DFrame>
-      </ProductSection>
+      </I18nProductSection>
 
       {/* === PAGE 5 : EQUITY CURVE === */}
-      <ProductSection
-        label="EQUITY CURVE & DRAWDOWN LIVE"
-        labelColor={colors.green}
-        title="Vois ton compte vivre — balance + DD trailing en temps réel."
-        subtitle="Chaque compte a sa courbe avec la ligne de DD trailing (static, EOD ou intraday selon la firme). Tu sais exactement combien il te reste avant de sauter."
-      >
+      <I18nProductSection sectionKey="equity" labelColor={colors.green}>
         <Tilted3DFrame title="quantara.tech/app/equity">
           <EquityCurveDemo />
         </Tilted3DFrame>
-      </ProductSection>
+      </I18nProductSection>
 
       {/* === PAGE 6 : NOTIFICATIONS PUSH === */}
       <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
@@ -360,22 +325,30 @@ export default function LandingPage() {
             <div style={{
               fontSize: 11, fontWeight: 700, color: colors.blueLight,
               textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12,
-            }}>✨ Features</div>
+            }}>{t('features.eyebrow')}</div>
             <h2 style={{
               fontSize: 'clamp(28px, 4vw, 40px)',
               fontWeight: 800, marginBottom: 14,
               letterSpacing: '-0.02em',
-            }}>Tout ce dont tu as besoin. Rien de superflu.</h2>
+            }}>{t('features.heading')}</h2>
             <p style={{ fontSize: 16, color: colors.text2, maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
-              Conçu par et pour les traders PropFirm. Chaque feature résout un problème réel.
+              {t('features.subheading')}
             </p>
           </div>
-          <FlipFeatureCards features={FEATURES} />
+          <FlipFeatureCards features={FEATURE_KEYS.map(f => ({
+            icon: f.icon,
+            title: t(`features.${f.key}.title`),
+            desc:  t(`features.${f.key}.desc`),
+          }))} />
         </div>
       </section>
 
       {/* === HOW IT WORKS (steps avec ligne lumineuse + hover) === */}
-      <EnhancedSteps steps={STEPS} />
+      <EnhancedSteps steps={STEP_KEYS.map(s => ({
+        n: s.n,
+        title: t(`steps.${s.key}.title`),
+        desc:  t(`steps.${s.key}.desc`),
+      }))} />
 
       {/* === FINAL CTA === */}
       <section style={{ padding: '100px 24px', textAlign: 'center', position: 'relative' }}>
@@ -392,24 +365,24 @@ export default function LandingPage() {
             letterSpacing: '-0.03em',
             lineHeight: 1.1,
           }}>
-            Prêt à <span style={{
+            {t('finalCTA.titleStart')}<span style={{
               background: `linear-gradient(135deg, ${colors.blue}, ${colors.blueLight}, ${colors.green})`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-            }}>tracker comme un pro</span> ?
+            }}>{t('finalCTA.titleHighlight')}</span>{t('finalCTA.titleEnd')}
           </h2>
           <p style={{
             fontSize: 17, color: colors.text2, marginBottom: 36,
             lineHeight: 1.6,
           }}>
-            Inscription gratuite. Pas de carte bancaire. Configure ta 1ère PropFirm en 90 secondes.
+            {t('finalCTA.subtitle')}
           </p>
           <MagneticButton href="/app" primary large>
-            Démarrer maintenant
+            {t('finalCTA.button')}
           </MagneticButton>
           <p style={{ marginTop: 20, fontSize: 12, color: colors.text3 }}>
-            🔒 Tes données t'appartiennent · 🇺🇸 Quantara LLC Texas · 🛡 RGPD compliant
+            {t('finalCTA.trustLine')}
           </p>
         </div>
       </section>
