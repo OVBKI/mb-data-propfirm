@@ -101,6 +101,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
   const [period, setPeriod] = useState('90d')
   const [accountFilter, setAccountFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [firmFilter, setFirmFilter] = useState('all')
 
   // Comptes plat pour le filtre
   const allAccounts = useMemo(() => {
@@ -117,6 +118,35 @@ export default function HeatmapPage({ user, firms, showToast }) {
     for (const a of allAccounts) m.set(a.id, a.status || 'Challenge')
     return m
   }, [allAccounts])
+
+  // Map account_id → firmName pour le filtre propfirm
+  const accountFirmMap = useMemo(() => {
+    const m = new Map()
+    for (const a of allAccounts) m.set(a.id, a.firmName)
+    return m
+  }, [allAccounts])
+
+  // Liste des propfirms uniques (pour le dropdown)
+  const uniqueFirms = useMemo(() => {
+    return firms.map(f => f.name).sort()
+  }, [firms])
+
+  // Comptes filtrés (par statut + firme) — alimente le dropdown Compte
+  const filteredAccountsForDropdown = useMemo(() => {
+    return allAccounts.filter(a => {
+      if (statusFilter !== 'all' && a.status !== statusFilter) return false
+      if (firmFilter !== 'all' && a.firmName !== firmFilter) return false
+      return true
+    })
+  }, [allAccounts, statusFilter, firmFilter])
+
+  // Si le compte sélectionné disparaît à cause d'un changement de filtre,
+  // reset automatiquement à "all" pour éviter un état incohérent.
+  useEffect(() => {
+    if (accountFilter !== 'all' && !filteredAccountsForDropdown.find(a => a.id === accountFilter)) {
+      setAccountFilter('all')
+    }
+  }, [accountFilter, filteredAccountsForDropdown])
 
   // === Fetch trades ===
   useEffect(() => {
@@ -142,7 +172,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
     return () => { cancelled = true }
   }, [user?.id])
 
-  // === Filtre par période + compte + statut ===
+  // === Filtre par période + compte + statut + firme ===
   const filtered = useMemo(() => {
     const preset = PERIOD_PRESETS.find(p => p.k === period)
     let cutoff = null
@@ -158,9 +188,13 @@ export default function HeatmapPage({ user, firms, showToast }) {
         const st = accountStatusMap.get(e.account_id)
         if (st !== statusFilter) return false
       }
+      if (firmFilter !== 'all') {
+        const fn = accountFirmMap.get(e.account_id)
+        if (fn !== firmFilter) return false
+      }
       return true
     })
-  }, [entries, period, accountFilter, statusFilter, accountStatusMap])
+  }, [entries, period, accountFilter, statusFilter, firmFilter, accountStatusMap, accountFirmMap])
 
   // === Agrégations ===
   const stats = useMemo(() => {
@@ -337,12 +371,27 @@ export default function HeatmapPage({ user, firms, showToast }) {
           </div>
         </div>
 
-        {/* Compte spécifique */}
+        {/* PropFirm */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PropFirm</span>
+          <select value={firmFilter} onChange={e => setFirmFilter(e.target.value)} style={{ ...inputS, fontSize: 12 }}>
+            <option value="all">Toutes</option>
+            {uniqueFirms.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Compte spécifique (filtré par statut + firme) */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Compte</span>
           <select value={accountFilter} onChange={e => setAccountFilter(e.target.value)} style={{ ...inputS, fontSize: 12 }}>
-            <option value="all">Tous les comptes</option>
-            {allAccounts.map(a => (
+            <option value="all">
+              {filteredAccountsForDropdown.length === allAccounts.length
+                ? 'Tous les comptes'
+                : `Tous (${filteredAccountsForDropdown.length})`}
+            </option>
+            {filteredAccountsForDropdown.map(a => (
               <option key={a.id} value={a.id}>{a.firmName} · {a.name || 'Compte'} ({a.status})</option>
             ))}
           </select>
