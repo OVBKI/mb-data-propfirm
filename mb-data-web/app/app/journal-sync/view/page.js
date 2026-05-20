@@ -10,13 +10,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { supabase } from '../../../lib/supabase'
-import JournalPage from '../../../components/JournalPage'
-import QLogoIcon from '../../../components/QLogoIcon'
-import SpaceBackground from '../../../components/dashboard/SpaceBackground'
-import ProfileModal from '../../../components/ProfileModal'
-import { FIRM_COLORS } from '../../../lib/constants'
-import { getFirmLogo } from '../../../lib/firmLogos'
+import { supabase } from '../../../../lib/supabase'
+import JournalPage from '../../../../components/JournalPage'
+import QLogoIcon from '../../../../components/QLogoIcon'
+import SpaceBackground from '../../../../components/dashboard/SpaceBackground'
+import ProfileModal from '../../../../components/ProfileModal'
+import { FIRM_COLORS } from '../../../../lib/constants'
+import { getFirmLogo } from '../../../../lib/firmLogos'
 
 // ============================================================================
 // Helpers : extraction métadonnées Rithmic depuis notes
@@ -55,7 +55,7 @@ function fmtTime(iso) {
 }
 
 // Mêmes emails que app/admin/layout.js — affichage conditionnel du lien admin
-import { ADMIN_EMAILS } from '../../../lib/admins'
+import { ADMIN_EMAILS } from '../../../../lib/admins'
 
 // Navigation sidebar : items internes (key) deep-linkent vers /app?p=key,
 // items externes (href) naviguent directement à la route Next.js.
