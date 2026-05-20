@@ -50,6 +50,14 @@ const PERIOD_PRESETS = [
   { k: '365d',  l: '1 an',        days: 365 },
 ]
 
+// Filtres statut compte (les statuts FR sont stockés tels quels en DB)
+const STATUS_PRESETS = [
+  { k: 'all',       l: 'Tous',        color: C => C.text2 },
+  { k: 'Challenge', l: 'Challenge',   color: C => C.amber },
+  { k: 'Financé',   l: 'Financé',     color: C => C.green },
+  { k: 'Échoué',    l: 'Échoué',      color: C => C.red },
+]
+
 const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']  // index = getDay() 0-6
 const DAYS_FULL = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 
@@ -92,6 +100,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('90d')
   const [accountFilter, setAccountFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   // Comptes plat pour le filtre
   const allAccounts = useMemo(() => {
@@ -101,6 +110,13 @@ export default function HeatmapPage({ user, firms, showToast }) {
       firmColor: f.color,
     })))
   }, [firms])
+
+  // Map account_id → status pour le filtre statut (lookup O(1) au filtrage)
+  const accountStatusMap = useMemo(() => {
+    const m = new Map()
+    for (const a of allAccounts) m.set(a.id, a.status || 'Challenge')
+    return m
+  }, [allAccounts])
 
   // === Fetch trades ===
   useEffect(() => {
@@ -126,7 +142,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
     return () => { cancelled = true }
   }, [user?.id])
 
-  // === Filtre par période + compte ===
+  // === Filtre par période + compte + statut ===
   const filtered = useMemo(() => {
     const preset = PERIOD_PRESETS.find(p => p.k === period)
     let cutoff = null
@@ -138,9 +154,13 @@ export default function HeatmapPage({ user, firms, showToast }) {
     return entries.filter(e => {
       if (cutoff && e.date < cutoff) return false
       if (accountFilter !== 'all' && e.account_id !== accountFilter) return false
+      if (statusFilter !== 'all') {
+        const st = accountStatusMap.get(e.account_id)
+        if (st !== statusFilter) return false
+      }
       return true
     })
-  }, [entries, period, accountFilter])
+  }, [entries, period, accountFilter, statusFilter, accountStatusMap])
 
   // === Agrégations ===
   const stats = useMemo(() => {
@@ -263,7 +283,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
       </div>
 
       {/* Filtres */}
-      <div style={{ ...card, padding: 14, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ ...card, padding: 14, marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Période */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Période</span>
           <div style={{ display: 'flex', gap: 4 }}>
@@ -282,15 +303,51 @@ export default function HeatmapPage({ user, firms, showToast }) {
             ))}
           </div>
         </div>
+
+        {/* Statut compte */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Statut</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {STATUS_PRESETS.map(s => {
+              const col = s.color(C)
+              const active = statusFilter === s.k
+              // Couleur active : teintée selon le statut (amber/green/red), bleue pour "Tous"
+              const activeBg = s.k === 'all' ? 'rgba(45,111,255,0.15)'
+                : s.k === 'Challenge' ? 'rgba(250,199,117,0.15)'
+                : s.k === 'Financé'   ? 'rgba(29,184,122,0.15)'
+                : 'rgba(232,80,74,0.15)'
+              const activeBorder = s.k === 'all' ? 'rgba(45,111,255,0.4)'
+                : s.k === 'Challenge' ? 'rgba(250,199,117,0.4)'
+                : s.k === 'Financé'   ? 'rgba(29,184,122,0.4)'
+                : 'rgba(232,80,74,0.4)'
+              return (
+                <button
+                  key={s.k}
+                  onClick={() => setStatusFilter(s.k)}
+                  style={{
+                    padding: '5px 10px', fontSize: 11, fontWeight: 500,
+                    background: active ? activeBg : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${active ? activeBorder : 'rgba(255,255,255,0.08)'}`,
+                    color: active ? col : C.text2,
+                    borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >{s.l}</button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Compte spécifique */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Compte</span>
           <select value={accountFilter} onChange={e => setAccountFilter(e.target.value)} style={{ ...inputS, fontSize: 12 }}>
             <option value="all">Tous les comptes</option>
             {allAccounts.map(a => (
-              <option key={a.id} value={a.id}>{a.firmName} · {a.name || 'Compte'}</option>
+              <option key={a.id} value={a.id}>{a.firmName} · {a.name || 'Compte'} ({a.status})</option>
             ))}
           </select>
         </div>
+
         <div style={{ marginLeft: 'auto', fontSize: 12, color: C.text3 }}>
           <strong style={{ color: C.text2 }}>{filtered.length}</strong> trade{filtered.length > 1 ? 's' : ''} analysé{filtered.length > 1 ? 's' : ''}
           {missingTimeCount > 0 && (
