@@ -28,6 +28,7 @@ import JournalPage from '../../components/JournalPage'
 import TradesPage from '../../components/TradesPage'
 import HeatmapPage from '../../components/HeatmapPage'
 import MyRulesPage from '../../components/MyRulesPage'
+import AppSidebar from '../../components/AppSidebar'
 import EquityOverlayChart from '../../components/EquityOverlayChart'
 import { isAdmin } from '../../lib/admins'
 import QLogoIcon from '../../components/QLogoIcon'
@@ -747,47 +748,10 @@ export default function Home() {
     badge:(status)=>({display:'inline-block',fontSize:'10.5px',fontWeight:'600',padding:'3px 9px',borderRadius:'99px',letterSpacing:'0.3px',background:status==='Financé'?'var(--green-bg)':status==='Challenge'?'var(--amber-bg)':'var(--red-bg)',color:status==='Financé'?'var(--green-text)':status==='Challenge'?'var(--amber-text)':'var(--red-text)'})
   }
 
-  // Icônes minimalistes géométriques (style mockup landing) — pas d'emoji.
-  // ◫ dashboard / ◐ analytics / ☰ journal / ◊ rules / ◉ alerts / ◳ calendar / ↓ import / ◰ journal sync
-  // Items avec `key` = navigation interne (setPage). Items avec `href` = navigation
-  // externe vers une autre route Next.js (Link).
-  // Sections en clé constante (utilisée pour grouper + match côté UI). Le label
-  // affiché passe par t() au moment du render.
-  // === Sidebar nav items — 3 sections (restructure mai 2026) ===
-  // Flags supportés :
-  //   subHeader: true  → label de sous-groupe non cliquable (ex: "Journal" parent)
-  //   indent:    true  → item indenté (sous-item d'un subHeader)
-  //   disabled:  true  → grisé, non cliquable (feature à venir)
-  //   badge:     N     → pastille rouge avec compteur (ex: alertes)
-  //   badgeLabel:'X'   → pastille bleue avec texte (ex: BETA, SOON)
-  const navItems=[
-    // === Vue d'ensemble ===
-    {key:'dashboard',icon:'◫',label:t('app.sidebar.dashboard'),section:'Vue'},
-    {key:'analytics',icon:'◐',label:t('app.sidebar.analytics'),section:'Vue'},
-    {key:'calendar', icon:'◳',label:t('app.sidebar.calendar'), section:'Vue'},
-
-    // === Mes Trades ===
-    // Sous-groupe "Journal" : Journal manuel + Journal Sync (hub avec import CSV)
-    // L'import CSV n'est plus dans la sidebar — accessible via le hub /app/journal-sync.
-    {subHeader:true,icon:'☰',label:t('app.sidebar.journalGroup'),section:'Trades'},
-    {key:'journal',           label:t('app.sidebar.journalManuel'),section:'Trades',indent:true},
-    {href:'/app/journal-sync',label:t('app.sidebar.journalSync'),  section:'Trades',indent:true},
-    {                         label:t('app.sidebar.syncApi'),      section:'Trades',indent:true,disabled:true,badgeLabel:'🔒'},
-    // Autres items "Mes Trades"
-    {key:'trades',  icon:'⊞',label:t('app.sidebar.trades'),  section:'Trades'},
-    {key:'heatmaps',icon:'▦',label:t('app.sidebar.heatmaps'),section:'Trades'},
-    {key:'myrules', icon:'⊡',label:t('app.sidebar.myrules'), section:'Trades'},
-
-    // === PropFirms ===
-    {key:'rules', icon:'◊',label:t('app.sidebar.rules'), section:'PropFirm'},
-    {key:'alerts',icon:'◉',label:t('app.sidebar.alerts'),section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
-  ]
-  // Map section key → label affiché (traduit)
-  const SECTION_LABELS={
-    'Vue':      t('app.sidebar.sectionVue'),
-    'Trades':   t('app.sidebar.sectionTrades'),
-    'PropFirm': t('app.sidebar.sectionPropFirm'),
-  }
+  // Sidebar : items + sections + flags définis dans components/AppSidebar.js
+  // (source de vérité unique, partagée avec /app/journal-sync/view/page.js).
+  // On passe juste les props nécessaires (page courante, callbacks, etc.).
+  const alertsBadgeCount = alerts.filter(a => a.type !== 'ok').length
 
   return(
     <div style={{minHeight:'100vh',background:'transparent',position:'relative'}}>
@@ -811,130 +775,19 @@ export default function Home() {
       </div>
 
       <div style={{display:'flex',minHeight:'calc(100vh - 50px)'}}>
-        <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'210px',flexShrink:0,background:'rgba(13,15,20,0.65)',backdropFilter:'blur(26px)',WebkitBackdropFilter:'blur(26px)',borderRight:'1px solid rgba(255,255,255,0.05)',padding:'18px 0',position:'sticky',top:'52px',height:'calc(100vh - 52px)',overflowY:'auto'}}>
-          {['Vue','Trades','PropFirm'].map(section=>(
-            <div key={section}>
-              <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em'}}>{SECTION_LABELS[section]}</div>
-              {navItems.filter(i=>i.section===section).map((item,idx)=>{
-                // === SUB-HEADER (label de groupe non cliquable, ex: "Journal" parent) ===
-                if(item.subHeader){
-                  return(
-                    <div key={`sub-${section}-${idx}`} style={{
-                      padding:'8px 18px 4px',
-                      fontSize:'12px',
-                      fontWeight:'600',
-                      color:'var(--text2)',
-                      display:'flex',
-                      alignItems:'center',
-                      gap:'10px',
-                      letterSpacing:'0.01em',
-                    }}>
-                      <span style={{fontSize:'13px',color:'var(--text3)',width:'18px',textAlign:'center',lineHeight:1}}>{item.icon}</span>
-                      {item.label}
-                    </div>
-                  )
-                }
-                // Styles communs : indent + disabled
-                const padL = item.indent ? '36px' : '18px'
-                const fontS = item.indent ? '12px' : '13px'
-                // === DISABLED ITEM (feature à venir, grisé non cliquable) ===
-                if(item.disabled){
-                  return(
-                    <div key={`dis-${section}-${idx}`} style={{
-                      display:'flex',alignItems:'center',gap:'11px',
-                      padding:`8px 18px 8px ${padL}`,width:'100%',
-                      color:'var(--text3)',fontSize:fontS,fontWeight:'500',
-                      opacity:0.5,cursor:'not-allowed',
-                      borderLeft:'2px solid transparent',
-                      fontFamily:'inherit',
-                    }} title="Bientôt disponible">
-                      {item.icon && <span style={{fontSize:'14px',color:'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>}
-                      {item.label}
-                      {item.badgeLabel&&<span style={{marginLeft:'auto',background:'rgba(255,255,255,0.06)',color:'var(--text3)',fontSize:'9px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px',letterSpacing:'0.08em'}}>{item.badgeLabel}</span>}
-                    </div>
-                  )
-                }
-                // === LIEN EXTERNE (autre route Next.js) ===
-                if(item.href){
-                  return(
-                    <a key={item.href} href={item.href} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:`9px 18px 9px ${padL}`,width:'100%',background:'transparent',color:'var(--text2)',fontSize:fontS,fontWeight:'500',textDecoration:'none',borderLeft:'2px solid transparent',transition:'all 0.15s',fontFamily:'inherit'}}>
-                      {item.icon && <span style={{fontSize:'14px',color:'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>}
-                      {item.label}
-                      {item.badgeLabel&&<span style={{marginLeft:'auto',background:'rgba(45,111,255,0.15)',color:'var(--blue-light)',fontSize:'9px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px',letterSpacing:'0.08em'}}>{item.badgeLabel}</span>}
-                    </a>
-                  )
-                }
-                // === NAVIGATION INTERNE (setPage) ===
-                return(
-                  <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:`9px 18px 9px ${padL}`,width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue-light)':'var(--text2)',fontSize:fontS,fontWeight:page===item.key?'600':'500',cursor:'pointer',textAlign:'left',borderLeft:`2px solid ${page===item.key?'var(--blue)':'transparent'}`,transition:'all 0.15s',fontFamily:'inherit'}}>
-                    {item.icon && <span style={{fontSize:'14px',color:page===item.key?'var(--blue-light)':'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>}
-                    {item.label}
-                    {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px'}}>{item.badge}</span>}
-                  </button>
-                )
-              })}
-            </div>
-          ))}
-          {/* Lien admin — visible uniquement pour les emails admin (liste centralisée lib/admins.js) */}
-          {user && isAdmin(user.email) && (
-            <div style={{padding:'8px 12px',marginTop:'12px',borderTop:'1px solid var(--border)'}}>
-              <a href="/admin" style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'8px',background:'rgba(232,80,74,0.08)',border:'1px solid rgba(232,80,74,0.25)',color:'var(--red-text)',fontSize:'12px',fontWeight:'600',textDecoration:'none'}}>
-                {t('app.sidebar.adminPanel')}
-              </a>
-            </div>
-          )}
-          <div style={{padding:'8px 12px',marginTop:'12px'}}>
-            <button onClick={()=>setShowTutorial(true)} style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',width:'100%',background:'rgba(45,111,255,0.08)',border:'1px solid rgba(45,111,255,0.22)',borderRadius:'8px',color:'var(--blue-light)',fontSize:'12px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',textAlign:'left',transition:'all 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.14)';e.currentTarget.style.borderColor='rgba(45,111,255,0.4)'}} onMouseLeave={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.22)'}}>
-              <span>🎓</span> {t('app.sidebar.launchTutorial')}
-            </button>
-          </div>
-          {/* Footer sidebar : carte profil split — clic sur la zone principale = page profil complète,
-              clic sur la mini icône = ProfileModal (édition rapide). */}
-          <div style={{position:'absolute',bottom:'12px',left:0,right:0,padding:'0 12px',display:'flex',gap:6}}>
-            <a
-              href="/app/profile"
-              className="qt-profile-btn"
-              style={{
-                flex:1,padding:'9px 11px',
-                background:'rgba(255,255,255,0.025)',
-                border:'1px solid rgba(255,255,255,0.07)',
-                borderRadius:'8px',cursor:'pointer',
-                textAlign:'left',color:'var(--text)',
-                fontFamily:'inherit',transition:'all 0.15s',
-                overflow:'hidden',textDecoration:'none',display:'block',
-              }}
-              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)'}}
-              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}}
-            >
-              <div style={{
-                fontSize:'12px',fontWeight:600,
-                color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
-                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
-              }}>
-                {profile?.display_name || (profile?.username ? `@${profile.username}` : t('app.sidebar.definePseudo'))}
-              </div>
-              <div style={{
-                fontSize:'10px',color:'var(--text3)',marginTop:'2px',
-                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
-                fontFamily:'ui-monospace, SFMono-Regular, Menlo, monospace',
-              }}>{user?.email}</div>
-            </a>
-            <button
-              onClick={()=>setShowProfileModal(true)}
-              title={t('app.sidebar.quickEdit')}
-              style={{
-                width:36,padding:'9px 0',
-                background:'rgba(255,255,255,0.025)',
-                border:'1px solid rgba(255,255,255,0.07)',
-                borderRadius:'8px',cursor:'pointer',
-                color:'var(--text2)',fontFamily:'inherit',
-                fontSize:14,flexShrink:0,
-              }}
-              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)';e.currentTarget.style.color='var(--blue-light)'}}
-              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='var(--text2)'}}
-            >✎</button>
-          </div>
-        </nav>
+        <AppSidebar
+          user={user}
+          profile={profile}
+          alertsBadgeCount={alertsBadgeCount}
+          currentPage={page}
+          onInternalNav={(key) => setPage(key)}
+          onAfterNav={() => setMobileNavOpen(false)}
+          onShowProfile={() => setShowProfileModal(true)}
+          onShowTutorial={() => setShowTutorial(true)}
+          showLaunchTutorial={true}
+          showProfileLink={true}
+          isOpenMobile={mobileNavOpen}
+        />
         {mobileNavOpen&&<div className="nav-backdrop" onClick={()=>setMobileNavOpen(false)} />}
 
         <div style={{flex:1,overflow:'auto'}}>

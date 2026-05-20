@@ -54,36 +54,8 @@ function fmtTime(iso) {
   return parts[1] || iso
 }
 
-// Mêmes emails que app/admin/layout.js — affichage conditionnel du lien admin
-import { ADMIN_EMAILS } from '../../../../lib/admins'
-
-// Navigation sidebar — sync avec app/app/page.js (restructure mai 2026).
-// 3 sections : Vue d'ensemble / Mes Trades (avec sous-groupe Journal) / PropFirms.
-// Flags : subHeader (label non cliquable), indent (item indenté), disabled (grisé).
-const NAV_ITEMS = [
-  // Vue d'ensemble
-  { key: 'dashboard', icon: '◫', label: 'Dashboard',        section: 'Vue' },
-  { key: 'analytics', icon: '◐', label: 'Analytics',        section: 'Vue' },
-  { key: 'calendar',  icon: '◳', label: 'Calendrier éco',   section: 'Vue' },
-  // Mes Trades — sous-groupe Journal
-  { subHeader: true, icon: '☰', label: 'Journal',            section: 'Trades' },
-  { key: 'journal',            label: 'Journal manuel',      section: 'Trades', indent: true },
-  { href: '/app/journal-sync', label: 'Journal Sync',        section: 'Trades', indent: true },
-  {                            label: 'Sync auto API',       section: 'Trades', indent: true, disabled: true, badgeLabel: '🔒' },
-  // Mes Trades — autres items
-  { key: 'trades',   icon: '⊞', label: 'Trade Log',          section: 'Trades' },
-  { key: 'heatmaps', icon: '▦', label: 'Heatmaps',           section: 'Trades' },
-  { key: 'myrules',  icon: '⊡', label: 'Mes règles',         section: 'Trades' },
-  // PropFirms
-  { key: 'rules',  icon: '◊', label: 'Règles firmes',        section: 'PropFirm' },
-  { key: 'alerts', icon: '◉', label: 'Alertes',              section: 'PropFirm' },
-]
-const SECTIONS = ['Vue', 'Trades', 'PropFirm']
-const SECTION_LABELS = {
-  'Vue':      "Vue d'ensemble",
-  'Trades':   'Mes trades',
-  'PropFirm': 'PropFirms',
-}
+// Sidebar partagée — définition unique dans components/AppSidebar.js
+import AppSidebar from '../../../../components/AppSidebar'
 
 // ============================================================================
 // COMPOSANT PRINCIPAL
@@ -188,8 +160,6 @@ export default function JournalSyncPage() {
     )
   }
 
-  const isAdmin = ADMIN_EMAILS.includes(user.email)
-
   // ==========================================================================
   // Render principal — même shell que /app (topbar + sidebar + content)
   // ==========================================================================
@@ -227,139 +197,13 @@ export default function JournalSyncPage() {
 
       <div style={{ display:'flex', minHeight:'calc(100vh - 50px)' }}>
         {/* SIDEBAR */}
-        <nav className={'app-nav'+(mobileNavOpen?' open':'')} style={{
-          width:'210px', flexShrink:0, background:'rgba(13,15,20,0.65)',
-          backdropFilter:'blur(26px)', WebkitBackdropFilter:'blur(26px)',
-          borderRight:'1px solid rgba(255,255,255,0.05)',
-          padding:'18px 0', position:'sticky', top:'52px',
-          height:'calc(100vh - 52px)', overflowY:'auto',
-        }}>
-          {SECTIONS.map(section => (
-            <div key={section}>
-              <div className="nav-section-label" style={{
-                padding:'12px 18px 6px', fontSize:'10px', fontWeight:'700',
-                color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.14em',
-              }}>{SECTION_LABELS[section] || section}</div>
-              {NAV_ITEMS.filter(i => i.section === section).map((item, idx) => {
-                // === SUB-HEADER (non cliquable, label du sous-groupe) ===
-                if (item.subHeader) {
-                  return (
-                    <div key={`sub-${section}-${idx}`} style={{
-                      padding:'8px 18px 4px',
-                      fontSize:'12px', fontWeight:'600', color:'var(--text2)',
-                      display:'flex', alignItems:'center', gap:'10px',
-                    }}>
-                      <span style={{ fontSize:'13px', color:'var(--text3)', width:'18px', textAlign:'center', lineHeight:1 }}>{item.icon}</span>
-                      {item.label}
-                    </div>
-                  )
-                }
-                // Padding adapté selon indent
-                const padL = item.indent ? '36px' : '18px'
-                const fontS = item.indent ? '12px' : '13px'
-                // === DISABLED ITEM (feature à venir) ===
-                if (item.disabled) {
-                  return (
-                    <div key={`dis-${section}-${idx}`} style={{
-                      display:'flex', alignItems:'center', gap:'11px',
-                      padding:`8px 18px 8px ${padL}`, width:'100%',
-                      color:'var(--text3)', fontSize:fontS, fontWeight:'500',
-                      opacity:0.5, cursor:'not-allowed',
-                      borderLeft:'2px solid transparent',
-                      fontFamily:'inherit',
-                    }} title="Bientôt disponible">
-                      {item.icon && <span style={{ fontSize:'14px', color:'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>}
-                      {item.label}
-                      {item.badgeLabel && (
-                        <span style={{ marginLeft:'auto', background:'rgba(255,255,255,0.06)', color:'var(--text3)', fontSize:'9px', fontWeight:'700', padding:'2px 7px', borderRadius:'99px', letterSpacing:'0.08em' }}>{item.badgeLabel}</span>
-                      )}
-                    </div>
-                  )
-                }
-                // === Item EXTERNE (href) ===
-                if (item.href) {
-                  const isActive = item.href === '/app/journal-sync'
-                  return (
-                    <a key={item.href} href={item.href} style={{
-                      display:'flex', alignItems:'center', gap:'11px',
-                      padding:`9px 18px 9px ${padL}`, width:'100%',
-                      background: isActive ? 'rgba(45,111,255,0.12)' : 'transparent',
-                      color: isActive ? 'var(--blue-light)' : 'var(--text2)',
-                      fontSize:fontS, fontWeight: isActive ? 600 : 500,
-                      textDecoration:'none',
-                      borderLeft:`2px solid ${isActive?'var(--blue)':'transparent'}`,
-                      transition:'all 0.15s', fontFamily:'inherit',
-                    }}>
-                      {item.icon && <span style={{ fontSize:'14px', color: isActive ? 'var(--blue-light)' : 'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>}
-                      {item.label}
-                      {item.badgeLabel && (
-                        <span style={{ marginLeft:'auto', background:'rgba(45,111,255,0.15)', color:'var(--blue-light)', fontSize:'9px', fontWeight:'700', padding:'2px 7px', borderRadius:'99px', letterSpacing:'0.08em' }}>{item.badgeLabel}</span>
-                      )}
-                    </a>
-                  )
-                }
-                // === Item INTERNE (key → /app?p=key) ===
-                return (
-                  <a key={item.key} href={`/app?p=${item.key}`} style={{
-                    display:'flex', alignItems:'center', gap:'11px',
-                    padding:`9px 18px 9px ${padL}`, width:'100%',
-                    background:'transparent', color:'var(--text2)',
-                    fontSize:fontS, fontWeight:500,
-                    textDecoration:'none',
-                    borderLeft:'2px solid transparent',
-                    transition:'all 0.15s', fontFamily:'inherit',
-                  }}>
-                    {item.icon && <span style={{ fontSize:'14px', color:'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>}
-                    {item.label}
-                  </a>
-                )
-              })}
-            </div>
-          ))}
-
-          {/* Admin panel (si admin) */}
-          {isAdmin && (
-            <div style={{ padding:'8px 12px', marginTop:'12px', borderTop:'1px solid var(--border)' }}>
-              <a href="/admin" style={{
-                display:'flex', alignItems:'center', gap:'10px',
-                padding:'10px 12px', borderRadius:'8px',
-                background:'rgba(232,80,74,0.08)', border:'1px solid rgba(232,80,74,0.25)',
-                color:'var(--red-text)', fontSize:'12px', fontWeight:'600', textDecoration:'none',
-              }}>🔧 Admin Panel</a>
-            </div>
-          )}
-
-          {/* Footer sidebar : carte profil cliquable */}
-          <div style={{ position:'absolute', bottom:'12px', left:0, right:0, padding:'0 12px' }}>
-            <button
-              onClick={()=>setShowProfileModal(true)}
-              style={{
-                width:'100%', padding:'9px 11px',
-                background:'rgba(255,255,255,0.025)',
-                border:'1px solid rgba(255,255,255,0.07)',
-                borderRadius:'8px', cursor:'pointer',
-                textAlign:'left', color:'var(--text)',
-                fontFamily:'inherit', transition:'all 0.15s',
-                overflow:'hidden',
-              }}
-              onMouseEnter={e=>{e.currentTarget.style.background='rgba(45,111,255,0.08)';e.currentTarget.style.borderColor='rgba(45,111,255,0.25)'}}
-              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.025)';e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}}
-            >
-              <div style={{
-                fontSize:'12px', fontWeight:600,
-                color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
-                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-              }}>
-                {profile?.display_name || (profile?.username ? `@${profile.username}` : '⊕ Définir un pseudo')}
-              </div>
-              <div style={{
-                fontSize:'10px', color:'var(--text3)', marginTop:'2px',
-                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-                fontFamily:'ui-monospace, SFMono-Regular, Menlo, monospace',
-              }}>{user?.email}</div>
-            </button>
-          </div>
-        </nav>
+        <AppSidebar
+          user={user}
+          profile={profile}
+          currentHref="/app/journal-sync"
+          onShowProfile={() => setShowProfileModal(true)}
+          isOpenMobile={mobileNavOpen}
+        />
 
         {mobileNavOpen && <div className="nav-backdrop" onClick={()=>setMobileNavOpen(false)} />}
 
