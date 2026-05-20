@@ -57,19 +57,33 @@ function fmtTime(iso) {
 // Mêmes emails que app/admin/layout.js — affichage conditionnel du lien admin
 import { ADMIN_EMAILS } from '../../../../lib/admins'
 
-// Navigation sidebar : items internes (key) deep-linkent vers /app?p=key,
-// items externes (href) naviguent directement à la route Next.js.
+// Navigation sidebar — sync avec app/app/page.js (restructure mai 2026).
+// 3 sections : Vue d'ensemble / Mes Trades (avec sous-groupe Journal) / PropFirms.
+// Flags : subHeader (label non cliquable), indent (item indenté), disabled (grisé).
 const NAV_ITEMS = [
-  { key: 'dashboard', icon: '◫', label: 'Tableau de bord', section: 'Principal' },
-  { key: 'analytics', icon: '◐', label: 'Analytics',       section: 'Principal' },
-  { key: 'journal',   icon: '☰', label: 'Journal manuel',  section: 'Principal' },
-  { key: 'rules',     icon: '◊', label: 'Règles firmes',   section: 'PropFirm' },
-  { key: 'alerts',    icon: '◉', label: 'Alertes',         section: 'PropFirm' },
-  { key: 'calendar',  icon: '◳', label: 'Calendrier Éco.', section: 'Live Data' },
-  { href: '/app/import-lab',   icon: '↓', label: 'Import CSV',   section: 'Sync', badgeLabel: 'BETA' },
-  { href: '/app/journal-sync', icon: '◰', label: 'Journal Sync', section: 'Sync' },
+  // Vue d'ensemble
+  { key: 'dashboard', icon: '◫', label: 'Dashboard',        section: 'Vue' },
+  { key: 'analytics', icon: '◐', label: 'Analytics',        section: 'Vue' },
+  { key: 'calendar',  icon: '◳', label: 'Calendrier éco',   section: 'Vue' },
+  // Mes Trades — sous-groupe Journal
+  { subHeader: true, icon: '☰', label: 'Journal',            section: 'Trades' },
+  { key: 'journal',            label: 'Journal manuel',      section: 'Trades', indent: true },
+  { href: '/app/journal-sync', label: 'Journal Sync',        section: 'Trades', indent: true },
+  {                            label: 'Sync auto API',       section: 'Trades', indent: true, disabled: true, badgeLabel: '🔒' },
+  // Mes Trades — autres items
+  { key: 'trades',   icon: '⊞', label: 'Trade Log',          section: 'Trades' },
+  { key: 'heatmaps', icon: '▦', label: 'Heatmaps',           section: 'Trades' },
+  { key: 'myrules',  icon: '⊡', label: 'Mes règles',         section: 'Trades' },
+  // PropFirms
+  { key: 'rules',  icon: '◊', label: 'Règles firmes',        section: 'PropFirm' },
+  { key: 'alerts', icon: '◉', label: 'Alertes',              section: 'PropFirm' },
 ]
-const SECTIONS = ['Principal', 'Live Data', 'PropFirm', 'Sync']
+const SECTIONS = ['Vue', 'Trades', 'PropFirm']
+const SECTION_LABELS = {
+  'Vue':      "Vue d'ensemble",
+  'Trades':   'Mes trades',
+  'PropFirm': 'PropFirms',
+}
 
 // ============================================================================
 // COMPOSANT PRINCIPAL
@@ -225,51 +239,77 @@ export default function JournalSyncPage() {
               <div className="nav-section-label" style={{
                 padding:'12px 18px 6px', fontSize:'10px', fontWeight:'700',
                 color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.14em',
-              }}>{section}</div>
-              {NAV_ITEMS.filter(i => i.section === section).map(item => {
-                // Item EXTERNE (href = autre route)
+              }}>{SECTION_LABELS[section] || section}</div>
+              {NAV_ITEMS.filter(i => i.section === section).map((item, idx) => {
+                // === SUB-HEADER (non cliquable, label du sous-groupe) ===
+                if (item.subHeader) {
+                  return (
+                    <div key={`sub-${section}-${idx}`} style={{
+                      padding:'8px 18px 4px',
+                      fontSize:'12px', fontWeight:'600', color:'var(--text2)',
+                      display:'flex', alignItems:'center', gap:'10px',
+                    }}>
+                      <span style={{ fontSize:'13px', color:'var(--text3)', width:'18px', textAlign:'center', lineHeight:1 }}>{item.icon}</span>
+                      {item.label}
+                    </div>
+                  )
+                }
+                // Padding adapté selon indent
+                const padL = item.indent ? '36px' : '18px'
+                const fontS = item.indent ? '12px' : '13px'
+                // === DISABLED ITEM (feature à venir) ===
+                if (item.disabled) {
+                  return (
+                    <div key={`dis-${section}-${idx}`} style={{
+                      display:'flex', alignItems:'center', gap:'11px',
+                      padding:`8px 18px 8px ${padL}`, width:'100%',
+                      color:'var(--text3)', fontSize:fontS, fontWeight:'500',
+                      opacity:0.5, cursor:'not-allowed',
+                      borderLeft:'2px solid transparent',
+                      fontFamily:'inherit',
+                    }} title="Bientôt disponible">
+                      {item.icon && <span style={{ fontSize:'14px', color:'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>}
+                      {item.label}
+                      {item.badgeLabel && (
+                        <span style={{ marginLeft:'auto', background:'rgba(255,255,255,0.06)', color:'var(--text3)', fontSize:'9px', fontWeight:'700', padding:'2px 7px', borderRadius:'99px', letterSpacing:'0.08em' }}>{item.badgeLabel}</span>
+                      )}
+                    </div>
+                  )
+                }
+                // === Item EXTERNE (href) ===
                 if (item.href) {
                   const isActive = item.href === '/app/journal-sync'
                   return (
                     <a key={item.href} href={item.href} style={{
                       display:'flex', alignItems:'center', gap:'11px',
-                      padding:'9px 18px', width:'100%',
+                      padding:`9px 18px 9px ${padL}`, width:'100%',
                       background: isActive ? 'rgba(45,111,255,0.12)' : 'transparent',
                       color: isActive ? 'var(--blue-light)' : 'var(--text2)',
-                      fontSize:'13px', fontWeight: isActive ? 600 : 500,
+                      fontSize:fontS, fontWeight: isActive ? 600 : 500,
                       textDecoration:'none',
                       borderLeft:`2px solid ${isActive?'var(--blue)':'transparent'}`,
                       transition:'all 0.15s', fontFamily:'inherit',
                     }}>
-                      <span style={{
-                        fontSize:'14px',
-                        color: isActive ? 'var(--blue-light)' : 'var(--text3)',
-                        width:'18px', display:'inline-block', textAlign:'center', lineHeight:1,
-                      }}>{item.icon}</span>
+                      {item.icon && <span style={{ fontSize:'14px', color: isActive ? 'var(--blue-light)' : 'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>}
                       {item.label}
                       {item.badgeLabel && (
-                        <span style={{
-                          marginLeft:'auto',
-                          background:'rgba(45,111,255,0.15)', color:'var(--blue-light)',
-                          fontSize:'9px', fontWeight:'700', padding:'2px 7px',
-                          borderRadius:'99px', letterSpacing:'0.08em',
-                        }}>{item.badgeLabel}</span>
+                        <span style={{ marginLeft:'auto', background:'rgba(45,111,255,0.15)', color:'var(--blue-light)', fontSize:'9px', fontWeight:'700', padding:'2px 7px', borderRadius:'99px', letterSpacing:'0.08em' }}>{item.badgeLabel}</span>
                       )}
                     </a>
                   )
                 }
-                // Item INTERNE (key) → deep-link vers /app?p=key
+                // === Item INTERNE (key → /app?p=key) ===
                 return (
                   <a key={item.key} href={`/app?p=${item.key}`} style={{
                     display:'flex', alignItems:'center', gap:'11px',
-                    padding:'9px 18px', width:'100%',
+                    padding:`9px 18px 9px ${padL}`, width:'100%',
                     background:'transparent', color:'var(--text2)',
-                    fontSize:'13px', fontWeight:500,
+                    fontSize:fontS, fontWeight:500,
                     textDecoration:'none',
                     borderLeft:'2px solid transparent',
                     transition:'all 0.15s', fontFamily:'inherit',
                   }}>
-                    <span style={{ fontSize:'14px', color:'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>
+                    {item.icon && <span style={{ fontSize:'14px', color:'var(--text3)', width:'18px', display:'inline-block', textAlign:'center', lineHeight:1 }}>{item.icon}</span>}
                     {item.label}
                   </a>
                 )
