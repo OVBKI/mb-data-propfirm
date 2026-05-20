@@ -43,9 +43,28 @@ const btnGhost = { padding:'8px 14px', fontSize:'12px', fontWeight:'500', backgr
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
 
+// Helpers pour le champ traded_at (heure exacte du trade, optionnel)
+// Format saisie : "HH:MM" (input type="time"). Stocké en DB : timestamptz.
+function tradedAtToTime(tradedAt) {
+  if (!tradedAt) return ''
+  try {
+    const d = new Date(tradedAt)
+    if (isNaN(d.getTime())) return ''
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    return `${hh}:${mm}`
+  } catch { return '' }
+}
+function buildTradedAt(date, time) {
+  if (!date) return null
+  // Format ISO : YYYY-MM-DDTHH:MM:00 — Postgres l'interprète avec timezone serveur
+  const timeStr = time && /^\d{2}:\d{2}$/.test(time) ? `${time}:00` : '12:00:00'
+  return `${date}T${timeStr}`
+}
+
 // Form vide par défaut
 const EMPTY_FORM = {
-  accountId: '', date: todayISO(), pnl: '', instrument: '', side: '', notes: '',
+  accountId: '', date: todayISO(), time: '', pnl: '', instrument: '', side: '', notes: '',
   entryPrice: '', exitPrice: '', stopLoss: '', takeProfit: '', screenshotUrl: '',
   tags: [],
   commissions: '', slippage: '',
@@ -56,6 +75,7 @@ function entryToForm(e) {
   return {
     accountId:   e.account_id,
     date:        e.date,
+    time:        tradedAtToTime(e.traded_at),
     pnl:         String(e.pnl ?? ''),
     instrument:  e.instrument || '',
     side:        e.side || '',
@@ -132,6 +152,8 @@ export default function TradeEntryModal({
       user_id: user.id,
       account_id: form.accountId,
       date: form.date,
+      // Timestamp précis pour heatmaps (date + heure, midi si time non saisi)
+      traded_at: buildTradedAt(form.date, form.time),
       pnl: parseFloat(form.pnl),
       instrument: form.instrument.trim(),
       side: form.side,
@@ -218,15 +240,25 @@ export default function TradeEntryModal({
             </select>
           </div>
 
-          {/* Date + PnL */}
+          {/* Date + Time (sub-grid) */}
           <div>
             <label style={labelS}>{t('app.trade.fieldDate')}</label>
-            <input
-              type="date"
-              value={form.date}
-              onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-              style={inputS}
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8 }}>
+              <input
+                type="date"
+                value={form.date}
+                onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+                style={inputS}
+              />
+              <input
+                type="time"
+                value={form.time}
+                onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
+                placeholder="--:--"
+                title="Heure du trade (optionnel) — utilisée pour les heatmaps"
+                style={inputS}
+              />
+            </div>
           </div>
           <div>
             <label style={labelS}>{t('app.trade.fieldPnL')}</label>

@@ -26,6 +26,7 @@ function suggestProfitSplit(firmName, plan){
 import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
 import TradesPage from '../../components/TradesPage'
+import HeatmapPage from '../../components/HeatmapPage'
 import EquityOverlayChart from '../../components/EquityOverlayChart'
 import { isAdmin } from '../../lib/admins'
 import QLogoIcon from '../../components/QLogoIcon'
@@ -226,7 +227,7 @@ export default function Home() {
   const [page,setPage]=useState(()=>{
     if(typeof window==='undefined') return 'dashboard'
     const p=new URLSearchParams(window.location.search).get('p')
-    const valid=['dashboard','analytics','journal','trades','rules','alerts','calendar','sync']
+    const valid=['dashboard','analytics','journal','trades','heatmaps','rules','alerts','calendar','sync']
     return valid.includes(p) ? p : 'dashboard'
   })
   const [currency,setCurrencyMode]=useState('native')
@@ -756,6 +757,7 @@ export default function Home() {
     {key:'analytics',icon:'◐',label:t('app.sidebar.analytics'),section:'Principal'},
     {key:'journal',icon:'☰',label:t('app.sidebar.journal'),section:'Principal'},
     {key:'trades',icon:'⊞',label:t('app.sidebar.trades'),section:'Principal'},
+    {key:'heatmaps',icon:'▦',label:t('app.sidebar.heatmaps'),section:'Principal'},
     {key:'rules',icon:'◊',label:t('app.sidebar.rules'),section:'PropFirm'},
     {key:'alerts',icon:'◉',label:t('app.sidebar.alerts'),section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
     {key:'calendar',icon:'◳',label:t('app.sidebar.calendar'),section:'Live Data'},
@@ -1236,6 +1238,16 @@ export default function Home() {
               user={user}
               showToast={showToast}
               onReload={loadFirms}
+            />
+          )}
+
+          {page==='heatmaps'&&(
+            // Heatmaps : analyse patterns par heure, jour, session, instrument.
+            // Lit traded_at depuis journal_entries (timestampé via TradeEntryModal ou import Rithmic).
+            <HeatmapPage
+              firms={firms}
+              user={user}
+              showToast={showToast}
             />
           )}
 

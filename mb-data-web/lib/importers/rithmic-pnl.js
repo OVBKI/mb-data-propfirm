@@ -72,6 +72,26 @@ function parseRithmicDate(s) {
   return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`
 }
 
+// Combine date + time Rithmic en ISO timestamp UTC pour la colonne traded_at.
+// Le format Rithmic entryTime varie selon export (HHMMSS, HH:MM:SS, ou H:MM:SS).
+// On normalise : on extrait les digits, on pad à 6, on construit "YYYY-MM-DDTHH:MM:SS".
+// Si time est invalide/vide → default midi (heure locale neutre).
+function combineDateAndTime(date, time) {
+  if (!date) return null
+  if (!time || typeof time !== 'string') return `${date}T12:00:00`
+  const digits = String(time).replace(/[^\d]/g, '')
+  if (digits.length < 4) return `${date}T12:00:00`
+  // Pad à 6 digits (HHMMSS) puis split
+  const padded = digits.padEnd(6, '0').slice(0, 6)
+  const hh = padded.slice(0, 2)
+  const mm = padded.slice(2, 4)
+  const ss = padded.slice(4, 6)
+  // Sanity check : HH ∈ [0,23], MM/SS ∈ [0,59]
+  const hhNum = parseInt(hh, 10)
+  if (isNaN(hhNum) || hhNum > 23) return `${date}T12:00:00`
+  return `${date}T${hh}:${mm}:${ss}`
+}
+
 // Parse une string-nombre avec guillemets et signes négatifs
 function parseNum(s) {
   if (s === null || s === undefined) return 0
@@ -312,6 +332,8 @@ function groupFillsIntoTrades(fills) {
       entryOrderId: first.entryOrderId,
       exitOrderId: first.exitOrderId,
       holdSeconds: round(first.holdSeconds, 1),
+      // ISO timestamp pour la colonne traded_at (heatmaps par heure/session)
+      tradedAt: combineDateAndTime(first.date, first.entryTime),
     })
   }
 

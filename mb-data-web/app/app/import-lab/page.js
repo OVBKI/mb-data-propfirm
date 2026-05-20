@@ -491,6 +491,9 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
             user_id: user.id,
             account_id: accountId,
             date: t.date,
+            // Phase 5 : traded_at extrait du CSV Rithmic (date + entryTime) pour les heatmaps
+            // par heure / session. Fallback midi si tradedAt absent (rare avec Rithmic).
+            traded_at: t.tradedAt || `${t.date}T12:00:00`,
             pnl: t.netPnL,
             instrument: t.instrument,
             side: t.side,

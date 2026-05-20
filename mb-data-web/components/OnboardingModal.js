@@ -46,6 +46,7 @@ const FIRM_SUGGESTIONS = [
 
 // Génère 30 trades fictifs réalistes pour le compte démo
 // Distribution : ~60% gagnants, PnL entre -200 et +300 typiquement
+// Heures réalistes pour les heatmaps : majoritairement 14h-22h (session NY)
 function generateDemoTrades() {
   const trades = []
   const today = new Date()
@@ -60,8 +61,16 @@ function generateDemoTrades() {
     const pnl = isWin
       ? Math.floor(Math.random() * 280) + 30  // +30 à +310
       : -Math.floor(Math.random() * 180) - 20 // -20 à -200
+    // Heure réaliste : 70% pendant session NY (15h-22h locale FR), 30% Asia/London
+    const hour = Math.random() < 0.7
+      ? 15 + Math.floor(Math.random() * 7)  // 15h-21h
+      : 8 + Math.floor(Math.random() * 6)   // 8h-13h
+    const minute = Math.floor(Math.random() * 60)
+    const dateStr = date.toISOString().slice(0, 10)
+    const timeStr = `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00`
     trades.push({
-      date: date.toISOString().slice(0, 10),
+      date: dateStr,
+      traded_at: `${dateStr}T${timeStr}`,
       pnl,
       instrument: instruments[Math.floor(Math.random() * instruments.length)],
       side: sides[Math.floor(Math.random() * sides.length)],

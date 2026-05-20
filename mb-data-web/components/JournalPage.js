@@ -518,7 +518,7 @@ export default function JournalPage({
   // Modal d'ajout / édition
   const [entryModal, setEntryModal] = useState(null) // null | { entry?, defaultDate? }
   const [form, setForm] = useState({
-    accountId:'', date:todayISO(), pnl:'', instrument:'', side:'', notes:'',
+    accountId:'', date:todayISO(), time:'', pnl:'', instrument:'', side:'', notes:'',
     entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
     tags: [],
     commissions:'', slippage:'',
@@ -717,7 +717,7 @@ export default function JournalPage({
     if(!acctId && scope.includes(':')) acctId = scope.split(':')[1]
     if(!acctId) acctId = allAccounts[0]?.id || ''
     setForm({
-      accountId:acctId, date:defaultDate||todayISO(),
+      accountId:acctId, date:defaultDate||todayISO(), time:'',
       pnl:'', instrument:'', side:'', notes:'',
       entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
       tags: [],
@@ -726,8 +726,18 @@ export default function JournalPage({
     setEntryModal({ defaultDate })
   }
   function openEditEntry(e){
+    // Extrait HH:MM depuis traded_at (sinon vide → default midi à la save)
+    let timeStr = ''
+    if(e.traded_at){
+      try {
+        const d = new Date(e.traded_at)
+        if(!isNaN(d.getTime())){
+          timeStr = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0')
+        }
+      } catch{}
+    }
     setForm({
-      accountId:e.account_id, date:e.date,
+      accountId:e.account_id, date:e.date, time: timeStr,
       pnl:String(e.pnl), instrument:e.instrument||'', side:e.side||'', notes:e.notes||'',
       entryPrice: e.entry_price != null ? String(e.entry_price) : '',
       exitPrice:  e.exit_price  != null ? String(e.exit_price)  : '',
@@ -745,10 +755,13 @@ export default function JournalPage({
     if(!form.date){ showToast?.('Date requise'); return }
     if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.('PnL requis (nombre)'); return }
     const numOrNull = (s) => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
+    // traded_at = date + time (default midi si time vide)
+    const timeStr = form.time && /^\d{2}:\d{2}$/.test(form.time) ? `${form.time}:00` : '12:00:00'
     const payload = {
       user_id: user.id,
       account_id: form.accountId,
       date: form.date,
+      traded_at: `${form.date}T${timeStr}`,
       pnl: parseFloat(form.pnl),
       instrument: form.instrument.trim(),
       side: form.side,
@@ -1430,8 +1443,11 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 </select>
               </div>
               <div>
-                <label style={labelS}>Date</label>
-                <input type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} style={inputS} />
+                <label style={labelS}>Date · Heure</label>
+                <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:8}}>
+                  <input type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} style={inputS} />
+                  <input type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))} title="Heure du trade (optionnel) — utilisée pour les heatmaps" style={inputS} />
+                </div>
               </div>
               <div>
                 <label style={labelS}>PnL ($)</label>
