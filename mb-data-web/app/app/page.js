@@ -767,11 +767,12 @@ export default function Home() {
     {key:'calendar', icon:'◳',label:t('app.sidebar.calendar'), section:'Vue'},
 
     // === Mes Trades ===
-    // Sous-groupe "Journal" avec 3 sous-items
+    // Sous-groupe "Journal" : Journal manuel + Journal Sync (hub avec import CSV)
+    // L'import CSV n'est plus dans la sidebar — accessible via le hub /app/journal-sync.
     {subHeader:true,icon:'☰',label:t('app.sidebar.journalGroup'),section:'Trades'},
-    {key:'journal',         label:t('app.sidebar.journalManuel'),section:'Trades',indent:true},
-    {href:'/app/import-lab',label:t('app.sidebar.importCsv'),    section:'Trades',indent:true,badgeLabel:t('app.sidebar.badgeBeta')},
-    {                       label:t('app.sidebar.syncApi'),      section:'Trades',indent:true,disabled:true,badgeLabel:'🔒'},
+    {key:'journal',           label:t('app.sidebar.journalManuel'),section:'Trades',indent:true},
+    {href:'/app/journal-sync',label:t('app.sidebar.journalSync'),  section:'Trades',indent:true},
+    {                         label:t('app.sidebar.syncApi'),      section:'Trades',indent:true,disabled:true,badgeLabel:'🔒'},
     // Autres items "Mes Trades"
     {key:'trades',  icon:'⊞',label:t('app.sidebar.trades'),  section:'Trades'},
     {key:'heatmaps',icon:'▦',label:t('app.sidebar.heatmaps'),section:'Trades'},
