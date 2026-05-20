@@ -218,7 +218,6 @@ const ROADMAP_FR = [
     items: [
       'API Rithmic directe (sans CSV)',
       'API Tradovate / NinjaTrader',
-      'Module crypto futures (Binance, Bybit)',
       'Cours et formations propfirm',
       'Application mobile native iOS/Android',
       'Marketplace de stratégies (anonymisées)',
@@ -274,7 +273,6 @@ const ROADMAP_EN = [
     items: [
       'Direct Rithmic API (no CSV)',
       'Tradovate / NinjaTrader API',
-      'Crypto futures module (Binance, Bybit)',
       'Propfirm courses and training',
       'Native iOS/Android mobile app',
       'Strategy marketplace (anonymized)',
