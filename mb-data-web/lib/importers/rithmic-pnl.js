@@ -72,24 +72,46 @@ function parseRithmicDate(s) {
   return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`
 }
 
-// Combine date + time Rithmic en ISO timestamp UTC pour la colonne traded_at.
-// Le format Rithmic entryTime varie selon export (HHMMSS, HH:MM:SS, ou H:MM:SS).
-// On normalise : on extrait les digits, on pad à 6, on construit "YYYY-MM-DDTHH:MM:SS".
-// Si time est invalide/vide → default midi (heure locale neutre).
+// Construit un timestamp ISO depuis le entryTime Rithmic pour la colonne traded_at.
+//
+// Rithmic R|Trader Pro exporte `entryTime` au format "YYYY-MM-DD HH:MM:SS" (timestamp
+// complet). Certains exports legacy donnent juste l'heure ("HH:MM:SS" ou "HHMMSS").
+// On gère les 3 cas + fallback midi si parsing impossible.
 function combineDateAndTime(date, time) {
   if (!date) return null
   if (!time || typeof time !== 'string') return `${date}T12:00:00`
-  const digits = String(time).replace(/[^\d]/g, '')
-  if (digits.length < 4) return `${date}T12:00:00`
-  // Pad à 6 digits (HHMMSS) puis split
-  const padded = digits.padEnd(6, '0').slice(0, 6)
-  const hh = padded.slice(0, 2)
-  const mm = padded.slice(2, 4)
-  const ss = padded.slice(4, 6)
-  // Sanity check : HH ∈ [0,23], MM/SS ∈ [0,59]
-  const hhNum = parseInt(hh, 10)
-  if (isNaN(hhNum) || hhNum > 23) return `${date}T12:00:00`
-  return `${date}T${hh}:${mm}:${ss}`
+  const trimmed = time.trim()
+
+  // Cas 1 : timestamp complet "YYYY-MM-DD HH:MM:SS" ou "YYYY-MM-DDTHH:MM:SS"
+  const fullMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})[\sT](\d{2}:\d{2}:\d{2})/)
+  if (fullMatch) {
+    return `${fullMatch[1]}T${fullMatch[2]}`
+  }
+
+  // Cas 2 : juste l'heure avec colons "HH:MM:SS" ou "HH:MM"
+  const colonMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
+  if (colonMatch) {
+    const hh = String(colonMatch[1]).padStart(2, '0')
+    const mm = colonMatch[2]
+    const ss = colonMatch[3] || '00'
+    return `${date}T${hh}:${mm}:${ss}`
+  }
+
+  // Cas 3 : HHMMSS sans séparateur (legacy)
+  const digits = trimmed.replace(/[^\d]/g, '')
+  if (digits.length >= 4) {
+    const padded = digits.padEnd(6, '0').slice(0, 6)
+    const hh = padded.slice(0, 2)
+    const mm = padded.slice(2, 4)
+    const ss = padded.slice(4, 6)
+    const hhNum = parseInt(hh, 10)
+    if (!isNaN(hhNum) && hhNum <= 23) {
+      return `${date}T${hh}:${mm}:${ss}`
+    }
+  }
+
+  // Fallback : midi (heure neutre)
+  return `${date}T12:00:00`
 }
 
 // Parse une string-nombre avec guillemets et signes négatifs
