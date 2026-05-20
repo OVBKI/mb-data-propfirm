@@ -439,25 +439,38 @@ const FR = {
   // === /app — produit (sidebar + dashboard + auth + trades) ===
   app: {
     sidebar: {
+      // Sections (3 sections après restructure mai 2026)
+      sectionVue:       "Vue d'ensemble",
+      sectionTrades:    'Mes trades',
+      sectionPropFirm:  'PropFirms',
+      // Legacy keys (gardées au cas où d'autres composants y font référence)
       sectionPrincipal: 'Principal',
-      sectionPropFirm: 'PropFirm',
-      sectionLiveData: 'Live Data',
-      sectionSync: 'Sync',
-      dashboard: 'Tableau de bord',
+      sectionLiveData:  'Live Data',
+      sectionSync:      'Sync',
+      // Items "Vue d'ensemble"
+      dashboard: 'Dashboard',
       analytics: 'Analytics',
-      journal: 'Journal manuel',
-      trades: 'Trade Log',
-      heatmaps: 'Heatmaps',
-      rules: 'Règles firmes',
+      calendar:  'Calendrier éco',
+      // Items "Mes trades" (avec sous-groupe Journal)
+      journalGroup:  'Journal',         // sub-header non cliquable
+      journalManuel: 'Journal manuel',  // sous-item indenté
+      importCsv:     'Import CSV',       // sous-item indenté
+      syncApi:       'Sync auto API',    // sous-item indenté disabled
+      trades:        'Trade Log',
+      heatmaps:      'Heatmaps',
+      myrules:       'Mes règles',
+      // Items "PropFirms"
+      rules:  'Règles firmes',
       alerts: 'Alertes',
-      calendar: 'Calendrier Éco.',
-      importCsv: 'Import CSV',
-      journalSync: 'Journal Sync',
-      badgeBeta: 'BETA',
+      // Legacy
+      journal:       'Journal manuel',
+      journalSync:   'Journal Sync',
+      badgeBeta:     'BETA',
+      badgeSoon:     'SOON',
       launchTutorial: 'Lancer le tutoriel',
-      adminPanel: '🔧 Admin Panel',
-      definePseudo: '⊕ Définir un pseudo',
-      quickEdit: 'Édition rapide (pseudo, bio)',
+      adminPanel:    '🔧 Admin Panel',
+      definePseudo:  '⊕ Définir un pseudo',
+      quickEdit:     'Édition rapide (pseudo, bio)',
     },
     topbar: {
       menu: 'Menu',
@@ -1128,25 +1141,38 @@ const EN = {
   // === /app — product (sidebar + dashboard + auth + trades) ===
   app: {
     sidebar: {
+      // Sections (3 sections after restructure May 2026)
+      sectionVue:       'Overview',
+      sectionTrades:    'My trades',
+      sectionPropFirm:  'PropFirms',
+      // Legacy
       sectionPrincipal: 'Main',
-      sectionPropFirm: 'PropFirm',
-      sectionLiveData: 'Live Data',
-      sectionSync: 'Sync',
+      sectionLiveData:  'Live Data',
+      sectionSync:      'Sync',
+      // Overview items
       dashboard: 'Dashboard',
       analytics: 'Analytics',
-      journal: 'Manual journal',
-      trades: 'Trade Log',
-      heatmaps: 'Heatmaps',
-      rules: 'Firm rules',
+      calendar:  'Eco. calendar',
+      // My trades items (with Journal sub-group)
+      journalGroup:  'Journal',
+      journalManuel: 'Manual journal',
+      importCsv:     'CSV Import',
+      syncApi:       'Auto sync API',
+      trades:        'Trade Log',
+      heatmaps:      'Heatmaps',
+      myrules:       'My rules',
+      // PropFirms items
+      rules:  'Firm rules',
       alerts: 'Alerts',
-      calendar: 'Eco. calendar',
-      importCsv: 'CSV Import',
-      journalSync: 'Journal Sync',
-      badgeBeta: 'BETA',
+      // Legacy
+      journal:       'Manual journal',
+      journalSync:   'Journal Sync',
+      badgeBeta:     'BETA',
+      badgeSoon:     'SOON',
       launchTutorial: 'Start the tutorial',
-      adminPanel: '🔧 Admin Panel',
-      definePseudo: '⊕ Set a username',
-      quickEdit: 'Quick edit (username, bio)',
+      adminPanel:    '🔧 Admin Panel',
+      definePseudo:  '⊕ Set a username',
+      quickEdit:     'Quick edit (username, bio)',
     },
     topbar: {
       menu: 'Menu',

@@ -27,6 +27,7 @@ import CalendarPage from '../../components/CalendarPage'
 import JournalPage from '../../components/JournalPage'
 import TradesPage from '../../components/TradesPage'
 import HeatmapPage from '../../components/HeatmapPage'
+import MyRulesPage from '../../components/MyRulesPage'
 import EquityOverlayChart from '../../components/EquityOverlayChart'
 import { isAdmin } from '../../lib/admins'
 import QLogoIcon from '../../components/QLogoIcon'
@@ -227,7 +228,7 @@ export default function Home() {
   const [page,setPage]=useState(()=>{
     if(typeof window==='undefined') return 'dashboard'
     const p=new URLSearchParams(window.location.search).get('p')
-    const valid=['dashboard','analytics','journal','trades','heatmaps','rules','alerts','calendar','sync']
+    const valid=['dashboard','analytics','journal','trades','heatmaps','myrules','rules','alerts','calendar','sync']
     return valid.includes(p) ? p : 'dashboard'
   })
   const [currency,setCurrencyMode]=useState('native')
@@ -752,24 +753,39 @@ export default function Home() {
   // externe vers une autre route Next.js (Link).
   // Sections en clé constante (utilisée pour grouper + match côté UI). Le label
   // affiché passe par t() au moment du render.
+  // === Sidebar nav items — 3 sections (restructure mai 2026) ===
+  // Flags supportés :
+  //   subHeader: true  → label de sous-groupe non cliquable (ex: "Journal" parent)
+  //   indent:    true  → item indenté (sous-item d'un subHeader)
+  //   disabled:  true  → grisé, non cliquable (feature à venir)
+  //   badge:     N     → pastille rouge avec compteur (ex: alertes)
+  //   badgeLabel:'X'   → pastille bleue avec texte (ex: BETA, SOON)
   const navItems=[
-    {key:'dashboard',icon:'◫',label:t('app.sidebar.dashboard'),section:'Principal'},
-    {key:'analytics',icon:'◐',label:t('app.sidebar.analytics'),section:'Principal'},
-    {key:'journal',icon:'☰',label:t('app.sidebar.journal'),section:'Principal'},
-    {key:'trades',icon:'⊞',label:t('app.sidebar.trades'),section:'Principal'},
-    {key:'heatmaps',icon:'▦',label:t('app.sidebar.heatmaps'),section:'Principal'},
-    {key:'rules',icon:'◊',label:t('app.sidebar.rules'),section:'PropFirm'},
+    // === Vue d'ensemble ===
+    {key:'dashboard',icon:'◫',label:t('app.sidebar.dashboard'),section:'Vue'},
+    {key:'analytics',icon:'◐',label:t('app.sidebar.analytics'),section:'Vue'},
+    {key:'calendar', icon:'◳',label:t('app.sidebar.calendar'), section:'Vue'},
+
+    // === Mes Trades ===
+    // Sous-groupe "Journal" avec 3 sous-items
+    {subHeader:true,icon:'☰',label:t('app.sidebar.journalGroup'),section:'Trades'},
+    {key:'journal',         label:t('app.sidebar.journalManuel'),section:'Trades',indent:true},
+    {href:'/app/import-lab',label:t('app.sidebar.importCsv'),    section:'Trades',indent:true,badgeLabel:t('app.sidebar.badgeBeta')},
+    {                       label:t('app.sidebar.syncApi'),      section:'Trades',indent:true,disabled:true,badgeLabel:'🔒'},
+    // Autres items "Mes Trades"
+    {key:'trades',  icon:'⊞',label:t('app.sidebar.trades'),  section:'Trades'},
+    {key:'heatmaps',icon:'▦',label:t('app.sidebar.heatmaps'),section:'Trades'},
+    {key:'myrules', icon:'⊡',label:t('app.sidebar.myrules'), section:'Trades'},
+
+    // === PropFirms ===
+    {key:'rules', icon:'◊',label:t('app.sidebar.rules'), section:'PropFirm'},
     {key:'alerts',icon:'◉',label:t('app.sidebar.alerts'),section:'PropFirm',badge:alerts.filter(a=>a.type!=='ok').length},
-    {key:'calendar',icon:'◳',label:t('app.sidebar.calendar'),section:'Live Data'},
-    {href:'/app/import-lab',  icon:'↓',label:t('app.sidebar.importCsv'),   section:'Sync',badgeLabel:t('app.sidebar.badgeBeta')},
-    {href:'/app/journal-sync',icon:'◰',label:t('app.sidebar.journalSync'), section:'Sync'},
   ]
   // Map section key → label affiché (traduit)
   const SECTION_LABELS={
-    'Principal': t('app.sidebar.sectionPrincipal'),
-    'Live Data': t('app.sidebar.sectionLiveData'),
-    'PropFirm':  t('app.sidebar.sectionPropFirm'),
-    'Sync':      t('app.sidebar.sectionSync'),
+    'Vue':      t('app.sidebar.sectionVue'),
+    'Trades':   t('app.sidebar.sectionTrades'),
+    'PropFirm': t('app.sidebar.sectionPropFirm'),
   }
 
   return(
@@ -795,23 +811,63 @@ export default function Home() {
 
       <div style={{display:'flex',minHeight:'calc(100vh - 50px)'}}>
         <nav data-tour="sidebar" className={'app-nav'+(mobileNavOpen?' open':'')} style={{width:'210px',flexShrink:0,background:'rgba(13,15,20,0.65)',backdropFilter:'blur(26px)',WebkitBackdropFilter:'blur(26px)',borderRight:'1px solid rgba(255,255,255,0.05)',padding:'18px 0',position:'sticky',top:'52px',height:'calc(100vh - 52px)',overflowY:'auto'}}>
-          {['Principal','Live Data','PropFirm','Sync'].map(section=>(
+          {['Vue','Trades','PropFirm'].map(section=>(
             <div key={section}>
               <div className="nav-section-label" style={{padding:'12px 18px 6px',fontSize:'10px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.14em'}}>{SECTION_LABELS[section]}</div>
-              {navItems.filter(i=>i.section===section).map(item=>{
-                // Navigation externe (autre route Next.js) → <a href> client-side via Next Link
+              {navItems.filter(i=>i.section===section).map((item,idx)=>{
+                // === SUB-HEADER (label de groupe non cliquable, ex: "Journal" parent) ===
+                if(item.subHeader){
+                  return(
+                    <div key={`sub-${section}-${idx}`} style={{
+                      padding:'8px 18px 4px',
+                      fontSize:'12px',
+                      fontWeight:'600',
+                      color:'var(--text2)',
+                      display:'flex',
+                      alignItems:'center',
+                      gap:'10px',
+                      letterSpacing:'0.01em',
+                    }}>
+                      <span style={{fontSize:'13px',color:'var(--text3)',width:'18px',textAlign:'center',lineHeight:1}}>{item.icon}</span>
+                      {item.label}
+                    </div>
+                  )
+                }
+                // Styles communs : indent + disabled
+                const padL = item.indent ? '36px' : '18px'
+                const fontS = item.indent ? '12px' : '13px'
+                // === DISABLED ITEM (feature à venir, grisé non cliquable) ===
+                if(item.disabled){
+                  return(
+                    <div key={`dis-${section}-${idx}`} style={{
+                      display:'flex',alignItems:'center',gap:'11px',
+                      padding:`8px 18px 8px ${padL}`,width:'100%',
+                      color:'var(--text3)',fontSize:fontS,fontWeight:'500',
+                      opacity:0.5,cursor:'not-allowed',
+                      borderLeft:'2px solid transparent',
+                      fontFamily:'inherit',
+                    }} title="Bientôt disponible">
+                      {item.icon && <span style={{fontSize:'14px',color:'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>}
+                      {item.label}
+                      {item.badgeLabel&&<span style={{marginLeft:'auto',background:'rgba(255,255,255,0.06)',color:'var(--text3)',fontSize:'9px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px',letterSpacing:'0.08em'}}>{item.badgeLabel}</span>}
+                    </div>
+                  )
+                }
+                // === LIEN EXTERNE (autre route Next.js) ===
                 if(item.href){
                   return(
-                    <a key={item.href} href={item.href} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',background:'transparent',color:'var(--text2)',fontSize:'13px',fontWeight:'500',textDecoration:'none',borderLeft:'2px solid transparent',transition:'all 0.15s',fontFamily:'inherit'}}>
-                      <span style={{fontSize:'14px',color:'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
+                    <a key={item.href} href={item.href} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:`9px 18px 9px ${padL}`,width:'100%',background:'transparent',color:'var(--text2)',fontSize:fontS,fontWeight:'500',textDecoration:'none',borderLeft:'2px solid transparent',transition:'all 0.15s',fontFamily:'inherit'}}>
+                      {item.icon && <span style={{fontSize:'14px',color:'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>}
+                      {item.label}
                       {item.badgeLabel&&<span style={{marginLeft:'auto',background:'rgba(45,111,255,0.15)',color:'var(--blue-light)',fontSize:'9px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px',letterSpacing:'0.08em'}}>{item.badgeLabel}</span>}
                     </a>
                   )
                 }
-                // Navigation interne (setPage) — comportement existant
+                // === NAVIGATION INTERNE (setPage) ===
                 return(
-                  <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:'9px 18px',width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue-light)':'var(--text2)',fontSize:'13px',fontWeight:page===item.key?'600':'500',cursor:'pointer',textAlign:'left',borderLeft:`2px solid ${page===item.key?'var(--blue)':'transparent'}`,transition:'all 0.15s',fontFamily:'inherit'}}>
-                    <span style={{fontSize:'14px',color:page===item.key?'var(--blue-light)':'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>{item.label}
+                  <button key={item.key} data-tour={`nav-${item.key}`} onClick={()=>{setPage(item.key);setMobileNavOpen(false)}} className="qt-nav-item" style={{display:'flex',alignItems:'center',gap:'11px',padding:`9px 18px 9px ${padL}`,width:'100%',border:'none',background:page===item.key?'rgba(45,111,255,0.12)':'transparent',color:page===item.key?'var(--blue-light)':'var(--text2)',fontSize:fontS,fontWeight:page===item.key?'600':'500',cursor:'pointer',textAlign:'left',borderLeft:`2px solid ${page===item.key?'var(--blue)':'transparent'}`,transition:'all 0.15s',fontFamily:'inherit'}}>
+                    {item.icon && <span style={{fontSize:'14px',color:page===item.key?'var(--blue-light)':'var(--text3)',width:'18px',display:'inline-block',textAlign:'center',lineHeight:1}}>{item.icon}</span>}
+                    {item.label}
                     {item.badge>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:'10px',fontWeight:'700',padding:'2px 7px',borderRadius:'99px'}}>{item.badge}</span>}
                   </button>
                 )
@@ -1246,6 +1302,15 @@ export default function Home() {
             // Lit traded_at depuis journal_entries (timestampé via TradeEntryModal ou import Rithmic).
             <HeatmapPage
               firms={firms}
+              user={user}
+              showToast={showToast}
+            />
+          )}
+
+          {page==='myrules'&&(
+            // Mes règles : page du trader pour documenter son plan, setups, et règles.
+            // 3 onglets : Plan (textarea autosave) / Setups (cards CRUD) / Règles (checklist par catégorie).
+            <MyRulesPage
               user={user}
               showToast={showToast}
             />
