@@ -193,6 +193,20 @@ const FIRM_META = {
     hallmark: '🌟 Split SCALING 80→90→100% · Crypto payouts same-day · 🇮🇹/🇬🇧 jeune firme',
     tags: ['Split scaling 100%', 'Crypto payouts', '2 comptes max'],
   },
+  'Alpha Futures': {
+    displayName: 'Alpha Futures',
+    color: '#0066ff',
+    ddType: 'EOD',
+    ddDetail: 'EOD trailing 4% Std/Zero · 3.5% Advanced · lock starting',
+    hasDLL: true, // Daily Loss Guard 2% côté Funded Std/Zero (Advanced sans DLL)
+    pricingModel: 'monthly',
+    pricingNote: '$79-419/mo (ALPHA20 -20%) · activation $149 Std/Adv',
+    splitMax: 90,
+    payoutSpeed: 'weekly',
+    statusBadge: null,
+    hallmark: '🌟 Overnight + weekend AUTORISÉS · 3 plans (Standard/Zero/Advanced) · Profit target 8-10%',
+    tags: ['Overnight OK', 'Weekend OK', '3 plans', '90% split max'],
+  },
 }
 
 // Filtres disponibles

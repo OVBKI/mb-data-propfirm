@@ -137,7 +137,7 @@ export default function JournalSyncHub() {
               <span style={{ padding: '3px 8px', background: 'rgba(45,111,255,0.1)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
               <span>Rithmic supporté</span>
               <span>·</span>
-              <span>10+ propfirms détectées</span>
+              <span>11+ propfirms détectées</span>
             </div>
             <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.blueLt, fontSize: 18 }}>→</div>
           </Link>

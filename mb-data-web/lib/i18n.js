@@ -380,7 +380,7 @@ const FR = {
     },
     integrations: {
       eyebrow: 'Intégrations',
-      titleA: '10 PropFirms',
+      titleA: '11 PropFirms',
       titleB: 'supportées,',
       titleC: '4 via import CSV automatique',
       subtitleA: 'Toutes les PropFirms futures populaires fonctionnent en',
@@ -1082,7 +1082,7 @@ const EN = {
     },
     integrations: {
       eyebrow: 'Integrations',
-      titleA: '10 PropFirms',
+      titleA: '11 PropFirms',
       titleB: 'supported,',
       titleC: '4 via automatic CSV import',
       subtitleA: 'All popular futures PropFirms work in',

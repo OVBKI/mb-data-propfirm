@@ -19,6 +19,7 @@ export const AFFILIATE_LINKS = {
   'FuturesELites': 'https://futureselites.com/?ref=quantara',
   'FuturesElite': 'https://futureselites.com/?ref=quantara', // alias display name
   'Phidias Propfirm': 'https://phidiaspropfirm.com/?ref=quantara',
+  'Alpha Futures': 'https://alpha-futures.com/?ref=quantara',
 }
 
 export function getAffiliateLink(firmName) {

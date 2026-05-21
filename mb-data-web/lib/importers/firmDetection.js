@@ -67,6 +67,12 @@ export const FIRM_PATTERNS = [
   // Pattern : "PP" (avec CASH optionnel concaténé) OU "PHI"/"PHIDIAS"
   // suivi d'un séparateur optionnel ([-_ ]) puis du reste de l'ID.
   { firm: 'Phidias Propfirm', pattern: /^(PP(CASH)?|PHI(DIAS)?)([-_ ][A-Z0-9-]+)?$/i },
+
+  // ── Alpha Futures ──
+  // Plateforme Rithmic (routing) — format account ID à confirmer après 1er import réel.
+  // Hypothèse : préfixe AF / ALPHA / ALPHAFUTURES + séparateur + alphanumeric
+  // Ex: AF-12345, ALPHA-50K-12345, ALPHAFUTURES-12345
+  { firm: 'Alpha Futures', pattern: /^(AF|ALPHA(FUTURES)?)[-_][A-Z0-9-]+$/i },
 ]
 
 // Pattern générique de fallback : permet d'identifier qu'une chaîne ressemble

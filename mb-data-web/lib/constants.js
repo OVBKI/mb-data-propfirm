@@ -492,6 +492,59 @@ export const PROPFIRM_RULES = {
       'Comptes simul.':           {'50k':'2 max sous 1 login (fair-play rule, très restrictif)','100k':'2 max','150k':'2 max'},
     }
   },
+  'Alpha Futures': {
+    // VÉRIFIÉ MAI 2026 — Sources : alpha-futures.com/how-it-works + propfirmbridge + proptradingvibes + thetrustedprop
+    //
+    // PLATEFORME : Rithmic (routing) + UIs : Tradovate, NinjaTrader, Quantower, TradingView, AlphaTicks, Deepchart
+    // (ProjectX et AlphaTicks officiellement retirés début 2026 d'après certaines sources)
+    //
+    // 3 PATHS / PLANS proposés (architecture 1-step évaluation) :
+    //   - STANDARD : éval mensuelle + activation $149 · Profit split TIERED 70%→80%→90%
+    //   - ZERO     : 0 activation fee · Profit split 90% from start · sizes 25/50/100K
+    //   - ADVANCED : prix plus élevé · 0 consistency rule · Profit split 90% from start
+    //
+    // CARACTÉRISTIQUES :
+    //   - Drawdown EOD trailing (close-to-close, pas intraday) — lock à starting balance
+    //     • Standard/Zero : 4% du compte
+    //     • Advanced      : 3.5% du compte
+    //   - Profit Target : 8% Standard/Advanced · 10% Zero
+    //   - Daily Loss Guard (Funded Standard/Zero) : 2% du compte, circuit breaker (pas un fail)
+    //   - Overnight + Weekend AUTORISÉS ✅ (très rare sur le marché)
+    //   - News : Standard restreint sur high-impact · Advanced/Premium autorisé
+    //   - Codes promo permanents : ALPHA20 (-20%)
+    plans: ['25k','50k','100k','150k'],
+    rules: {
+      'Objectif de profit':       {'25k':'$2,500 (Zero · 10%)','50k':'$4,000 Standard / $5,000 Zero ($50K × 10%)','100k':'$8,000 Standard / $10,000 Zero','150k':'$12,000 Standard / $12,000 Advanced'},
+      'Drawdown trailing max':    {'25k':'$1,000 EOD (Zero, 4%)','50k':'$2,000 EOD (Std/Zero 4%) · $1,750 EOD (Adv 3.5%)','100k':'$4,000 EOD Std/Zero · $3,500 EOD Adv','150k':'$6,000 EOD Std · $5,250 EOD Adv'},
+      'Drawdown journalier max':  {'25k':'$1,000 (Daily Loss Guard 2% Funded Std/Zero)','50k':'$1,000','100k':'$2,000','150k':'$3,000 · Advanced trader-settable'},
+      'Jours de trading min':     {'25k':'0 (Zero)','50k':'2 jours (Standard) · 0 (Zero/Advanced)','100k':'idem','150k':'idem'},
+      'Profit min jour valide':   {'25k':'$200+/jour pour payouts hebdo (Adv/Zero)','50k':'idem','100k':'idem','150k':'idem'},
+      'Règle de cohérence':       {'25k':'Standard: 50% (best day) · Zero/Advanced: AUCUNE en éval','50k':'idem','100k':'idem','150k':'idem'},
+      'Stop-Loss + Take-Profit':  {'25k':'Recommandés (non obligatoires)','50k':'idem','100k':'idem','150k':'idem'},
+      // Trading
+      'Positions overnight':      {'25k':'✅ AUTORISÉ (overnight + weekend) — unique sur le marché','50k':'idem','100k':'idem','150k':'idem'},
+      'Trading des news':         {'25k':'Standard: restreint high-impact · Advanced/Premium: OK','50k':'idem','100k':'idem','150k':'idem'},
+      'DCA (renforcement)':       {'25k':'Toléré (pas de règle stricte)','50k':'idem','100k':'idem','150k':'idem'},
+      'Algos / automation':       {'25k':'Éval: bots interdits · Funded: automation limitée plateformes approuvées','50k':'idem','100k':'idem','150k':'idem'},
+      // Contrats
+      'Contrats max (mini)':      {'25k':'1','50k':'5','100k':'10','150k':'15'},
+      'Contrats max (micro)':     {'25k':'10','50k':'50','100k':'100','150k':'150'},
+      // Tarifs (mensuel — codes promo ALPHA20 -20% disponibles)
+      'Prix mensuel Standard':    {'25k':'— (Standard non dispo en 25K)','50k':'$79','100k':'$159','150k':'$239'},
+      'Prix mensuel Zero':        {'25k':'$79','50k':'$119','100k':'$239','150k':'— (Zero max 100K)'},
+      'Prix mensuel Advanced':    {'25k':'— (Advanced non dispo en 25K)','50k':'$139','100k':'$279','150k':'$419'},
+      'Frais activation funded':  {'25k':'Zero: $0','50k':'Standard/Advanced: $149 · Zero: $0','100k':'idem','150k':'idem'},
+      'Reset cost':               {'25k':'Non publié (rachat eval avec promo)','50k':'idem','100k':'idem','150k':'idem'},
+      'Codes promo permanents':   {'25k':'ALPHA20 = -20% sur tous plans','50k':'idem','100k':'idem','150k':'idem'},
+      // Payouts (Funded)
+      'Répartition gains':        {'25k':'Zero/Advanced: 90% from start · Standard: 70%→80%→90% (paliers 1, 3, 5 payouts)','50k':'idem','100k':'idem','150k':'idem'},
+      'Payout minimum':           {'25k':'Standard: $200 · Advanced/Zero: $1,000','50k':'idem','100k':'idem','150k':'idem'},
+      'Délai payout':             {'25k':'Standard: 14 jours · Advanced/Zero: hebdo (on-demand 48h)','50k':'idem','100k':'idem','150k':'idem'},
+      'Méthodes payout':          {'25k':'ACH (US) · Wise · Wire SWIFT · Rise (intl)','50k':'idem','100k':'idem','150k':'idem'},
+      // Multi-comptes
+      'Comptes simul.':           {'25k':'3 max ($450K cap total tous plans confondus)','50k':'idem','100k':'idem','150k':'idem'},
+    }
+  },
 }
 
 export const FIRM_COLORS = ['#2d6fff','#1db87a','#e8504a','#fac775','#a78bfa','#f472b6','#34d399','#fb923c']
