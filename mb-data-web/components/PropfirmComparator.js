@@ -56,8 +56,8 @@ const FIRM_META = {
   'Topstep': {
     displayName: 'Topstep',
     color: '#2d6fff',
-    ddType: 'Mixed',
-    ddDetail: 'Intraday (Combine) → EOD (XFA/LFA)',
+    ddType: 'EOD',
+    ddDetail: 'EOD uniquement (Combine + XFA + LFA) · lock starting permanent',
     hasDLL: true,
     pricingModel: 'monthly',
     pricingNote: '$49-149/mo',
@@ -65,7 +65,7 @@ const FIRM_META = {
     payoutSpeed: '24h',
     statusBadge: null,
     hallmark: 'Leader historique US — 3 phases Combine → XFA → LFA',
-    tags: ['Mensuel', 'No overnight', '90/10 dès le $1'],
+    tags: ['Mensuel', 'No overnight', '90/10 dès le $1', 'EOD only'],
   },
   'Apex Trader Funding': {
     displayName: 'Apex Trader Funding',

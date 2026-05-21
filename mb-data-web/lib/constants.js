@@ -28,9 +28,10 @@ export const PROPFIRM_RULES = {
     //   • XFA CONSISTENCY  : 3 days @ 40% consistency · cap payout $6K
     //
     // MLL (Maximum Loss Limit) — UNIFORME pour les 3 stages :
-    //   • EOD TRAILING (PAS intraday) — monitored real-time mais update EOD seulement
-    //   • Combine : starts à (size − DD), trails up jusqu'à starting balance, puis LOCK permanent
-    //   • XFA     : starts à $0 balance avec MLL à -$DD (ex: -$2K sur 50K) · MLL trails up · LOCK à $0 quand balance atteint le DD
+    //   • EOD UNIQUEMENT (jamais intraday) — recalcule au close de chaque session
+    //   • PAS de trailing intraday (vs Apex/MFFU) — c'est la grosse différence
+    //   • Combine : starts à (size − DD), monte avec nouveaux EOD highs jusqu'à starting balance, puis LOCK permanent
+    //   • XFA     : starts à $0 balance avec MLL à -$DD (ex: -$2K sur 50K) · monte avec EOD highs · LOCK à $0 quand balance atteint le DD
     //   • LFA     : MLL = liquidation value (locked once balance hits starting)
     //   • Si touché → liquidation immédiate (Combine: éligible reset · XFA/LFA: compte fermé permanent)
     //
@@ -52,7 +53,7 @@ export const PROPFIRM_RULES = {
       // === Objectifs (Combine) ===
       'Profit Target (Combine)':  {'50k':'$3,000','100k':'$6,000','150k':'$9,000'},
       // === Maximum Loss Limit (Drawdown) ===
-      'Max Loss Limit (MLL)':     {'50k':'$2,000 — EOD TRAILING (Combine/XFA/LFA) · lock starting balance permanent','100k':'$3,000 — EOD TRAILING (Combine/XFA/LFA) · lock starting balance permanent','150k':'$4,500 — EOD TRAILING (Combine/XFA/LFA) · lock starting balance permanent'},
+      'Max Loss Limit (MLL)':     {'50k':'$2,000 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs jusqu'au lock starting balance permanent','100k':'$3,000 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs jusqu'au lock starting balance permanent','150k':'$4,500 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs jusqu'au lock starting balance permanent'},
       'MLL mécanique XFA':        {'50k':'XFA starts à $0 balance · MLL à -$2,000 · balance atteint +$2K → MLL lock $0','100k':'XFA starts à $0 balance · MLL à -$3,000 · balance atteint +$3K → MLL lock $0','150k':'XFA starts à $0 balance · MLL à -$4,500 · balance atteint +$4.5K → MLL lock $0'},
       // === Daily Loss Limit ===
       'Daily Loss Limit (DLL)':   {'50k':'$1,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)','100k':'$2,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)','150k':'$3,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)'},
