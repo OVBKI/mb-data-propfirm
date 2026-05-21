@@ -1,17 +1,22 @@
 'use client'
-// Modal d'accueil pour les nouveaux users — affiché quand :
-//   - L'user vient de se connecter pour la 1ère fois (firms.length === 0)
-//   - ET qu'il n'a pas déjà skip via localStorage
+// OnboardingModal — Wizard d'accueil multi-étapes pour nouveaux users (refactor mai 2026)
 //
-// 3 chemins :
-//   1. "Ajouter ma 1ère PropFirm" → ouvre le firmModal existant
-//   2. "Voir avec données démo" → crée Topstep 50K + 30 trades fictifs
-//   3. "Plus tard" → dismiss (localStorage flag)
+// 4 étapes :
+//   1. Welcome        — value props + intro
+//   2. Profil trader  — style (scalper/day/swing) + propfirms ciblées (optionnel, pas sauvé en DB)
+//   3. Choisis ta voie — 3 options : firm réelle / démo / tutoriel
+//   4. Done (démo)    — confirmation + next actions (uniquement après démo)
+//
+// Affiché quand : firms.length === 0 ET pas dismissed via localStorage.
+// Les réponses du step 2 ne sont PAS persistées (per user request) — juste UX.
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { getFirmLogo } from '../lib/firmLogos'
-import { defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, defaultDdType } from '../lib/constants'
+import {
+  defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice,
+  defaultMinDailyProfit, defaultDdType,
+} from '../lib/constants'
 
 const C = {
   bg: '#0d0f14',
@@ -28,9 +33,10 @@ const C = {
   green: '#1db87a',
   amber: '#fac775',
   red: '#e8504a',
+  purple: '#a78bfa',
 }
 
-// Suggestions de firmes affichées dans le wizard (les plus populaires en premier)
+// Liste des firmes pour la sélection step 2 (alimente le grid clickable)
 const FIRM_SUGGESTIONS = [
   { name: 'Topstep',                color: '#ff8c42' },
   { name: 'Apex Trader Funding',    color: '#a78bfa' },
@@ -44,27 +50,29 @@ const FIRM_SUGGESTIONS = [
   { name: 'FuturesELites',          color: '#f472b6' },
 ]
 
+const TRADING_STYLES = [
+  { k: 'scalper',  label: 'Scalper',     emoji: '⚡', desc: 'Trades < 5 min, beaucoup de volume' },
+  { k: 'day',      label: 'Day Trader',  emoji: '📊', desc: 'Trades intraday, flat avant close' },
+  { k: 'swing',    label: 'Swing',       emoji: '🌊', desc: 'Trades sur plusieurs jours' },
+  { k: 'mixed',    label: 'Mixed',       emoji: '🎯', desc: "Un peu de tout selon l'opportunité" },
+]
+
 // Génère 30 trades fictifs réalistes pour le compte démo
-// Distribution : ~60% gagnants, PnL entre -200 et +300 typiquement
-// Heures réalistes pour les heatmaps : majoritairement 14h-22h (session NY)
 function generateDemoTrades() {
   const trades = []
   const today = new Date()
   const instruments = ['NQ', 'ES', 'MNQ', 'MES', 'GC', 'CL']
   const sides = ['Long', 'Short']
-  // Génère 30 trades sur les 30 derniers jours
   for (let i = 0; i < 30; i++) {
     const date = new Date(today)
     date.setDate(date.getDate() - Math.floor(Math.random() * 30))
-    // 60% chance de gain, 40% perte
     const isWin = Math.random() < 0.62
     const pnl = isWin
-      ? Math.floor(Math.random() * 280) + 30  // +30 à +310
-      : -Math.floor(Math.random() * 180) - 20 // -20 à -200
-    // Heure réaliste : 70% pendant session NY (15h-22h locale FR), 30% Asia/London
+      ? Math.floor(Math.random() * 280) + 30
+      : -Math.floor(Math.random() * 180) - 20
     const hour = Math.random() < 0.7
-      ? 15 + Math.floor(Math.random() * 7)  // 15h-21h
-      : 8 + Math.floor(Math.random() * 6)   // 8h-13h
+      ? 15 + Math.floor(Math.random() * 7)
+      : 8 + Math.floor(Math.random() * 6)
     const minute = Math.floor(Math.random() * 60)
     const dateStr = date.toISOString().slice(0, 10)
     const timeStr = `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00`
@@ -81,8 +89,12 @@ function generateDemoTrades() {
 }
 
 export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTutorial, showToast }) {
+  // Step du wizard : 'welcome' | 'profile' | 'choose' | 'demo-loading' | 'done'
+  const [step, setStep] = useState('welcome')
   const [creating, setCreating] = useState(false)
-  const [step, setStep] = useState('welcome') // welcome | demo-loading
+  // Réponses step 2 (NON sauvées en DB, juste UX)
+  const [tradingStyle, setTradingStyle] = useState(null)
+  const [selectedFirms, setSelectedFirms] = useState([])
 
   function handleSkip() {
     localStorage.setItem('quantara_onboarding_dismissed', '1')
@@ -92,7 +104,6 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
   function handleAddFirm() {
     localStorage.setItem('quantara_onboarding_dismissed', '1')
     onComplete()
-    // Ouvre le firmModal du parent
     onAddFirm()
   }
 
@@ -101,12 +112,16 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
     onStartTutorial?.()
   }
 
-  // Crée une firme Topstep + un compte 50K + 30 trades démo
+  function toggleFirm(name) {
+    setSelectedFirms(prev =>
+      prev.includes(name) ? prev.filter(f => f !== name) : [...prev, name]
+    )
+  }
+
   async function handleDemo() {
     setCreating(true)
     setStep('demo-loading')
     try {
-      // 1. Crée la firme Topstep
       const { data: firm, error: firmErr } = await supabase
         .from('firms')
         .insert({ name: 'Topstep (Démo)', color: '#ff8c42', user_id: user.id })
@@ -114,7 +129,6 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
         .single()
       if (firmErr) throw firmErr
 
-      // 2. Crée un compte 50K Challenge avec règles auto
       const tg = defaultPayoutTarget('Topstep', '50k')
       const md = defaultMinTradingDays('Topstep', '50k')
       const pr = defaultChallengePrice('Topstep', '50k')
@@ -143,7 +157,6 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
         .single()
       if (acctErr) throw acctErr
 
-      // 3. Crée 30 trades démo
       const trades = generateDemoTrades().map(t => ({
         ...t,
         user_id: user.id,
@@ -153,17 +166,30 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
       if (tradesErr) throw tradesErr
 
       localStorage.setItem('quantara_onboarding_dismissed', '1')
-      showToast?.('🎉 Démo créée ! Explore le dashboard et le journal.')
-      onComplete()
-      // Reload pour afficher les nouvelles données
-      setTimeout(() => window.location.reload(), 600)
+      setStep('done')
+      setCreating(false)
     } catch (err) {
       console.error('[OnboardingModal demo]', err)
       alert('Erreur création démo : ' + (err.message || 'inconnue'))
       setCreating(false)
-      setStep('welcome')
+      setStep('choose')
     }
   }
+
+  function handleDoneAction(action) {
+    if (action === 'tutorial') {
+      onStartTutorial?.()
+      // On reload après le démarrage du tuto pour avoir les nouvelles data en mémoire
+      setTimeout(() => window.location.reload(), 400)
+      return
+    }
+    onComplete()
+    setTimeout(() => window.location.reload(), 400)
+  }
+
+  // Progress indicator (3 dots pour les 3 steps wizard, sauf demo-loading et done)
+  const showProgress = ['welcome', 'profile', 'choose'].includes(step)
+  const currentStepNum = step === 'welcome' ? 1 : step === 'profile' ? 2 : 3
 
   return (
     <div style={{
@@ -187,147 +213,343 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
           pointerEvents: 'none',
         }} />
 
+        {/* Progress dots (étapes 1-3) */}
+        {showProgress && (
+          <div style={{
+            position: 'relative', display: 'flex', justifyContent: 'center',
+            gap: 8, padding: '20px 0 0', marginBottom: -10,
+          }}>
+            {[1, 2, 3].map(n => (
+              <div key={n} style={{
+                width: n === currentStepNum ? 28 : 8,
+                height: 8, borderRadius: 99,
+                background: n <= currentStepNum ? C.blueLight : 'rgba(255,255,255,0.1)',
+                transition: 'all 0.3s ease',
+              }} />
+            ))}
+          </div>
+        )}
+
+        {/* === STEP 1 : WELCOME === */}
         {step === 'welcome' && (
-          <div style={{ position: 'relative', padding: '48px 40px 36px' }}>
-            {/* Header */}
+          <div style={{ position: 'relative', padding: '40px 40px 32px' }}>
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
-              <div style={{ fontSize: 42, marginBottom: 12 }}>👋</div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 10, letterSpacing: '-0.01em' }}>
+              <div style={{ fontSize: 56, marginBottom: 14 }}>👋</div>
+              <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 10, letterSpacing: '-0.015em' }}>
                 Bienvenue sur Quantara
               </h1>
-              <p style={{ fontSize: 14, color: C.text2, maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
+              <p style={{ fontSize: 14, color: C.text2, maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}>
                 Le journal de trading pensé pour les <strong style={{ color: C.text }}>traders PropFirm futures</strong>.
-                Avant de commencer, comment veux-tu démarrer ?
+                Configurons ton espace en 3 étapes rapides.
               </p>
             </div>
 
-            {/* Les 3 chemins */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-              {/* Option 1 : Ajouter ma vraie firme — off-white inverted (cohérent landing/dashboard) */}
-              <button
-                onClick={handleAddFirm}
-                disabled={creating}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '20px 24px', borderRadius: 12,
-                  background: C.text,
-                  border: '1px solid transparent', color: '#0a0c10', cursor: creating ? 'wait' : 'pointer',
-                  textAlign: 'left', fontFamily: 'inherit',
-                  boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 12px 28px rgba(0,0,0,0.3)',
-                  transition: 'transform 0.15s, box-shadow 0.2s',
-                }}
-                onMouseEnter={e => { if(!creating) e.currentTarget.style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
-              >
-                <div style={{
-                  width: 48, height: 48, borderRadius: 10, flexShrink: 0,
-                  background: 'rgba(45,111,255,0.15)',
-                  border: '1px solid rgba(45,111,255,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 22, color: '#2d6fff',
-                }}>→</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3 }}>Ajouter ma 1ère PropFirm</div>
-                  <div style={{ fontSize: 12, color: 'rgba(10,12,16,0.75)' }}>
-                    Configuration en 30 sec — règles drawdown/payout pré-remplies
-                  </div>
+            {/* 3 value props */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+              {[
+                { icon: '🎯', title: 'Track', desc: 'Drawdown trailing, payouts, balances en temps réel' },
+                { icon: '📊', title: 'Analyze', desc: 'Heatmaps, R-multiple, patterns gagnants' },
+                { icon: '🌱', title: 'Grow', desc: 'Plan, setups, règles non négociables' },
+              ].map((vp, i) => (
+                <div key={i} style={{
+                  padding: '16px 14px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 10,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>{vp.icon}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4, letterSpacing: '0.02em' }}>{vp.title}</div>
+                  <div style={{ fontSize: 10.5, color: C.text3, lineHeight: 1.4 }}>{vp.desc}</div>
                 </div>
-                <span style={{ fontSize: 18, color: 'rgba(10,12,16,0.6)' }}>↗</span>
-              </button>
-
-              {/* Option 2 : Voir avec données démo */}
-              <button
-                onClick={handleDemo}
-                disabled={creating}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '20px 24px', borderRadius: 12,
-                  background: C.surface2, border: `1px solid ${C.border2}`,
-                  color: C.text, cursor: creating ? 'wait' : 'pointer',
-                  textAlign: 'left', fontFamily: 'inherit',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { if(!creating){ e.currentTarget.style.borderColor = C.blueLight; e.currentTarget.style.background = C.surface3 } }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border2; e.currentTarget.style.background = C.surface2 }}
-              >
-                <div style={{
-                  width: 48, height: 48, borderRadius: 10, flexShrink: 0,
-                  background: 'rgba(29,184,122,0.12)', border: `1px solid ${C.green}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24,
-                }}>🎮</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3 }}>
-                    Voir avec données démo
-                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(29,184,122,0.18)', color: C.green, marginLeft: 8, verticalAlign: 'middle' }}>RECOMMANDÉ</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: C.text2 }}>
-                    Topstep 50K + 30 trades fictifs pour explorer toutes les fonctionnalités
-                  </div>
-                </div>
-                <span style={{ fontSize: 18, color: C.text3 }}>→</span>
-              </button>
-
-              {/* Option 3 : Tutoriel guidé */}
-              <button
-                onClick={handleTutorial}
-                disabled={creating}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '20px 24px', borderRadius: 12,
-                  background: C.surface2, border: `1px solid ${C.border2}`,
-                  color: C.text, cursor: creating ? 'wait' : 'pointer',
-                  textAlign: 'left', fontFamily: 'inherit',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { if(!creating){ e.currentTarget.style.borderColor = C.blueLight; e.currentTarget.style.background = C.surface3 } }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border2; e.currentTarget.style.background = C.surface2 }}
-              >
-                <div style={{
-                  width: 48, height: 48, borderRadius: 10, flexShrink: 0,
-                  background: 'rgba(45,111,255,0.12)', border: `1px solid ${C.blueLight}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24,
-                }}>🎓</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3 }}>
-                    Suivre le tutoriel interactif
-                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(45,111,255,0.18)', color: C.blueLight, marginLeft: 8, verticalAlign: 'middle' }}>NOUVEAU</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: C.text2 }}>
-                    11 étapes en ~5 min — tu crées RÉELLEMENT ta firme, un compte, un trade, un payout (guidé pas à pas)
-                  </div>
-                </div>
-                <span style={{ fontSize: 18, color: C.text3 }}>→</span>
-              </button>
+              ))}
             </div>
 
-            {/* Aperçu des firmes supportées */}
-            <div style={{
-              padding: '16px 20px', borderRadius: 10,
-              background: C.surface2, border: `1px solid ${C.border}`,
-              marginBottom: 20,
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
-                10 PropFirms supportées
+            {/* Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+              <button
+                onClick={() => setStep('profile')}
+                style={{
+                  padding: '12px 32px', fontSize: 14, fontWeight: 600,
+                  background: C.text, color: '#0a0c10',
+                  border: 'none', borderRadius: 8,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 20px rgba(0,0,0,0.3)',
+                  transition: 'transform 0.15s',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+              >
+                Continuer <span style={{ fontFamily: 'monospace' }}>→</span>
+              </button>
+              <button
+                onClick={handleSkip}
+                style={{
+                  background: 'none', border: 'none', color: C.text3,
+                  fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
+                  fontFamily: 'inherit', marginTop: 4,
+                }}
+              >Plus tard, je veux explorer librement</button>
+            </div>
+          </div>
+        )}
+
+        {/* === STEP 2 : PROFIL TRADER === */}
+        {step === 'profile' && (
+          <div style={{ position: 'relative', padding: '32px 40px 28px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, letterSpacing: '-0.01em' }}>
+                Quel trader es-tu ?
+              </h2>
+              <p style={{ fontSize: 13, color: C.text2 }}>
+                Optionnel — aide-nous à personnaliser ton expérience.
+              </p>
+            </div>
+
+            {/* Trading style */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                Style de trading
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                {FIRM_SUGGESTIONS.map(f => (
-                  <div key={f.name} title={f.name} style={{ flexShrink: 0 }}>
-                    {getFirmLogo(f.name, f.color, 28)}
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                {TRADING_STYLES.map(s => (
+                  <button
+                    key={s.k}
+                    onClick={() => setTradingStyle(tradingStyle === s.k ? null : s.k)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 14px', borderRadius: 8,
+                      background: tradingStyle === s.k ? 'rgba(45,111,255,0.12)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${tradingStyle === s.k ? C.blueLight : C.border}`,
+                      color: C.text, cursor: 'pointer', textAlign: 'left',
+                      fontFamily: 'inherit', transition: 'all 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>{s.emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{s.label}</div>
+                      <div style={{ fontSize: 10.5, color: C.text3, marginTop: 2 }}>{s.desc}</div>
+                    </div>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Skip link */}
-            <div style={{ textAlign: 'center' }}>
+            {/* PropFirms used */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                PropFirms que tu utilises {selectedFirms.length > 0 && <span style={{ color: C.blueLight, marginLeft: 6 }}>· {selectedFirms.length} sélectionnée{selectedFirms.length > 1 ? 's' : ''}</span>}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                {FIRM_SUGGESTIONS.map(f => {
+                  const isSelected = selectedFirms.includes(f.name)
+                  return (
+                    <button
+                      key={f.name}
+                      onClick={() => toggleFirm(f.name)}
+                      title={f.name}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: 6, padding: '12px 6px', borderRadius: 8,
+                        background: isSelected ? 'rgba(45,111,255,0.1)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${isSelected ? C.blueLight : C.border}`,
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        transition: 'all 0.15s', position: 'relative',
+                      }}
+                    >
+                      {getFirmLogo(f.name, f.color, 28)}
+                      <div style={{
+                        fontSize: 9, color: isSelected ? C.blueLight : C.text3,
+                        fontWeight: isSelected ? 700 : 500,
+                        textAlign: 'center', lineHeight: 1.1,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        width: '100%',
+                      }}>{f.name.split(' ')[0]}</div>
+                      {isSelected && (
+                        <div style={{
+                          position: 'absolute', top: 4, right: 4,
+                          width: 14, height: 14, borderRadius: 99,
+                          background: C.blueLight, color: '#fff',
+                          fontSize: 9, fontWeight: 700,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>✓</div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Nav buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                onClick={() => setStep('welcome')}
+                style={{
+                  background: 'none', border: 'none', color: C.text3,
+                  fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}
+              >
+                <span style={{ fontFamily: 'monospace' }}>←</span> Retour
+              </button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  onClick={() => setStep('choose')}
+                  style={{
+                    background: 'none', border: 'none', color: C.text3,
+                    fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                    textDecoration: 'underline',
+                  }}
+                >Passer</button>
+                <button
+                  onClick={() => setStep('choose')}
+                  style={{
+                    padding: '10px 24px', fontSize: 13, fontWeight: 600,
+                    background: C.text, color: '#0a0c10',
+                    border: 'none', borderRadius: 7,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  Continuer <span style={{ fontFamily: 'monospace' }}>→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === STEP 3 : CHOISIS TA VOIE === */}
+        {step === 'choose' && (
+          <div style={{ position: 'relative', padding: '32px 40px 28px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, letterSpacing: '-0.01em' }}>
+                Comment veux-tu démarrer ?
+              </h2>
+              <p style={{ fontSize: 13, color: C.text2 }}>
+                {selectedFirms.length > 0
+                  ? `Tu cibles ${selectedFirms.length} PropFirm${selectedFirms.length > 1 ? 's' : ''}. Voici 3 manières de commencer.`
+                  : '3 manières de découvrir Quantara — choisis ce qui te ressemble.'}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+              {/* Option 1 : Ajouter ma vraie firme */}
+              <button
+                onClick={handleAddFirm}
+                disabled={creating}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '16px 20px', borderRadius: 11,
+                  background: C.text,
+                  border: '1px solid transparent', color: '#0a0c10', cursor: creating ? 'wait' : 'pointer',
+                  textAlign: 'left', fontFamily: 'inherit',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 20px rgba(0,0,0,0.25)',
+                  transition: 'transform 0.15s',
+                }}
+                onMouseEnter={e => { if(!creating) e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+              >
+                <div style={{
+                  width: 42, height: 42, borderRadius: 9, flexShrink: 0,
+                  background: 'rgba(45,111,255,0.15)',
+                  border: '1px solid rgba(45,111,255,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 20, color: C.blue,
+                }}>→</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>Ajouter ma 1ère PropFirm</div>
+                  <div style={{ fontSize: 11.5, color: 'rgba(10,12,16,0.7)' }}>
+                    Configuration en 30 sec — règles drawdown/payout pré-remplies
+                  </div>
+                </div>
+                <span style={{ fontSize: 16, color: 'rgba(10,12,16,0.55)' }}>↗</span>
+              </button>
+
+              {/* Option 2 : Démo */}
+              <button
+                onClick={handleDemo}
+                disabled={creating}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '16px 20px', borderRadius: 11,
+                  background: C.surface2, border: `1px solid ${C.border2}`,
+                  color: C.text, cursor: creating ? 'wait' : 'pointer',
+                  textAlign: 'left', fontFamily: 'inherit',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if(!creating){ e.currentTarget.style.borderColor = C.green; e.currentTarget.style.background = C.surface3 } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border2; e.currentTarget.style.background = C.surface2 }}
+              >
+                <div style={{
+                  width: 42, height: 42, borderRadius: 9, flexShrink: 0,
+                  background: 'rgba(29,184,122,0.12)', border: `1px solid ${C.green}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22,
+                }}>🎮</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
+                    Voir avec données démo
+                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(29,184,122,0.18)', color: C.green, marginLeft: 8, verticalAlign: 'middle' }}>RECOMMANDÉ</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.text2 }}>
+                    Topstep 50K + 30 trades fictifs pour explorer toutes les fonctionnalités
+                  </div>
+                </div>
+                <span style={{ fontSize: 16, color: C.text3 }}>→</span>
+              </button>
+
+              {/* Option 3 : Tutoriel */}
+              <button
+                onClick={handleTutorial}
+                disabled={creating}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '16px 20px', borderRadius: 11,
+                  background: C.surface2, border: `1px solid ${C.border2}`,
+                  color: C.text, cursor: creating ? 'wait' : 'pointer',
+                  textAlign: 'left', fontFamily: 'inherit',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if(!creating){ e.currentTarget.style.borderColor = C.blueLight; e.currentTarget.style.background = C.surface3 } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border2; e.currentTarget.style.background = C.surface2 }}
+              >
+                <div style={{
+                  width: 42, height: 42, borderRadius: 9, flexShrink: 0,
+                  background: 'rgba(45,111,255,0.12)', border: `1px solid ${C.blueLight}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22,
+                }}>🎓</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
+                    Suivre le tutoriel interactif
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.text2 }}>
+                    11 étapes guidées en ~5 min — tu crées vraiment ta firme + 1 compte + 1 trade
+                  </div>
+                </div>
+                <span style={{ fontSize: 16, color: C.text3 }}>→</span>
+              </button>
+            </div>
+
+            {/* Nav buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                onClick={() => setStep('profile')}
+                style={{
+                  background: 'none', border: 'none', color: C.text3,
+                  fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}
+              >
+                <span style={{ fontFamily: 'monospace' }}>←</span> Retour
+              </button>
               <button
                 onClick={handleSkip}
                 disabled={creating}
                 style={{
                   background: 'none', border: 'none', color: C.text3,
-                  fontSize: 12, cursor: 'pointer', textDecoration: 'underline',
+                  fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
                   fontFamily: 'inherit',
                 }}
               >Plus tard, je veux explorer librement</button>
@@ -335,15 +557,67 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
           </div>
         )}
 
+        {/* === DEMO LOADING === */}
         {step === 'demo-loading' && (
           <div style={{ position: 'relative', padding: '60px 40px', textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 18 }}>⚙️</div>
+            <div style={{ fontSize: 48, marginBottom: 18, animation: 'spin 2s linear infinite' }}>⚙️</div>
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Création de la démo en cours...</h2>
             <p style={{ fontSize: 13, color: C.text2, marginBottom: 24 }}>
               On crée ta firme Topstep démo + 30 trades fictifs réalistes.
             </p>
-            <div style={{ fontSize: 11, color: C.text3 }}>
-              Cela prend ~3 secondes...
+            <div style={{ fontSize: 11, color: C.text3 }}>Cela prend ~3 secondes...</div>
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
+
+        {/* === STEP 4 : DONE (après démo) === */}
+        {step === 'done' && (
+          <div style={{ position: 'relative', padding: '40px 40px 32px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
+              <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.01em' }}>
+                Tout est prêt !
+              </h2>
+              <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, maxWidth: 420, margin: '0 auto' }}>
+                Ta démo Topstep 50K + 30 trades fictifs sont créés.<br />
+                Que veux-tu faire maintenant ?
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
+              {[
+                { k: 'dashboard', icon: '📊', title: 'Dashboard', desc: 'Vue d\'ensemble + balance' },
+                { k: 'heatmaps',  icon: '🔥', title: 'Heatmaps',  desc: 'Patterns par heure/jour' },
+                { k: 'tutorial',  icon: '🎓', title: 'Tutoriel',  desc: '5 min guidées' },
+              ].map(action => (
+                <button
+                  key={action.k}
+                  onClick={() => handleDoneAction(action.k)}
+                  style={{
+                    padding: '18px 14px', borderRadius: 11,
+                    background: C.surface2, border: `1px solid ${C.border2}`,
+                    color: C.text, cursor: 'pointer', fontFamily: 'inherit',
+                    textAlign: 'center', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.blueLight; e.currentTarget.style.background = C.surface3 }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border2; e.currentTarget.style.background = C.surface2 }}
+                >
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>{action.icon}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{action.title}</div>
+                  <div style={{ fontSize: 10.5, color: C.text3, lineHeight: 1.4 }}>{action.desc}</div>
+                </button>
+              ))}
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <button
+                onClick={() => handleDoneAction('dashboard')}
+                style={{
+                  background: 'none', border: 'none', color: C.text3,
+                  fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                  textDecoration: 'underline',
+                }}
+              >Fermer et explorer librement</button>
             </div>
           </div>
         )}
