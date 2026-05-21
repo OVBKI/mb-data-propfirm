@@ -493,63 +493,81 @@ export const PROPFIRM_RULES = {
     }
   },
   'Alpha Futures': {
-    // VÉRIFIÉ MAI 2026 — Source : screenshots officiels alpha-futures.com (compte trader confirmé)
+    // VÉRIFIÉ MAI 2026 — Sources : help.alpha-futures.com (docs officielles) + screenshots compte trader
     // PLATEFORME : DXtrade (broker direct — pas Rithmic)
     //
-    // 3 PLANS distincts (chacun avec ses propres règles) :
+    // 3 PLANS distincts — chacun avec ses tailles et règles propres :
     //
-    //   PREMIUM   : 50/100/150K — 2 paths possibles :
-    //               • $79-239/mo avec activation fee $149 au passage Qualified
-    //               • $159-379/mo "No Activation Fee" (plus cher mensuel, 0 fee au funded)
-    //               Eval: 2 jours min · Consistency 50% · DD $2000 (50K)
-    //               Qualified: 5 jours min · Profit split 90% · Max 5 accounts
+    //   PREMIUM   : 50/100/150K
+    //               - 2 paths : $79-239/mo (+$149 activation) OU $159-379/mo (0 activation)
+    //               - Eval : Consistency 50% · MLL 4% trailing EOD
+    //               - Qualified : 0 Daily Loss Guard, 0 Consistency, 90% split
+    //               - Withdraw : 50% des profits chaque 5 winning days ≥ $200
     //
-    //   ZERO      : 25/50/100K — Pas d'activation fee · $79/$119/$239 mo
-    //               Eval: 1 jour min (!) · Daily Loss Guard $1000 (eval+qualified)
-    //               Qualified: 40% consistency (rare en Qualified seulement) · 90% split
+    //   ZERO      : 25/50/100K
+    //               - $79/$119/$239 mo · 0 activation permanent
+    //               - Eval : 0 Consistency · 1 jour min · DLG $500/$1000/$2000
+    //               - Qualified : 40% Consistency UNIQUEMENT · 90% split
+    //               - MLL ne reset PAS à 0 après withdrawal
+    //               - Cap payouts : $1K-$2.5K par cycle, 50% des profits
     //
-    //   ADVANCED  : 50/100/150K — $139/$279/$419 mo
-    //               DD réduit 3.5% ($1750 sur 50K) · Profit target 8% ($4000 50K)
-    //               5 contracts max — NO SCALING PLAN (taille max dès jour 1)
-    //               Qualified: 0 consistency · 90% split · Max 3 accounts seulement
+    //   ADVANCED  : 50/100/150K
+    //               - $139/$279/$419 mo · $149 activation
+    //               - MLL 3.5% (réduit) · Profit target 8% (plus élevé)
+    //               - Pas de scaling plan (taille max dès jour 1)
+    //               - 0 Daily Loss Guard · 0 Consistency Qualified · 90% split
+    //               - Withdraw max $15,000 par request · 4 monthly withdrawals
+    //
+    // MLL (Maximum Loss Limit — universel toutes plans) :
+    //   • EOD TRAILING (PAS intraday) — calculé sur balance EOD high
+    //   • Lock au starting balance (une fois atteint, plus de trailing down)
+    //   • Breach = liquidation immédiate (pas de warning)
+    //   • Eval breach = reset payant OU rebill mensuel · Qualified breach = compte fermé
     //
     // Caractéristiques globales :
-    //   - Hold Through News : YES (toutes plans)
     //   - Overnight + Weekend AUTORISÉS ✅ (rare !)
-    //   - Profit split 90% en Qualified pour les 3 plans (pas tiered)
-    //   - Reset disponible (varie par plan : $69-599 selon plan/status)
+    //   - Hold Through News : YES (Premium/Advanced sans restriction · Zero avec restrictions Qualified)
+    //   - Profit Split 90% en Qualified — IMMÉDIAT pour les 3 plans (pas tiered)
     plans: ['25k','50k','100k','150k'],
     rules: {
-      'Objectif de profit (Eval)':{'25k':'$1,500 (Zero, 6%)','50k':'$3,000 Premium/Zero · $4,000 Advanced','100k':'$6,000 Premium/Zero · $8,000 Advanced','150k':'$9,000 Premium · $12,000 Advanced'},
-      'Drawdown trailing max':    {'25k':'$1,000 (Zero, 4%)','50k':'$2,000 Premium/Zero · $1,750 Advanced','100k':'$4,000 Premium/Zero · $3,500 Advanced','150k':'$6,000 Premium · $5,250 Advanced'},
-      'Drawdown journalier max':  {'25k':'$1,000 (Zero · Daily Loss Guard)','50k':'$1,000 Zero · ❌ AUCUN Premium/Advanced','100k':'$1,000 Zero · ❌ AUCUN Premium/Advanced','150k':'❌ AUCUN (Zero non dispo en 150K)'},
-      'Jours de trading min (Eval)':{'25k':'1 (Zero)','50k':'2 Premium · 1 Zero · 2 Advanced','100k':'idem','150k':'idem'},
-      'Jours de trading min (Qualified)':{'25k':'5','50k':'5 (tous plans)','100k':'5','150k':'5'},
-      'Règle de cohérence (Eval)':{'25k':'AUCUNE (Zero)','50k':'Premium: 50% · Zero: AUCUNE · Advanced: 50%','100k':'idem','150k':'idem'},
-      'Règle de cohérence (Qualified)':{'25k':'40% (Zero seulement !)','50k':'Premium: AUCUNE · Zero: 40% · Advanced: AUCUNE','100k':'idem','150k':'idem'},
-      'Hold Through News':        {'25k':'✅ Eval YES · Qualified YES (Zero: avec restrictions)','50k':'idem','100k':'idem','150k':'idem'},
-      // Trading
-      'Positions overnight':      {'25k':'✅ AUTORISÉ (overnight + weekend) — unique sur le marché','50k':'idem','100k':'idem','150k':'idem'},
-      'Trading des news':         {'25k':'✅ Autorisé (Premium/Advanced) · Zero: restrictions en Qualified','50k':'idem','100k':'idem','150k':'idem'},
-      'DCA (renforcement)':       {'25k':'Toléré (pas de règle stricte)','50k':'idem','100k':'idem','150k':'idem'},
-      'Algos / automation':       {'25k':'EAs limités — vérifier T&C avant utilisation','50k':'idem','100k':'idem','150k':'idem'},
-      // Contrats (Position Size Max)
-      'Contrats max (Eval)':      {'25k':'3 (Zero)','50k':'Premium: 4 · Zero: 3 · Advanced: 5','100k':'~6-8 selon plan','150k':'~10-15 selon plan'},
-      'Contrats max (Qualified)': {'25k':'3 (Zero)','50k':'Premium: 4 · Zero: 3 · Advanced: 5 (no scaling!)','100k':'idem proportionnel','150k':'idem proportionnel'},
-      // Tarifs PREMIUM (2 paths : with activation OR no-activation)
-      'Prix mensuel Premium':     {'25k':'— (Premium non dispo en 25K)','50k':'$79/mo (+$149 activation) OU $159/mo (0 activation)','100k':'$159/mo (+$269) OU $269/mo (0)','150k':'$239/mo (+$379) OU $379/mo (0)'},
-      // Tarifs ZERO (no activation fee, mensuel only)
-      'Prix mensuel Zero':        {'25k':'$79/mo · 0 activation','50k':'$119/mo · 0 activation','100k':'$239/mo · 0 activation','150k':'— (Zero non dispo en 150K)'},
-      // Tarifs ADVANCED (no activation fee mentioned)
-      'Prix mensuel Advanced':    {'25k':'— (Advanced non dispo en 25K)','50k':'$139/mo','100k':'$279/mo','150k':'$419/mo'},
-      'Frais activation funded':  {'25k':'Zero: $0','50k':'Premium path 1: $149 · Premium path 2: $0 · Zero: $0 · Advanced: $0','100k':'idem','150k':'idem'},
-      // Resets (varie : Eval vs Qualified, et par plan)
-      'Reset Eval':               {'25k':'Zero: $109','50k':'Premium: $69 (path 1) ou $149 (path 2) · Zero: $109 · Advanced: $139','100k':'~$129-249','150k':'~$199-349'},
-      'Reset Qualified':          {'25k':'Zero: $499','50k':'Premium: $599 · Zero: $499 · Advanced: AUCUN reset','100k':'idem','150k':'idem'},
-      // Payouts (Qualified)
-      'Répartition gains':        {'25k':'90% trader from start (toutes plans Qualified)','50k':'90% (immédiat)','100k':'90%','150k':'90%'},
+      // Profit Target (Eval)
+      'Objectif de profit':       {'25k':'$1,500 (Zero uniquement)','50k':'Premium/Zero: $3,000 · Advanced: $4,000','100k':'Premium/Zero: $6,000 · Advanced: $8,000','150k':'Premium: $9,000 · Advanced: $12,000'},
+      // MLL — Maximum Loss Limit (EOD trailing)
+      'MLL (Maximum Loss Limit)': {'25k':'Zero: $1,000 (EOD trailing, lock starting)','50k':'Premium/Zero: $2,000 · Advanced: $1,750 (3.5%)','100k':'Premium: $3,000 · Zero: $3,000 · Advanced: $3,500','150k':'Premium: $4,500 · Advanced: $5,250'},
+      // Daily Loss Guard (DLG) — seulement Zero
+      'Daily Loss Guard':         {'25k':'Zero: $500','50k':'Zero: $1,000 · Premium: AUCUN · Advanced: AUCUN','100k':'Zero: $2,000 · Premium: AUCUN · Advanced: AUCUN','150k':'AUCUN (Zero non dispo en 150K · Premium/Advanced sans DLG)'},
+      // Min trading days
+      'Min jours trading (Eval)': {'25k':'Zero: 1 jour (one-day pass possible)','50k':'Premium: 2 · Zero: 1 · Advanced: 2','100k':'idem','150k':'idem'},
+      'Min jours trading (Qual)': {'25k':'5','50k':'5 (tous plans)','100k':'5','150k':'5'},
+      // Consistency rule
+      'Consistency (Eval)':       {'25k':'Zero: AUCUNE','50k':'Premium: 50% · Zero: AUCUNE · Advanced: 50%','100k':'idem','150k':'idem'},
+      'Consistency (Qualified)':  {'25k':'Zero: 40% (rare !)','50k':'Premium: AUCUNE · Zero: 40% · Advanced: AUCUNE','100k':'idem','150k':'idem'},
+      // Profit split (Qualified)
+      'Profit Split (Qualified)': {'25k':'90% (Zero, dès le 1er payout)','50k':'90% IMMÉDIAT (tous plans · pas tiered)','100k':'90%','150k':'90%'},
+      // Position sizing (mini contracts | micro contracts)
+      'Contrats max (mini)':      {'25k':'Zero: 1','50k':'Premium: 4 · Zero: 3 · Advanced: 5','100k':'Premium: 8 · Zero: 6 · Advanced: 10','150k':'Premium: 12 · Advanced: 15'},
+      'Contrats max (micro)':     {'25k':'Zero: 10','50k':'Premium: 40 · Zero: 30 · Advanced: 50','100k':'Premium: 80 · Zero: 60 · Advanced: 100','150k':'Premium: 120 · Advanced: 150'},
+      'Scaling plan':             {'25k':'Zero: pas de scaling (full dès jour 1)','50k':'Premium/Zero: pas de scaling · Advanced: PAS DE SCALING (taille max dès jour 1)','100k':'idem','150k':'idem'},
+      // Pricing
+      'Prix mensuel Premium':     {'25k':'— (Premium non dispo en 25K)','50k':'$79/mo (+$149 act) OU $159/mo (0 act)','100k':'$159/mo (+$149 act) OU $269/mo (0 act)','150k':'$239/mo (+$149 act) OU $379/mo (0 act)'},
+      'Prix mensuel Zero':        {'25k':'$79/mo · 0 activation permanent','50k':'$119/mo · 0 activation','100k':'$239/mo · 0 activation','150k':'— (Zero non dispo en 150K)'},
+      'Prix mensuel Advanced':    {'25k':'— (Advanced non dispo en 25K)','50k':'$139/mo (+$149 activation)','100k':'$279/mo (+$149 activation)','150k':'$419/mo (+$149 activation)'},
+      'Activation fee':           {'25k':'Zero: $0','50k':'Premium path1: $149 · Premium path2: $0 · Zero: $0 · Advanced: $149','100k':'idem','150k':'idem'},
+      // Reset costs (Eval phase)
+      'Reset Eval':               {'25k':'Zero: $69','50k':'Premium: $69 (path1) ou $149 (path2) · Zero: $109 · Advanced: $139','100k':'Premium: $139/$239 · Zero: $219 · Advanced: $279','150k':'Premium: $219/$329 · Advanced: $419'},
+      // Trading rules
+      'Hold Through News':        {'25k':'✅ YES (avec restrictions sur Zero Qualified)','50k':'idem','100k':'idem','150k':'idem'},
+      'Positions overnight':      {'25k':'✅ AUTORISÉ (overnight + weekend) — rare sur le marché','50k':'idem','100k':'idem','150k':'idem'},
+      'Trading des news':         {'25k':'Premium/Advanced: aucune restriction · Zero: restrictions Qualified uniquement','50k':'idem','100k':'idem','150k':'idem'},
+      'Algos / automation':       {'25k':'EAs limités — vérifier Prohibited Trading Practices avant usage','50k':'idem','100k':'idem','150k':'idem'},
+      'Copy trading':             {'25k':'Voir doc officielle Copy Trading','50k':'idem','100k':'idem','150k':'idem'},
+      // Payouts
+      'Payout — Premium':         {'25k':'— (non dispo)','50k':'50% des profits par cycle, après 5 winning days ≥ $200','100k':'idem','150k':'idem'},
+      'Payout — Zero':            {'25k':'5 winning days ≥ $200 · cap 50% profits · max $1K/cycle','50k':'idem · max $2K/cycle','100k':'idem · max $2.5K/cycle','150k':'— (non dispo)'},
+      'Payout — Advanced':        {'25k':'— (non dispo)','50k':'Max $15,000 par request · 4 monthly withdrawals possibles','100k':'idem','150k':'idem'},
       'Méthodes payout':          {'25k':'ACH, Wise, Wire SWIFT, Rise (intl)','50k':'idem','100k':'idem','150k':'idem'},
-      'Max comptes simultanés':   {'25k':'Zero: 5 accounts','50k':'Premium: 5 · Zero: 5 · Advanced: 3','100k':'idem','150k':'idem'},
+      // Comptes simul.
+      'Max comptes simultanés':   {'25k':'Voir "Maximum Allocation" sur help.alpha-futures.com','50k':'idem','100k':'idem','150k':'idem'},
     }
   },
 }
