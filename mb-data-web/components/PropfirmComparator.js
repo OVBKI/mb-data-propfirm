@@ -677,31 +677,46 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
           />
         </div>
 
-        {/* Toutes les règles, groupées par section */}
+        {/* Toutes les règles, groupées par section.
+            Les regex ont été élargis mai 2026 après ajout de ~40 nouvelles clés (DLL, Mécanisme trailing,
+            Profit split par famille, Path to LIVE, Sim→Live triggers, etc.).
+            Une 7e section "Autres règles" catche les keys non matchés pour garantir 100% d'affichage. */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <RuleSection title="Évaluation" keys={ruleKeys.filter(k =>
-            /objectif|drawdown|jour|cohérence|consistency|limite.*temps|profit\s*min/i.test(k)
-          )} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+          {(() => {
+            // Patterns par section — élargis pour matcher les clés des fiches détaillées mai 2026
+            const evalRe = /objectif|drawdown|jour|cohérence|consistency|limite.*temps|profit\s*min|durée|mécanisme|daily loss|\bDLL\b|safety net|stop.loss|take.profit|metals|lock|path to live|transition|sim.?→.?live|sim.?live|sim funded|live (rapid|pro|funded)|risk lock|MLL|drawdown lock|profit target|starting balance|live.*initial|bonus|promotion|expansion|min.?trading|max.?contracts|DLR/i
+            const restrictRe = /overnight|news|annonces|dca|algo|copy|automation|hedging|scalping|weekend|heures|robots|auto.?flat|auto.?liquidation|counter.?position|coordinated|instruments|trading des|trading hours|t1 news|news t1|tier.1/i
+            const contratsRe = /contrats|inactivité|scaling|position size|micro|mini|contracts/i
+            const tarifsRe = /prix|frais|reset|data|codes promo|activation|tax|kyc|fee|cost|discount|éligibilité|license|commission|platform/i
+            const payoutsRe = /répartition|gains|payout|cadence|délai|méthodes|buffer|min entre|withdrawal|threshold|safety|cap|profit split|balance cap|balance initial|cycle|elite reward|after.*payouts|live.*funding|sim.?→.?live|funded|call up|call down|shoulder tap|back2funded|b2f/i
+            const multiRe = /combines|comptes|évaluations|stop-loss|accounts.*limit|new accounts|actifs|xfa.*simul/i
 
-          <RuleSection title="Restrictions trading" keys={ruleKeys.filter(k =>
-            /overnight|news|annonces|dca|algo|copy|automation|hedging|scalping|weekend|heures|robots/i.test(k)
-          )} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+            // Calcul des matches par section
+            const evalKeys = ruleKeys.filter(k => evalRe.test(k))
+            const restrictKeys = ruleKeys.filter(k => restrictRe.test(k) && !evalRe.test(k))
+            const contratsKeys = ruleKeys.filter(k => contratsRe.test(k) && !evalRe.test(k) && !restrictRe.test(k))
+            const tarifsKeys = ruleKeys.filter(k => tarifsRe.test(k) && !evalRe.test(k) && !restrictRe.test(k) && !contratsRe.test(k))
+            const payoutsKeys = ruleKeys.filter(k => payoutsRe.test(k) && !evalRe.test(k) && !restrictRe.test(k) && !contratsRe.test(k) && !tarifsRe.test(k))
+            const multiKeys = ruleKeys.filter(k => multiRe.test(k) && !evalRe.test(k) && !restrictRe.test(k) && !contratsRe.test(k) && !tarifsRe.test(k) && !payoutsRe.test(k))
 
-          <RuleSection title="Contrats" keys={ruleKeys.filter(k =>
-            /contrats|inactivité/i.test(k)
-          )} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+            // Fallback : clés non matchées par AUCUNE section
+            const matchedKeys = new Set([...evalKeys, ...restrictKeys, ...contratsKeys, ...tarifsKeys, ...payoutsKeys, ...multiKeys])
+            const otherKeys = ruleKeys.filter(k => !matchedKeys.has(k))
 
-          <RuleSection title="Tarifs" keys={ruleKeys.filter(k =>
-            /prix|frais|reset|data|codes promo/i.test(k)
-          )} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
-
-          <RuleSection title="Payouts" keys={ruleKeys.filter(k =>
-            /répartition|gains|payout|cadence|délai|méthodes|buffer|min entre|withdrawal|threshold|safety/i.test(k)
-          )} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
-
-          <RuleSection title="Multi-comptes" keys={ruleKeys.filter(k =>
-            /combines|comptes|évaluations|stop-loss/i.test(k)
-          )} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+            return (
+              <>
+                <RuleSection title="Évaluation" keys={evalKeys} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+                <RuleSection title="Restrictions trading" keys={restrictKeys} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+                <RuleSection title="Contrats" keys={contratsKeys} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+                <RuleSection title="Tarifs" keys={tarifsKeys} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+                <RuleSection title="Payouts" keys={payoutsKeys} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+                <RuleSection title="Multi-comptes" keys={multiKeys} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+                {otherKeys.length > 0 && (
+                  <RuleSection title="Autres règles" keys={otherKeys} rules={rules} ruleValue={ruleValue} firmName={firmName} plan={selectedPlan} />
+                )}
+              </>
+            )
+          })()}
         </div>
       </div>
     </div>
