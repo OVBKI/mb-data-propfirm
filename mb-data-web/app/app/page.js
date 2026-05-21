@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import AuthPage from '../../components/AuthPage'
-import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, STATUS_COLORS, PX_FIRMS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, defaultProfitSplit as defaultProfitSplitFromRules } from '../../lib/constants'
+import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS, STATUS_COLORS, PX_FIRMS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, defaultProfitSplit as defaultProfitSplitFromRules } from '../../lib/constants'
 
 // Wrapper qui retourne uniquement les valeurs autorisées par le dropdown : 100, 90, 80, 70
 function suggestProfitSplit(firmName, plan){
@@ -1215,7 +1215,134 @@ export default function Home() {
         </div>
       </div>
 
-      {firmModal&&<div onClick={()=>setFirmModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px'}}><div className="modal" onClick={e=>e.stopPropagation()} style={{...S.card,padding:'28px',width:'400px',maxWidth:'100%',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}><h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>Ajouter une PropFirm</h3><div style={{marginBottom:'14px'}}><label style={S.label}>Nom</label><input value={newFirmName} onChange={e=>setNewFirmName(e.target.value)} placeholder="Tape le nom ou clique une suggestion ci-dessous" style={S.input} onKeyDown={e=>e.key==='Enter'&&createFirm()} autoFocus /></div><div style={{marginBottom:'20px'}}><div style={{...S.label,marginBottom:'8px'}}>Suggestions</div><div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>{FIRM_SUGGESTIONS.map(s=>(<button type="button" key={s} onClick={()=>setNewFirmName(s)} style={{padding:'6px 12px',fontSize:'12px',cursor:'pointer',borderRadius:'99px',border:'0.5px solid var(--border2)',fontFamily:'inherit',fontWeight:'500',background:newFirmName===s?'var(--blue)':'var(--surface2)',color:newFirmName===s?'#fff':'var(--text2)'}}>{s}</button>))}</div></div><div style={{display:'flex',gap:'8px',justifyContent:'flex-end'}}><button onClick={()=>setFirmModal(false)} style={S.btnGhost}>Annuler</button><button onClick={createFirm} style={S.btnPrimary}>Créer &amp; Ajouter un compte</button></div></div></div>}
+      {firmModal && (
+        <div
+          onClick={() => setFirmModal(false)}
+          style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}
+        >
+          <div
+            className="modal"
+            onClick={e => e.stopPropagation()}
+            style={{...S.card, padding:'28px', width:'600px', maxWidth:'100%', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}
+          >
+            <h3 style={{fontSize:'17px', fontWeight:'600', marginBottom:'6px'}}>Ajouter une PropFirm</h3>
+            <div style={{fontSize:'12px', color:'var(--text3)', marginBottom:'20px'}}>
+              Choisis dans la liste ou tape un nom personnalisé.
+            </div>
+
+            {/* === Grid de cards avec logos === */}
+            <div style={{
+              display:'grid',
+              gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))',
+              gap:'10px',
+              marginBottom:'18px',
+            }}>
+              {FIRM_SUGGESTIONS.map(s => {
+                const isSelected = newFirmName === s
+                const color = FIRM_SUGGESTION_COLORS[s] || '#4d8fff'
+                return (
+                  <button
+                    type="button"
+                    key={s}
+                    onClick={() => setNewFirmName(s)}
+                    title={s}
+                    style={{
+                      display:'flex', flexDirection:'column', alignItems:'center', gap:'8px',
+                      padding:'14px 8px', borderRadius:'10px',
+                      background: isSelected ? 'rgba(45,111,255,0.12)' : 'var(--surface2)',
+                      border: `1px solid ${isSelected ? 'var(--blue-light)' : 'var(--border2)'}`,
+                      cursor:'pointer', fontFamily:'inherit',
+                      transition:'all 0.15s', position:'relative',
+                    }}
+                    onMouseEnter={e => { if(!isSelected){ e.currentTarget.style.borderColor='var(--blue-light)'; e.currentTarget.style.background='var(--surface3)' } }}
+                    onMouseLeave={e => { if(!isSelected){ e.currentTarget.style.borderColor='var(--border2)'; e.currentTarget.style.background='var(--surface2)' } }}
+                  >
+                    {getFirmLogo(s, color, 38)}
+                    <div style={{
+                      fontSize:'11px',
+                      fontWeight: isSelected ? 700 : 500,
+                      color: isSelected ? 'var(--blue-light)' : 'var(--text2)',
+                      textAlign:'center', lineHeight:1.2,
+                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                      width:'100%',
+                    }}>{s}</div>
+                    {isSelected && (
+                      <div style={{
+                        position:'absolute', top:6, right:6,
+                        width:16, height:16, borderRadius:99,
+                        background:'var(--blue-light)', color:'#fff',
+                        fontSize:10, fontWeight:700,
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>✓</div>
+                    )}
+                  </button>
+                )
+              })}
+
+              {/* === Card "Autre" (custom firm) === */}
+              {(() => {
+                const isCustom = newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName)
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Focus l'input pour saisie custom
+                      const input = document.getElementById('firm-custom-input')
+                      if (input) input.focus()
+                    }}
+                    style={{
+                      display:'flex', flexDirection:'column', alignItems:'center', gap:'8px',
+                      padding:'14px 8px', borderRadius:'10px',
+                      background: isCustom ? 'rgba(167,139,250,0.12)' : 'var(--surface2)',
+                      border: `1px dashed ${isCustom ? '#a78bfa' : 'var(--border2)'}`,
+                      cursor:'pointer', fontFamily:'inherit',
+                      transition:'all 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width:38, height:38, borderRadius:8,
+                      background:'rgba(167,139,250,0.15)',
+                      border:'1px solid rgba(167,139,250,0.35)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      fontSize:18, color:'#a78bfa', fontWeight:700,
+                    }}>+</div>
+                    <div style={{
+                      fontSize:'11px', fontWeight: isCustom ? 700 : 500,
+                      color: isCustom ? '#a78bfa' : 'var(--text2)',
+                      textAlign:'center', lineHeight:1.2,
+                    }}>Autre</div>
+                  </button>
+                )
+              })()}
+            </div>
+
+            {/* === Input nom (apparaît si "Autre" cliqué OU custom name déjà tapé) === */}
+            <div style={{marginBottom:'20px'}}>
+              <label style={S.label}>
+                Nom de la firme
+                {newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName) && (
+                  <span style={{marginLeft:8, fontSize:9, padding:'2px 6px', borderRadius:4, background:'rgba(167,139,250,0.15)', color:'#a78bfa'}}>CUSTOM</span>
+                )}
+              </label>
+              <input
+                id="firm-custom-input"
+                value={newFirmName}
+                onChange={e => setNewFirmName(e.target.value)}
+                placeholder="Tape un nom personnalisé ou clique une carte ci-dessus"
+                style={S.input}
+                onKeyDown={e => e.key === 'Enter' && createFirm()}
+              />
+            </div>
+
+            <div style={{display:'flex', gap:'8px', justifyContent:'flex-end'}}>
+              <button onClick={() => setFirmModal(false)} style={S.btnGhost}>Annuler</button>
+              <button onClick={createFirm} style={S.btnPrimary} disabled={!newFirmName.trim()}>
+                Créer &amp; Ajouter un compte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {acctModal&&<div onClick={()=>setAcctModal(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}><div className="modal" onClick={e=>e.stopPropagation()} style={{...S.card,padding:'28px',width:'440px',maxWidth:'100%',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}><h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>{acctModal.acct?'Modifier le compte':`Nouveau compte — ${firms.find(f=>f.id===acctModal.firmId)?.name}`}</h3><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}><div><label style={S.label}>Date d'achat</label><input type="date" value={acctForm.buyDate} onChange={e=>setAcctForm(p=>({...p,buyDate:e.target.value}))} style={S.input} /></div><div><label style={S.label}>Devise</label><select value={acctForm.currency} onChange={e=>setAcctForm(p=>({...p,currency:e.target.value}))} style={S.input}><option>USD</option><option>EUR</option><option>GBP</option><option>CHF</option></select></div><div><label style={S.label}>Plan / Taille du compte</label><select value={acctForm.planSize} onChange={e=>{const newPlan=e.target.value;const firmName=firms.find(f=>f.id===acctModal.firmId)?.name;const tg=defaultPayoutTarget(firmName,newPlan);const md=defaultMinTradingDays(firmName,newPlan);const pr=defaultChallengePrice(firmName,newPlan);const mdp=defaultMinDailyProfit(firmName,newPlan);const ps=suggestProfitSplit(firmName,newPlan);setAcctForm(p=>({...p,planSize:newPlan,payoutTarget:tg!==null?String(tg):p.payoutTarget,minTradingDays:md!==null?String(md):p.minTradingDays,spent:pr!==null?String(pr):p.spent,minDailyProfit:mdp!==null?String(mdp):p.minDailyProfit,profitSplit:String(ps)}))}} style={S.input}>{plansForFirm(firms.find(f=>f.id===acctModal.firmId)?.name).map(p=><option key={p} value={p}>{p.toUpperCase()}</option>)}</select></div><div style={{gridColumn:'1/-1'}}><label style={S.label}>Mode de paiement du challenge<TooltipIcon text="Mensuel : abonnement moins cher MAIS frais d'activation à payer au passage en Financé. One-time : prix plus élevé en une seule fois, sans frais d'activation par la suite. Affecte le calcul du coût total du compte." maxWidth={360} /></label><div style={{display:'flex',gap:'4px',background:'var(--surface3)',borderRadius:'var(--radius)',padding:'4px'}}>{[{v:'monthly',l:'📅 Mensuel',d:'+ frais activation'},{v:'onetime',l:'💎 One-time',d:'sans frais activation'}].map(opt=>(<button key={opt.v} type="button" onClick={()=>setAcctForm(p=>({...p,paymentMode:opt.v,activationFee:opt.v==='onetime'?'':p.activationFee}))} style={{flex:1,padding:'10px 12px',fontSize:'12px',fontWeight:'600',background:acctForm.paymentMode===opt.v?'var(--blue)':'transparent',color:acctForm.paymentMode===opt.v?'#fff':'var(--text2)',border:'none',borderRadius:'6px',cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s',display:'flex',flexDirection:'column',alignItems:'center',gap:'2px'}}><span>{opt.l}</span><span style={{fontSize:'10px',opacity:0.75,fontWeight:'500'}}>{opt.d}</span></button>))}</div></div><div><label style={S.label}>{acctForm.paymentMode==='onetime'?'Prix one-time ($)':'Prix mensuel ($)'}<TooltipIcon text={acctForm.paymentMode==='onetime'?"Le montant complet payé en une seule fois pour ce challenge.":"Le montant facturé CHAQUE MOIS tant que le challenge n'est pas validé. Quantara accumule automatiquement les mensualités au fil du temps."} maxWidth={320} /></label><input type="number" value={acctForm.spent} onChange={e=>setAcctForm(p=>({...p,spent:e.target.value}))} placeholder="0.00" style={S.input} /></div><div style={{gridColumn:'1/-1'}}><label style={S.label}>Statut</label><select value={acctForm.status} onChange={e=>setAcctForm(p=>({...p,status:e.target.value}))} style={S.input}><option>Challenge</option><option>Financé</option><option>Échoué</option></select></div>{acctForm.status==='Financé'&&<div style={{gridColumn:'1/-1',background:'rgba(29,184,122,0.07)',border:'0.5px solid var(--green)',borderRadius:'var(--radius)',padding:'12px'}}><div style={{fontSize:'11px',fontWeight:'700',color:'var(--green-text)',marginBottom:'10px',textTransform:'uppercase',letterSpacing:'0.5px'}}>✅ Compte Financé</div><div style={{display:'grid',gridTemplateColumns:acctForm.paymentMode==='onetime'?'1fr':'1fr 1fr',gap:'8px'}}><div><label style={S.label}>Date d'activation</label><input type="date" value={acctForm.activationDate} onChange={e=>setAcctForm(p=>({...p,activationDate:e.target.value}))} style={{...S.input,background:'var(--surface3)'}} /></div>{acctForm.paymentMode!=='onetime'&&<div><label style={S.label}>Frais d'activation</label><input type="number" value={acctForm.activationFee} onChange={e=>setAcctForm(p=>({...p,activationFee:e.target.value}))} placeholder="145.00" style={{...S.input,background:'var(--surface3)'}} /></div>}</div>{acctForm.paymentMode==='onetime'&&<div style={{marginTop:'8px',fontSize:'11px',color:'var(--text3)',display:'flex',gap:'6px',alignItems:'center'}}>💎 Paiement one-time → aucun frais d'activation à payer.</div>}</div>}<div style={{gridColumn:'1/-1'}}>{!acctModal.acct ? (
                   // Mode CRÉATION : nom + quantité (achats simultanés)

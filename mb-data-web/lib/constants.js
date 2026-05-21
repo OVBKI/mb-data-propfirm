@@ -561,7 +561,23 @@ export const FIRM_SUGGESTIONS = [
   'Phidias Propfirm',
   'Funded Futures Network',
   'FuturesELites',
+  'Alpha Futures',
 ]
+
+// Couleurs associées à chaque firm suggérée (utilisées pour le default logo si pas de SVG custom)
+export const FIRM_SUGGESTION_COLORS = {
+  'Topstep':                '#ff8c42',
+  'Apex Trader Funding':    '#a78bfa',
+  'Bulenox':                '#e8504a',
+  'Lucid Trading':          '#4d8fff',
+  'Tradeify':               '#1db87a',
+  'Take Profit Trader':     '#fac775',
+  'My Funded Futures':      '#fb923c',
+  'Phidias Propfirm':       '#1e2a4a',
+  'Funded Futures Network': '#a86bff',
+  'FuturesELites':          '#f472b6',
+  'Alpha Futures':          '#0066ff',
+}
 export const STATUS_COLORS = { 'Financé': '#1db87a', 'Challenge': '#fac775', 'Échoué': '#e8504a' }
 
 export const PX_FIRMS = {
