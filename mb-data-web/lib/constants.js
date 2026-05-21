@@ -36,8 +36,8 @@ export const PROPFIRM_RULES = {
       'Répartition gains':        {'50k':'90% / 10% dès le $1 (depuis 12 jan 2026)','100k':'90% / 10%','150k':'90% / 10%'},
       'Payout minimum':           {'50k':'$125 min withdrawal','100k':'$125','150k':'$125'},
       'Cap par payout':           {'50k':'$2,000 (Standard) · $3,000 (Consistency) — augmente après 1er','100k':'$2,500 · $3,000','150k':'$3,500 · $4,000'},
-      'Délai payout':             {'50k':'Same-day si avant cutoff, livraison J+1 ouvré (Wise/ACH/Aeropay)','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'50k':'Aeropay (gratuit) · Wise ($0.39) · ACH/wire ($30) · PayPal RETIRÉ','100k':'idem','150k':'idem'},
+      'Délai payout':             {'50k':'Same-day si avant cutoff, livraison J+1 ouvré (Wise/ACH/Aeropay)','100k':'Same-day si avant cutoff, livraison J+1 ouvré (Wise/ACH/Aeropay)','150k':'Same-day si avant cutoff, livraison J+1 ouvré (Wise/ACH/Aeropay)'},
+      'Méthodes payout':          {'50k':'Aeropay (gratuit) · Wise ($0.39) · ACH/wire ($30) · PayPal RETIRÉ','100k':'Aeropay (gratuit) · Wise ($0.39) · ACH/wire ($30) · PayPal RETIRÉ','150k':'Aeropay (gratuit) · Wise ($0.39) · ACH/wire ($30) · PayPal RETIRÉ'},
       // Multi-comptes
       'Combines simul. par taille':{'50k':'Illimité','100k':'Illimité','150k':'Illimité'},
       'XFA simul. (max)':         {'50k':'5 actifs','100k':'5','150k':'5'},
@@ -66,22 +66,22 @@ export const PROPFIRM_RULES = {
       'Drawdown journalier max':  {'25k':'AUCUNE (Apex n\'a jamais eu de DLL)','50k':'AUCUNE','75k':'AUCUNE','100k':'AUCUNE','150k':'AUCUNE','250k':'AUCUNE','300k':'AUCUNE'},
       'Jours de trading min':     {'25k':'0 (supprimé en 4.0)','50k':'0','75k':'0','100k':'0','150k':'0','250k':'0','300k':'0'},
       'Profit min jour valide':   {'25k':'$0 (PA: 5 jours ≥ $50 entre payouts)','50k':'$0','75k':'$0','100k':'$0','150k':'$0','250k':'$0','300k':'$0'},
-      'Règle de cohérence (eval)':{'25k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Règle de cohérence (eval)':{'25k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)','50k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)','75k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)','100k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)','150k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)','250k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)','300k':'Aucune en éval · 50% sur PA payouts (relâché de 30%)'},
       'Stop-Loss + Take-Profit':  {'25k':'OBLIGATOIRES sur chaque ordre (enforcement Rithmic/Tradovate) — depuis 4.0','50k':'OBLIGATOIRES','75k':'OBLIGATOIRES','100k':'OBLIGATOIRES','150k':'OBLIGATOIRES','250k':'OBLIGATOIRES','300k':'OBLIGATOIRES'},
       // Trading
       'Positions overnight':      {'25k':'INTERDIT (flat avant close)','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT','250k':'INTERDIT','300k':'INTERDIT'},
-      'Trading des news':         {'25k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
-      'DCA (renforcement)':       {'25k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Trading des news':         {'25k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)','50k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)','75k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)','100k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)','150k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)','250k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)','300k':'Autorisé (interdit : max size, chasing, hedge des 2 côtés)'},
+      'DCA (renforcement)':       {'25k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026','50k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026','75k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026','100k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026','150k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026','250k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026','300k':'Eval: autorisé · PA: 🚨 INTERDIT (fail auto) depuis mars 2026'},
       'Algos / automation':       {'25k':'INTERDIT — pas d\'algo, HFT, copy trading inter-comptes','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT','250k':'INTERDIT','300k':'INTERDIT'},
       // Contrats
       'Contrats max eval (mini)': {'25k':'4','50k':'6','75k':'8 (legacy)','100k':'8','150k':'12','250k':'16 (legacy)','300k':'20 (legacy)'},
       'Contrats max funded (mini)':{'25k':'2 → 4 (post safety net)','50k':'4 → 6','75k':'6 (legacy)','100k':'6 → 8','150k':'9 → 12','250k':'12 (legacy)','300k':'15 (legacy)'},
       // Tarifs (one-time uniquement en 4.0, codes promo permanents -50/-90%)
       'Prix one-time (EOD)':      {'25k':'$147 → ~$15-30 avec code','50k':'$167 → ~$17-35','75k':'$207 (legacy)','100k':'$207 → ~$20-50','150k':'$297 → ~$30-75','250k':'$517 (legacy)','300k':'$617 (legacy)'},
-      'Prix one-time (intraday)': {'25k':'~30% moins cher que EOD','50k':'idem','75k':'idem (legacy)','100k':'idem','150k':'idem','250k':'idem (legacy)','300k':'idem (legacy)'},
+      'Prix one-time (intraday)': {'25k':'~30% moins cher que EOD','50k':'~30% moins cher que EOD','75k':'~30% moins cher que EOD (legacy)','100k':'~30% moins cher que EOD','150k':'~30% moins cher que EOD','250k':'~30% moins cher que EOD (legacy)','300k':'~30% moins cher que EOD (legacy)'},
       'Frais activation PA':      {'25k':'$99 EOD / $79 Intraday — NON discountable','50k':'$99 / $79','75k':'$99 / $79','100k':'$99 / $79','150k':'$99 / $79','250k':'$99 / $79','300k':'$99 / $79'},
       'Reset cost':               {'25k':'Supprimés en 4.0 (rachat éval avec code = de facto reset)','50k':'Supprimés','75k':'Supprimés','100k':'Supprimés','150k':'Supprimés','250k':'Supprimés','300k':'Supprimés'},
-      'Codes promo permanents':   {'25k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Codes promo permanents':   {'25k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','50k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','75k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','100k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','150k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','250k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)','300k':'-50% à -90% en permanence (TSXRGNER, SAVENOW, etc.)'},
       // Payouts (Apex 4.0 — 100% cappé par ladder progressive lifetime 6 payouts)
       'Répartition gains':        {'25k':'100% du payout (Apex 4.0) — MAIS cappé par ladder lifetime 6 payouts','50k':'100% cappé ladder','75k':'100% cappé ladder','100k':'100% cappé ladder','150k':'100% cappé ladder','250k':'100% (legacy)','300k':'100% (legacy)'},
       'Payout minimum':           {'25k':'$500','50k':'$500','75k':'$500','100k':'$500','150k':'$500','250k':'$500','300k':'$500'},
@@ -89,10 +89,10 @@ export const PROPFIRM_RULES = {
       'Qualifying days/payout':   {'25k':'5 jours · min $100/jour','50k':'5 jours · min $250 EOD / $200 Intraday','75k':'(legacy)','100k':'5 jours · min $300 EOD / $250 Intraday','150k':'5 jours · min $350 EOD / $300 Intraday','250k':'(legacy)','300k':'(legacy)'},
       'Safety Net (PA)':          {'25k':'$26,100 = starting + DD + $100','50k':'$52,100','75k':'(legacy)','100k':'$103,100','150k':'$154,100','250k':'(legacy)','300k':'(legacy)'},
       'Délai payout':             {'25k':'24-48h processing (Plane/ACH)','50k':'24-48h','75k':'24-48h','100k':'24-48h','150k':'24-48h','250k':'24-48h','300k':'24-48h'},
-      'Méthodes payout':          {'25k':'ACH (US) · Plane (international) — Deel supprimé','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Méthodes payout':          {'25k':'ACH (US) · Plane (international) — Deel supprimé','50k':'ACH (US) · Plane (international) — Deel supprimé','75k':'ACH (US) · Plane (international) — Deel supprimé','100k':'ACH (US) · Plane (international) — Deel supprimé','150k':'ACH (US) · Plane (international) — Deel supprimé','250k':'ACH (US) · Plane (international) — Deel supprimé','300k':'ACH (US) · Plane (international) — Deel supprimé'},
       // Restrictions instruments
-      'Metals HALT (depuis 14 mars 2026)':{'25k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
-      'Auto-flat':                {'25k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Metals HALT (depuis 14 mars 2026)':{'25k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','50k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','75k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','100k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','150k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','250k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','300k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé'},
+      'Auto-flat':                {'25k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','50k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','75k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','100k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','150k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','250k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)','300k':'4:59 PM ET (toutes positions fermées · si breach MLL = ban)'},
       // Multi-comptes
       'Comptes simul.':           {'25k':'Eval: illimité · PA: 20 max par foyer (copy-trading OK)','50k':'20 PA','75k':'20 PA','100k':'20 PA','150k':'20 PA','250k':'20 PA','300k':'20 PA'},
     }
@@ -116,12 +116,12 @@ export const PROPFIRM_RULES = {
       'Drawdown journalier max':  {'25k':'AUCUN (Option 1) · $500 (Option 2 EOD)','50k':'AUCUN / $1,100 (2.2%)','100k':'AUCUN / $2,200','150k':'AUCUN / $3,300','250k':'AUCUN / $4,500'},
       'Jours de trading min':     {'25k':'0 (one-shot possible)','50k':'0','100k':'0','150k':'0','250k':'0'},
       'Profit min jour valide':   {'25k':'$0','50k':'$0','100k':'$0','150k':'$0','250k':'$0'},
-      'Règle de cohérence (eval)':{'25k':'Aucune en éval · 40% sur Master/Funded','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
+      'Règle de cohérence (eval)':{'25k':'Aucune en éval · 40% sur Master/Funded','50k':'Aucune en éval · 40% sur Master/Funded','100k':'Aucune en éval · 40% sur Master/Funded','150k':'Aucune en éval · 40% sur Master/Funded','250k':'Aucune en éval · 40% sur Master/Funded'},
       // Trading
       'Positions overnight':      {'25k':'INTERDIT (flat 15:59 CT)','50k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT','250k':'INTERDIT'},
-      'Trading des news':         {'25k':'Autorisé partout (pas de blackout) ⚠ Option 1 = piège (trailing real-time)','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
+      'Trading des news':         {'25k':'Autorisé partout (pas de blackout) ⚠ Option 1 = piège (trailing real-time)','50k':'Autorisé partout (pas de blackout) ⚠ Option 1 = piège (trailing real-time)','100k':'Autorisé partout (pas de blackout) ⚠ Option 1 = piège (trailing real-time)','150k':'Autorisé partout (pas de blackout) ⚠ Option 1 = piège (trailing real-time)','250k':'Autorisé partout (pas de blackout) ⚠ Option 1 = piège (trailing real-time)'},
       'DCA (renforcement)':       {'25k':'Autorisé','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé','250k':'Autorisé'},
-      'Algos/EAs / copy trading': {'25k':'EAs OK, HFT interdit · Copy/hedging inter-comptes INTERDIT','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
+      'Algos/EAs / copy trading': {'25k':'EAs OK, HFT interdit · Copy/hedging inter-comptes INTERDIT','50k':'EAs OK, HFT interdit · Copy/hedging inter-comptes INTERDIT','100k':'EAs OK, HFT interdit · Copy/hedging inter-comptes INTERDIT','150k':'EAs OK, HFT interdit · Copy/hedging inter-comptes INTERDIT','250k':'EAs OK, HFT interdit · Copy/hedging inter-comptes INTERDIT'},
       // Contrats Option 1 (No Scaling, full day-1) — Option 2 = scaling progressif
       'Contrats max (mini)':      {'25k':'4 (O1) / 1→4 (O2)','50k':'7 (O1) / 3→4→7 (O2 scaling)','100k':'12 (O1) / 3→5→8→12 (O2 scaling)','150k':'15-20 (O1)','250k':'25 (O1)'},
       'Contrats max (micro)':     {'25k':'40','50k':'70','100k':'120','150k':'150-200','250k':'250'},
@@ -130,18 +130,18 @@ export const PROPFIRM_RULES = {
       'Frais activation Master':  {'25k':'$130 (tradingfinder) — $98 selon quantvps · DISPUTÉ à vérifier au checkout','50k':'$150-220 selon source','100k':'$220','150k':'$260-490 selon source · DISPUTÉ','250k':'$300-490 selon source · DISPUTÉ'},
       'Reset cost':               {'25k':'$78 (gratuit le jour de facturation)','50k':'$78','100k':'$78','150k':'$78','250k':'$78'},
       'Data fee Pro':             {'25k':'$116/mo si Professional','50k':'$116/mo','100k':'$116/mo','150k':'$116/mo','250k':'$116/mo'},
-      'Codes promo':              {'25k':'VIBES (~45%), LUMI (89%), TRADINGSTRATEGY89 (89%)','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
+      'Codes promo':              {'25k':'VIBES (~45%), LUMI (89%), TRADINGSTRATEGY89 (89%)','50k':'VIBES (~45%), LUMI (89%), TRADINGSTRATEGY89 (89%)','100k':'VIBES (~45%), LUMI (89%), TRADINGSTRATEGY89 (89%)','150k':'VIBES (~45%), LUMI (89%), TRADINGSTRATEGY89 (89%)','250k':'VIBES (~45%), LUMI (89%), TRADINGSTRATEGY89 (89%)'},
       // Payouts (post avril 2025 — balance caps)
-      'Répartition gains':        {'25k':'100% des premiers $10K puis 90/10','50k':'100% $10K puis 90/10','100k':'idem','150k':'idem','250k':'idem'},
+      'Répartition gains':        {'25k':'100% des premiers $10K puis 90/10','50k':'100% $10K puis 90/10','100k':'100% des premiers $10K puis 90/10','150k':'100% des premiers $10K puis 90/10','250k':'100% des premiers $10K puis 90/10'},
       'Payout minimum':           {'25k':'$1,000','50k':'$1,000','100k':'$1,000','150k':'$1,000','250k':'$1,000'},
       'Max withdrawal (3 premiers)':{'25k':'$1,000','50k':'$1,500','100k':'$1,750','150k':'$2,000','250k':'$2,500'},
       'Safety threshold reserve': {'25k':'$1,600','50k':'$2,600','100k':'$3,100','150k':'$4,600','250k':'$5,600'},
       'Min jours Master':         {'25k':'10 jours avant 1er payout','50k':'10','100k':'10','150k':'10','250k':'10'},
       'Min jours Funded/cycle':   {'25k':'5','50k':'5','100k':'5','150k':'5','250k':'5'},
-      'Délai payout':             {'25k':'Hebdo chaque MERCREDI','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
-      'Méthodes payout':          {'25k':'ACH, Wire, PayPal, Wise','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
+      'Délai payout':             {'25k':'Hebdo chaque MERCREDI','50k':'Hebdo chaque MERCREDI','100k':'Hebdo chaque MERCREDI','150k':'Hebdo chaque MERCREDI','250k':'Hebdo chaque MERCREDI'},
+      'Méthodes payout':          {'25k':'ACH, Wire, PayPal, Wise','50k':'ACH, Wire, PayPal, Wise','100k':'ACH, Wire, PayPal, Wise','150k':'ACH, Wire, PayPal, Wise','250k':'ACH, Wire, PayPal, Wise'},
       // Multi-comptes
-      'Comptes simul.':           {'25k':'Qualification: illimité · Master: 11 actifs (3 simul start) · Funded: 1 consolidé','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
+      'Comptes simul.':           {'25k':'Qualification: illimité · Master: 11 actifs (3 simul start) · Funded: 1 consolidé','50k':'Qualification: illimité · Master: 11 actifs (3 simul start) · Funded: 1 consolidé','100k':'Qualification: illimité · Master: 11 actifs (3 simul start) · Funded: 1 consolidé','150k':'Qualification: illimité · Master: 11 actifs (3 simul start) · Funded: 1 consolidé','250k':'Qualification: illimité · Master: 11 actifs (3 simul start) · Funded: 1 consolidé'},
     }
   },
   'Lucid Trading': {
@@ -173,11 +173,11 @@ export const PROPFIRM_RULES = {
       'Drawdown journalier max':  {'25k':'Aucun (25K)','50k':'$1,200 (~2.4%, ajouté fév 2026, soft breach halt journée)','100k':'~$2,400 (extrapolation 2.4%)','150k':'~$3,600 (extrapolation 2.4%)'},
       'Jours de trading min':     {'25k':'1 jour suffit (5j min supprimé fév 2026)','50k':'1 jour','100k':'1 jour','150k':'1 jour'},
       'Profit min jour valide':   {'25k':'$0 (pas de seuil par jour en éval)','50k':'$0','100k':'$0','150k':'$0'},
-      'Règle de cohérence':       {'25k':'AUCUNE en éval Pro · 50% en Flex','50k':'AUCUNE Pro · 50% Flex','100k':'idem','150k':'idem'},
+      'Règle de cohérence':       {'25k':'AUCUNE en éval Pro · 50% en Flex','50k':'AUCUNE Pro · 50% Flex','100k':'AUCUNE en éval Pro · 50% en Flex','150k':'AUCUNE en éval Pro · 50% en Flex'},
       'Limite de temps Eval':     {'25k':'60 jours (LucidPro)','50k':'60 jours','100k':'60 jours','150k':'60 jours'},
       // === Trading restrictions ===
-      'Heures de trading':        {'25k':'Auto-flat 16h45 EST (reprise 18h EST)','50k':'idem','100k':'idem','150k':'idem'},
-      'Positions overnight':      {'25k':'INTERDIT (Pro/Flex/Direct) · AUTORISÉ uniquement sur LucidLive','50k':'idem','100k':'idem','150k':'idem'},
+      'Heures de trading':        {'25k':'Auto-flat 16h45 EST (reprise 18h EST)','50k':'Auto-flat 16h45 EST (reprise 18h EST)','100k':'Auto-flat 16h45 EST (reprise 18h EST)','150k':'Auto-flat 16h45 EST (reprise 18h EST)'},
+      'Positions overnight':      {'25k':'INTERDIT (Pro/Flex/Direct) · AUTORISÉ uniquement sur LucidLive','50k':'INTERDIT (Pro/Flex/Direct) · AUTORISÉ uniquement sur LucidLive','100k':'INTERDIT (Pro/Flex/Direct) · AUTORISÉ uniquement sur LucidLive','150k':'INTERDIT (Pro/Flex/Direct) · AUTORISÉ uniquement sur LucidLive'},
       'Trading des news':         {'25k':'Autorisé sur toutes familles (NFP, FOMC, CPI)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
       'DCA / scalping':           {'25k':'Autorisé (pas de min hold time)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
       'Bots / copy trading':      {'25k':'Autorisés (trader responsable)','50k':'Autorisés','100k':'Autorisés','150k':'Autorisés'},
@@ -190,15 +190,15 @@ export const PROPFIRM_RULES = {
       'Prix LucidFlex':           {'25k':'$164 retail (~$98.50 avec VIBES)','50k':'~$245 retail','100k':'$295 retail','150k':'~$415 retail'},
       'Prix LucidDirect (instant)':{'25k':'$197','50k':'$549','100k':'$799 (ajouté fév 2026)','150k':'$899'},
       'Frais activation':         {'25k':'$0 (aucun)','50k':'$0','100k':'$0','150k':'$0'},
-      'Codes promo':              {'25k':'VIBES -40%, NINJA, SOPF, DGT (35-50% courant)','50k':'idem','100k':'idem','150k':'idem'},
-      'Reset compte':             {'25k':'Non documenté précisément','50k':'idem','100k':'idem','150k':'idem'},
+      'Codes promo':              {'25k':'VIBES -40%, NINJA, SOPF, DGT (35-50% courant)','50k':'VIBES -40%, NINJA, SOPF, DGT (35-50% courant)','100k':'VIBES -40%, NINJA, SOPF, DGT (35-50% courant)','150k':'VIBES -40%, NINJA, SOPF, DGT (35-50% courant)'},
+      'Reset compte':             {'25k':'Non documenté précisément','50k':'Non documenté précisément','100k':'Non documenté précisément','150k':'Non documenté précisément'},
       // === Payouts ===
       'Répartition gains':        {'25k':'90% / 10% (depuis mars 2026) · grandfathered avant 28/11/2025 = 100% premiers $10K','50k':'90% / 10%','100k':'90% / 10%','150k':'90% / 10%'},
       'Payout minimum':           {'25k':'$500','50k':'$500','100k':'$500','150k':'$500'},
-      'Conditions payout':        {'25k':'5 jours profitables + net positif','50k':'idem','100k':'idem','150k':'idem'},
-      'Délai payout':             {'25k':'~15 min approval, fonds en 2 jours ouvrés','50k':'idem','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'25k':'ACH, PayPal, Rise, international wire','50k':'idem','100k':'idem','150k':'idem'},
-      'Cadence payout':           {'25k':'Tous les 3 jours calendaires après 5 jours profitables','50k':'idem','100k':'idem','150k':'idem'},
+      'Conditions payout':        {'25k':'5 jours profitables + net positif','50k':'5 jours profitables + net positif','100k':'5 jours profitables + net positif','150k':'5 jours profitables + net positif'},
+      'Délai payout':             {'25k':'~15 min approval, fonds en 2 jours ouvrés','50k':'~15 min approval, fonds en 2 jours ouvrés','100k':'~15 min approval, fonds en 2 jours ouvrés','150k':'~15 min approval, fonds en 2 jours ouvrés'},
+      'Méthodes payout':          {'25k':'ACH, PayPal, Rise, international wire','50k':'ACH, PayPal, Rise, international wire','100k':'ACH, PayPal, Rise, international wire','150k':'ACH, PayPal, Rise, international wire'},
+      'Cadence payout':           {'25k':'Tous les 3 jours calendaires après 5 jours profitables','50k':'Tous les 3 jours calendaires après 5 jours profitables','100k':'Tous les 3 jours calendaires après 5 jours profitables','150k':'Tous les 3 jours calendaires après 5 jours profitables'},
       // === Multi-comptes ===
       'Comptes financés simul.':  {'25k':'5 max par foyer (toutes familles confondues)','50k':'5 max','100k':'5 max','150k':'5 max'},
       'Comptes Eval simul.':      {'25k':'10 max par foyer','50k':'10 max','100k':'10 max','150k':'10 max'},
@@ -220,14 +220,14 @@ export const PROPFIRM_RULES = {
       'Objectif de profit':       {'25k':'$1,500 (Lightning seulement)','50k':'$3,000','100k':'$6,000','150k':'$9,000'},
       'Drawdown trailing max':    {'25k':'$1,000 EOD','50k':'$2,000 EOD · lock +$100 starting','100k':'$3,000 EOD · lock +$100','150k':'$4,500 EOD · lock +$100'},
       'Drawdown journalier max':  {'25k':'Lightning : selon scaling','50k':'AUCUN (Select) · $1,250 (Growth, soft breach)','100k':'AUCUN · $2,500','150k':'AUCUN · $3,750'},
-      'Jours de trading min':     {'25k':'1 (Growth) · 3 (Select)','50k':'3 (Select, à cause 40% consist) · 1 (Growth)','100k':'idem','150k':'idem'},
+      'Jours de trading min':     {'25k':'1 (Growth) · 3 (Select)','50k':'3 (Select, à cause 40% consist) · 1 (Growth)','100k':'1 (Growth) · 3 (Select)','150k':'1 (Growth) · 3 (Select)'},
       'Profit min jour valide':   {'25k':'$50','50k':'$100','100k':'$200','150k':'$300'},
       'Règle de cohérence (eval)':{'25k':'Lightning : 20% → 25% → 30% (progressive)','50k':'40% (Select) · AUCUNE (Growth, 35% en funded)','100k':'40% (Select) · AUCUNE (Growth)','150k':'40% (Select) · AUCUNE (Growth)'},
       // Trading
       'Positions overnight':      {'25k':'INTERDIT (flat fin de session, sources contradictoires)','50k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       'Trading des news':         {'25k':'Autorisé sans restriction (NFP, FOMC, CPI)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
       'DCA (renforcement)':       {'25k':'Autorisé','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
-      'Algos / copy trading':     {'25k':'Algos OK, HFT interdit. Copy entre vos comptes OK','50k':'idem','100k':'idem','150k':'idem'},
+      'Algos / copy trading':     {'25k':'Algos OK, HFT interdit. Copy entre vos comptes OK','50k':'Algos OK, HFT interdit. Copy entre vos comptes OK','100k':'Algos OK, HFT interdit. Copy entre vos comptes OK','150k':'Algos OK, HFT interdit. Copy entre vos comptes OK'},
       // Contrats (source help.tradeify.co officielle)
       'Contrats max (mini)':      {'25k':'Lightning seulement','50k':'4','100k':'8','150k':'12'},
       'Contrats max (micro)':     {'25k':'Lightning seulement','50k':'40','100k':'80','150k':'120'},
@@ -238,10 +238,10 @@ export const PROPFIRM_RULES = {
       'Frais activation':         {'25k':'$0 (waived sur tous plans)','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'$95 toutes tailles','50k':'$95','100k':'$95','150k':'$95'},
       // Payouts (correction agent : split différent par famille)
-      'Répartition gains':        {'25k':'Lightning : 100% premier $15K cumulé puis 90/10','50k':'Select : 90/10 dès $1 · Growth/Lightning : 100% premier $15K puis 90/10','100k':'idem','150k':'idem'},
-      'Payout minimum':           {'25k':'$1,500 above starting (Growth/Lightning) · varies (Select)','50k':'idem · cap progressif $1,000 → $1,250 → $3,000','100k':'idem','150k':'idem'},
-      'Délai payout':             {'25k':'Windows FIXES : 1-4 et 15-18 de chaque mois (sauf Select Daily option)','50k':'idem','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'25k':'Rise (primaire) + Plane (backup) — PAS de PayPal direct ni ACH/Wire/Wise','50k':'idem','100k':'idem','150k':'idem'},
+      'Répartition gains':        {'25k':'Lightning : 100% premier $15K cumulé puis 90/10','50k':'Select : 90/10 dès $1 · Growth/Lightning : 100% premier $15K puis 90/10','100k':'Lightning : 100% premier $15K cumulé puis 90/10','150k':'Lightning : 100% premier $15K cumulé puis 90/10'},
+      'Payout minimum':           {'25k':'$1,500 above starting (Growth/Lightning) · varies (Select)','50k':'$1,500 above starting (Growth/Lightning) · varies (Select) · cap progressif $1,000 → $1,250 → $3,000','100k':'$1,500 above starting (Growth/Lightning) · varies (Select)','150k':'$1,500 above starting (Growth/Lightning) · varies (Select)'},
+      'Délai payout':             {'25k':'Windows FIXES : 1-4 et 15-18 de chaque mois (sauf Select Daily option)','50k':'Windows FIXES : 1-4 et 15-18 de chaque mois (sauf Select Daily option)','100k':'Windows FIXES : 1-4 et 15-18 de chaque mois (sauf Select Daily option)','150k':'Windows FIXES : 1-4 et 15-18 de chaque mois (sauf Select Daily option)'},
+      'Méthodes payout':          {'25k':'Rise (primaire) + Plane (backup) — PAS de PayPal direct ni ACH/Wire/Wise','50k':'Rise (primaire) + Plane (backup) — PAS de PayPal direct ni ACH/Wire/Wise','100k':'Rise (primaire) + Plane (backup) — PAS de PayPal direct ni ACH/Wire/Wise','150k':'Rise (primaire) + Plane (backup) — PAS de PayPal direct ni ACH/Wire/Wise'},
       // Multi-comptes
       'Comptes simul.':           {'25k':'Funded: 5 max par foyer (toutes familles) · Eval: 15 max sur 30j','50k':'5 funded max','100k':'5 funded max','150k':'5 funded max'},
     }
@@ -262,7 +262,7 @@ export const PROPFIRM_RULES = {
     rules: {
       // === Évaluation (Test) ===
       'Objectif de profit':       {'25k':'$1,500 (6%)','50k':'$3,000 (6%)','75k':'$4,500 (6%)','100k':'$6,000 (6%)','150k':'$9,000 (6%)'},
-      'Drawdown trailing max':    {'25k':'$1,500 EOD (Test) → INTRADAY (PRO) → EOD (PRO+)','50k':'$2,500 idem','75k':'$3,000','100k':'$3,500','150k':'$5,000'},
+      'Drawdown trailing max':    {'25k':'$1,500 EOD (Test) → INTRADAY (PRO) → EOD (PRO+)','50k':'$2,500 EOD (Test) → INTRADAY (PRO) → EOD (PRO+)','75k':'$3,000 EOD (Test) → INTRADAY (PRO) → EOD (PRO+)','100k':'$3,500 EOD (Test) → INTRADAY (PRO) → EOD (PRO+)','150k':'$5,000 EOD (Test) → INTRADAY (PRO) → EOD (PRO+)'},
       'Drawdown journalier max':  {'25k':'🚨 AUCUN (DLL supprimée jan 2025) — seul trailing','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'Jours de trading min':     {'25k':'5 jours (au moins 1 trade/jour, pas de seuil profit)','50k':'5 jours','75k':'5 jours','100k':'5 jours','150k':'5 jours'},
       'Profit min jour valide':   {'25k':'AUCUN seuil — TPT impose juste ≥1 trade/jour','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
@@ -271,8 +271,8 @@ export const PROPFIRM_RULES = {
       'Positions overnight':      {'25k':'INTERDIT (flat 17h ET toutes phases)','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       'DCA (renforcement)':       {'25k':'Pas de règle spécifique','50k':'Pas de règle','75k':'Pas de règle','100k':'Pas de règle','150k':'Pas de règle'},
       'Annonces éco (Test)':      {'25k':'Autorisé sans restriction','50k':'Autorisé','75k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
-      'Annonces éco (PRO/PRO+)':  {'25k':'Flat 1 min avant/pendant/après FOMC/NFP/CPI','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
-      'Bots / automation':        {'25k':'Full auto INTERDIT · Semi-auto avec monitoring OK','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
+      'Annonces éco (PRO/PRO+)':  {'25k':'Flat 1 min avant/pendant/après FOMC/NFP/CPI','50k':'Flat 1 min avant/pendant/après FOMC/NFP/CPI','75k':'Flat 1 min avant/pendant/après FOMC/NFP/CPI','100k':'Flat 1 min avant/pendant/après FOMC/NFP/CPI','150k':'Flat 1 min avant/pendant/après FOMC/NFP/CPI'},
+      'Bots / automation':        {'25k':'Full auto INTERDIT · Semi-auto avec monitoring OK','50k':'Full auto INTERDIT · Semi-auto avec monitoring OK','75k':'Full auto INTERDIT · Semi-auto avec monitoring OK','100k':'Full auto INTERDIT · Semi-auto avec monitoring OK','150k':'Full auto INTERDIT · Semi-auto avec monitoring OK'},
       'Coordinated multi-account':{'25k':'INTERDIT','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       // === Contrats (hard limit, dépassement +1 = termination immédiate) ===
       'Contrats max (mini)':      {'25k':'3','50k':'6','75k':'9','100k':'12','150k':'15'},
@@ -285,12 +285,12 @@ export const PROPFIRM_RULES = {
       'Reset PRO (max 3)':        {'25k':'$399','50k':'$649','75k':'$799','100k':'$999','150k':'$1,499'},
       'Reset PRO+':               {'25k':'INTERDIT (pas de reset)','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       // === Payouts ===
-      'Payout minimum':           {'25k':'Pas de minimum strict documenté à 3 sources','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
+      'Payout minimum':           {'25k':'Pas de minimum strict documenté à 3 sources','50k':'Pas de minimum strict documenté à 3 sources','75k':'Pas de minimum strict documenté à 3 sources','100k':'Pas de minimum strict documenté à 3 sources','150k':'Pas de minimum strict documenté à 3 sources'},
       'Délai payout':             {'25k':'~4-9h (max ~24h)','50k':'~4-9h','75k':'~4-9h','100k':'~4-9h','150k':'~4-9h'},
       'Mode de retrait':          {'25k':'Plaid ACH, Wise','50k':'Plaid ACH, Wise','75k':'Plaid ACH, Wise','100k':'Plaid ACH, Wise','150k':'Plaid ACH, Wise'},
       'Répartition gains':        {'25k':'80% trader (PRO) → 90% (PRO+)','50k':'80% → 90%','75k':'80% → 90%','100k':'80% → 90%','150k':'80% → 90%'},
-      'Buffer payout PRO':        {'25k':'Buffer = starting balance + trailing DD (formulation officielle TPT)','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
-      'Min entre payouts':        {'25k':'7 jours (PRO) · 0 (PRO+)','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
+      'Buffer payout PRO':        {'25k':'Buffer = starting balance + trailing DD (formulation officielle TPT)','50k':'Buffer = starting balance + trailing DD (formulation officielle TPT)','75k':'Buffer = starting balance + trailing DD (formulation officielle TPT)','100k':'Buffer = starting balance + trailing DD (formulation officielle TPT)','150k':'Buffer = starting balance + trailing DD (formulation officielle TPT)'},
+      'Min entre payouts':        {'25k':'7 jours (PRO) · 0 (PRO+)','50k':'7 jours (PRO) · 0 (PRO+)','75k':'7 jours (PRO) · 0 (PRO+)','100k':'7 jours (PRO) · 0 (PRO+)','150k':'7 jours (PRO) · 0 (PRO+)'},
       'Comptes financés simul.':  {'25k':'5 max (PRO + PRO+ combinés)','50k':'5 max','75k':'5 max','100k':'5 max','150k':'5 max'},
     }
   },
@@ -322,12 +322,12 @@ export const PROPFIRM_RULES = {
       'Drawdown journalier max':  {'25k':'AUCUN (sim funded) · DLL appliqué en LIVE','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'Jours de trading min':     {'25k':'1 jour','50k':'1 jour','100k':'1 jour','150k':'1 jour'},
       'Profit min jour valide':   {'25k':'$150 (Net PnL/jour pour comptage payout)','50k':'$150','100k':'$150','150k':'$150'},
-      'Règle de cohérence (eval)':{'25k':'50% en éval · Rapid funded: AUCUNE · Core/Pro funded: 40%','50k':'idem','100k':'idem','150k':'idem'},
+      'Règle de cohérence (eval)':{'25k':'50% en éval · Rapid funded: AUCUNE · Core/Pro funded: 40%','50k':'50% en éval · Rapid funded: AUCUNE · Core/Pro funded: 40%','100k':'50% en éval · Rapid funded: AUCUNE · Core/Pro funded: 40%','150k':'50% en éval · Rapid funded: AUCUNE · Core/Pro funded: 40%'},
       // Trading
       'Positions overnight':      {'25k':'INTERDIT (sauf Pro qui permet)','50k':'INTERDIT (sauf Pro)','100k':'INTERDIT (sauf Pro)','150k':'INTERDIT (sauf Pro)'},
-      'Trading des news':         {'25k':'🚨 Flat 2 MIN avant ET 2 MIN après Tier-1 (Core/Rapid/Pro) — ban si violation · Flex/Builder PERMETTENT T1 news sur funded','50k':'idem','100k':'idem','150k':'idem'},
-      'DCA (renforcement)':       {'25k':'Autorisé · scaling micro requis','50k':'idem','100k':'idem','150k':'idem'},
-      'Algos / automation':       {'25k':'Full auto INTERDIT · semi-auto OK si manual oversight','50k':'idem','100k':'idem','150k':'idem'},
+      'Trading des news':         {'25k':'🚨 Flat 2 MIN avant ET 2 MIN après Tier-1 (Core/Rapid/Pro) — ban si violation · Flex/Builder PERMETTENT T1 news sur funded','50k':'🚨 Flat 2 MIN avant ET 2 MIN après Tier-1 (Core/Rapid/Pro) — ban si violation · Flex/Builder PERMETTENT T1 news sur funded','100k':'🚨 Flat 2 MIN avant ET 2 MIN après Tier-1 (Core/Rapid/Pro) — ban si violation · Flex/Builder PERMETTENT T1 news sur funded','150k':'🚨 Flat 2 MIN avant ET 2 MIN après Tier-1 (Core/Rapid/Pro) — ban si violation · Flex/Builder PERMETTENT T1 news sur funded'},
+      'DCA (renforcement)':       {'25k':'Autorisé · scaling micro requis','50k':'Autorisé · scaling micro requis','100k':'Autorisé · scaling micro requis','150k':'Autorisé · scaling micro requis'},
+      'Algos / automation':       {'25k':'Full auto INTERDIT · semi-auto OK si manual oversight','50k':'Full auto INTERDIT · semi-auto OK si manual oversight','100k':'Full auto INTERDIT · semi-auto OK si manual oversight','150k':'Full auto INTERDIT · semi-auto OK si manual oversight'},
       // Contrats Rapid
       'Contrats max éval (mini)': {'25k':'2','50k':'5','100k':'10','150k':'15'},
       'Contrats max éval (micro)':{'25k':'20','50k':'50','100k':'100','150k':'150'},
@@ -340,12 +340,12 @@ export const PROPFIRM_RULES = {
       'Prix Builder (50K only)':  {'25k':'n/a','50k':'Pricing non documenté publiquement','100k':'n/a','150k':'n/a'},
       'Frais activation':         {'25k':'$0 (waived firm-wide juillet 2025)','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'~$87 (à vérifier au checkout)','50k':'~$157 (Rapid)','100k':'~$267 (Rapid)','150k':'~$347 (Rapid)'},
-      'Data fee (Pro classifié)': {'25k':'$0 retail · $130/mo si Professional','50k':'idem','100k':'idem','150k':'idem'},
-      'Codes promo permanents':   {'25k':'SAVE40 (-40%), IMAN (20% Rapid · 30% Pro · 50% Flex)','50k':'idem','100k':'idem','150k':'idem'},
+      'Data fee (Pro classifié)': {'25k':'$0 retail · $130/mo si Professional','50k':'$0 retail · $130/mo si Professional','100k':'$0 retail · $130/mo si Professional','150k':'$0 retail · $130/mo si Professional'},
+      'Codes promo permanents':   {'25k':'SAVE40 (-40%), IMAN (20% Rapid · 30% Pro · 50% Flex)','50k':'SAVE40 (-40%), IMAN (20% Rapid · 30% Pro · 50% Flex)','100k':'SAVE40 (-40%), IMAN (20% Rapid · 30% Pro · 50% Flex)','150k':'SAVE40 (-40%), IMAN (20% Rapid · 30% Pro · 50% Flex)'},
       // Payouts (correction agent : Rapid = DAILY 24h, pas 5 winning days)
-      'Répartition gains':        {'25k':'Rapid 90/10 · Core/Pro 80/20 · Flex disputé (80/20 ou 90/10) · Builder 80/20','50k':'idem','100k':'idem','150k':'idem'},
-      'Payout minimum':           {'25k':'Rapid/Core/Flex: $250 · Pro: $1,000','50k':'idem','100k':'idem','150k':'idem'},
-      'Cadence payout':           {'25k':'Rapid: DAILY 24h après 1er trade · Core: 5 winning days · Pro: bi-weekly · Builder: 48h · Flex: 5 winning days','50k':'idem','100k':'idem','150k':'idem'},
+      'Répartition gains':        {'25k':'Rapid 90/10 · Core/Pro 80/20 · Flex disputé (80/20 ou 90/10) · Builder 80/20','50k':'Rapid 90/10 · Core/Pro 80/20 · Flex disputé (80/20 ou 90/10) · Builder 80/20','100k':'Rapid 90/10 · Core/Pro 80/20 · Flex disputé (80/20 ou 90/10) · Builder 80/20','150k':'Rapid 90/10 · Core/Pro 80/20 · Flex disputé (80/20 ou 90/10) · Builder 80/20'},
+      'Payout minimum':           {'25k':'Rapid/Core/Flex: $250 · Pro: $1,000','50k':'Rapid/Core/Flex: $250 · Pro: $1,000','100k':'Rapid/Core/Flex: $250 · Pro: $1,000','150k':'Rapid/Core/Flex: $250 · Pro: $1,000'},
+      'Cadence payout':           {'25k':'Rapid: DAILY 24h après 1er trade · Core: 5 winning days · Pro: bi-weekly · Builder: 48h · Flex: 5 winning days','50k':'Rapid: DAILY 24h après 1er trade · Core: 5 winning days · Pro: bi-weekly · Builder: 48h · Flex: 5 winning days','100k':'Rapid: DAILY 24h après 1er trade · Core: 5 winning days · Pro: bi-weekly · Builder: 48h · Flex: 5 winning days','150k':'Rapid: DAILY 24h après 1er trade · Core: 5 winning days · Pro: bi-weekly · Builder: 48h · Flex: 5 winning days'},
       // Multi-comptes
       'Comptes funded simul.':    {'25k':'5 si que 25K/50K · 3 si au moins un 100K/150K','50k':'5 si que 25/50K','100k':'3 max','150k':'3 max'},
       'Évaluations simul.':       {'25k':'10 max actives','50k':'10 max','100k':'10 max','150k':'10 max'},
@@ -377,13 +377,13 @@ export const PROPFIRM_RULES = {
       'Drawdown journalier max':  {'25k':'Aucun','50k':'Aucun','100k':'Aucun','150k':'Aucun'},
       'Jours de trading min':     {'25k':'1 jour','50k':'1 (E2L) / 3 (Fundamental)','100k':'3 (Fundamental)','150k':'3'},
       'Profit min jour valide':   {'25k':'$0','50k':'$0 (E2L) / ~$100 (Fundamental, estimé)','100k':'~$150','150k':'~$200'},
-      'Règle de cohérence (eval)':{'25k':'AUCUNE tous stages','50k':'Aucune éval · 30% sur CASH funded · AUCUNE en LIVE','100k':'idem','150k':'idem'},
+      'Règle de cohérence (eval)':{'25k':'AUCUNE tous stages','50k':'Aucune éval · 30% sur CASH funded · AUCUNE en LIVE','100k':'AUCUNE tous stages','150k':'AUCUNE tous stages'},
       // Trading
-      'Positions overnight':      {'25k':'INTERDIT','50k':'INTERDIT (Fundamental) · AUTORISÉ (Premium/Swing)','100k':'idem','150k':'idem'},
-      'Weekend trading':          {'25k':'INTERDIT','50k':'INTERDIT (Fundamental) · AUTORISÉ (Premium/Swing) — UNIQUE','100k':'idem','150k':'idem'},
-      'Trading des news':         {'25k':'AUTORISÉ en éval (NFP/FOMC/CPI) · Funded : ±1 min flat Tier-1','50k':'idem','100k':'idem','150k':'idem'},
+      'Positions overnight':      {'25k':'INTERDIT','50k':'INTERDIT (Fundamental) · AUTORISÉ (Premium/Swing)','100k':'INTERDIT','150k':'INTERDIT'},
+      'Weekend trading':          {'25k':'INTERDIT','50k':'INTERDIT (Fundamental) · AUTORISÉ (Premium/Swing) — UNIQUE','100k':'INTERDIT','150k':'INTERDIT'},
+      'Trading des news':         {'25k':'AUTORISÉ en éval (NFP/FOMC/CPI) · Funded : ±1 min flat Tier-1','50k':'AUTORISÉ en éval (NFP/FOMC/CPI) · Funded : ±1 min flat Tier-1','100k':'AUTORISÉ en éval (NFP/FOMC/CPI) · Funded : ±1 min flat Tier-1','150k':'AUTORISÉ en éval (NFP/FOMC/CPI) · Funded : ±1 min flat Tier-1'},
       'DCA (renforcement)':       {'25k':'Autorisé','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
-      'Robots / full auto':       {'25k':'INTERDIT · Semi-auto OK si monitoring','50k':'idem','100k':'idem','150k':'idem'},
+      'Robots / full auto':       {'25k':'INTERDIT · Semi-auto OK si monitoring','50k':'INTERDIT · Semi-auto OK si monitoring','100k':'INTERDIT · Semi-auto OK si monitoring','150k':'INTERDIT · Semi-auto OK si monitoring'},
       // Contrats
       'Contrats max (mini)':      {'25k':'2','50k':'5 (E2L) / 10 (Fundamental)','100k':'7 (E2L) / 14 (Fundamental)','150k':'9 (E2L) / 17 (Fundamental)'},
       'Contrats max (micro)':     {'25k':'20','50k':'50 / 100','100k':'70 / 140','150k':'90 / 170'},
@@ -394,13 +394,13 @@ export const PROPFIRM_RULES = {
       'Prix one-time Premium':    {'25k':'n/a','50k':'(non documenté publiquement)','100k':'$180 (selon source) · $900 (autre) — DISPUTÉ','150k':'(non documenté)'},
       'Frais activation':         {'25k':'$0','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'Renouvellement','50k':'Renouvellement','100k':'Renouvellement','150k':'Renouvellement'},
-      'Codes promo':              {'25k':'LASTCHANCE (-60% éval / -80% OTP) — autres codes circulants non vérifiés à 3 sources','50k':'idem','100k':'idem','150k':'idem'},
+      'Codes promo':              {'25k':'LASTCHANCE (-60% éval / -80% OTP) — autres codes circulants non vérifiés à 3 sources','50k':'LASTCHANCE (-60% éval / -80% OTP) — autres codes circulants non vérifiés à 3 sources','100k':'LASTCHANCE (-60% éval / -80% OTP) — autres codes circulants non vérifiés à 3 sources','150k':'LASTCHANCE (-60% éval / -80% OTP) — autres codes circulants non vérifiés à 3 sources'},
       // Payouts
-      'Répartition gains':        {'25k':'E2L 80/20 fixe','50k':'Fundamental 80/20 fixe · 🌟 Premium PROGRESSIF: 75→80→85→90→100% (payout 5+)','100k':'idem','150k':'idem'},
-      'Cadence payout':           {'25k':'48h post-éval → LIVE','50k':'CASH bi-weekly (1-14 et 15-fin mois) · Premium tous les 5 jours · LIVE quotidien possible','100k':'idem','150k':'idem'},
+      'Répartition gains':        {'25k':'E2L 80/20 fixe','50k':'Fundamental 80/20 fixe · 🌟 Premium PROGRESSIF: 75→80→85→90→100% (payout 5+)','100k':'E2L 80/20 fixe','150k':'E2L 80/20 fixe'},
+      'Cadence payout':           {'25k':'48h post-éval → LIVE','50k':'CASH bi-weekly (1-14 et 15-fin mois) · Premium tous les 5 jours · LIVE quotidien possible','100k':'48h post-éval → LIVE','150k':'48h post-éval → LIVE'},
       'Payout minimum':           {'25k':'$500','50k':'$500','100k':'$500','150k':'$500'},
-      'Délai payout':             {'25k':'Approval 1-4h same-day · Bank 3-5j · PayPal/Skrill 1-2j','50k':'idem','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'25k':'Wallet Phidias → Rise → bank/PayPal/Skrill','50k':'idem','100k':'idem','150k':'idem'},
+      'Délai payout':             {'25k':'Approval 1-4h same-day · Bank 3-5j · PayPal/Skrill 1-2j','50k':'Approval 1-4h same-day · Bank 3-5j · PayPal/Skrill 1-2j','100k':'Approval 1-4h same-day · Bank 3-5j · PayPal/Skrill 1-2j','150k':'Approval 1-4h same-day · Bank 3-5j · PayPal/Skrill 1-2j'},
+      'Méthodes payout':          {'25k':'Wallet Phidias → Rise → bank/PayPal/Skrill','50k':'Wallet Phidias → Rise → bank/PayPal/Skrill','100k':'Wallet Phidias → Rise → bank/PayPal/Skrill','150k':'Wallet Phidias → Rise → bank/PayPal/Skrill'},
       // Multi-comptes
       'Comptes simul.':           {'25k':'Jusqu\'à 15 funded (E2L + Fundamental + Premium)','50k':'15 funded · 5 max E2L (CASH+LIVE confondus)','100k':'15 funded','150k':'15 funded'},
     }
@@ -426,8 +426,8 @@ export const PROPFIRM_RULES = {
       'Limite de temps Eval':     {'25k':'Aucune (sub mensuel récurrent)','50k':'Aucune','100k':'Aucune','250k':'Aucune'},
       // Trading
       'Positions overnight':      {'25k':'INTERDIT (flat 16:50 EST) · weekends INTERDITS','50k':'INTERDIT','100k':'INTERDIT','250k':'INTERDIT'},
-      'Trading des news':         {'25k':'Eval: AUTORISÉ · Funded/Exhibition: FLAT 1 min avant + après Tier-1 (FOMC/NFP/CPI/Fed speeches)','50k':'idem','100k':'idem','250k':'idem'},
-      'DCA (renforcement)':       {'25k':'Pas de restriction explicite','50k':'idem','100k':'idem','250k':'idem'},
+      'Trading des news':         {'25k':'Eval: AUTORISÉ · Funded/Exhibition: FLAT 1 min avant + après Tier-1 (FOMC/NFP/CPI/Fed speeches)','50k':'Eval: AUTORISÉ · Funded/Exhibition: FLAT 1 min avant + après Tier-1 (FOMC/NFP/CPI/Fed speeches)','100k':'Eval: AUTORISÉ · Funded/Exhibition: FLAT 1 min avant + après Tier-1 (FOMC/NFP/CPI/Fed speeches)','250k':'Eval: AUTORISÉ · Funded/Exhibition: FLAT 1 min avant + après Tier-1 (FOMC/NFP/CPI/Fed speeches)'},
+      'DCA (renforcement)':       {'25k':'Pas de restriction explicite','50k':'Pas de restriction explicite','100k':'Pas de restriction explicite','250k':'Pas de restriction explicite'},
       // Contrats (scaling)
       'Contrats max (mini)':      {'25k':'3 (jusqu\'à 30 micros)','50k':'4 → 15 (scaling)','100k':'5 → 18 (scaling)','250k':'6 → 20 (scaling)'},
       // Tarifs (avec code VIBES ~50%)
@@ -436,14 +436,14 @@ export const PROPFIRM_RULES = {
       'Frais activation Exhib.':  {'25k':'$120 one-time','50k':'$120','100k':'$120','250k':'$120'},
       'Reset cost':               {'25k':'$100 (pas de free reset)','50k':'$100','100k':'$100','250k':'$100'},
       'Data fee funded ongoing':  {'25k':'$126/mo (à intégrer au ROI)','50k':'$126/mo','100k':'$126/mo','250k':'$126/mo'},
-      'Codes promo':              {'25k':'VIBES (~50%)','50k':'idem','100k':'idem','250k':'idem'},
+      'Codes promo':              {'25k':'VIBES (~50%)','50k':'VIBES (~50%)','100k':'VIBES (~50%)','250k':'VIBES (~50%)'},
       // Payouts
-      'Répartition gains':        {'25k':'Exhibition Sim: 80/20 → Live: 90/10 après $5,000 cumulés','50k':'idem','100k':'idem','250k':'idem'},
-      'Consistency funded':       {'25k':'Appliquée seulement les 3 PREMIERS payouts puis supprimée','50k':'idem','100k':'idem','250k':'idem'},
+      'Répartition gains':        {'25k':'Exhibition Sim: 80/20 → Live: 90/10 après $5,000 cumulés','50k':'Exhibition Sim: 80/20 → Live: 90/10 après $5,000 cumulés','100k':'Exhibition Sim: 80/20 → Live: 90/10 après $5,000 cumulés','250k':'Exhibition Sim: 80/20 → Live: 90/10 après $5,000 cumulés'},
+      'Consistency funded':       {'25k':'Appliquée seulement les 3 PREMIERS payouts puis supprimée','50k':'Appliquée seulement les 3 PREMIERS payouts puis supprimée','100k':'Appliquée seulement les 3 PREMIERS payouts puis supprimée','250k':'Appliquée seulement les 3 PREMIERS payouts puis supprimée'},
       'Payout minimum':           {'25k':'$1,000','50k':'$1,000','100k':'$1,000','250k':'$1,000'},
-      'Délai payout (Sim)':       {'25k':'Jusqu\'à $10K tous les 3 jours','50k':'idem','100k':'idem','250k':'idem'},
-      'Délai payout (Live)':      {'25k':'🚀 DAILY same-day (PayPal 10-15 min)','50k':'idem','100k':'idem','250k':'idem'},
-      'Méthodes payout':          {'25k':'Wire/ACH ($10-30 fee) · PayPal (frais PayPal, instantané)','50k':'idem','100k':'idem','250k':'idem'},
+      'Délai payout (Sim)':       {'25k':'Jusqu\'à $10K tous les 3 jours','50k':'Jusqu\'à $10K tous les 3 jours','100k':'Jusqu\'à $10K tous les 3 jours','250k':'Jusqu\'à $10K tous les 3 jours'},
+      'Délai payout (Live)':      {'25k':'🚀 DAILY same-day (PayPal 10-15 min)','50k':'🚀 DAILY same-day (PayPal 10-15 min)','100k':'🚀 DAILY same-day (PayPal 10-15 min)','250k':'🚀 DAILY same-day (PayPal 10-15 min)'},
+      'Méthodes payout':          {'25k':'Wire/ACH ($10-30 fee) · PayPal (frais PayPal, instantané)','50k':'Wire/ACH ($10-30 fee) · PayPal (frais PayPal, instantané)','100k':'Wire/ACH ($10-30 fee) · PayPal (frais PayPal, instantané)','250k':'Wire/ACH ($10-30 fee) · PayPal (frais PayPal, instantané)'},
       // Multi-comptes
       'Comptes simul.':           {'25k':'10 max (copy trading limité à 5)','50k':'10','100k':'10','250k':'10'},
     }
@@ -466,13 +466,13 @@ export const PROPFIRM_RULES = {
       'Objectif de profit':       {'50k':'~$3,000 (Starter) · ~$4,000 (Pro) · 5% buffer (Instant) — décompo Starter vs Pro NON DOCUMENTÉE à 3 sources','100k':'~$6,000 / ~$7,500','150k':'~$9,000 / ~$11,000'},
       'Drawdown trailing max':    {'50k':'$2,000 EOD (Starter/Pro) · Instant : 5% du current balance (trailing dynamique) — DISPUTÉ','100k':'$3,000 EOD','150k':'$5,000 EOD'},
       'Drawdown journalier max':  {'50k':'$1,100 (Starter) · AUCUN (Pro) · DLL Instant DISPUTÉ entre sources','100k':'$2,000 / AUCUN','150k':'$3,000 / AUCUN'},
-      'Jours de trading min':     {'50k':'≥5 profitable days en ≥14 calendar (Starter/Pro) · 7 sur 14 (Instant)','100k':'idem','150k':'idem'},
+      'Jours de trading min':     {'50k':'≥5 profitable days en ≥14 calendar (Starter/Pro) · 7 sur 14 (Instant)','100k':'≥5 profitable days en ≥14 calendar (Starter/Pro) · 7 sur 14 (Instant)','150k':'≥5 profitable days en ≥14 calendar (Starter/Pro) · 7 sur 14 (Instant)'},
       'Profit min jour valide':   {'50k':'Non documenté précisément à 3 sources','100k':'Non documenté','150k':'Non documenté'},
-      'Règle de cohérence':       {'50k':'40% (Starter/Pro) · Instant : 20% (FAQ officielle) ou 25% (PTV) — DISPUTÉ','100k':'idem','150k':'idem'},
+      'Règle de cohérence':       {'50k':'40% (Starter/Pro) · Instant : 20% (FAQ officielle) ou 25% (PTV) — DISPUTÉ','100k':'40% (Starter/Pro) · Instant : 20% (FAQ officielle) ou 25% (PTV) — DISPUTÉ','150k':'40% (Starter/Pro) · Instant : 20% (FAQ officielle) ou 25% (PTV) — DISPUTÉ'},
       // Trading
-      'Positions overnight':      {'50k':'Exchange hours seulement (modèle EOD)','100k':'idem','150k':'idem'},
-      'Trading des news':         {'50k':'Tier-1 windows enforcées (flat) · add-on PAYANT pour unlock','100k':'idem','150k':'idem'},
-      'Scalping':                 {'50k':'Très short holds peuvent être exclus du payout · "Scalp Mode" add-on dispo','100k':'idem','150k':'idem'},
+      'Positions overnight':      {'50k':'Exchange hours seulement (modèle EOD)','100k':'Exchange hours seulement (modèle EOD)','150k':'Exchange hours seulement (modèle EOD)'},
+      'Trading des news':         {'50k':'Tier-1 windows enforcées (flat) · add-on PAYANT pour unlock','100k':'Tier-1 windows enforcées (flat) · add-on PAYANT pour unlock','150k':'Tier-1 windows enforcées (flat) · add-on PAYANT pour unlock'},
+      'Scalping':                 {'50k':'Très short holds peuvent être exclus du payout · "Scalp Mode" add-on dispo','100k':'Très short holds peuvent être exclus du payout · "Scalp Mode" add-on dispo','150k':'Très short holds peuvent être exclus du payout · "Scalp Mode" add-on dispo'},
       'DCA / Grid':               {'50k':'Autorisé sous policy actuelle','100k':'Autorisé','150k':'Autorisé'},
       'Hedging cross-comptes':    {'50k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       // Contrats
@@ -485,9 +485,9 @@ export const PROPFIRM_RULES = {
       'Codes promo':              {'50k':'BLACK40 (40-50%)','100k':'BLACK40','150k':'BLACK40'},
       // Payouts
       'Répartition gains':        {'50k':'🌟 80% → 90% → 100% scaling sur sustained performance','100k':'80% → 90% → 100%','150k':'80% → 90% → 100%'},
-      'Payout minimum':           {'50k':'Pas de floor publié (industrie : $500+)','100k':'idem','150k':'idem'},
-      'Délai payout':             {'50k':'Bi-weekly, processing ~24h post-approval · Bank 2-4j, CRYPTO same-day','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'50k':'Bank (SEPA/SWIFT) · 🌟 Crypto USDT/USDC via Rise (same-day)','100k':'idem','150k':'idem'},
+      'Payout minimum':           {'50k':'Pas de floor publié (industrie : $500+)','100k':'Pas de floor publié (industrie : $500+)','150k':'Pas de floor publié (industrie : $500+)'},
+      'Délai payout':             {'50k':'Bi-weekly, processing ~24h post-approval · Bank 2-4j, CRYPTO same-day','100k':'Bi-weekly, processing ~24h post-approval · Bank 2-4j, CRYPTO same-day','150k':'Bi-weekly, processing ~24h post-approval · Bank 2-4j, CRYPTO same-day'},
+      'Méthodes payout':          {'50k':'Bank (SEPA/SWIFT) · 🌟 Crypto USDT/USDC via Rise (same-day)','100k':'Bank (SEPA/SWIFT) · 🌟 Crypto USDT/USDC via Rise (same-day)','150k':'Bank (SEPA/SWIFT) · 🌟 Crypto USDT/USDC via Rise (same-day)'},
       // Multi-comptes
       'Comptes simul.':           {'50k':'2 max sous 1 login (fair-play rule, très restrictif)','100k':'2 max','150k':'2 max'},
     }
@@ -543,44 +543,44 @@ export const PROPFIRM_RULES = {
     //   - Profit Split 90% en Qualified — IMMÉDIAT pour les 3 plans (pas tiered)
     plans: ['25k','50k','100k','150k'],
     rules: {
-      // Profit Target (Eval)
-      'Objectif de profit':       {'25k':'$1,500 (Zero uniquement)','50k':'Premium/Zero: $3,000 · Advanced: $4,000','100k':'Premium/Zero: $6,000 · Advanced: $8,000','150k':'Premium: $9,000 · Advanced: $12,000'},
-      // MLL — Maximum Loss Limit (EOD trailing)
-      'MLL (Maximum Loss Limit)': {'25k':'Zero: $1,000 (EOD trailing, lock starting)','50k':'Premium/Zero: $2,000 · Advanced: $1,750 (3.5%)','100k':'Premium: $3,000 · Zero: $3,000 · Advanced: $3,500','150k':'Premium: $4,500 · Advanced: $5,250'},
+      // Profit Target (Eval) — par plan, par taille
+      'Objectif de profit':       {'25k':'Zero: $1,500 (Premium/Advanced non dispo)','50k':'Premium: $3,000 · Zero: $3,000 · Advanced: $4,000','100k':'Premium: $6,000 · Zero: $6,000 · Advanced: $8,000','150k':'Premium: $9,000 · Advanced: $12,000 (Zero non dispo)'},
+      // MLL — Maximum Loss Limit (EOD trailing, lock starting)
+      'MLL (Maximum Loss Limit)': {'25k':'Zero: $1,000 (EOD trailing, lock starting balance)','50k':'Premium: $2,000 · Zero: $2,000 · Advanced: $1,750 (3.5%)','100k':'Premium: $3,000 · Zero: $3,000 · Advanced: $3,500','150k':'Premium: $4,500 · Advanced: $5,250 (Zero non dispo)'},
       // Daily Loss Guard (DLG) — seulement Zero
-      'Daily Loss Guard':         {'25k':'Zero: $500','50k':'Zero: $1,000 · Premium: AUCUN · Advanced: AUCUN','100k':'Zero: $2,000 · Premium: AUCUN · Advanced: AUCUN','150k':'AUCUN (Zero non dispo en 150K · Premium/Advanced sans DLG)'},
+      'Daily Loss Guard':         {'25k':'Zero: $500 (Premium/Advanced non dispo en 25K)','50k':'Premium: AUCUN · Zero: $1,000 · Advanced: AUCUN','100k':'Premium: AUCUN · Zero: $2,000 · Advanced: AUCUN','150k':'Premium: AUCUN · Advanced: AUCUN (Zero non dispo)'},
       // Min trading days
-      'Min jours trading (Eval)': {'25k':'Zero: 1 jour (one-day pass possible)','50k':'Premium: 2 · Zero: 1 · Advanced: 2','100k':'idem','150k':'idem'},
-      'Min jours trading (Qual)': {'25k':'5','50k':'5 (tous plans)','100k':'5','150k':'5'},
+      'Min jours trading (Eval)': {'25k':'Zero: 1 jour (one-day pass possible)','50k':'Premium: 2 · Zero: 1 · Advanced: 2','100k':'Premium: 2 · Zero: 1 · Advanced: 2','150k':'Premium: 2 · Advanced: 2 (Zero non dispo)'},
+      'Min jours trading (Qual)': {'25k':'Zero: 5','50k':'Premium: 5 · Zero: 5 · Advanced: 5','100k':'Premium: 5 · Zero: 5 · Advanced: 5','150k':'Premium: 5 · Advanced: 5 (Zero non dispo)'},
       // Consistency rule
-      'Consistency (Eval)':       {'25k':'Zero: AUCUNE','50k':'Premium: 50% · Zero: AUCUNE · Advanced: 50%','100k':'idem','150k':'idem'},
-      'Consistency (Qualified)':  {'25k':'Zero: 40% (rare !)','50k':'Premium: AUCUNE · Zero: 40% · Advanced: AUCUNE','100k':'idem','150k':'idem'},
-      // Profit split (Qualified)
-      'Profit Split (Qualified)': {'25k':'90% (Zero, dès le 1er payout)','50k':'90% IMMÉDIAT (tous plans · pas tiered)','100k':'90%','150k':'90%'},
-      // Position sizing (mini contracts | micro contracts)
-      'Contrats max (mini)':      {'25k':'Zero: 1','50k':'Premium: 4 · Zero: 3 · Advanced: 5','100k':'Premium: 8 · Zero: 6 · Advanced: 10','150k':'Premium: 12 · Advanced: 15'},
-      'Contrats max (micro)':     {'25k':'Zero: 10','50k':'Premium: 40 · Zero: 30 · Advanced: 50','100k':'Premium: 80 · Zero: 60 · Advanced: 100','150k':'Premium: 120 · Advanced: 150'},
-      'Scaling plan':             {'25k':'Zero: pas de scaling (full dès jour 1)','50k':'Premium/Zero: pas de scaling · Advanced: PAS DE SCALING (taille max dès jour 1)','100k':'idem','150k':'idem'},
-      // Pricing
-      'Prix mensuel Premium':     {'25k':'— (Premium non dispo en 25K)','50k':'$79/mo (+$149 act) OU $159/mo (0 act)','100k':'$159/mo (+$149 act) OU $269/mo (0 act)','150k':'$239/mo (+$149 act) OU $379/mo (0 act)'},
-      'Prix mensuel Zero':        {'25k':'$79/mo · 0 activation permanent','50k':'$119/mo · 0 activation','100k':'$239/mo · 0 activation','150k':'— (Zero non dispo en 150K)'},
-      'Prix mensuel Advanced':    {'25k':'— (Advanced non dispo en 25K)','50k':'$139/mo (+$149 activation)','100k':'$279/mo (+$149 activation)','150k':'$419/mo (+$149 activation)'},
-      'Activation fee':           {'25k':'Zero: $0','50k':'Premium path1: $149 · Premium path2: $0 · Zero: $0 · Advanced: $149','100k':'idem','150k':'idem'},
+      'Consistency (Eval)':       {'25k':'Zero: AUCUNE','50k':'Premium: 50% · Zero: AUCUNE · Advanced: 50%','100k':'Premium: 50% · Zero: AUCUNE · Advanced: 50%','150k':'Premium: 50% · Advanced: 50% (Zero non dispo)'},
+      'Consistency (Qualified)':  {'25k':'Zero: 40% (rare en Qualified !)','50k':'Premium: AUCUNE · Zero: 40% · Advanced: AUCUNE','100k':'Premium: AUCUNE · Zero: 40% · Advanced: AUCUNE','150k':'Premium: AUCUNE · Advanced: AUCUNE (Zero non dispo)'},
+      // Profit split (Qualified) — 90% pour tous, immédiat
+      'Profit Split (Qualified)': {'25k':'Zero: 90% (immédiat dès 1er payout)','50k':'Premium: 90% · Zero: 90% · Advanced: 90% (immédiat, pas tiered)','100k':'Premium: 90% · Zero: 90% · Advanced: 90%','150k':'Premium: 90% · Advanced: 90% (Zero non dispo)'},
+      // Position sizing
+      'Contrats max (mini)':      {'25k':'Zero: 1 (Premium/Advanced non dispo en 25K)','50k':'Premium: 4 · Zero: 3 · Advanced: 5','100k':'Premium: 8 · Zero: 6 · Advanced: 10','150k':'Premium: 12 · Advanced: 15 (Zero non dispo)'},
+      'Contrats max (micro)':     {'25k':'Zero: 10 (Premium/Advanced non dispo en 25K)','50k':'Premium: 40 · Zero: 30 · Advanced: 50','100k':'Premium: 80 · Zero: 60 · Advanced: 100','150k':'Premium: 120 · Advanced: 150 (Zero non dispo)'},
+      'Scaling plan':             {'25k':'Zero: pas de scaling (taille max dès jour 1)','50k':'Premium: pas de scaling · Zero: pas de scaling · Advanced: PAS DE SCALING (taille max dès jour 1)','100k':'Premium: pas de scaling · Zero: pas de scaling · Advanced: pas de scaling','150k':'Premium: pas de scaling · Advanced: pas de scaling (Zero non dispo)'},
+      // Pricing — par plan
+      'Prix mensuel Premium':     {'25k':'— (Premium non dispo en 25K)','50k':'$79/mo (+$149 activation) OU $159/mo (0 activation)','100k':'$159/mo (+$149 activation) OU $269/mo (0 activation)','150k':'$239/mo (+$149 activation) OU $379/mo (0 activation)'},
+      'Prix mensuel Zero':        {'25k':'$79/mo · 0 activation permanent','50k':'$119/mo · 0 activation permanent','100k':'$239/mo · 0 activation permanent','150k':'— (Zero non dispo en 150K)'},
+      'Prix mensuel Advanced':    {'25k':'— (Advanced non dispo en 25K)','50k':'$139/mo + $149 activation','100k':'$279/mo + $149 activation','150k':'$419/mo + $149 activation'},
+      'Activation fee':           {'25k':'Zero: $0 (Premium/Advanced non dispo)','50k':'Premium path1: $149 · Premium path2: $0 · Zero: $0 · Advanced: $149','100k':'Premium path1: $149 · Premium path2: $0 · Zero: $0 · Advanced: $149','150k':'Premium path1: $149 · Premium path2: $0 · Advanced: $149 (Zero non dispo)'},
       // Reset costs (Eval phase)
-      'Reset Eval':               {'25k':'Zero: $69','50k':'Premium: $69 (path1) ou $149 (path2) · Zero: $109 · Advanced: $139','100k':'Premium: $139/$239 · Zero: $219 · Advanced: $279','150k':'Premium: $219/$329 · Advanced: $419'},
-      // Trading rules
-      'Hold Through News':        {'25k':'✅ YES (avec restrictions sur Zero Qualified)','50k':'idem','100k':'idem','150k':'idem'},
-      'Positions overnight':      {'25k':'✅ AUTORISÉ (overnight + weekend) — rare sur le marché','50k':'idem','100k':'idem','150k':'idem'},
-      'Trading des news':         {'25k':'Premium/Advanced: aucune restriction · Zero: restrictions Qualified uniquement','50k':'idem','100k':'idem','150k':'idem'},
-      'Algos / automation':       {'25k':'EAs limités — vérifier Prohibited Trading Practices avant usage','50k':'idem','100k':'idem','150k':'idem'},
-      'Copy trading':             {'25k':'Voir doc officielle Copy Trading','50k':'idem','100k':'idem','150k':'idem'},
-      // Payouts
-      'Payout — Premium':         {'25k':'— (non dispo)','50k':'50% des profits par cycle, après 5 winning days ≥ $200','100k':'idem','150k':'idem'},
-      'Payout — Zero':            {'25k':'5 winning days ≥ $200 · cap 50% profits · max $1K/cycle','50k':'idem · max $2K/cycle','100k':'idem · max $2.5K/cycle','150k':'— (non dispo)'},
-      'Payout — Advanced':        {'25k':'— (non dispo)','50k':'Max $15,000 par request · 4 monthly withdrawals possibles','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'25k':'ACH, Wise, Wire SWIFT, Rise (intl)','50k':'idem','100k':'idem','150k':'idem'},
+      'Reset Eval':               {'25k':'Zero: $69 (Premium/Advanced non dispo)','50k':'Premium: $69 (path1) ou $149 (path2) · Zero: $109 · Advanced: $139','100k':'Premium: $139 (path1) ou $239 (path2) · Zero: $219 · Advanced: $279','150k':'Premium: $219 (path1) ou $329 (path2) · Advanced: $419 (Zero non dispo)'},
+      // Trading rules — globalement identiques pour tous, on répète l'info
+      'Hold Through News':        {'25k':'✅ YES (Zero: avec restrictions en Qualified)','50k':'✅ YES (Premium/Advanced: sans restriction · Zero: avec restrictions en Qualified)','100k':'✅ YES (Premium/Advanced: sans restriction · Zero: avec restrictions en Qualified)','150k':'✅ YES (Premium/Advanced: sans restriction · Zero non dispo)'},
+      'Positions overnight':      {'25k':'✅ AUTORISÉ (overnight + weekend) — rare sur le marché','50k':'✅ AUTORISÉ (overnight + weekend) — rare sur le marché','100k':'✅ AUTORISÉ (overnight + weekend) — rare sur le marché','150k':'✅ AUTORISÉ (overnight + weekend) — rare sur le marché'},
+      'Trading des news':         {'25k':'Zero: restrictions Qualified uniquement','50k':'Premium: aucune restriction · Zero: restrictions Qualified uniquement · Advanced: aucune restriction','100k':'Premium: aucune restriction · Zero: restrictions Qualified uniquement · Advanced: aucune restriction','150k':'Premium: aucune restriction · Advanced: aucune restriction (Zero non dispo)'},
+      'Algos / automation':       {'25k':'EAs limités — voir Prohibited Trading Practices','50k':'EAs limités — voir Prohibited Trading Practices','100k':'EAs limités — voir Prohibited Trading Practices','150k':'EAs limités — voir Prohibited Trading Practices'},
+      'Copy trading':             {'25k':'Voir doc Copy Trading officielle (help.alpha-futures.com)','50k':'Voir doc Copy Trading officielle (help.alpha-futures.com)','100k':'Voir doc Copy Trading officielle (help.alpha-futures.com)','150k':'Voir doc Copy Trading officielle (help.alpha-futures.com)'},
+      // Payouts (Qualified)
+      'Payout — Premium':         {'25k':'— (Premium non dispo en 25K)','50k':'50% des profits par cycle après 5 winning days ≥ $200','100k':'50% des profits par cycle après 5 winning days ≥ $200','150k':'50% des profits par cycle après 5 winning days ≥ $200'},
+      'Payout — Zero':            {'25k':'Zero: 5 winning days ≥ $200 · cap 50% profits · max $1K/cycle','50k':'Zero: 5 winning days ≥ $200 · cap 50% profits · max $2K/cycle','100k':'Zero: 5 winning days ≥ $200 · cap 50% profits · max $2.5K/cycle','150k':'— (Zero non dispo en 150K)'},
+      'Payout — Advanced':        {'25k':'— (Advanced non dispo en 25K)','50k':'Max $15,000 par request · jusqu\'à 4 monthly withdrawals · flexible','100k':'Max $15,000 par request · jusqu\'à 4 monthly withdrawals · flexible','150k':'Max $15,000 par request · jusqu\'à 4 monthly withdrawals · flexible'},
+      'Méthodes payout':          {'25k':'ACH (US), Wise, Wire SWIFT, Rise (international)','50k':'ACH (US), Wise, Wire SWIFT, Rise (international)','100k':'ACH (US), Wise, Wire SWIFT, Rise (international)','150k':'ACH (US), Wise, Wire SWIFT, Rise (international)'},
       // Comptes simul.
-      'Max comptes simultanés':   {'25k':'Voir "Maximum Allocation" sur help.alpha-futures.com','50k':'idem','100k':'idem','150k':'idem'},
+      'Max comptes simultanés':   {'25k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com','50k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com','100k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com','150k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com'},
     }
   },
 }
