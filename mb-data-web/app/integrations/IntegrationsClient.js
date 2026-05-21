@@ -33,7 +33,7 @@ const FIRMS_FR = [
   { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
   { name: 'Funded Futures Network', color: '#a86bff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic' },
   { name: 'FuturesElite',           color: '#f472b6', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
-  { name: 'Alpha Futures',          color: '#0a3a2a', status: 'manual',       apiVendor: 'DXtrade (broker direct)',          note: 'Saisie manuelle — overnight & weekend autorisés' },
+  { name: 'Alpha Futures',          color: '#0a3a2a', status: 'manual',       apiVendor: 'Volumetrica + dXFeed (Tradovate, NinjaTrader, Quantower, TradingView, WealthCharts, Deepchart)', note: 'Saisie manuelle — overnight & weekend autorisés' },
 ]
 
 const FIRMS_EN = [
@@ -47,7 +47,7 @@ const FIRMS_EN = [
   { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
   { name: 'Funded Futures Network', color: '#a86bff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Rithmic CSV import' },
   { name: 'FuturesElite',           color: '#f472b6', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
-  { name: 'Alpha Futures',          color: '#0a3a2a', status: 'manual',       apiVendor: 'DXtrade (direct broker)',          note: 'Manual entry — overnight & weekend allowed' },
+  { name: 'Alpha Futures',          color: '#0a3a2a', status: 'manual',       apiVendor: 'Volumetrica + dXFeed (Tradovate, NinjaTrader, Quantower, TradingView, WealthCharts, Deepchart)', note: 'Manual entry — overnight & weekend allowed' },
 ]
 
 const PLATFORMS_FR = [

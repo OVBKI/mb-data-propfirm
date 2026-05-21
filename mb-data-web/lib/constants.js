@@ -494,7 +494,20 @@ export const PROPFIRM_RULES = {
   },
   'Alpha Futures': {
     // VÉRIFIÉ MAI 2026 — Sources : help.alpha-futures.com (docs officielles) + screenshots compte trader
-    // PLATEFORME : DXtrade (broker direct — pas Rithmic)
+    //
+    // INFRASTRUCTURE :
+    //   • Clearing house : Volumetrica Trading
+    //   • Data feed      : dXFeed (Devexperts — PAS DXtrade le trading platform)
+    //   • Plateformes UI au choix (login credentials Tradovate/NinjaTrader partagés) :
+    //       - WealthCharts (web)
+    //       - Deepchart by Volumetrica Trading (web + desktop, OrderFlow inclus)
+    //       - Quantower (desktop, dXFeed)
+    //       - Tradovate (web)
+    //       - NinjaTrader (desktop)
+    //       - TradingView (via add-on Tradovate)
+    //   • IMPORTANT : choix de plateforme NON interchangeable après achat
+    //   • Sync Quantara : pas d'import auto pour l'instant — saisie manuelle uniquement
+    //     (futur : possible via export CSV Tradovate/NinjaTrader, à coder)
     //
     // 3 PLANS distincts — chacun avec ses tailles et règles propres :
     //
