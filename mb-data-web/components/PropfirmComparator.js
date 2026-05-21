@@ -553,6 +553,8 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
 
   const plans = firmData.plans || []
   const [selectedPlan, setSelectedPlan] = useState(plans.includes('50k') ? '50k' : plans[0])
+  // Vue rapide (par défaut) vs Règles avancées (toutes les ~30-50 règles)
+  const [viewMode, setViewMode] = useState('quick')
 
   const rules = firmData.rules || {}
   const ruleKeys = Object.keys(rules)
@@ -677,10 +679,51 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
           />
         </div>
 
-        {/* Toutes les règles, groupées par section.
+        {/* Tab switcher : Vue rapide (défaut) vs Règles avancées */}
+        <div style={{
+          display: 'flex', gap: 4, marginBottom: 20,
+          background: C.surface, padding: 4, borderRadius: 10,
+          border: `1px solid ${C.border}`,
+        }}>
+          {[
+            { key: 'quick', label: 'Vue rapide' },
+            { key: 'advanced', label: 'Règles avancées' },
+          ].map(t => {
+            const active = viewMode === t.key
+            return (
+              <button
+                key={t.key}
+                onClick={() => setViewMode(t.key)}
+                style={{
+                  flex: 1,
+                  padding: '8px 14px', fontSize: 12, fontWeight: 600,
+                  borderRadius: 7, border: 'none', cursor: 'pointer',
+                  background: active ? 'rgba(45,111,255,0.18)' : 'transparent',
+                  color: active ? C.blueLight : C.text2,
+                  fontFamily: 'inherit', letterSpacing: '0.04em',
+                  transition: 'all 0.15s',
+                }}>{t.label}</button>
+            )
+          })}
+        </div>
+
+        {/* Vue rapide : Challenge + Financé avec champs essentiels uniquement */}
+        {viewMode === 'quick' && (
+          <QuickView
+            rules={rules}
+            ruleKeys={ruleKeys}
+            plan={selectedPlan}
+            firmName={firmName}
+            ruleValue={ruleValue}
+            meta={meta}
+          />
+        )}
+
+        {/* Vue avancée : toutes les règles groupées par section.
             Les regex ont été élargis mai 2026 après ajout de ~40 nouvelles clés (DLL, Mécanisme trailing,
             Profit split par famille, Path to LIVE, Sim→Live triggers, etc.).
             Une 7e section "Autres règles" catche les keys non matchés pour garantir 100% d'affichage. */}
+        {viewMode === 'advanced' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {(() => {
             // Patterns par section — élargis pour matcher les clés des fiches détaillées mai 2026
@@ -718,6 +761,7 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
             )
           })()}
         </div>
+        )}
       </div>
     </div>
   )
@@ -741,6 +785,218 @@ function StatBig({ label, value, sub, color, small }) {
       {sub && (
         <div style={{ fontSize: 10, color: C.text3, marginTop: 4, lineHeight: 1.4 }}>{sub}</div>
       )}
+    </div>
+  )
+}
+
+// === QuickView : vue résumée par sections Challenge / Financé ===
+// Affiche uniquement les ~14 champs essentiels demandés par le user (mai 2026).
+// Utilise des patterns regex pour trouver la BONNE clé parmi les ~30-50 disponibles par firme.
+// Pour chaque champ : essaie les patterns les plus spécifiques d'abord, puis les fallbacks.
+// Si aucune clé ne matche : affiche "—" ou "AUCUNE" (DLL) pour signaler explicitement.
+function QuickView({ rules, ruleKeys, plan, firmName, ruleValue, meta }) {
+  // Helper : retourne le PREMIER match non vide pour une liste de patterns.
+  // Pour chaque pattern, on cherche TOUTES les clés matchantes et on prend la première
+  // dont la valeur est non vide ET non "n/a" / "—" (essentiel car beaucoup de firmes
+  // utilisent "n/a" sur certaines tailles, ex: Drawdown Static = n/a sur 50K Phidias).
+  function findVal(patterns) {
+    for (const pat of patterns) {
+      const matchingKeys = ruleKeys.filter(rk => pat.test(rk))
+      for (const k of matchingKeys) {
+        const v = ruleValue(firmName, k, plan)
+        if (v && String(v).trim() !== '' && !/^(?:n\/a|—)$/i.test(v)) {
+          return { key: k, value: v }
+        }
+      }
+    }
+    return null
+  }
+
+  // === Challenge (Évaluation) ===
+  const challenge = [
+    {
+      label: 'Prix',
+      match: findVal([
+        /^prix\b.*(?:one.?time|otp|list|retail|mensuel|mois)/i,
+        /^prix\b/i,
+      ]),
+    },
+    {
+      label: 'Profit target',
+      match: findVal([/^objectif de profit/i, /^profit target/i]),
+    },
+    {
+      label: 'Max loss limit',
+      match: findVal([
+        /^drawdown\s+(?:trailing|test|select|growth|lightning|rapid|core|flex|builder|static|fundamental|swing|max)/i,
+        /^max loss limit/i,
+        /^mll\b/i,
+        /^drawdown\b/i,
+        /^max.?loss/i,
+      ]),
+    },
+    {
+      label: 'Type drawdown',
+      match: meta?.ddType ? {
+        key: '-',
+        value: meta.ddType + (meta.ddDetail ? ' · ' + meta.ddDetail : ''),
+      } : null,
+    },
+    {
+      label: 'Daily Loss Limit',
+      // Si aucun match : fallback explicite "AUCUNE" (per user request)
+      match: findVal([
+        /^daily loss limit/i,
+        /^daily loss guard/i,
+        /^\bdlg\b/i,
+        /^\bdll\b/i,
+        /^drawdown journalier/i,
+        /^pa dll/i,
+      ]) || { key: '-', value: 'AUCUNE' },
+    },
+    {
+      label: 'Consistance',
+      match: findVal([
+        /^(?:règle de cohérence|consistency).*(?:eval|test|q|standard|express|select|growth|lightning|lucidpro|lucidflex|luciddirect|starter|pro|combine)\b/i,
+        /^(?:règle de cohérence|consistency)/i,
+      ]),
+    },
+    {
+      label: 'Max contrat',
+      match: findVal([
+        /^contrats max\s+(?:eval|mini)/i,
+        /^contrats max\s+(?:option|select|growth|lightning|e2l|fund)/i,
+        /^max contracts\s*(?:\(combine\)|eval)/i,
+        /^max contracts/i,
+        /^contrats max\b/i,
+      ]),
+    },
+    {
+      label: 'Reset fee',
+      match: findVal([
+        /^reset (?:cost|test|compte|eval)/i,
+        /^reset\b/i,
+      ]),
+    },
+  ]
+
+  // === Financé (Funded) ===
+  const funded = [
+    {
+      label: 'Activation fee',
+      match: findVal([
+        /^frais activation/i,
+        /^activation\b/i,  // matches "Activation fee" (Alpha), "Activation PRO+" (TPT)
+      ]),
+    },
+    {
+      label: 'Buffer / Safety',
+      match: findVal([
+        /^buffer payout/i,
+        /^buffer\b/i,
+        /^safety net/i,
+        /^safety threshold/i,
+        /^min payout balance/i,
+        /^min payout balance/i,
+      ]),
+    },
+    {
+      label: 'Jours min entre payouts',
+      match: findVal([
+        /^jours min (?:funded|master|cycle|lucidpro|lucidflex)/i,
+        /^min jours (?:master|funded|trading)/i,
+        /^min entre payouts/i,
+        /^qualifying days/i,
+        /^jours.*min.*funded/i,
+        /^min trading days\s*\((?:xfa|lfa)/i,
+        /^min trading days/i,
+      ]),
+    },
+    {
+      label: 'Profit min jour valide',
+      match: findVal([
+        /^profit min[\/\s]+jour/i,
+        /^profit min\b/i,
+        /^profit min winning day/i,
+      ]),
+    },
+    {
+      label: 'Max loss (funded)',
+      match: findVal([
+        /^drawdown post/i,
+        /^live.*drawdown/i,
+        /^pa dll/i,
+        /^drawdown pro\+?/i,
+        /^mll mécanique xfa/i,
+        /^drawdown\b/i,
+        /^max loss limit/i,
+        /^mll\b/i,
+      ]),
+    },
+    {
+      label: 'Passage Live',
+      match: findVal([
+        /^path to live/i,
+        /^sim.?→.?live/i,
+        /^sim to live/i,
+        /^transition.*live/i,
+        /^pro.?→.?pro\+/i,
+        /^promotion/i,
+        /^after.*payouts/i,
+        /^payout ladder/i,
+        /^lucidlive transitions?/i,
+        /^call up/i,
+        /^lfa\b.*éligibilité/i,
+      ]),
+    },
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <QuickSection title="Challenge / Évaluation" accent={C.amber} items={challenge} />
+      <QuickSection title="Financé / Funded" accent={C.green} items={funded} />
+      <div style={{ fontSize: 11, color: C.text3, lineHeight: 1.5, marginTop: -8 }}>
+        ⚙ Pour TOUTES les règles (overnight, news, DCA, algos, métaux, payout methods, multi-comptes…) → onglet <strong>Règles avancées</strong>
+      </div>
+    </div>
+  )
+}
+
+function QuickSection({ title, items, accent }) {
+  // On affiche TOUS les items même sans match (avec "—" comme fallback)
+  // pour que l'user voie explicitement quels champs sont applicables ou pas.
+  return (
+    <div>
+      <div style={{
+        fontSize: 11, color: accent || C.blueLight, letterSpacing: '0.14em',
+        marginBottom: 12, textTransform: 'uppercase', fontWeight: 700,
+      }}>
+        {title}
+      </div>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10,
+      }}>
+        {items.map((item, i) => (
+          <QuickItem key={i} label={item.label} value={item.match?.value} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function QuickItem({ label, value }) {
+  return (
+    <div style={{
+      background: C.surface, border: `1px solid ${C.border}`,
+      borderRadius: 10, padding: 12,
+    }}>
+      <div style={{
+        fontSize: 10, color: C.text3, letterSpacing: '0.10em',
+        textTransform: 'uppercase', fontWeight: 600, marginBottom: 6,
+      }}>{label}</div>
+      <div style={{
+        fontSize: 12, color: C.text, fontWeight: 500, lineHeight: 1.4,
+      }}>{value || '—'}</div>
     </div>
   )
 }
