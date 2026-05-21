@@ -195,17 +195,17 @@ const FIRM_META = {
   },
   'Alpha Futures': {
     displayName: 'Alpha Futures',
-    color: '#0066ff',
-    ddType: 'EOD',
-    ddDetail: 'EOD trailing 4% Std/Zero · 3.5% Advanced · lock starting',
-    hasDLL: true, // Daily Loss Guard 2% côté Funded Std/Zero (Advanced sans DLL)
+    color: '#0a3a2a',
+    ddType: 'TRAIL', // Trailing (close-to-close, lock à starting)
+    ddDetail: 'Trailing 4% Premium/Zero · 3.5% Advanced · lock starting balance',
+    hasDLL: true, // Daily Loss Guard $1000 sur Zero (uniquement)
     pricingModel: 'monthly',
-    pricingNote: '$79-419/mo (ALPHA20 -20%) · activation $149 Std/Adv',
+    pricingNote: '$79-419/mo · Premium: $0 activation path dispo · Zero/Advanced: 0 activation',
     splitMax: 90,
-    payoutSpeed: 'weekly',
+    payoutSpeed: 'on-demand',
     statusBadge: null,
-    hallmark: '🌟 Overnight + weekend AUTORISÉS · 3 plans (Standard/Zero/Advanced) · Profit target 8-10%',
-    tags: ['Overnight OK', 'Weekend OK', '3 plans', '90% split max'],
+    hallmark: '🌟 Overnight + Weekend + Hold News autorisés · 3 plans (Premium/Zero/Advanced) · DXtrade',
+    tags: ['Overnight OK', 'Hold news', '3 plans', 'DXtrade', '90% split'],
   },
 }
 

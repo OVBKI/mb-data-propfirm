@@ -44,5 +44,31 @@ export function getFirmLogo(name, color, size=36) {
     )
   }
 
+  // Logo custom Alpha Futures — triangle blanc (stylised A) sur fond vert sombre
+  // Reproduction du logo officiel alpha-futures.com : triangle hollow + barre horizontale en bas
+  if (name === 'Alpha Futures') {
+    const s = size
+    return (
+      <div style={{width:s,height:s,borderRadius:8,background:'linear-gradient(135deg,#063024 0%,#0a4d3a 60%,#125f4a 100%)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,overflow:'hidden',position:'relative'}}>
+        {/* Halo subtil radial */}
+        <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at top left, rgba(255,255,255,0.06), transparent 60%)'}} />
+        <svg width={s*0.62} height={s*0.62} viewBox="0 0 32 32" fill="none" style={{position:'relative',zIndex:1}}>
+          {/* Triangle "A" hollow (forme principale) */}
+          <path
+            d="M16 4 L28 24 L23 24 L21 20.5 L11 20.5 L9 24 L4 24 Z"
+            fill="#fff"
+          />
+          {/* Triangle intérieur (cutout pour effet hollow) */}
+          <path
+            d="M16 11.5 L13.5 17 L18.5 17 Z"
+            fill="#0a4d3a"
+          />
+          {/* Barre horizontale (la "ligne" sous le A) */}
+          <rect x="5" y="26" width="22" height="2.2" rx="0.5" fill="#fff" />
+        </svg>
+      </div>
+    )
+  }
+
   return <div style={{width:size,height:size,borderRadius:8,background:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,fontWeight:700,color:'#fff',flexShrink:0}}>{name.charAt(0)}</div>
 }

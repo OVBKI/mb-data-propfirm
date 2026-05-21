@@ -68,11 +68,9 @@ export const FIRM_PATTERNS = [
   // suivi d'un séparateur optionnel ([-_ ]) puis du reste de l'ID.
   { firm: 'Phidias Propfirm', pattern: /^(PP(CASH)?|PHI(DIAS)?)([-_ ][A-Z0-9-]+)?$/i },
 
-  // ── Alpha Futures ──
-  // Plateforme Rithmic (routing) — format account ID à confirmer après 1er import réel.
-  // Hypothèse : préfixe AF / ALPHA / ALPHAFUTURES + séparateur + alphanumeric
-  // Ex: AF-12345, ALPHA-50K-12345, ALPHAFUTURES-12345
-  { firm: 'Alpha Futures', pattern: /^(AF|ALPHA(FUTURES)?)[-_][A-Z0-9-]+$/i },
+  // Note : Alpha Futures utilise DXtrade (broker direct), pas Rithmic.
+  // Aucune détection auto via CSV Rithmic possible pour Alpha Futures.
+  // Saisie manuelle ou (futur) parser DXtrade CSV à implémenter.
 ]
 
 // Pattern générique de fallback : permet d'identifier qu'une chaîne ressemble

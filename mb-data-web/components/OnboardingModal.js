@@ -48,7 +48,7 @@ const FIRM_SUGGESTIONS = [
   { name: 'Phidias Propfirm',       color: '#1e2a4a' },
   { name: 'Funded Futures Network', color: '#a86bff' },
   { name: 'FuturesELites',          color: '#f472b6' },
-  { name: 'Alpha Futures',          color: '#0066ff' },
+  { name: 'Alpha Futures',          color: '#0a3a2a' },
 ]
 
 const TRADING_STYLES = [
