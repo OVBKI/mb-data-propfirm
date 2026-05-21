@@ -2,45 +2,125 @@
 // Toutes les firmes futures ci-dessous utilisent un drawdown TRAILING avec stop au balance initial.
 export const PROPFIRM_RULES = {
   'Topstep': {
-    // VÉRIFIÉ MAI 2026 (help.topstep.com + tradecovex + proptradingvibes)
-    // Trading Combine → Express Funded Account (XFA) → Live Funded Account (LFA)
-    // Combine = trailing intraday | XFA/LFA = trailing EOD lock à starting balance
+    // VÉRIFIÉ MAI 2026 — Sources OFFICIELLES :
+    //   help.topstep.com/articles/8284197 (Trading Combine Parameters)
+    //   help.topstep.com/articles/8284204 (Maximum Loss Limit)
+    //   help.topstep.com/articles/8284208 (Consistency Target)
+    //   help.topstep.com/articles/8284215 (XFA Parameters)
+    //   help.topstep.com/articles/10657969 (LFA Parameters)
+    //   help.topstep.com/articles/8284233 (Payout Policy)
+    //   help.topstep.com/articles/14289835 (Pricing)
+    //   help.topstep.com/articles/10490293 (DLL in Combine + XFA)
+    //   help.topstep.com/articles/8284223 (Scaling Plan)
     //
-    // CHANGEMENTS RÉCENTS :
-    //  - 12 jan 2026 : profit split unifié 90/10 dès le $1 (avant : 100% premiers $10K)
-    //  - 5 fév 2026 : path "XFA Consistency" ajouté (3 winning days + $6K min, cap payouts ++)
-    //  - 10 fév 2026 : LFA 100K — DLL réduit à $2K si balance EOD < $10K
-    //  - Début 2026 : consistency rule 30% → 50% (assoupli)
-    //  - Flat OBLIGATOIRE 3:10 PM CT (pas d'overnight)
+    // ARCHITECTURE 3-STEP :
+    //   Trading Combine (sim payant) → Express Funded Account XFA (sim, $0 start) → Live Funded Account LFA (réel)
+    //
+    // PLATEFORME : TopstepX requise pour nouveaux Combines (Rithmic underlying) ·
+    //              NinjaTrader/Quantower grandfathered uniquement.
+    //
+    // 2 PATHS au checkout :
+    //   • STANDARD     : moins cher mensuel + $149 activation au passage XFA
+    //   • NO ACTIVATION FEE : plus cher mensuel + $0 activation au passage XFA
+    //
+    // 2 VARIANTES XFA (depuis 5 fév 2026) :
+    //   • XFA STANDARD     : 5 winning days ≥ $150 · cap payout $5K · pas de consistency
+    //   • XFA CONSISTENCY  : 3 days @ 40% consistency · cap payout $6K
+    //
+    // MLL (Maximum Loss Limit) — UNIFORME pour les 3 stages :
+    //   • EOD TRAILING (PAS intraday) — monitored real-time mais update EOD seulement
+    //   • Combine : starts à (size − DD), trails up jusqu'à starting balance, puis LOCK permanent
+    //   • XFA     : starts à $0 balance avec MLL à -$DD (ex: -$2K sur 50K) · MLL trails up · LOCK à $0 quand balance atteint le DD
+    //   • LFA     : MLL = liquidation value (locked once balance hits starting)
+    //   • Si touché → liquidation immédiate (Combine: éligible reset · XFA/LFA: compte fermé permanent)
+    //
+    // CHANGEMENTS RÉCENTS (2025/2026) :
+    //   - 25 nov 2025 : No Activation Fee Combines lancé
+    //   - 30 déc 2025 : Two-rule payout structure (1er payout: winning days only · suivants: + remaining profitable + Min Payout Balance)
+    //   - 12 jan 2026 : 90/10 split immédiat pour nouveaux (legacy 100% premiers $10K préservé pour pré-12-jan)
+    //   - 5 fév 2026  : XFA split en Standard + Consistency variants
+    //   - 22 jul 2025 : Winning days XFA NE carry over PAS au LFA (nouveaux LFA post-cette date)
+    //
+    // CONSISTENCY (formules officielles) :
+    //   • Combine: Best Day Profit ÷ Overall Profit ≤ 50% (au passage à XFA)
+    //     → Si dépassé : Profit Target AUGMENTE (pas fail direct)
+    //   • XFA Consistency: Largest Single-Day Net Profit ÷ Total Net Profit ≤ 40%
+    //
+    // INSTRUMENTS : ES, NQ, CL, GC, 6E + micros (MES, MNQ, MCL, MGC) — copy trading externe INTERDIT
     plans: ['50k','100k','150k'],
     rules: {
-      'Objectif de profit':       {'50k':'$3,000','100k':'$6,000','150k':'$9,000'},
-      'Drawdown trailing max':    {'50k':'$2,000 (Combine intraday · XFA EOD)','100k':'$3,000','150k':'$4,500'},
-      'Drawdown journalier max':  {'50k':'$1,000','100k':'$2,000','150k':'$3,000'},
-      'Jours de trading min':     {'50k':'2 jours gagnants ≥ $150','100k':'2 jours gagnants ≥ $150','150k':'2 jours gagnants ≥ $150'},
-      'Profit min jour valide':   {'50k':'$150','100k':'$150','150k':'$150'},
-      'Règle de cohérence':       {'50k':'Best day ≤ 50% du target','100k':'≤ 50%','150k':'≤ 50%'},
-      // Trading
-      'Positions overnight':      {'50k':'INTERDIT (flat 3:10 PM CT)','100k':'INTERDIT','150k':'INTERDIT'},
-      'Trading des news':         {'50k':'Autorisé (pas de buffer NFP/CPI/FOMC)','100k':'Autorisé','150k':'Autorisé'},
-      'DCA (renforcement)':       {'50k':'Toléré (pas de règle stricte)','100k':'Toléré','150k':'Toléré'},
-      // Contrats
-      'Contrats max (mini)':      {'50k':'5','100k':'10','150k':'15'},
-      'Contrats max (micro)':     {'50k':'50','100k':'100','150k':'150'},
-      // Tarifs — 2 paths au choix au checkout
-      'Prix mensuel Standard':    {'50k':'$49','100k':'$99','150k':'$149'},
-      'Prix mensuel No-Fee path': {'50k':'$95','100k':'$149','150k':'$229'},
-      'Frais activation funded':  {'50k':'$149 (Standard) · $0 (No-Activation-Fee)','100k':'$149 · $0','150k':'$149 · $0'},
-      'Reset cost':               {'50k':'Inclus dans rebill mensuel (rebill = reset)','100k':'Inclus','150k':'Inclus'},
-      // Payouts (POST 12 JAN 2026)
-      'Répartition gains':        {'50k':'90% / 10% dès le $1 (depuis 12 jan 2026)','100k':'90% / 10%','150k':'90% / 10%'},
-      'Payout minimum':           {'50k':'$125 min withdrawal','100k':'$125','150k':'$125'},
-      'Cap par payout':           {'50k':'$2,000 (Standard) · $3,000 (Consistency) — augmente après 1er','100k':'$2,500 · $3,000','150k':'$3,500 · $4,000'},
-      'Délai payout':             {'50k':'Same-day si avant cutoff, livraison J+1 ouvré (Wise/ACH/Aeropay)','100k':'Same-day si avant cutoff, livraison J+1 ouvré (Wise/ACH/Aeropay)','150k':'Same-day si avant cutoff, livraison J+1 ouvré (Wise/ACH/Aeropay)'},
-      'Méthodes payout':          {'50k':'Aeropay (gratuit) · Wise ($0.39) · ACH/wire ($30) · PayPal RETIRÉ','100k':'Aeropay (gratuit) · Wise ($0.39) · ACH/wire ($30) · PayPal RETIRÉ','150k':'Aeropay (gratuit) · Wise ($0.39) · ACH/wire ($30) · PayPal RETIRÉ'},
-      // Multi-comptes
-      'Combines simul. par taille':{'50k':'Illimité','100k':'Illimité','150k':'Illimité'},
-      'XFA simul. (max)':         {'50k':'5 actifs','100k':'5','150k':'5'},
+      // === Objectifs (Combine) ===
+      'Profit Target (Combine)':  {'50k':'$3,000','100k':'$6,000','150k':'$9,000'},
+      // === Maximum Loss Limit (Drawdown) ===
+      'Max Loss Limit (MLL)':     {'50k':'$2,000 — EOD TRAILING (Combine/XFA/LFA) · lock starting balance permanent','100k':'$3,000 — EOD TRAILING (Combine/XFA/LFA) · lock starting balance permanent','150k':'$4,500 — EOD TRAILING (Combine/XFA/LFA) · lock starting balance permanent'},
+      'MLL mécanique XFA':        {'50k':'XFA starts à $0 balance · MLL à -$2,000 · balance atteint +$2K → MLL lock $0','100k':'XFA starts à $0 balance · MLL à -$3,000 · balance atteint +$3K → MLL lock $0','150k':'XFA starts à $0 balance · MLL à -$4,500 · balance atteint +$4.5K → MLL lock $0'},
+      // === Daily Loss Limit ===
+      'Daily Loss Limit (DLL)':   {'50k':'$1,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)','100k':'$2,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)','150k':'$3,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)'},
+      'DLL Live Funded (LFA)':    {'50k':'$2,000 standard · $2,000 si tradable ≤ $10K · $1,000 si ≤ $5K (avec max 3 contrats)','100k':'$3,000 standard · $2,000 si tradable ≤ $10K · $1,000 si ≤ $5K (avec max 3 contrats)','150k':'$4,500 standard · $2,000 si tradable ≤ $10K · $1,000 si ≤ $5K (avec max 3 contrats)'},
+      // === Trading Days ===
+      'Min trading days (Combine)':{'50k':'Aucun min · pass dès profit target + consistency atteints','100k':'Aucun min · pass dès profit target + consistency atteints','150k':'Aucun min · pass dès profit target + consistency atteints'},
+      'Min trading days (XFA Standard)':{'50k':'5 winning days ≥ $150 net profit + profit > 0 depuis dernier payout','100k':'5 winning days ≥ $150 net profit + profit > 0 depuis dernier payout','150k':'5 winning days ≥ $150 net profit + profit > 0 depuis dernier payout'},
+      'Min trading days (XFA Consistency)':{'50k':'3 jours minimum @ 40% consistency (largest day ÷ total net profit)','100k':'3 jours minimum @ 40% consistency (largest day ÷ total net profit)','150k':'3 jours minimum @ 40% consistency (largest day ÷ total net profit)'},
+      'Profit min winning day':   {'50k':'$150 (XFA Standard uniquement)','100k':'$150 (XFA Standard uniquement)','150k':'$150 (XFA Standard uniquement)'},
+      // === Consistency rules (formules officielles) ===
+      'Consistency (Combine)':    {'50k':'Best Day Profit ÷ Overall Profit ≤ 50% · si dépassé : Profit Target AUGMENTE (pas fail)','100k':'Best Day Profit ÷ Overall Profit ≤ 50% · si dépassé : Profit Target AUGMENTE (pas fail)','150k':'Best Day Profit ÷ Overall Profit ≤ 50% · si dépassé : Profit Target AUGMENTE (pas fail)'},
+      'Consistency (XFA Standard)':{'50k':'AUCUNE','100k':'AUCUNE','150k':'AUCUNE'},
+      'Consistency (XFA Consistency)':{'50k':'Largest Single-Day Net Profit ÷ Total Net Profit ≤ 40% · min 3 jours','100k':'Largest Single-Day Net Profit ÷ Total Net Profit ≤ 40% · min 3 jours','150k':'Largest Single-Day Net Profit ÷ Total Net Profit ≤ 40% · min 3 jours'},
+      // === Trading rules ===
+      'Auto-flat / overnight':    {'50k':'INTERDIT overnight (auto-flat 3:10 PM CT)','100k':'INTERDIT overnight (auto-flat 3:10 PM CT)','150k':'INTERDIT overnight (auto-flat 3:10 PM CT)'},
+      'Trading des news':         {'50k':'✅ Autorisé (pas de buffer NFP/CPI/FOMC)','100k':'✅ Autorisé (pas de buffer NFP/CPI/FOMC)','150k':'✅ Autorisé (pas de buffer NFP/CPI/FOMC)'},
+      'DCA (renforcement)':       {'50k':'Toléré (pas de règle stricte)','100k':'Toléré (pas de règle stricte)','150k':'Toléré (pas de règle stricte)'},
+      'Copy trading externe':     {'50k':'❌ INTERDIT · multi-account arbitrage INTERDIT · coordinated position aggregation INTERDIT','100k':'❌ INTERDIT · multi-account arbitrage INTERDIT · coordinated position aggregation INTERDIT','150k':'❌ INTERDIT · multi-account arbitrage INTERDIT · coordinated position aggregation INTERDIT'},
+      'Instruments autorisés':    {'50k':'ES, NQ, CL, GC, 6E + micros (MES, MNQ, MCL, MGC) · Micro Silver ratio 5:1 · MBT/MET capped','100k':'ES, NQ, CL, GC, 6E + micros (MES, MNQ, MCL, MGC) · Micro Silver ratio 5:1 · MBT/MET capped','150k':'ES, NQ, CL, GC, 6E + micros (MES, MNQ, MCL, MGC) · Micro Silver ratio 5:1 · MBT/MET capped'},
+      // === Contracts / Scaling Plan ===
+      'Max contracts (Combine)':  {'50k':'5 minis OU 50 micros (ratio standard 10:1)','100k':'10 minis OU 100 micros (ratio standard 10:1)','150k':'15 minis OU 150 micros (ratio standard 10:1)'},
+      'Max contracts (XFA — Scaling Plan)':{'50k':'⚠ Scaling Plan ACTIF · starts à $0 balance avec 0 contracts allowed · scale up basé sur PnL EOD · changement effectif J+1 · 10 sec grace period','100k':'⚠ Scaling Plan ACTIF · starts à $0 balance avec 0 contracts allowed · scale up basé sur PnL EOD · changement effectif J+1 · 10 sec grace period','150k':'⚠ Scaling Plan ACTIF · starts à $0 balance avec 0 contracts allowed · scale up basé sur PnL EOD · changement effectif J+1 · 10 sec grace period'},
+      'Max contracts (LFA)':      {'50k':'5 minis standard · 5 si tradable ≤ $10K · 3 si tradable ≤ $5K','100k':'10 minis standard · 5 si tradable ≤ $10K · 3 si tradable ≤ $5K','150k':'15 minis standard · 5 si tradable ≤ $10K · 3 si tradable ≤ $5K'},
+      // === Pricing (officiel help.topstep.com) ===
+      'Prix mensuel Standard':    {'50k':'$49/mo + $149 activation au passage XFA','100k':'$99/mo + $149 activation au passage XFA','150k':'$149/mo + $149 activation au passage XFA'},
+      'Prix mensuel No-Fee Path': {'50k':'$95/mo · $0 activation au passage XFA','100k':'$149/mo · $0 activation au passage XFA','150k':'$229/mo · $0 activation au passage XFA'},
+      'Reset (rebill = reset)':   {'50k':'$49 Standard / $95 No-Fee — équivaut au mensuel','100k':'$99 Standard / $149 No-Fee — équivaut au mensuel','150k':'$149 Standard / $229 No-Fee — équivaut au mensuel'},
+      'Level 2 Data (option)':    {'50k':'+$38/mo (Depth of Market)','100k':'+$38/mo (Depth of Market)','150k':'+$38/mo (Depth of Market)'},
+      'Discount Responsible':     {'50k':'$10-30 off mensuel si DLL set manuellement (varie taille)','100k':'$10-30 off mensuel si DLL set manuellement (varie taille)','150k':'$10-30 off mensuel si DLL set manuellement (varie taille)'},
+      'New accounts limit':       {'50k':'Max 20 nouveaux Combines / mois','100k':'Max 20 nouveaux Combines / mois','150k':'Max 20 nouveaux Combines / mois'},
+      // === Profit Split (officiel) ===
+      'Profit Split (post 12-jan-2026)':{'50k':'90% trader / 10% Topstep · IMMÉDIAT dès $1 (nouveaux)','100k':'90% trader / 10% Topstep · IMMÉDIAT dès $1 (nouveaux)','150k':'90% trader / 10% Topstep · IMMÉDIAT dès $1 (nouveaux)'},
+      'Profit Split (legacy pre 12-jan-2026)':{'50k':'100% trader sur premiers $10K LIFETIME (préservé pour anciens uniquement) puis 90/10','100k':'100% trader sur premiers $10K LIFETIME (préservé pour anciens uniquement) puis 90/10','150k':'100% trader sur premiers $10K LIFETIME (préservé pour anciens uniquement) puis 90/10'},
+      // === Two-Rule Payout Structure (depuis 30-déc-2025) ===
+      'Two-Rule Payout (30-déc-2025)':{'50k':'1er payout: winning days only · payouts suivants: winning days + remaining profitable since last + Min Payout Balance respectée','100k':'1er payout: winning days only · payouts suivants: winning days + remaining profitable since last + Min Payout Balance respectée','150k':'1er payout: winning days only · payouts suivants: winning days + remaining profitable since last + Min Payout Balance respectée'},
+      // === Payouts XFA ===
+      'XFA Standard — cap':       {'50k':'$5,000 OU 50% du balance (le PLUS BAS des deux) par request','100k':'$5,000 OU 50% du balance (le PLUS BAS des deux) par request','150k':'$5,000 OU 50% du balance (le PLUS BAS des deux) par request'},
+      'XFA Consistency — cap':    {'50k':'$6,000 OU 50% du balance (le PLUS BAS des deux) par request','100k':'$6,000 OU 50% du balance (le PLUS BAS des deux) par request','150k':'$6,000 OU 50% du balance (le PLUS BAS des deux) par request'},
+      // === Payouts LFA ===
+      'LFA — éligibilité':        {'50k':'5 winning days ≥ $150 (depuis 22-jul-2025 : winning days XFA NE carry over PAS pour nouveaux LFA)','100k':'5 winning days ≥ $150 (depuis 22-jul-2025 : winning days XFA NE carry over PAS pour nouveaux LFA)','150k':'5 winning days ≥ $150 (depuis 22-jul-2025 : winning days XFA NE carry over PAS pour nouveaux LFA)'},
+      'LFA — cap par payout':     {'50k':'50% du balance par request · UNLOCK 100% après 30 winning days cumulés (daily payouts)','100k':'50% du balance par request · UNLOCK 100% après 30 winning days cumulés (daily payouts)','150k':'50% du balance par request · UNLOCK 100% après 30 winning days cumulés (daily payouts)'},
+      // === Payouts général ===
+      'Payout minimum':           {'50k':'$125 min withdrawal','100k':'$125 min withdrawal','150k':'$125 min withdrawal'},
+      'Cadence payout':           {'50k':'XFA: hebdo (après 5 winning days) · LFA: hebdo standard · daily unlock à 30 winning days','100k':'XFA: hebdo (après 5 winning days) · LFA: hebdo standard · daily unlock à 30 winning days','150k':'XFA: hebdo (après 5 winning days) · LFA: hebdo standard · daily unlock à 30 winning days'},
+      'Méthodes payout':          {'50k':'Aeropay (instant US, gratuit) · Wise ($0.39 USD/USD, 1-3j) · ACH ($30, US 1-3j) · Wire SWIFT ($30, intl 5-10j) · PayPal RETIRÉ','100k':'Aeropay (instant US, gratuit) · Wise ($0.39 USD/USD, 1-3j) · ACH ($30, US 1-3j) · Wire SWIFT ($30, intl 5-10j) · PayPal RETIRÉ','150k':'Aeropay (instant US, gratuit) · Wise ($0.39 USD/USD, 1-3j) · ACH ($30, US 1-3j) · Wire SWIFT ($30, intl 5-10j) · PayPal RETIRÉ'},
+      'Délai approbation interne':{'50k':'1-3 jours ouvrés','100k':'1-3 jours ouvrés','150k':'1-3 jours ouvrés'},
+      // === Multi-comptes ===
+      'Combines simul. (max)':    {'50k':'Illimité (mais max 20 nouveaux/mois)','100k':'Illimité (mais max 20 nouveaux/mois)','150k':'Illimité (mais max 20 nouveaux/mois)'},
+      'XFA actifs simul. (max)':  {'50k':'5 XFA actifs en même temps','100k':'5 XFA actifs en même temps','150k':'5 XFA actifs en même temps'},
+      // === Back2Funded (recovery program — prix exacts officiels) ===
+      'Back2Funded — prix':       {'50k':'$599 par réactivation','100k':'$699 par réactivation','150k':'$829 par réactivation'},
+      'Back2Funded — conditions': {'50k':'Max 2 réactivations · 7 jours pour décider · AVANT 1er payout uniquement · TopstepX requis · Focused Trader Plan exclu · ne s\'applique pas à Pro/Shoulder Tap','100k':'Max 2 réactivations · 7 jours pour décider · AVANT 1er payout uniquement · TopstepX requis · Focused Trader Plan exclu · ne s\'applique pas à Pro/Shoulder Tap','150k':'Max 2 réactivations · 7 jours pour décider · AVANT 1er payout uniquement · TopstepX requis · Focused Trader Plan exclu · ne s\'applique pas à Pro/Shoulder Tap'},
+      // === Call Up XFA → LFA (officiel) ===
+      'Call Up timing':           {'50k':'Entre 3ème et 5ème payout typiquement (review Risk Team — peut accélérer/retarder)','100k':'Entre 3ème et 5ème payout typiquement (review Risk Team — peut accélérer/retarder)','150k':'Entre 3ème et 5ème payout typiquement (review Risk Team — peut accélérer/retarder)'},
+      'Call Up critères':         {'50k':'Consistency · Risk management · Position sizing · Products traded · Use of stops · Payout history · Overall behavior','100k':'Consistency · Risk management · Position sizing · Products traded · Use of stops · Payout history · Overall behavior','150k':'Consistency · Risk management · Position sizing · Products traded · Use of stops · Payout history · Overall behavior'},
+      'LFA balance initial':      {'50k':'20% du cumulatif XFA balance OU $10,000 minimum (le PLUS HAUT des deux) · transferts additionnels possibles depuis reserves','100k':'20% du cumulatif XFA balance OU $10,000 minimum (le PLUS HAUT des deux) · transferts additionnels possibles depuis reserves','150k':'20% du cumulatif XFA balance OU $10,000 minimum (le PLUS HAUT des deux) · transferts additionnels possibles depuis reserves'},
+      // === Call Down / Shoulder Tap (officiel) ===
+      'Call Down (Shoulder Tap)': {'50k':'LFA → Shoulder Tap Express si : DLL breaches répétés, inconsistance, excessive risk, large swings, perte discipline. Retour LFA possible après démonstration consistency. Back2Funded EXCLU sur Shoulder Tap.','100k':'LFA → Shoulder Tap Express si : DLL breaches répétés, inconsistance, excessive risk, large swings, perte discipline. Retour LFA possible après démonstration consistency. Back2Funded EXCLU sur Shoulder Tap.','150k':'LFA → Shoulder Tap Express si : DLL breaches répétés, inconsistance, excessive risk, large swings, perte discipline. Retour LFA possible après démonstration consistency. Back2Funded EXCLU sur Shoulder Tap.'},
+      // === Dynamic Live Risk Expansion (DLR) — LFA tier progression (CRITIQUE) ===
+      'DLR — DLL progression':    {'50k':'Tiers DLR : $15K profit → $5K DLL · $20K → $5.5K · $50K → $6K · $100K → $10K · $200K → $20K · $550K → $50K · $1M → $100K (Active Day = 1 micro min, pas de min PnL)','100k':'Tiers DLR : $15K profit → $5K DLL · $20K → $5.5K · $50K → $6K · $100K → $10K · $200K → $20K · $550K → $50K · $1M → $100K','150k':'Tiers DLR : $15K profit → $5K DLL · $20K → $5.5K · $50K → $6K · $100K → $10K · $200K → $20K · $550K → $50K · $1M → $100K'},
+      'DLR — contracts expansion':{'50k':'$50K profit → 30 lots max · $100K → 50 lots · $200K → 70 lots · $1M → 100 lots — REQUIS : Tier 4+ ET balance ≥ $100K','100k':'$50K profit → 30 lots max · $100K → 50 lots · $200K → 70 lots · $1M → 100 lots — REQUIS : Tier 4+ ET balance ≥ $100K','150k':'$50K profit → 30 lots max · $100K → 50 lots · $200K → 70 lots · $1M → 100 lots — REQUIS : Tier 4+ ET balance ≥ $100K'},
+      'DLR — délai entre tiers':  {'50k':'10 Active Trading Days requis dans chaque tier avant DLL augmenté (Active Day = 1 micro contract minimum, pas de min P&L)','100k':'10 Active Trading Days requis dans chaque tier avant DLL augmenté (Active Day = 1 micro contract minimum, pas de min P&L)','150k':'10 Active Trading Days requis dans chaque tier avant DLL augmenté (Active Day = 1 micro contract minimum, pas de min P&L)'},
+      // === Risk Lock-In (LFA — protection profits) ===
+      'Risk Lock-In':             {'50k':'Sur jours très profitables, Risk Team peut set un minimum profit level. Drawdown autorisé = 1x/1.5x/2x du DLL starting (3x sur overnight). Si P&L tombe sous → liquidation jour. Notification email/téléphone.','100k':'Sur jours très profitables, Risk Team peut set un minimum profit level. Drawdown autorisé = 1x/1.5x/2x du DLL starting (3x sur overnight). Si P&L tombe sous → liquidation jour. Notification email/téléphone.','150k':'Sur jours très profitables, Risk Team peut set un minimum profit level. Drawdown autorisé = 1x/1.5x/2x du DLL starting (3x sur overnight). Si P&L tombe sous → liquidation jour. Notification email/téléphone.'},
+      // === LFA Costs (officiel — important !) ===
+      'LFA — Data fees':          {'50k':'CME couvert par Topstep (depuis 22-jul-2025). Exchanges additionnels = $133/mo chacun (NYMEX, COMEX, CBOT). Total 4 exchanges = $540/mo.','100k':'CME couvert par Topstep (depuis 22-jul-2025). Exchanges additionnels = $133/mo chacun (NYMEX, COMEX, CBOT). Total 4 exchanges = $540/mo.','150k':'CME couvert par Topstep (depuis 22-jul-2025). Exchanges additionnels = $133/mo chacun (NYMEX, COMEX, CBOT). Total 4 exchanges = $540/mo.'},
+      'LFA — Commissions':        {'50k':'$0.72-$2.04 broker · Exchange fees $2.46-$4.30 · Ex: ES/NQ $3.80 RT · CL $1.54 RT · GC $4.24 RT','100k':'$0.72-$2.04 broker · Exchange fees $2.46-$4.30 · Ex: ES/NQ $3.80 RT · CL $1.54 RT · GC $4.24 RT','150k':'$0.72-$2.04 broker · Exchange fees $2.46-$4.30 · Ex: ES/NQ $3.80 RT · CL $1.54 RT · GC $4.24 RT'},
+      'LFA — Platform license':   {'50k':'À la charge du trader (Topstep couvre uniquement en Combine, pas en LFA)','100k':'À la charge du trader (Topstep couvre uniquement en Combine, pas en LFA)','150k':'À la charge du trader (Topstep couvre uniquement en Combine, pas en LFA)'},
     }
   },
   'Apex Trader Funding': {
