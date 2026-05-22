@@ -15,6 +15,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
+import FollowButton from '../../../components/FollowButton'
 
 // Force dynamic rendering (pas de cache SSG) car le contenu change selon le user
 export const dynamic = 'force-dynamic'
@@ -198,13 +199,17 @@ export default async function PublicProfilePage({ params }) {
           }}>{profile.bio}</p>
         )}
 
-        {/* Followers / Following */}
+        {/* Followers / Following (cliquables vers pages dédiées) */}
         <div style={{
-          marginTop: 16, display: 'flex', gap: 24,
-          fontSize: 13, color: '#9098b0',
+          marginTop: 16, display: 'flex', gap: 20,
+          fontSize: 13, color: '#9098b0', flexWrap: 'wrap',
         }}>
-          <span><strong style={{ color: '#f0ede8' }}>{profile.following_count || 0}</strong> following</span>
-          <span><strong style={{ color: '#f0ede8' }}>{profile.followers_count || 0}</strong> followers</span>
+          <Link href={`/u/${profile.username}/following`} style={statLinkStyle}>
+            <strong style={{ color: '#f0ede8' }}>{profile.following_count || 0}</strong> following
+          </Link>
+          <Link href={`/u/${profile.username}/followers`} style={statLinkStyle}>
+            <strong style={{ color: '#f0ede8' }}>{profile.followers_count || 0}</strong> followers
+          </Link>
           {memberSince && (
             <span style={{ color: '#565e78' }}>
               · Membre depuis {memberSince}
@@ -212,20 +217,12 @@ export default async function PublicProfilePage({ params }) {
           )}
         </div>
 
-        {/* CTA Follow (préparé pour Phase 2 — désactivé) */}
+        {/* CTA Follow — Phase 2 réseau social (mai 2026) */}
         <div style={{ marginTop: 20 }}>
-          <button
-            disabled
-            title="Bientôt disponible — Phase 2 réseau social"
-            style={{
-              padding: '10px 24px', fontSize: 13, fontWeight: 600,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              color: '#565e78', borderRadius: 99,
-              cursor: 'not-allowed', fontFamily: 'inherit',
-            }}>
-            Follow (BIENTÔT)
-          </button>
+          <FollowButton
+            targetUserId={profile.user_id}
+            targetUsername={profile.username}
+          />
         </div>
 
         {/* Trading styles + instruments */}
@@ -255,7 +252,7 @@ export default async function PublicProfilePage({ params }) {
           </div>
         )}
 
-        {/* Placeholder pour les phases suivantes (payouts, groupes, etc.) */}
+        {/* Placeholder pour les phases suivantes (groupes, payouts, leaderboard) */}
         <div style={{
           marginTop: 48, padding: 20,
           background: 'rgba(255,255,255,0.02)',
@@ -263,9 +260,9 @@ export default async function PublicProfilePage({ params }) {
           borderRadius: 12, textAlign: 'center',
           fontSize: 12, color: '#565e78',
         }}>
-          🚧 D'autres infos arriveront bientôt : statistiques publiques, groupes, classements.
+          🚧 D'autres fonctionnalités arrivent : groupes privés, leaderboard, chat.
           <br />
-          Phase 1/6 du réseau social Quantara.
+          Phase 2/6 du réseau social Quantara.
         </div>
 
         {/* Footer minimal */}
@@ -301,4 +298,10 @@ const tagStyle = {
   background: 'rgba(255,255,255,0.04)',
   border: '1px solid rgba(255,255,255,0.10)',
   color: '#f0ede8', borderRadius: 99,
+}
+
+const statLinkStyle = {
+  color: '#9098b0', textDecoration: 'none',
+  borderBottom: '1px dotted rgba(255,255,255,0.15)',
+  paddingBottom: 2,
 }
