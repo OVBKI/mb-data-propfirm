@@ -53,7 +53,7 @@ export const PROPFIRM_RULES = {
       // === Objectifs (Combine) ===
       'Profit Target (Combine)':  {'50k':'$3,000','100k':'$6,000','150k':'$9,000'},
       // === Maximum Loss Limit (Drawdown) ===
-      'Max Loss Limit (MLL)':     {'50k':'$2,000 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs jusqu'au lock starting balance permanent','100k':'$3,000 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs jusqu'au lock starting balance permanent','150k':'$4,500 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs jusqu'au lock starting balance permanent'},
+      'Max Loss Limit (MLL)':     {'50k':'$2,000 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs puis lock au starting balance permanent','100k':'$3,000 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs puis lock au starting balance permanent','150k':'$4,500 — EOD seulement (PAS intraday) · monte avec nouveaux EOD highs puis lock au starting balance permanent'},
       'MLL mécanique XFA':        {'50k':'XFA starts à $0 balance · MLL à -$2,000 · balance atteint +$2K → MLL lock $0','100k':'XFA starts à $0 balance · MLL à -$3,000 · balance atteint +$3K → MLL lock $0','150k':'XFA starts à $0 balance · MLL à -$4,500 · balance atteint +$4.5K → MLL lock $0'},
       // === Daily Loss Limit ===
       'Daily Loss Limit (DLL)':   {'50k':'$1,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)','100k':'$2,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)','150k':'$3,000 (Combine + XFA) — reset chaque session 5:00 PM CT · pas un fail (auto-liquidation jour seulement)'},
