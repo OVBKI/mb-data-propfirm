@@ -9,10 +9,13 @@
 //
 // Affiché quand : firms.length === 0 ET pas dismissed via localStorage.
 // Les réponses du step 2 ne sont PAS persistées (per user request) — juste UX.
+//
+// i18n v3.1 (mai 2026) : tous les strings migrés vers app.onboarding.* — FR + EN supportés.
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { getFirmLogo } from '../lib/firmLogos'
+import { useT } from './LanguageProvider'
 import {
   defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice,
   defaultMinDailyProfit, defaultDdType,
@@ -51,13 +54,6 @@ const FIRM_SUGGESTIONS = [
   { name: 'Alpha Futures',          color: '#0a3a2a' },
 ]
 
-const TRADING_STYLES = [
-  { k: 'scalper',  label: 'Scalper',     emoji: '⚡', desc: 'Trades < 5 min, beaucoup de volume' },
-  { k: 'day',      label: 'Day Trader',  emoji: '📊', desc: 'Trades intraday, flat avant close' },
-  { k: 'swing',    label: 'Swing',       emoji: '🌊', desc: 'Trades sur plusieurs jours' },
-  { k: 'mixed',    label: 'Mixed',       emoji: '🎯', desc: "Un peu de tout selon l'opportunité" },
-]
-
 // Génère 30 trades fictifs réalistes pour le compte démo
 function generateDemoTrades() {
   const trades = []
@@ -90,12 +86,21 @@ function generateDemoTrades() {
 }
 
 export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTutorial, showToast }) {
+  const t = useT()
   // Step du wizard : 'welcome' | 'profile' | 'choose' | 'demo-loading' | 'done'
   const [step, setStep] = useState('welcome')
   const [creating, setCreating] = useState(false)
   // Réponses step 2 (NON sauvées en DB, juste UX)
   const [tradingStyle, setTradingStyle] = useState(null)
   const [selectedFirms, setSelectedFirms] = useState([])
+
+  // Trading styles — construits avec t() pour i18n, identifiants emoji + key
+  const TRADING_STYLES = [
+    { k: 'scalper',  label: t('app.onboarding.styleScalper'),  emoji: '⚡', desc: t('app.onboarding.styleScalperDesc') },
+    { k: 'day',      label: t('app.onboarding.styleDay'),      emoji: '📊', desc: t('app.onboarding.styleDayDesc') },
+    { k: 'swing',    label: t('app.onboarding.styleSwing'),    emoji: '🌊', desc: t('app.onboarding.styleSwingDesc') },
+    { k: 'mixed',    label: t('app.onboarding.styleMixed'),    emoji: '🎯', desc: t('app.onboarding.styleMixedDesc') },
+  ]
 
   function handleSkip() {
     localStorage.setItem('quantara_onboarding_dismissed', '1')
@@ -125,7 +130,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
     try {
       const { data: firm, error: firmErr } = await supabase
         .from('firms')
-        .insert({ name: 'Topstep (Démo)', color: '#ff8c42', user_id: user.id })
+        .insert({ name: t('app.onboarding.demoFirmName'), color: '#ff8c42', user_id: user.id })
         .select()
         .single()
       if (firmErr) throw firmErr
@@ -147,19 +152,19 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
           spent: pr || 49,
           status: 'Challenge',
           plan_size: '50k',
-          name: 'Compte démo (à supprimer)',
+          name: t('app.onboarding.demoAccountName'),
           dd_type: defaultDdType('Topstep'),
           payout_target: tg,
           min_trading_days: md,
           min_daily_profit: mdp,
-          notes: 'Compte créé automatiquement avec 30 trades fictifs pour découvrir Quantara. Tu peux le supprimer à tout moment.',
+          notes: t('app.onboarding.demoNotes'),
         })
         .select()
         .single()
       if (acctErr) throw acctErr
 
-      const trades = generateDemoTrades().map(t => ({
-        ...t,
+      const trades = generateDemoTrades().map(tr => ({
+        ...tr,
         user_id: user.id,
         account_id: account.id,
       }))
@@ -171,7 +176,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
       setCreating(false)
     } catch (err) {
       console.error('[OnboardingModal demo]', err)
-      alert('Erreur création démo : ' + (err.message || 'inconnue'))
+      alert(t('app.onboarding.demoError') + (err.message || t('app.onboarding.demoErrorUnknown')))
       setCreating(false)
       setStep('choose')
     }
@@ -191,6 +196,18 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
   // Progress indicator (3 dots pour les 3 steps wizard, sauf demo-loading et done)
   const showProgress = ['welcome', 'profile', 'choose'].includes(step)
   const currentStepNum = step === 'welcome' ? 1 : step === 'profile' ? 2 : 3
+
+  // Helper pour la singularisation EN/FR (1 sélectionnée vs 2 sélectionnées)
+  const firmsSelectedLabel = selectedFirms.length > 1
+    ? t('app.onboarding.firmsSelectedPlural')
+    : t('app.onboarding.firmsSelected')
+
+  // Helper pour le subtitle step 3 avec interpolation {n} + {s}
+  const chooseSubtitle = selectedFirms.length > 0
+    ? t('app.onboarding.chooseSubtitleWithFirms')
+        .replace('{n}', selectedFirms.length)
+        .replace('{s}', selectedFirms.length > 1 ? 's' : '')
+    : t('app.onboarding.chooseSubtitleNoFirms')
 
   return (
     <div style={{
@@ -237,20 +254,21 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
               <div style={{ fontSize: 56, marginBottom: 14 }}>👋</div>
               <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 10, letterSpacing: '-0.015em' }}>
-                Bienvenue sur Quantara
+                {t('app.onboarding.welcomeTitle')}
               </h1>
-              <p style={{ fontSize: 14, color: C.text2, maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}>
-                Le journal de trading pensé pour les <strong style={{ color: C.text }}>traders PropFirm futures</strong>.
-                Configurons ton espace en 3 étapes rapides.
-              </p>
+              {/* welcomeSubtitle contient <strong> — dangerouslySetInnerHTML safe car content sous notre contrôle (i18n.js) */}
+              <p
+                style={{ fontSize: 14, color: C.text2, maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}
+                dangerouslySetInnerHTML={{ __html: t('app.onboarding.welcomeSubtitle') }}
+              />
             </div>
 
             {/* 3 value props */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
               {[
-                { icon: '🎯', title: 'Track', desc: 'Drawdown trailing, payouts, balances en temps réel' },
-                { icon: '📊', title: 'Analyze', desc: 'Heatmaps, R-multiple, patterns gagnants' },
-                { icon: '🌱', title: 'Grow', desc: 'Plan, setups, règles non négociables' },
+                { icon: '🎯', title: t('app.onboarding.vpTrackTitle'),   desc: t('app.onboarding.vpTrackDesc') },
+                { icon: '📊', title: t('app.onboarding.vpAnalyzeTitle'), desc: t('app.onboarding.vpAnalyzeDesc') },
+                { icon: '🌱', title: t('app.onboarding.vpGrowTitle'),    desc: t('app.onboarding.vpGrowDesc') },
               ].map((vp, i) => (
                 <div key={i} style={{
                   padding: '16px 14px',
@@ -282,7 +300,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
               >
-                Continuer <span style={{ fontFamily: 'monospace' }}>→</span>
+                {t('app.onboarding.btnContinue')} <span style={{ fontFamily: 'monospace' }}>→</span>
               </button>
               <button
                 onClick={handleSkip}
@@ -291,7 +309,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
                   fontFamily: 'inherit', marginTop: 4,
                 }}
-              >Plus tard, je veux explorer librement</button>
+              >{t('app.onboarding.skipLater')}</button>
             </div>
           </div>
         )}
@@ -301,17 +319,17 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
           <div style={{ position: 'relative', padding: '32px 40px 28px' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, letterSpacing: '-0.01em' }}>
-                Quel trader es-tu ?
+                {t('app.onboarding.profileTitle')}
               </h2>
               <p style={{ fontSize: 13, color: C.text2 }}>
-                Optionnel — aide-nous à personnaliser ton expérience.
+                {t('app.onboarding.profileSubtitle')}
               </p>
             </div>
 
             {/* Trading style */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                Style de trading
+                {t('app.onboarding.styleHeader')}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                 {TRADING_STYLES.map(s => (
@@ -327,7 +345,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                       fontFamily: 'inherit', transition: 'all 0.15s',
                     }}
                   >
-                    <span style={{ fontSize: 20 }}>{s.emoji}</span>
+                    <span style={{ fontSize: 20 }} role="img" aria-label={s.label}>{s.emoji}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{s.label}</div>
                       <div style={{ fontSize: 10.5, color: C.text3, marginTop: 2 }}>{s.desc}</div>
@@ -340,7 +358,12 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
             {/* PropFirms used */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                PropFirms que tu utilises {selectedFirms.length > 0 && <span style={{ color: C.blueLight, marginLeft: 6 }}>· {selectedFirms.length} sélectionnée{selectedFirms.length > 1 ? 's' : ''}</span>}
+                {t('app.onboarding.firmsHeader')}
+                {selectedFirms.length > 0 && (
+                  <span style={{ color: C.blueLight, marginLeft: 6 }}>
+                    · {selectedFirms.length} {firmsSelectedLabel}
+                  </span>
+                )}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
                 {FIRM_SUGGESTIONS.map(f => {
@@ -392,7 +415,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}
               >
-                <span style={{ fontFamily: 'monospace' }}>←</span> Retour
+                <span style={{ fontFamily: 'monospace' }}>←</span> {t('app.onboarding.back')}
               </button>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button
@@ -402,7 +425,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                     fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
                     textDecoration: 'underline',
                   }}
-                >Passer</button>
+                >{t('app.onboarding.skip')}</button>
                 <button
                   onClick={() => setStep('choose')}
                   style={{
@@ -413,7 +436,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                     display: 'flex', alignItems: 'center', gap: 6,
                   }}
                 >
-                  Continuer <span style={{ fontFamily: 'monospace' }}>→</span>
+                  {t('app.onboarding.btnContinue')} <span style={{ fontFamily: 'monospace' }}>→</span>
                 </button>
               </div>
             </div>
@@ -425,12 +448,10 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
           <div style={{ position: 'relative', padding: '32px 40px 28px' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, letterSpacing: '-0.01em' }}>
-                Comment veux-tu démarrer ?
+                {t('app.onboarding.chooseTitle')}
               </h2>
               <p style={{ fontSize: 13, color: C.text2 }}>
-                {selectedFirms.length > 0
-                  ? `Tu cibles ${selectedFirms.length} PropFirm${selectedFirms.length > 1 ? 's' : ''}. Voici 3 manières de commencer.`
-                  : '3 manières de découvrir Quantara — choisis ce qui te ressemble.'}
+                {chooseSubtitle}
               </p>
             </div>
 
@@ -459,9 +480,9 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   fontSize: 20, color: C.blue,
                 }}>→</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>Ajouter ma 1ère PropFirm</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{t('app.onboarding.optAddFirmTitle')}</div>
                   <div style={{ fontSize: 11.5, color: 'rgba(10,12,16,0.7)' }}>
-                    Configuration en 30 sec — règles drawdown/payout pré-remplies
+                    {t('app.onboarding.optAddFirmDesc')}
                   </div>
                 </div>
                 <span style={{ fontSize: 16, color: 'rgba(10,12,16,0.55)' }}>↗</span>
@@ -490,11 +511,11 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                 }}>🎮</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
-                    Voir avec données démo
-                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(29,184,122,0.18)', color: C.green, marginLeft: 8, verticalAlign: 'middle' }}>RECOMMANDÉ</span>
+                    {t('app.onboarding.optDemoTitle')}
+                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(29,184,122,0.18)', color: C.green, marginLeft: 8, verticalAlign: 'middle' }}>{t('app.onboarding.optDemoBadge')}</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: C.text2 }}>
-                    Topstep 50K + 30 trades fictifs pour explorer toutes les fonctionnalités
+                    {t('app.onboarding.optDemoDesc')}
                   </div>
                 </div>
                 <span style={{ fontSize: 16, color: C.text3 }}>→</span>
@@ -523,10 +544,10 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                 }}>🎓</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
-                    Suivre le tutoriel interactif
+                    {t('app.onboarding.optTutorialTitle')}
                   </div>
                   <div style={{ fontSize: 11.5, color: C.text2 }}>
-                    11 étapes guidées en ~5 min — tu crées vraiment ta firme + 1 compte + 1 trade
+                    {t('app.onboarding.optTutorialDesc')}
                   </div>
                 </div>
                 <span style={{ fontSize: 16, color: C.text3 }}>→</span>
@@ -543,7 +564,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}
               >
-                <span style={{ fontFamily: 'monospace' }}>←</span> Retour
+                <span style={{ fontFamily: 'monospace' }}>←</span> {t('app.onboarding.back')}
               </button>
               <button
                 onClick={handleSkip}
@@ -553,7 +574,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
                   fontFamily: 'inherit',
                 }}
-              >Plus tard, je veux explorer librement</button>
+              >{t('app.onboarding.skipLater')}</button>
             </div>
           </div>
         )}
@@ -562,11 +583,11 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
         {step === 'demo-loading' && (
           <div style={{ position: 'relative', padding: '60px 40px', textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 18, animation: 'spin 2s linear infinite' }}>⚙️</div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Création de la démo en cours...</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>{t('app.onboarding.demoLoadingTitle')}</h2>
             <p style={{ fontSize: 13, color: C.text2, marginBottom: 24 }}>
-              On crée ta firme Topstep démo + 30 trades fictifs réalistes.
+              {t('app.onboarding.demoLoadingSubtitle')}
             </p>
-            <div style={{ fontSize: 11, color: C.text3 }}>Cela prend ~3 secondes...</div>
+            <div style={{ fontSize: 11, color: C.text3 }}>{t('app.onboarding.demoLoadingFooter')}</div>
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
@@ -577,19 +598,20 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
               <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.01em' }}>
-                Tout est prêt !
+                {t('app.onboarding.doneTitle')}
               </h2>
-              <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, maxWidth: 420, margin: '0 auto' }}>
-                Ta démo Topstep 50K + 30 trades fictifs sont créés.<br />
-                Que veux-tu faire maintenant ?
-              </p>
+              {/* doneSubtitle contient <br /> — dangerouslySetInnerHTML safe car content sous notre contrôle */}
+              <p
+                style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, maxWidth: 420, margin: '0 auto' }}
+                dangerouslySetInnerHTML={{ __html: t('app.onboarding.doneSubtitle') }}
+              />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
               {[
-                { k: 'dashboard', icon: '📊', title: 'Dashboard', desc: 'Vue d\'ensemble + balance' },
-                { k: 'heatmaps',  icon: '🔥', title: 'Heatmaps',  desc: 'Patterns par heure/jour' },
-                { k: 'tutorial',  icon: '🎓', title: 'Tutoriel',  desc: '5 min guidées' },
+                { k: 'dashboard', icon: '📊', title: t('app.onboarding.actDashboardTitle'), desc: t('app.onboarding.actDashboardDesc') },
+                { k: 'heatmaps',  icon: '🔥', title: t('app.onboarding.actHeatmapsTitle'),  desc: t('app.onboarding.actHeatmapsDesc') },
+                { k: 'tutorial',  icon: '🎓', title: t('app.onboarding.actTutorialTitle'),  desc: t('app.onboarding.actTutorialDesc') },
               ].map(action => (
                 <button
                   key={action.k}
@@ -618,7 +640,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
                   textDecoration: 'underline',
                 }}
-              >Fermer et explorer librement</button>
+              >{t('app.onboarding.closeExplore')}</button>
             </div>
           </div>
         )}
