@@ -22,6 +22,8 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
+  // is_public : toggle visibility profile sur /u/[pseudo] — défaut false (privacy first)
+  const [isPublic, setIsPublic] = useState(false)
 
   // État initial pour détecter les changements
   const [initialUsername, setInitialUsername] = useState('')
@@ -34,7 +36,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
       setLoading(true)
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, display_name, bio')
+        .select('username, display_name, bio, is_public')
         .eq('user_id', user.id)
         .single()
       if (!mounted) return
@@ -47,6 +49,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
       setInitialUsername(profile.username || '')
       setDisplayName(profile.display_name || '')
       setBio(profile.bio || '')
+      setIsPublic(profile.is_public === true)
       setLoading(false)
     }
     load()
@@ -108,12 +111,19 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
 
     setSaving(true)
     try {
+      // Si is_public coché mais pas de pseudo → on bloque (un profil public sans pseudo n'a pas de URL)
+      if (isPublic && !trimmed) {
+        setError('Pour rendre ton profil public, choisis d\'abord un pseudo.')
+        setSaving(false)
+        return
+      }
       const { error } = await supabase
         .from('profiles')
         .update({
           username: trimmed || null,
           display_name: displayName.trim() || null,
           bio: bio.trim() || null,
+          is_public: isPublic,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.id)
@@ -242,6 +252,65 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
               <div style={{ fontSize: 10, marginTop: 4, color: 'var(--text3)', textAlign: 'right' }}>
                 {bio.length} / 280
               </div>
+            </div>
+
+            {/* Visibilité publique — Phase 1 réseau social (mai 2026) */}
+            {/* Privacy first : profil privé par défaut. L'user opt-in explicitement. */}
+            <div style={{
+              marginBottom: 18, padding: '14px 16px',
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 10,
+            }}>
+              <label style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                cursor: 'pointer', userSelect: 'none',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={e => setIsPublic(e.target.checked)}
+                  style={{
+                    width: 18, height: 18, marginTop: 1,
+                    cursor: 'pointer', accentColor: 'var(--blue, #2d6fff)',
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+                    Rendre mon profil public
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
+                    Ton profil sera accessible à <code style={{
+                      background: 'rgba(255,255,255,0.04)', padding: '1px 5px',
+                      borderRadius: 3, fontSize: 10, fontFamily: 'ui-monospace, monospace',
+                    }}>quantara.tech/u/{username || 'ton-pseudo'}</code> pour tous (y compris non connectés).
+                    {' '}Pseudo, bio, style de trading visibles · <strong style={{ color: 'var(--text2)' }}>aucun montant de payout</strong> exposé.
+                  </div>
+                </div>
+              </label>
+
+              {/* Lien partageable si is_public + pseudo défini */}
+              {isPublic && username.trim() && (
+                <div style={{
+                  marginTop: 12, padding: '8px 12px',
+                  background: 'rgba(45,111,255,0.08)',
+                  border: '1px solid rgba(45,111,255,0.2)',
+                  borderRadius: 6, fontSize: 11,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span style={{ color: 'var(--blue-light, #4d8fff)' }}>🔗</span>
+                  <a
+                    href={`/u/${username.trim()}`}
+                    target="_blank"
+                    rel="noopener"
+                    style={{
+                      flex: 1, color: 'var(--blue-light, #4d8fff)',
+                      textDecoration: 'none', fontFamily: 'ui-monospace, monospace',
+                    }}>
+                    quantara.tech/u/{username.trim()} ↗
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Messages */}
