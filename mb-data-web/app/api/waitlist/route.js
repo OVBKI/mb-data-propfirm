@@ -18,10 +18,23 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req) {
+  // Récupère l'IP (Vercel / proxy) — utilisée pour le rate limit + storage DB
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    || req.headers.get('x-real-ip')
+    || 'unknown'
+
+  // 🛡 Rate limit : 3 inscriptions / minute / IP (mai 2026 — audit Agent #1)
+  // Protège contre spam d'inscriptions waitlist (coût Resend + risque blacklist domaine)
+  const limit = rateLimit({ key: `waitlist:${ip}`, windowMs: 60_000, max: 3 })
+  if (!limit.allowed) {
+    return rateLimitResponse(limit, 'Trop d\'inscriptions depuis cette IP. Réessaye dans 1 minute.')
+  }
+
   let body
   try {
     body = await req.json()
@@ -38,11 +51,6 @@ export async function POST(req) {
   if (!['pro', 'lifetime'].includes(plan)) {
     return Response.json({ error: 'Plan invalide (pro ou lifetime)' }, { status: 400 })
   }
-
-  // Récupère l'IP (Vercel / proxy)
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
-    || req.headers.get('x-real-ip')
-    || null
 
   // Insert dans Supabase
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

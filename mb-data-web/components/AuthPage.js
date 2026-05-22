@@ -145,12 +145,23 @@ export default function AuthPage({ onAuth }) {
         // 🪪 Résolution pseudo → email si l'input ne contient pas '@'
         let loginEmail = emailOrUsername.trim()
         if (!EMAIL_REGEX.test(loginEmail)) {
-          // C'est un pseudo : on le résout via le RPC SECURITY DEFINER
-          const { data: resolved, error: rpcErr } = await supabase
-            .rpc('resolve_username_to_email', { p_username: loginEmail })
-          if (rpcErr) throw new Error('Erreur lors de la résolution du pseudo : ' + rpcErr.message)
-          if (!resolved) throw new Error(`Aucun compte trouvé avec le pseudo « ${loginEmail} ».`)
-          loginEmail = resolved
+          // C'est un pseudo : on le résout via /api/auth/resolve-username
+          // (route serveur rate-limitée, mai 2026 — audit Agent #1)
+          // Avant : RPC direct ouvert à `anon` → vector énumération username→email.
+          const res = await fetch('/api/auth/resolve-username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: loginEmail }),
+          })
+          if (res.status === 429) {
+            throw new Error('Trop de tentatives. Réessaye dans une minute.')
+          }
+          const json = await res.json().catch(() => ({}))
+          if (!res.ok) {
+            throw new Error('Erreur lors de la résolution du pseudo : ' + (json.error || res.statusText))
+          }
+          if (!json.email) throw new Error(`Aucun compte trouvé avec le pseudo « ${loginEmail} ».`)
+          loginEmail = json.email
         }
 
         const opts = {}
