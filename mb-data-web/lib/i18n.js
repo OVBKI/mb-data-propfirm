@@ -462,6 +462,9 @@ const FR = {
       // Items "PropFirms"
       rules:  'Règles firmes',
       alerts: 'Alertes',
+      // Section Communauté (P3 réseau social mai 2026)
+      sectionCommunaute: 'Communauté',
+      groups: 'Mes groupes',
       // Legacy
       journal:       'Journal manuel',
       journalSync:   'Journal Sync',
@@ -1225,6 +1228,9 @@ const EN = {
       // PropFirms items
       rules:  'Firm rules',
       alerts: 'Alerts',
+      // Section Community (P3 social network May 2026)
+      sectionCommunaute: 'Community',
+      groups: 'My groups',
       // Legacy
       journal:       'Manual journal',
       journalSync:   'Journal Sync',

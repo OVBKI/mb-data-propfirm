@@ -25,7 +25,7 @@
 import { useT } from './LanguageProvider'
 import { isAdmin } from '../lib/admins'
 
-const SECTIONS = ['Vue', 'Trades', 'PropFirm']
+const SECTIONS = ['Vue', 'Trades', 'PropFirm', 'Communaute']
 
 export default function AppSidebar({
   user,
@@ -61,12 +61,15 @@ export default function AppSidebar({
     // PropFirms
     { key: 'rules',  icon: '◊', label: t('app.sidebar.rules'),  section: 'PropFirm' },
     { key: 'alerts', icon: '◉', label: t('app.sidebar.alerts'), section: 'PropFirm', badge: alertsBadgeCount },
+    // Communauté (Phase 3 réseau social — mai 2026)
+    { href: '/app/groups', icon: '◈', label: t('app.sidebar.groups'), section: 'Communaute' },
   ]
 
   const SECTION_LABELS = {
-    'Vue':      t('app.sidebar.sectionVue'),
-    'Trades':   t('app.sidebar.sectionTrades'),
-    'PropFirm': t('app.sidebar.sectionPropFirm'),
+    'Vue':         t('app.sidebar.sectionVue'),
+    'Trades':      t('app.sidebar.sectionTrades'),
+    'PropFirm':    t('app.sidebar.sectionPropFirm'),
+    'Communaute':  t('app.sidebar.sectionCommunaute'),
   }
 
   function handleInternalClick(key) {
