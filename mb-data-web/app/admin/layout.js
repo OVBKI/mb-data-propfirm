@@ -31,6 +31,7 @@ const NAV_ITEMS = [
   { href: '/admin/activity',      label: 'Activité',      icon: '◉' },
   { href: '/admin/stats',         label: 'Statistiques',  icon: '◐' },
   { href: '/admin/users',         label: 'Utilisateurs',  icon: '◊' },
+  { href: '/admin/payouts',       label: 'Payouts',       icon: '◈' },
   { href: '/admin/announcements', label: 'Annonces',      icon: '◬' },
   { href: '/admin/system',        label: 'Système',       icon: '◇' },
 ]
