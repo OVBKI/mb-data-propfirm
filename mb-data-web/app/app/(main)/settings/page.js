@@ -1,0 +1,374 @@
+'use client'
+// app/app/(main)/settings/page.js — Settings page: profile, notifications, language, data, about.
+// Linked from monthly recap emails (/app/settings → "Gérer mes préférences email").
+
+import { useState, useEffect } from 'react'
+import { useApp } from '../AppContext'
+import { useT } from '../../../../components/LanguageProvider'
+import { C, cardStyle } from '../../../../lib/theme'
+import PushNotificationToggle from '../../../../components/PushNotificationToggle'
+import LanguageSwitcher from '../../../../components/LanguageSwitcher'
+import Link from 'next/link'
+
+// ── Local storage key for email preferences ──
+const LS_KEY_MONTHLY_RECAP = 'qt_pref_monthly_recap'
+
+function SectionTitle({ icon, children }) {
+  return (
+    <h2 style={{
+      fontSize: 16, fontWeight: 700, color: C.text,
+      display: 'flex', alignItems: 'center', gap: 10,
+      margin: 0, marginBottom: 16,
+    }}>
+      <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+      {children}
+    </h2>
+  )
+}
+
+function Card({ children, style = {} }) {
+  return (
+    <div style={{
+      ...cardStyle,
+      padding: '20px 22px',
+      marginBottom: 20,
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function SettingRow({ label, description, children }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      gap: 16, flexWrap: 'wrap',
+      padding: '12px 0',
+      borderBottom: `0.5px solid ${C.border}`,
+    }}>
+      <div style={{ flex: 1, minWidth: 180 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{label}</div>
+        {description && (
+          <div style={{ fontSize: 11, color: C.text3, marginTop: 3 }}>{description}</div>
+        )}
+      </div>
+      <div style={{ flexShrink: 0 }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function Toggle({ checked, onChange, disabled = false }) {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!checked)}
+      disabled={disabled}
+      style={{
+        width: 44, height: 24, borderRadius: 12,
+        background: checked ? C.blue : 'rgba(255,255,255,0.1)',
+        border: `1px solid ${checked ? C.blue : C.border2}`,
+        position: 'relative', cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'all 0.2s', padding: 0,
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      <div style={{
+        width: 18, height: 18, borderRadius: '50%',
+        background: '#fff',
+        position: 'absolute', top: 2,
+        left: checked ? 22 : 2,
+        transition: 'left 0.2s',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+      }} />
+    </button>
+  )
+}
+
+export default function SettingsPage() {
+  const t = useT()
+  const { user, profile } = useApp()
+
+  // Email preference: monthly recap opt-in (localStorage for now)
+  const [monthlyRecap, setMonthlyRecap] = useState(true)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LS_KEY_MONTHLY_RECAP)
+      if (stored !== null) setMonthlyRecap(JSON.parse(stored))
+    } catch {}
+  }, [])
+
+  function handleMonthlyRecapToggle(val) {
+    setMonthlyRecap(val)
+    try { localStorage.setItem(LS_KEY_MONTHLY_RECAP, JSON.stringify(val)) } catch {}
+  }
+
+  // Toast state for "coming soon" actions
+  const [toast, setToast] = useState(null)
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  // Delete account confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const displayName = profile?.display_name || (profile?.username ? `@${profile.username}` : null)
+  const email = user?.email || ''
+
+  return (
+    <div className="page-pad" style={{ maxWidth: 640, margin: '0 auto', padding: '32px 24px 80px' }}>
+
+      {/* ── Page header ── */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{
+          fontSize: 11, color: C.amber, letterSpacing: '0.16em',
+          marginBottom: 10, textTransform: 'uppercase', fontWeight: 600,
+        }}>
+          {/* TODO: i18n key app.settings.eyebrow */}
+          Parametres
+        </div>
+        <h1 style={{
+          fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em',
+          margin: 0, marginBottom: 6, lineHeight: 1.1, color: C.text,
+        }}>
+          {/* TODO: i18n key app.settings.title */}
+          Reglages
+        </h1>
+        <p style={{ fontSize: 13, color: C.text3, margin: 0 }}>
+          {/* TODO: i18n key app.settings.subtitle */}
+          Gerez votre profil, vos notifications et vos preferences.
+        </p>
+      </div>
+
+      {/* ── 1. Profil ── */}
+      <SectionTitle icon="👤">
+        {/* TODO: i18n key app.settings.profileSection */}
+        Profil
+      </SectionTitle>
+      <Card>
+        <SettingRow
+          label={/* TODO: i18n */ 'Nom d\'utilisateur'}
+          description={displayName || '(non defini)'}
+        >
+          <span style={{ fontSize: 12, color: C.text3, fontFamily: 'monospace' }}>
+            {displayName || '-'}
+          </span>
+        </SettingRow>
+        <SettingRow
+          label="Email"
+          description={email}
+        >
+          <span style={{
+            fontSize: 11, color: C.text3,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+          }}>
+            {email}
+          </span>
+        </SettingRow>
+        <div style={{ paddingTop: 14 }}>
+          <Link
+            href="/app/profile"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 12, fontWeight: 600, color: C.blueLight,
+              textDecoration: 'none', padding: '8px 14px',
+              background: 'rgba(45,111,255,0.08)',
+              border: `1px solid rgba(45,111,255,0.22)`,
+              borderRadius: 8, transition: 'all 0.15s',
+            }}
+          >
+            {/* TODO: i18n key app.settings.editProfile */}
+            Modifier mon profil
+          </Link>
+        </div>
+      </Card>
+
+      {/* ── 2. Notifications ── */}
+      <SectionTitle icon="🔔">
+        {/* TODO: i18n key app.settings.notificationsSection */}
+        Notifications
+      </SectionTitle>
+      <Card>
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+            {/* TODO: i18n key app.settings.pushLabel */}
+            Notifications push
+          </div>
+          <div style={{ fontSize: 11, color: C.text3, marginBottom: 12 }}>
+            {/* TODO: i18n key app.settings.pushDesc */}
+            Recevez des alertes en temps reel sur votre navigateur.
+          </div>
+          <PushNotificationToggle />
+        </div>
+        <div style={{ height: 1, background: C.border, margin: '16px 0' }} />
+        <SettingRow
+          label={/* TODO: i18n */ 'Recap mensuel par email'}
+          description="Recevez chaque mois un resume de vos performances et depenses."
+        >
+          <Toggle checked={monthlyRecap} onChange={handleMonthlyRecapToggle} />
+        </SettingRow>
+      </Card>
+
+      {/* ── 3. Langue ── */}
+      <SectionTitle icon="🌐">
+        {/* TODO: i18n key app.settings.languageSection */}
+        Langue
+      </SectionTitle>
+      <Card>
+        <SettingRow
+          label={/* TODO: i18n */ 'Langue de l\'interface'}
+          description="Choisissez entre francais et anglais."
+        >
+          <LanguageSwitcher />
+        </SettingRow>
+      </Card>
+
+      {/* ── 4. Donnees ── */}
+      <SectionTitle icon="🗂">
+        {/* TODO: i18n key app.settings.dataSection */}
+        Donnees
+      </SectionTitle>
+      <Card>
+        <SettingRow
+          label={/* TODO: i18n */ 'Exporter mes donnees'}
+          description="Telechargez toutes vos donnees au format JSON."
+        >
+          <button
+            onClick={() => showToast('Export de donnees bientot disponible.')}
+            style={{
+              fontSize: 12, fontWeight: 600, color: C.text2,
+              background: 'rgba(255,255,255,0.05)',
+              border: `1px solid ${C.border2}`,
+              borderRadius: 8, padding: '8px 14px',
+              cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all 0.15s',
+            }}
+          >
+            {/* TODO: i18n */}
+            Exporter
+          </button>
+        </SettingRow>
+        <div style={{ paddingTop: 14 }}>
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              style={{
+                fontSize: 12, fontWeight: 600, color: C.red,
+                background: 'transparent',
+                border: `1px solid ${C.redSoft}`,
+                borderRadius: 8, padding: '8px 14px',
+                cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all 0.15s',
+              }}
+            >
+              {/* TODO: i18n */}
+              Supprimer mon compte
+            </button>
+          ) : (
+            <div style={{
+              background: 'rgba(232,80,74,0.06)',
+              border: `1px solid rgba(232,80,74,0.25)`,
+              borderRadius: 10, padding: '16px 18px',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.red, marginBottom: 6 }}>
+                {/* TODO: i18n */}
+                Etes-vous sur ?
+              </div>
+              <p style={{ fontSize: 12, color: C.text2, margin: '0 0 14px', lineHeight: 1.5 }}>
+                {/* TODO: i18n */}
+                La suppression de compte est definitive. Pour proceder,
+                contactez-nous par email. Toutes vos donnees seront effacees
+                conformement a notre politique de confidentialite.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <a
+                  href="mailto:contact@quantara.tech?subject=Suppression%20de%20compte&body=Bonjour%2C%20je%20souhaite%20supprimer%20mon%20compte%20Quantara."
+                  style={{
+                    fontSize: 12, fontWeight: 600, color: '#fff',
+                    background: C.red, border: 'none',
+                    borderRadius: 8, padding: '8px 16px',
+                    textDecoration: 'none', display: 'inline-block',
+                  }}
+                >
+                  {/* TODO: i18n */}
+                  Contacter le support
+                </a>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    fontSize: 12, fontWeight: 600, color: C.text2,
+                    background: 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${C.border2}`,
+                    borderRadius: 8, padding: '8px 14px',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  {/* TODO: i18n */}
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* ── 5. A propos ── */}
+      <SectionTitle icon="ℹ️">
+        {/* TODO: i18n key app.settings.aboutSection */}
+        A propos
+      </SectionTitle>
+      <Card style={{ marginBottom: 0 }}>
+        <SettingRow
+          label={/* TODO: i18n */ 'Version de l\'application'}
+        >
+          <span style={{
+            fontSize: 12, color: C.text3,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            background: 'rgba(255,255,255,0.04)',
+            padding: '4px 10px', borderRadius: 6,
+          }}>
+            1.0.0-beta
+          </span>
+        </SettingRow>
+        <div style={{
+          display: 'flex', gap: 16, flexWrap: 'wrap', paddingTop: 14,
+        }}>
+          <Link href="/legal/cgu" style={{
+            fontSize: 12, color: C.text2, textDecoration: 'none',
+          }}>
+            CGU
+          </Link>
+          <Link href="/legal/privacy" style={{
+            fontSize: 12, color: C.text2, textDecoration: 'none',
+          }}>
+            {/* TODO: i18n */}
+            Confidentialite
+          </Link>
+          <Link href="/legal/imprint" style={{
+            fontSize: 12, color: C.text2, textDecoration: 'none',
+          }}>
+            {/* TODO: i18n */}
+            Mentions legales
+          </Link>
+        </div>
+      </Card>
+
+      {/* ── Toast notification ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+          background: C.surface2, color: C.text, fontSize: 13, fontWeight: 600,
+          padding: '12px 22px', borderRadius: 10,
+          border: `1px solid ${C.border2}`,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out',
+        }}>
+          {toast}
+        </div>
+      )}
+    </div>
+  )
+}

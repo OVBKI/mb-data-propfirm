@@ -255,6 +255,28 @@ export default function AppSidebar({
         </div>
       ))}
 
+      {/* === Settings link === */}
+      <div style={{ padding: '8px 12px', marginTop: 12, borderTop: '1px solid var(--border)' }}>
+        <Link
+          href="/app/settings"
+          onClick={onAfterNav}
+          className="qt-nav-item"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', borderRadius: 8,
+            background: currentHref === '/app/settings' ? 'rgba(45,111,255,0.12)' : 'rgba(255,255,255,0.025)',
+            border: `1px solid ${currentHref === '/app/settings' ? 'rgba(45,111,255,0.25)' : 'rgba(255,255,255,0.07)'}`,
+            color: currentHref === '/app/settings' ? 'var(--blue-light)' : 'var(--text2)',
+            fontSize: 12, fontWeight: currentHref === '/app/settings' ? 600 : 500,
+            textDecoration: 'none', fontFamily: 'inherit',
+            transition: 'all 0.15s',
+          }}
+        >
+          <span style={{ fontSize: 14, lineHeight: 1 }}>{'⚙️'}</span>
+          {t('app.sidebar.settings') || 'Réglages'}
+        </Link>
+      </div>
+
       {/* === Admin panel (visible uniquement pour admins) === */}
       {user && isAdmin(user.email) && (
         <div style={{ padding: '8px 12px', marginTop: 12, borderTop: '1px solid var(--border)' }}>
