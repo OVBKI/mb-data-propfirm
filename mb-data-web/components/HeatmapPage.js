@@ -20,7 +20,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { C, inputStyleCompact as inputS } from '../lib/theme'
-import { fmtMoney as fmtMoneyFull } from '../lib/format'
+import { fmtMoney } from '../lib/format'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
 
@@ -54,14 +54,8 @@ const SESSIONS = [
   { k: 'nyPM',   l: '🇺🇸 NY After',   emoji: '🇺🇸', range: [17, 24], desc: '17:00 — 24:00 (locale)' },
 ]
 
-function fmtMoney(n, dec = 0) {
-  const v = Number(n) || 0
-  return (v >= 0 ? '+' : '') + v.toFixed(dec) + ' $'
-}
-function fmtMoneyFull(n, dec = 2) {
-  const v = Number(n) || 0
-  return (v >= 0 ? '+' : '') + v.toFixed(dec) + ' $'
-}
+// fmtMoney imported from ../lib/format (default dec=2)
+// For 0-decimal display, call fmtMoney(val, 0)
 
 // Colorise une cellule selon le P&L net (vert = profit, rouge = perte, neutre = 0)
 // `magnitude` = ratio 0-1 par rapport au max abs P&L (intensité)
@@ -409,7 +403,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     color: pnlTextColor(d.pnl),
                     fontFamily: 'ui-monospace, monospace',
                   }}>
-                    {d.count > 0 ? fmtMoney(d.pnl) : '—'}
+                    {d.count > 0 ? fmtMoney(d.pnl, 0) : '—'}
                   </div>
                   <div style={{
                     width: '80%', height: `${h}px`,
@@ -417,7 +411,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     borderRadius: '4px 4px 0 0',
                     border: d.count > 0 ? `1px solid ${d.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid rgba(255,255,255,0.05)',
                     transition: 'all 0.2s',
-                  }} title={`${DAYS_FULL[i]} · ${d.count} trade${d.count > 1 ? 's' : ''} · ${fmtMoneyFull(d.pnl)}${d.count > 0 ? ` · WR ${(d.wins / d.count * 100).toFixed(0)}%` : ''}`} />
+                  }} title={`${DAYS_FULL[i]} · ${d.count} trade${d.count > 1 ? 's' : ''} · ${fmtMoney(d.pnl)}${d.count > 0 ? ` · WR ${(d.wins / d.count * 100).toFixed(0)}%` : ''}`} />
                   <div style={{ fontSize: 11, color: C.text3, fontWeight: 600 }}>{DAYS_FR[i]}</div>
                   <div style={{ fontSize: 9, color: C.text3 }}>{d.count}</div>
                 </div>
@@ -447,7 +441,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     {side === 'Long' ? '↑ Long' : '↓ Short'}
                   </div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: pnlTextColor(s.pnl), fontFamily: 'ui-monospace, monospace', marginBottom: 6 }}>
-                    {fmtMoneyFull(s.pnl)}
+                    {fmtMoney(s.pnl)}
                   </div>
                   <div style={{ display: 'flex', gap: 12, fontSize: 11, color: C.text3 }}>
                     <span><strong style={{ color: C.text2 }}>{s.count}</strong> trades</span>
@@ -477,7 +471,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                   background: pnlColor(h.pnl, mag),
                   borderRadius: '3px 3px 0 0',
                   border: h.count > 0 ? `1px solid ${h.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid rgba(255,255,255,0.05)',
-                }} title={`${i}h · ${h.count} trade${h.count > 1 ? 's' : ''} · ${fmtMoneyFull(h.pnl)}${h.count > 0 ? ` · WR ${(h.wins / h.count * 100).toFixed(0)}%` : ''}`} />
+                }} title={`${i}h · ${h.count} trade${h.count > 1 ? 's' : ''} · ${fmtMoney(h.pnl)}${h.count > 0 ? ` · WR ${(h.wins / h.count * 100).toFixed(0)}%` : ''}`} />
                 <div style={{ fontSize: 9, color: C.text3, fontFamily: 'ui-monospace, monospace' }}>
                   {String(i).padStart(2, '0')}
                 </div>
@@ -532,7 +526,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                         cursor: cell.count > 0 ? 'help' : 'default',
                         transition: 'transform 0.15s, border-color 0.15s',
                       }}
-                      title={cell.count > 0 ? `${DAYS_FULL[dow]} ${String(h).padStart(2, '0')}h · ${cell.count} trade${cell.count > 1 ? 's' : ''} · ${fmtMoneyFull(cell.pnl)}` : `${DAYS_FULL[dow]} ${String(h).padStart(2, '0')}h · aucun trade`}
+                      title={cell.count > 0 ? `${DAYS_FULL[dow]} ${String(h).padStart(2, '0')}h · ${cell.count} trade${cell.count > 1 ? 's' : ''} · ${fmtMoney(cell.pnl)}` : `${DAYS_FULL[dow]} ${String(h).padStart(2, '0')}h · aucun trade`}
                       onMouseEnter={ev => { if (cell.count > 0) { ev.currentTarget.style.transform = 'scale(1.4)'; ev.currentTarget.style.zIndex = '10'; ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)' } }}
                       onMouseLeave={ev => { ev.currentTarget.style.transform = 'scale(1)'; ev.currentTarget.style.zIndex = '1'; ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.03)' }}
                     >
@@ -606,7 +600,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                       }} />
                     </div>
                     <div style={{ width: 80, textAlign: 'right', color: pnlTextColor(inst.pnl), fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>
-                      {fmtMoney(inst.pnl)}
+                      {fmtMoney(inst.pnl, 0)}
                     </div>
                     <div style={{ width: 60, textAlign: 'right', color: C.text3, fontSize: 10 }}>
                       {inst.count}t · {wr.toFixed(0)}%
@@ -641,7 +635,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: pnlTextColor(v.pnl), fontFamily: 'ui-monospace, monospace' }}>
-                      {v.count > 0 ? fmtMoneyFull(v.pnl) : '—'}
+                      {v.count > 0 ? fmtMoney(v.pnl) : '—'}
                     </span>
                     {v.count > 0 && (
                       <span style={{ fontSize: 10, color: C.text3 }}>
