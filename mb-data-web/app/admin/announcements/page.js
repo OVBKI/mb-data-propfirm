@@ -5,6 +5,24 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 
+// Helper pour appeler les routes API admin avec le token Bearer de la session courante
+async function adminFetch(url, options = {}) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) throw new Error('Non authentifié')
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
+  return json
+}
+
 const C = {
   bg: '#0d0f14',
   surface: '#141720',
@@ -65,17 +83,12 @@ export default function AdminAnnouncementsPage() {
 
   async function load() {
     setLoading(true); setError('')
-    // ⚠ on bypass la RLS de lecture en utilisant un select admin (l'admin doit voir aussi les inactives)
-    // Pour ça la RLS doit autoriser l'admin à lire — sinon ne montre que les actives
-    const { data, error: err } = await supabase
-      .from('announcements')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (err) {
+    try {
+      const json = await adminFetch('/api/admin/announcements')
+      setItems(json.data || [])
+    } catch (err) {
       setError(err.message)
       setItems([])
-    } else {
-      setItems(data || [])
     }
     setLoading(false)
   }
@@ -117,21 +130,24 @@ export default function AdminAnnouncementsPage() {
       link_url: form.link_url.trim() || null,
       link_label: form.link_label.trim() || null,
     }
-    let res
-    if (editing === 'new') {
-      const { data: { session } } = await supabase.auth.getSession()
-      payload.created_by = session?.user?.id
-      res = await supabase.from('announcements').insert(payload)
-    } else {
-      res = await supabase.from('announcements').update(payload).eq('id', editing.id)
+    try {
+      if (editing === 'new') {
+        await adminFetch('/api/admin/announcements', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
+      } else {
+        await adminFetch('/api/admin/announcements', {
+          method: 'PUT',
+          body: JSON.stringify({ ...payload, id: editing.id }),
+        })
+      }
+      closeEdit()
+      load()
+    } catch (err) {
+      alert('Erreur : ' + err.message)
     }
     setSaving(false)
-    if (res.error) {
-      alert('Erreur : ' + res.error.message)
-      return
-    }
-    closeEdit()
-    load()
   }
 
   async function toggleActive(item) {

@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { sanitizeUrl } from '../lib/sanitize'
 
 const C = {
   blue: '#2d6fff',
@@ -98,9 +99,9 @@ export default function AnnouncementBanner() {
           <span style={{ marginLeft: 10, opacity: 0.85 }}>· {announcement.message}</span>
         )}
       </div>
-      {announcement.link_url && (
+      {sanitizeUrl(announcement.link_url) && (
         <a
-          href={announcement.link_url}
+          href={sanitizeUrl(announcement.link_url)}
           target="_blank" rel="noopener noreferrer"
           style={{
             padding: '6px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600,

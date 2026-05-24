@@ -16,6 +16,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import FollowButton from '../../../components/FollowButton'
+import { sanitizeUrl } from '../../../lib/sanitize'
 
 // Force dynamic rendering (pas de cache SSG) car le contenu change selon le user
 export const dynamic = 'force-dynamic'
@@ -135,10 +136,10 @@ export default async function PublicProfilePage({ params }) {
       </header>
 
       {/* Banner (si défini) */}
-      {profile.banner_url ? (
+      {sanitizeUrl(profile.banner_url) ? (
         <div style={{
           height: 200,
-          backgroundImage: `url(${profile.banner_url})`,
+          backgroundImage: `url(${sanitizeUrl(profile.banner_url)})`,
           backgroundSize: 'cover', backgroundPosition: 'center',
           borderBottom: '1px solid rgba(255,255,255,0.07)',
         }} />
@@ -157,15 +158,15 @@ export default async function PublicProfilePage({ params }) {
           <div style={{
             width: 100, height: 100,
             borderRadius: '50%',
-            background: profile.avatar_url
-              ? `url(${profile.avatar_url}) center/cover`
+            background: sanitizeUrl(profile.avatar_url)
+              ? `url(${sanitizeUrl(profile.avatar_url)}) center/cover`
               : 'linear-gradient(135deg, #2d6fff, #4d8fff)',
             border: '4px solid #0d0f14',
             flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 36, fontWeight: 800, color: '#fff',
           }}>
-            {!profile.avatar_url && (profile.username?.[0]?.toUpperCase() || '?')}
+            {!sanitizeUrl(profile.avatar_url) && (profile.username?.[0]?.toUpperCase() || '?')}
           </div>
           <div style={{ flex: 1, paddingBottom: 8 }}>
             <h1 style={{

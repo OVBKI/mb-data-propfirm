@@ -269,8 +269,12 @@ begin
 end;
 $$;
 
--- Permet aux users anonymes (login form) ET authentifiés d'appeler ces RPCs
-grant execute on function public.resolve_username_to_email(text) to anon, authenticated;
+-- SÉCURITÉ : anon révoqué pour resolve_username_to_email (audit mai 2026).
+-- L'appel direct via le client Supabase anon permettait de contourner le rate-limit
+-- de la route API /api/auth/resolve-username. Seule la route API (qui utilise
+-- SUPABASE_SERVICE_ROLE_KEY) peut désormais appeler cette RPC.
+-- Les users authentifiés conservent l'accès (utilisé en interne).
+grant execute on function public.resolve_username_to_email(text) to authenticated;
 grant execute on function public.username_available(text)       to anon, authenticated;
 
 -- ============================================================================
