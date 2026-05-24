@@ -22,35 +22,14 @@ import { TRADE_TAGS } from '../lib/tradeTags'
 import TradeCard from './TradeCard'
 import TradeEntryModal from './TradeEntryModal'
 import TagSelector from './TagSelector'
-
-const C = {
-  surface:  'rgba(20,23,32,0.65)',
-  border:   'rgba(255,255,255,0.07)',
-  text:     '#f0ede8',
-  text2:    '#9098b0',
-  text3:    '#5a6275',
-  green:    '#1db87a',
-  red:      '#e8504a',
-  amber:    '#fac775',
-  blue:     '#2d6fff',
-  blueLt:   '#4d8fff',
-}
+import { C } from '../lib/theme'
+import { fmtMoney, todayISO, daysAgoISO } from '../lib/format'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
+// Local variants — differ from shared theme (smaller padding/fontSize/borderRadius, no transitions)
 const inputS = { width: '100%', padding: '8px 10px', fontSize: 12, border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 6, background: 'rgba(255,255,255,0.02)', color: C.text, outline: 'none', fontFamily: 'inherit' }
 const btnGhost = { padding: '7px 12px', fontSize: 11, fontWeight: 500, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.10)', color: C.text2, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
 const btnPrimary = { padding: '8px 16px', fontSize: 12, fontWeight: 500, background: C.text, color: '#0a0c10', border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)' }
-
-function fmtMoney(n, dec = 2) {
-  const v = Number(n) || 0
-  return (v >= 0 ? '+' : '') + v.toFixed(dec) + ' $'
-}
-function todayISO() { return new Date().toISOString().slice(0, 10) }
-function daysAgoISO(n) {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return d.toISOString().slice(0, 10)
-}
 
 // Filtres période rapides
 const PERIOD_PRESETS = [

@@ -19,27 +19,10 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-
-const C = {
-  surface:   'rgba(20,23,32,0.65)',
-  surface2:  'rgba(28,32,48,0.7)',
-  border:    'rgba(255,255,255,0.07)',
-  border2:   'rgba(255,255,255,0.13)',
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
-  green:     '#1db87a',
-  greenSoft: 'rgba(29,184,122,0.15)',
-  red:       '#e8504a',
-  redSoft:   'rgba(232,80,74,0.15)',
-  amber:     '#fac775',
-  blue:      '#2d6fff',
-  blueLt:    '#4d8fff',
-  neutral:   'rgba(255,255,255,0.04)',
-}
+import { C, inputStyleCompact as inputS } from '../lib/theme'
+import { fmtMoney as fmtMoneyFull } from '../lib/format'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
-const inputS = { padding: '7px 10px', fontSize: 12, border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 6, background: 'rgba(255,255,255,0.02)', color: C.text, outline: 'none', fontFamily: 'inherit' }
 
 // Filtres période
 const PERIOD_PRESETS = [

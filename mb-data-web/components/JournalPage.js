@@ -15,24 +15,11 @@ import { TooltipIcon } from './Tooltip'
 // (/app?p=trades) pour garder le Journal focalisé sur la vue calendrier.
 import TagSelector from './TagSelector'
 import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
+import { fmtMoney, todayISO } from '../lib/format'
+import { cardStyle as card, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn } from '../lib/theme'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
-
-function fmtMoney(n, dec=2){
-  const v = Number(n)||0
-  return (v>=0?'+':'') + v.toFixed(dec) + ' $'
-}
-function todayISO(){ return new Date().toISOString().slice(0,10) }
-
-// Styles harmonisés avec le Dashboard cosmic theme (cohérence visuelle)
-const card = { background:'var(--surface)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }
-const inputS = { width:'100%', padding:'10px 12px', fontSize:'13px', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'8px', background:'rgba(255,255,255,0.02)', color:'var(--text)', outline:'none', transition:'border-color 0.2s, background 0.2s', fontFamily:'inherit' }
-const labelS = { fontSize:'10.5px', fontWeight:'600', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.12em', display:'block', marginBottom:'6px' }
-// btnPrimary : off-white inverted (matching Dashboard et landing — pas de gradient bleu vif AI-looking)
-const btnPrimary = { padding:'9px 18px', fontSize:'12.5px', fontWeight:'500', background:'var(--text)', color:'#0a0c10', border:'1px solid transparent', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em', boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)', transition:'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s' }
-const btnGhost = { padding:'8px 14px', fontSize:'12px', fontWeight:'500', background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.10)', color:'var(--text2)', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em', transition:'color 0.2s, border-color 0.2s, background 0.2s' }
-const chipBtn = (active)=>({ padding:'7px 14px', fontSize:'12px', cursor:'pointer', borderRadius:'99px', border:`1px solid ${active?'rgba(45,111,255,0.4)':'rgba(255,255,255,0.10)'}`, fontFamily:'inherit', fontWeight:active?'600':'500', background:active?'rgba(45,111,255,0.15)':'transparent', color:active?'var(--blue-light)':'var(--text2)', transition:'all 0.15s' })
 
 // Carte avec courbe de balance pour un compte donné
 function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade, addTradeHref=null }){
