@@ -1,397 +1,64 @@
-'use client'
-// Landing page Quantara — V1 (ton identité d'origine)
-// Logo + particules + hero centré + ton layout existant
-// Tous les composants V1 sont actifs et utilisés.
-//
-// CLIENT COMPONENT (mai 2026) : converti en client pour permettre le switch
-// FR/EN à la volée via useT(). Le metadata SEO est géré par app/layout.js.
-// Trade-off accepté : SSR du contenu landing (pour bots) reste, mais la locale
-// affichée est toujours FR au premier paint, puis bascule en EN après hydratation
-// si navigator.language === 'en' ou localStorage 'quantara_lang' === 'en'.
+// Landing page — Server component wrapper.
+// The actual interactive landing lives in components/landing/LandingPage.js ('use client').
+// This file stays as a server component so we can export metadata for SEO,
+// render an SEO-friendly fallback for crawlers, and lazy-load the heavy client bundle.
 
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useT, useLanguage } from '../components/LanguageProvider'
-import LanguageSwitcher from '../components/LanguageSwitcher'
-import ParticlesField from '../components/landing/ParticlesField'
-import HeroSection from '../components/landing/HeroSection'
-import MagneticButton from '../components/landing/MagneticButton'
-import FlipFeatureCards from '../components/landing/FlipFeatureCards'
-import MeshGradientFooter from '../components/landing/MeshGradientFooter'
-import LandingScrollEffects from '../components/landing/LandingScrollEffects'
-// Polish layers (A-F + grain non-AI)
-import ScrollProgress from '../components/landing/ScrollProgress'
-import SmoothScrollProvider from '../components/landing/SmoothScrollProvider'
-import AnimatedStats from '../components/landing/AnimatedStats'
-import EnhancedSteps from '../components/landing/EnhancedSteps'
-// === Démos visuelles features (nouvelle vague — moins look-IA) ===
-// 5 vraies pages produit affichées dans un frame 3D incliné (Tilted3DFrame)
-// pour donner de la profondeur et de la spatialisation type Stripe/Linear/Apple.
-import Tilted3DFrame from '../components/landing/Tilted3DFrame'
-import DashboardMockup from '../components/landing/DashboardMockup'
-import AnalyticsMockup from '../components/landing/AnalyticsMockup'
-import JournalMockup from '../components/landing/JournalMockup'
-import EconomicCalendarMockup from '../components/landing/EconomicCalendarMockup'
-import EquityCurveDemo from '../components/landing/EquityCurveDemo'
-import NotificationMockup from '../components/landing/NotificationMockup'
-// SEO — JSON-LD Schema.org pour rich results Google + citations AI search
-import JsonLd, { LANDING_SCHEMAS } from '../components/JsonLd'
+import { Suspense } from 'react'
 
-// 3D stars — lazy-loaded côté client uniquement (Three.js ~600KB, on évite le SSR + on
-// retire ce poids du first paint pour ne pas dégrader le LCP).
-const StarField3D = dynamic(() => import('../components/landing/StarField3D'), {
+// Page-specific metadata — overrides layout.js defaults for the landing route.
+// Layout already provides OG images, twitter cards, robots, icons, etc.
+export const metadata = {
+  title: 'Quantara — Tableau de bord PropFirm intelligent',
+  description: 'Suis tes comptes PropFirm, analyse tes trades, gère tes payouts. Dashboard multi-firmes, journal de trading, calendrier économique. Gratuit.',
+  alternates: {
+    canonical: 'https://quantara.tech',
+    languages: { 'fr': 'https://quantara.tech', 'en': 'https://quantara.tech' },
+  },
+}
+
+const LandingPage = dynamic(() => import('../components/landing/LandingPage'), {
   ssr: false,
-  loading: () => null, // pas de loader visible — le fond reste juste noir le temps que ça charge
+  loading: () => <LandingFallback />,
 })
 
-// NB : `export const metadata` retiré (incompatible avec 'use client').
-//      Le metadata SEO complet est centralisé dans app/layout.js.
-
-const colors = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#565e78',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  red: '#e8504a',
-  amber: '#fac775',
-}
-
-// Keys i18n pour les 6 features/3 steps/4 stats (résolues via useT dans le composant).
-// On garde icons + numéros ici (non traduits), le texte vient de lib/i18n.js.
-const FEATURE_KEYS = [
-  { icon: '🏢', key: 'multipropfirms' },
-  { icon: '📔', key: 'journal' },
-  { icon: '📈', key: 'equity' },
-  { icon: '💰', key: 'payouts' },
-  { icon: '🔔', key: 'notifications' },
-  { icon: '📅', key: 'calendar' },
-]
-
-const STEP_KEYS = [
-  { n: 1, key: 'step1' },
-  { n: 2, key: 'step2' },
-  { n: 3, key: 'step3' },
-]
-
-const STAT_KEYS = ['propfirms', 'accounts', 'langs', 'privacy']
-
-// ============================================================================
-// Helper layout pour chaque section "vraie page produit" :
-// label monospace + titre + sous-titre + mockup 3D tilt en dessous.
-// Utilisé par les 6 pages (Dashboard, Analytics, Journal, Calendar, Equity, Notif).
-// ============================================================================
-// Helper compact pour rendre une section via sa clé i18n (ex: sectionKey="dashboard"
-// → translate sections.dashboard.label, .title, .subtitle automatiquement).
-function I18nProductSection({ sectionKey, labelColor, children }) {
-  const t = useT()
+// SEO fallback — visible to crawlers while JS loads
+function LandingFallback() {
   return (
-    <ProductSection
-      label={t(`sections.${sectionKey}.label`)}
-      labelColor={labelColor}
-      title={t(`sections.${sectionKey}.title`)}
-      subtitle={t(`sections.${sectionKey}.subtitle`)}
-    >
-      {children}
-    </ProductSection>
-  )
-}
-
-function ProductSection({ label, labelColor, title, subtitle, children }) {
-  return (
-    <section className="lp-product-section" style={{ padding: '80px 24px 60px', position: 'relative' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Intro text centrée */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: labelColor,
-            textTransform: 'uppercase', letterSpacing: '0.12em',
-            marginBottom: 14, fontFamily: 'ui-monospace, monospace',
-          }}>
-            {label}
-          </div>
-          <h2 style={{
-            fontSize: 'clamp(28px, 4vw, 42px)',
-            fontWeight: 800, letterSpacing: '-0.025em',
-            marginBottom: 16, color: colors.text, lineHeight: 1.15,
-          }}>
-            {title}
-          </h2>
-          <p style={{
-            fontSize: 16, color: colors.text2, lineHeight: 1.55,
-            maxWidth: 700, margin: '0 auto',
-          }}>
-            {subtitle}
-          </p>
-        </div>
-
-        {/* Mockup 3D tilted en dessous */}
-        {children}
-      </div>
-    </section>
-  )
-}
-
-export default function LandingPage() {
-  const t = useT()
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: colors.bg,
-      color: colors.text,
-      overflowX: 'hidden',
-      position: 'relative',
-    }}>
-      {/* JSON-LD Schema.org : Organization + WebSite + SoftwareApplication + FAQPage.
-          Critique pour rich results Google + citations par AI search (ChatGPT/Claude/Perplexity). */}
-      {LANDING_SCHEMAS.map((schema, i) => (
-        <JsonLd key={i} data={schema} />
-      ))}
-
-      {/* Polish layers — invisible mais cassent le côté "AI-default" */}
-      <SmoothScrollProvider />
-      <ScrollProgress />
-
-      {/* Grain noise très subtil — sans mix-blend-mode pour éviter coût GPU compositing */}
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none',
-        opacity: 0.018,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")`,
-      }} />
-
-      {/* Top bar minimaliste — style refined cohérent avec MagneticButton */}
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        padding: '14px 24px',
-        background: 'rgba(13,15,20,0.65)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${colors.border}`,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <div style={{ fontWeight: 800, letterSpacing: '0.12em', fontSize: 13, color: colors.text }}>QUANTARA</div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Switcher FR ↔ EN */}
-          <LanguageSwitcher compact />
-          {/* Se connecter — ghost subtle */}
-          <Link href="/app" className="qt-topbtn-ghost" style={{
-            padding: '8px 16px', fontSize: 12.5, fontWeight: 500,
-            borderRadius: 8,
-            color: colors.text2,
-            textDecoration: 'none',
-            border: '0.5px solid rgba(255,255,255,0.10)',
-            background: 'rgba(255,255,255,0.02)',
-            transition: 'color 0.2s, border-color 0.2s, background 0.2s',
-            letterSpacing: '0.005em',
-          }}>{t('nav.login')}</Link>
-          {/* Démarrer — INVERSÉ premium (off-white sur sombre) */}
-          <Link href="/app" className="qt-topbtn-primary" style={{
-            padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
-            borderRadius: 8,
-            background: colors.text,
-            color: '#0a0c10',
-            textDecoration: 'none',
-            border: '1px solid transparent',
-            boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.3)',
-            transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s',
-            letterSpacing: '0.005em',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-          }}>
-            {t('nav.start')}
-            <span style={{
-              fontFamily: 'monospace', fontSize: 11, opacity: 0.7,
-              transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
-            }} className="qt-topbtn-arrow">→</span>
-          </Link>
-        </div>
-        <style>{`
-          .qt-topbtn-ghost:hover {
-            color: ${colors.text} !important;
-            border-color: rgba(255,255,255,0.18) !important;
-            background: rgba(255,255,255,0.05) !important;
-          }
-          .qt-topbtn-primary:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 6px 18px rgba(0,0,0,0.4) !important; }
-          .qt-topbtn-primary:hover .qt-topbtn-arrow { transform: translateX(2px); }
-        `}</style>
-      </div>
-
-      {/* === HERO avec fond 3D parallax + particules 2D légères au-dessus === */}
-      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* COUCHE 1 (profonde) — Champ d'étoiles 3D avec parallax souris */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <StarField3D />
-        </div>
-
-        {/* COUCHE 2 (proche) — Particules 2D pour halo souris et interaction directe.
-            Densité réduite (40 vs 90 avant) pour ne pas saturer visuellement le 3D dessous. */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          <ParticlesField density={40} color="77,143,255" />
-        </div>
-
-        {/* Vignette pour adoucir les bords */}
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 1,
-          background: `radial-gradient(ellipse at center, transparent 30%, ${colors.bg} 80%)`,
-          pointerEvents: 'none',
-        }} />
-
-        {/* Logo Q 2D + halos repris (l'utilisateur adore). La planète Earth 3D rendue
-            dans StarField3D apparaît en bas, derrière, comme vue depuis l'orbite. */}
-        <HeroSection>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <MagneticButton href="/app" primary large>
-              {t('hero.ctaPrimary')}
-            </MagneticButton>
-            <MagneticButton href="#features" large>
-              {t('hero.ctaSecondary')}
-            </MagneticButton>
-          </div>
-        </HeroSection>
-
-        {/* Indicateur scroll */}
-        <div style={{
-          position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 2,
-          fontSize: 11, color: colors.text3,
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          animation: 'qtFloat 2s ease-in-out infinite',
-        }}>
-          {t('hero.scrollHint')}
-        </div>
-      </section>
-
-      {/* === STATS strip avec compteurs animés au scroll === */}
-      <AnimatedStats stats={STAT_KEYS.map(k => ({
-        v: t(`stats.${k}.value`),
-        l: t(`stats.${k}.label`),
-      }))} />
-
-      {/* ============================================================
-          6 VRAIES PAGES PRODUIT en 3D incliné (Tilted3DFrame).
-          Chaque section : intro text au-dessus + mockup tilted en dessous.
-          Le `flip` alterne le sens du tilt pour rythmer visuellement.
-          ============================================================ */}
-
-      {/* === PAGE 1 : TABLEAU DE BORD === */}
-      <I18nProductSection sectionKey="dashboard" labelColor={colors.blueLight}>
-        <Tilted3DFrame title="quantara.tech/app">
-          <DashboardMockup />
-        </Tilted3DFrame>
-      </I18nProductSection>
-
-      {/* === PAGE 2 : ANALYTICS === */}
-      <I18nProductSection sectionKey="analytics" labelColor={colors.blueLight}>
-        <Tilted3DFrame title="quantara.tech/app?p=analytics" flip>
-          <AnalyticsMockup />
-        </Tilted3DFrame>
-      </I18nProductSection>
-
-      {/* === PAGE 3 : JOURNAL DE TRADING === */}
-      <I18nProductSection sectionKey="journal" labelColor={colors.green}>
-        <Tilted3DFrame title="quantara.tech/app/journal">
-          <JournalMockup />
-        </Tilted3DFrame>
-      </I18nProductSection>
-
-      {/* === PAGE 4 : CALENDRIER ÉCONOMIQUE === */}
-      <I18nProductSection sectionKey="calendar" labelColor={colors.amber}>
-        <Tilted3DFrame title="quantara.tech/app/calendar" flip>
-          <EconomicCalendarMockup />
-        </Tilted3DFrame>
-      </I18nProductSection>
-
-      {/* === PAGE 5 : EQUITY CURVE === */}
-      <I18nProductSection sectionKey="equity" labelColor={colors.green}>
-        <Tilted3DFrame title="quantara.tech/app/equity">
-          <EquityCurveDemo />
-        </Tilted3DFrame>
-      </I18nProductSection>
-
-      {/* === PAGE 6 : NOTIFICATIONS PUSH === */}
-      <section style={{ padding: '60px 24px 80px', position: 'relative' }}>
-        <NotificationMockup />
-      </section>
-
-      {/* === FEATURES === */}
-      <section id="features" style={{ padding: '80px 24px', position: 'relative' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 50 }}>
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: colors.blueLight,
-              textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12,
-            }}>{t('features.eyebrow')}</div>
-            <h2 style={{
-              fontSize: 'clamp(28px, 4vw, 40px)',
-              fontWeight: 800, marginBottom: 14,
-              letterSpacing: '-0.02em',
-            }}>{t('features.heading')}</h2>
-            <p style={{ fontSize: 16, color: colors.text2, maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
-              {t('features.subheading')}
-            </p>
-          </div>
-          <FlipFeatureCards features={FEATURE_KEYS.map(f => ({
-            icon: f.icon,
-            title: t(`features.${f.key}.title`),
-            desc:  t(`features.${f.key}.desc`),
-          }))} />
-        </div>
-      </section>
-
-      {/* === HOW IT WORKS (steps avec ligne lumineuse + hover) === */}
-      <EnhancedSteps steps={STEP_KEYS.map(s => ({
-        n: s.n,
-        title: t(`steps.${s.key}.title`),
-        desc:  t(`steps.${s.key}.desc`),
-      }))} />
-
-      {/* === FINAL CTA === */}
-      <section style={{ padding: '100px 24px', textAlign: 'center', position: 'relative' }}>
-        {/* Halo dramatique */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `radial-gradient(ellipse at center, ${colors.blue}25, transparent 60%)`,
-        }} />
-        <div style={{ position: 'relative', maxWidth: 700, margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: 'clamp(32px, 5vw, 52px)',
-            fontWeight: 900,
-            marginBottom: 18,
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1,
-          }}>
-            {t('finalCTA.titleStart')}<span style={{
-              background: `linear-gradient(135deg, ${colors.blue}, ${colors.blueLight}, ${colors.green})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>{t('finalCTA.titleHighlight')}</span>{t('finalCTA.titleEnd')}
-          </h2>
-          <p style={{
-            fontSize: 17, color: colors.text2, marginBottom: 36,
-            lineHeight: 1.6,
-          }}>
-            {t('finalCTA.subtitle')}
-          </p>
-          <MagneticButton href="/app" primary large>
-            {t('finalCTA.button')}
-          </MagneticButton>
-          <p style={{ marginTop: 20, fontSize: 12, color: colors.text3 }}>
-            {t('finalCTA.trustLine')}
-          </p>
-        </div>
-      </section>
-
-      {/* === FOOTER === */}
-      <MeshGradientFooter />
-
-      {/* Keyframes globales */}
-      <LandingScrollEffects />
+    <div style={{ minHeight: '100vh', background: '#0d0f14', color: '#f0ede8' }}>
+      <header style={{ padding: '14px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <span style={{ fontWeight: 800, letterSpacing: '0.12em', fontSize: 13 }}>QUANTARA</span>
+      </header>
+      <main style={{ maxWidth: 700, margin: '0 auto', padding: '120px 24px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: 48, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 24 }}>
+          Ton cockpit<br />PropFirm
+        </h1>
+        <p style={{ fontSize: 18, color: '#9098b0', lineHeight: 1.6, marginBottom: 40 }}>
+          Suis tes comptes, analyse tes trades, gère tes payouts. Le tableau de bord que chaque trader PropFirm mérite.
+        </p>
+        <a href="/app" style={{ padding: '14px 32px', background: '#f0ede8', color: '#0a0c10', borderRadius: 10, fontWeight: 600, textDecoration: 'none', fontSize: 15 }}>
+          Commencer gratuitement →
+        </a>
+        <noscript>
+          <h2 style={{ marginTop: 60, fontSize: 24 }}>Fonctionnalités</h2>
+          <ul style={{ textAlign: 'left', maxWidth: 500, margin: '20px auto', lineHeight: 2 }}>
+            <li>Multi PropFirm — Topstep, Apex, FTMO, et plus</li>
+            <li>Journal de trading avec screenshots et tags</li>
+            <li>Courbe d equity en temps réel</li>
+            <li>Suivi des payouts et dépenses</li>
+            <li>Alertes de prélèvement par push notification</li>
+            <li>Calendrier économique intégré</li>
+          </ul>
+        </noscript>
+      </main>
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<LandingFallback />}>
+      <LandingPage />
+    </Suspense>
   )
 }
