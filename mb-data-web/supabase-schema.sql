@@ -351,3 +351,131 @@ alter table profiles add column if not exists verified       boolean default fal
 
 create index if not exists profiles_username_idx
   on profiles(username) where username is not null;
+
+-- ============================================================================
+-- TABLES MANQUANTES — ajoutées lors de l'audit sécurité (mai 2026)
+-- ============================================================================
+
+-- PUSH_SUBSCRIPTIONS — stocke les abonnements push notification par user
+create table if not exists push_subscriptions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  endpoint text not null,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  created_at timestamptz default now()
+);
+create unique index if not exists push_subscriptions_user_endpoint_uniq
+  on push_subscriptions(user_id, endpoint);
+
+alter table push_subscriptions enable row level security;
+create policy "Users manage own push subscriptions" on push_subscriptions
+  for all using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists push_subscriptions_user_id_idx on push_subscriptions(user_id);
+
+-- WAITLIST — inscriptions waitlist Pro / Lifetime
+create table if not exists waitlist (
+  id uuid default gen_random_uuid() primary key,
+  email text unique not null,
+  plan text not null check (plan in ('pro','lifetime')),
+  created_at timestamptz default now(),
+  ip_address text
+);
+
+alter table waitlist enable row level security;
+create policy "Anyone can insert waitlist" on waitlist for insert with check (true);
+
+-- GROUPS — groupes privés avec code d'invitation
+create table if not exists groups (
+  id uuid default gen_random_uuid() primary key,
+  owner_id uuid references auth.users(id) on delete cascade not null,
+  name text not null,
+  description text default '',
+  invite_code text unique not null,
+  max_members int default 50,
+  members_count int default 0,
+  created_at timestamptz default now()
+);
+
+alter table groups enable row level security;
+create policy "Owner manages own groups" on groups
+  for all using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+create policy "Members can read their groups" on groups
+  for select using (
+    exists (select 1 from group_members gm where gm.group_id = id and gm.user_id = auth.uid())
+  );
+
+create index if not exists groups_owner_id_idx on groups(owner_id);
+create index if not exists groups_invite_code_idx on groups(invite_code);
+
+-- GROUP_MEMBERS — membres d'un groupe
+create table if not exists group_members (
+  id uuid default gen_random_uuid() primary key,
+  group_id uuid references groups(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  role text default 'member' check (role in ('owner','admin','member')),
+  joined_at timestamptz default now()
+);
+create unique index if not exists group_members_uniq on group_members(group_id, user_id);
+
+alter table group_members enable row level security;
+create policy "Members can read own membership" on group_members
+  for select using (auth.uid() = user_id);
+create policy "Members can delete own membership" on group_members
+  for delete using (auth.uid() = user_id);
+
+create index if not exists group_members_group_id_idx on group_members(group_id);
+create index if not exists group_members_user_id_idx on group_members(user_id);
+
+-- ANNOUNCEMENTS — bannières globales gérées par les admins
+create table if not exists announcements (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  message text not null,
+  type text default 'info' check (type in ('info','success','warn','promo')),
+  link_url text,
+  link_label text,
+  starts_at timestamptz,
+  ends_at timestamptz,
+  is_active boolean default true,
+  created_at timestamptz default now()
+);
+
+alter table announcements enable row level security;
+create policy "Anyone can read active announcements" on announcements
+  for select using (is_active = true);
+
+-- FOLLOWS — réseau social (profils publics)
+create table if not exists follows (
+  id uuid default gen_random_uuid() primary key,
+  follower_id uuid references auth.users(id) on delete cascade not null,
+  following_id uuid references auth.users(id) on delete cascade not null,
+  created_at timestamptz default now()
+);
+create unique index if not exists follows_uniq on follows(follower_id, following_id);
+
+alter table follows enable row level security;
+create policy "Users manage own follows" on follows
+  for all using (auth.uid() = follower_id)
+  with check (auth.uid() = follower_id);
+create policy "Anyone can read follows" on follows
+  for select using (true);
+
+create index if not exists follows_follower_id_idx on follows(follower_id);
+create index if not exists follows_following_id_idx on follows(following_id);
+
+-- PUBLIC PROFILES — lecture publique des profils opt-in
+drop policy if exists "Public profiles are viewable" on profiles;
+create policy "Public profiles are viewable" on profiles
+  for select using (is_public = true);
+
+-- INDEX COMPOSITE — optimisation des requêtes journal fréquentes
+create index if not exists journal_entries_user_date_idx
+  on journal_entries(user_id, date desc);
+
+-- INDEX PAYOUTS par user_id (manquant)
+create index if not exists payouts_user_id_idx on payouts(user_id);

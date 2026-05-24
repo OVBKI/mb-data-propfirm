@@ -15,7 +15,7 @@
 // Le token est validé contre Supabase Auth (un client read-only fait getUser(token)).
 
 import { createClient } from '@supabase/supabase-js'
-import { ADMIN_EMAILS } from './admins'
+import { isAdmin } from './admins'
 
 // ============================================================================
 // verifyAuth — exige un user authentifié
@@ -53,7 +53,7 @@ export async function verifyAuth(request) {
 export async function verifyAdmin(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return auth
-  if (!ADMIN_EMAILS.includes(auth.user.email)) {
+  if (!isAdmin(auth.user.email)) {
     return { error: 'Forbidden', status: 403 }
   }
   return auth

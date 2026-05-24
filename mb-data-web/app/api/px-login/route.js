@@ -54,7 +54,10 @@ export async function POST(request) {
       'uprofit':   'https://api.uprofit.com/api',
     }
 
-    const baseUrl = API_URLS[clientId] || `https://api.${clientId}.com/api`
+    const baseUrl = API_URLS[clientId]
+    if (!baseUrl) {
+      return Response.json({ error: 'clientId non supporté' }, { status: 400 })
+    }
 
     // Auth with API key (official ProjectX method)
     const authRes = await fetch(`${baseUrl}/Auth/loginKey`, {
