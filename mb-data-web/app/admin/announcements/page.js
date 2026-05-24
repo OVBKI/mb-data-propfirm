@@ -151,19 +151,27 @@ export default function AdminAnnouncementsPage() {
   }
 
   async function toggleActive(item) {
-    const { error: err } = await supabase
-      .from('announcements')
-      .update({ active: !item.active })
-      .eq('id', item.id)
-    if (err) alert('Erreur : ' + err.message)
-    else load()
+    try {
+      await adminFetch('/api/admin/announcements', {
+        method: 'PUT',
+        body: JSON.stringify({ id: item.id, active: !item.active }),
+      })
+      load()
+    } catch (err) {
+      alert('Erreur : ' + err.message)
+    }
   }
 
   async function remove(item) {
     if (!confirm(`Supprimer l'annonce "${item.title}" ?`)) return
-    const { error: err } = await supabase.from('announcements').delete().eq('id', item.id)
-    if (err) alert('Erreur : ' + err.message)
-    else load()
+    try {
+      await adminFetch(`/api/admin/announcements?id=${item.id}`, {
+        method: 'DELETE',
+      })
+      load()
+    } catch (err) {
+      alert('Erreur : ' + err.message)
+    }
   }
 
   function isLive(item) {
