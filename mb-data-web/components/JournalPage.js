@@ -894,7 +894,7 @@ export default function JournalPage({
         </div>
         <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
           {/* Bouton vers la nouvelle page Trade Log (vue cards analytique) */}
-          <a href="/app?p=trades" style={{
+          <a href="/app/trades" style={{
             ...btnGhost,
             textDecoration:'none',display:'inline-flex',alignItems:'center',gap:'5px',
             background:'rgba(45,111,255,0.08)',

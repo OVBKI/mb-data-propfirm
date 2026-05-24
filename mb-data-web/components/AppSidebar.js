@@ -11,7 +11,7 @@
 //   currentHref       — string | undefined — pathname actif (ex: '/app/journal-sync')
 //
 //   onInternalNav     — (key) => void — callback si la nav interne doit être un button onClick
-//                       (utilisé par /app/page.js pour setPage). Sinon → <a href="/app?p=key">.
+//                       (utilisé par /app/page.js pour setPage). Sinon → <Link href="/app/{key}">.
 //   onAfterNav        — () => void — appelé après chaque nav (ex: fermer mobile drawer)
 //
 //   onShowProfile     — () => void — clic sur la carte profil (footer) OU bouton quickEdit
@@ -22,6 +22,7 @@
 //                        si false → bouton unique qui appelle onShowProfile
 //   isOpenMobile       — boolean — état du drawer mobile (classe CSS .open)
 
+import Link from 'next/link'
 import { useT } from './LanguageProvider'
 import { isAdmin } from '../lib/admins'
 
@@ -179,7 +180,7 @@ export default function AppSidebar({
             if (item.href) {
               const isActive = currentHref === item.href
               return (
-                <a key={item.href} href={item.href} className="qt-nav-item" style={{
+                <Link key={item.href} href={item.href} onClick={onAfterNav} className="qt-nav-item" style={{
                   display: 'flex', alignItems: 'center', gap: 11,
                   padding: `9px 18px 9px ${padL}px`,
                   width: '100%',
@@ -204,12 +205,12 @@ export default function AppSidebar({
                       padding: '2px 7px', borderRadius: 99, letterSpacing: '0.08em',
                     }}>{item.badgeLabel}</span>
                   )}
-                </a>
+                </Link>
               )
             }
 
-            // === INTERNAL key (deep-link ou setPage callback) ===
-            const isActive = currentPage === item.key
+            // === INTERNAL key (Link or setPage callback) ===
+            const isActive = currentPage === item.key || currentHref === `/app/${item.key}`
             const commonStyle = {
               display: 'flex', alignItems: 'center', gap: 11,
               padding: `9px 18px 9px ${padL}px`,
@@ -237,17 +238,18 @@ export default function AppSidebar({
               )
             }
 
-            // Cas 2 : pas de callback → lien direct vers /app?p=key (deep-link)
+            // Cas 2 : pas de callback → Link vers /app/{key} (App Router)
             return (
-              <a
+              <Link
                 key={item.key}
-                href={`/app?p=${item.key}`}
+                href={`/app/${item.key}`}
                 data-tour={`nav-${item.key}`}
+                onClick={onAfterNav}
                 className="qt-nav-item"
                 style={commonStyle}
               >
                 {renderItemContent(item, isActive)}
-              </a>
+              </Link>
             )
           })}
         </div>

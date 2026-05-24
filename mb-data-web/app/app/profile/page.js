@@ -690,7 +690,7 @@ function Sidebar({ mobileNavOpen, setMobileNavOpen, user, profile, isAdmin, onPr
                 )
               }
               return (
-                <a key={item.key} href={`/app?p=${item.key}`} style={{
+                <a key={item.key} href={`/app/${item.key}`} style={{
                   display: 'flex', alignItems: 'center', gap: 11,
                   padding: '9px 18px', width: '100%',
                   background: 'transparent', color: 'var(--text2)',
