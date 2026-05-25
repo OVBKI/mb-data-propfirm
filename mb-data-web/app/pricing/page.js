@@ -3,12 +3,13 @@
 // Free est déjà dispo (CTA → /auth?mode=signup) ; Pro et Lifetime sont en waitlist.
 // Le formulaire POST sur /api/waitlist qui insère dans Supabase + envoie un email Resend.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import Reveal from '../../components/Reveal'
 import { useT } from '../../components/LanguageProvider'
+import { supabase } from '../../lib/supabase'
 
 const C = {
   bg: '#0d0f14',
@@ -25,9 +26,7 @@ const C = {
   amber: '#fac775',
 }
 
-// Le compteur de places restantes pour Lifetime est statique pour l'instant.
 const LIFETIME_TOTAL = 100
-const LIFETIME_TAKEN = 0
 
 export default function PricingPage() {
   const t = useT()
@@ -35,8 +34,15 @@ export default function PricingPage() {
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitResult, setSubmitResult] = useState(null)
+  const [lifetimeTaken, setLifetimeTaken] = useState(0)
 
-  const lifetimeRemaining = Math.max(0, LIFETIME_TOTAL - LIFETIME_TAKEN)
+  useEffect(() => {
+    supabase.from('waitlist').select('id', { count: 'exact', head: true })
+      .eq('plan', 'lifetime')
+      .then(({ count }) => { if (count != null) setLifetimeTaken(count) })
+  }, [])
+
+  const lifetimeRemaining = Math.max(0, LIFETIME_TOTAL - lifetimeTaken)
 
   // Récupération des listes de features depuis i18n (objet retourné par translate).
   const freeFeatures = t('pages.pricing.planFree.features')

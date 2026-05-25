@@ -1,8 +1,11 @@
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
+import dynamic from 'next/dynamic'
 import { Analytics } from '@vercel/analytics/react'
 import { LanguageProvider } from '../components/LanguageProvider'
 import './globals.css'
+
+const CookieConsent = dynamic(() => import('../components/CookieConsent'), { ssr: false })
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -143,6 +146,8 @@ export default function RootLayout({ children }) {
         `}</Script>
         {/* Vercel Analytics — RGPD-friendly, page views + custom events. Pas de Speed Insights. */}
         <Analytics />
+        {/* RGPD — Cookie consent banner (client-side only, uses localStorage) */}
+        <CookieConsent />
       </body>
     </html>
   )
