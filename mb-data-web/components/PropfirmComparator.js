@@ -549,12 +549,11 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
 
   const firmData = PROPFIRM_RULES[firmName]
   const affLink = getAffiliateLink(firmName)
-  if (!firmData) return null
-
-  const plans = firmData.plans || []
+  const plans = firmData?.plans || []
   const [selectedPlan, setSelectedPlan] = useState(plans.includes('50k') ? '50k' : plans[0])
-  // Vue rapide (par défaut) vs Règles avancées (toutes les ~30-50 règles)
   const [viewMode, setViewMode] = useState('quick')
+
+  if (!firmData) return null
 
   const rules = firmData.rules || {}
   const ruleKeys = Object.keys(rules)
