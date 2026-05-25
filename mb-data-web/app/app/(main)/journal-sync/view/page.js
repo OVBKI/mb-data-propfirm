@@ -9,14 +9,11 @@
 // des trades, avec colonnes Rithmic complètes (entry/exit, fills, hold).
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import { supabase } from '../../../../lib/supabase'
-import JournalPage from '../../../../components/JournalPage'
-import QLogoIcon from '../../../../components/QLogoIcon'
-import SpaceBackground from '../../../../components/dashboard/SpaceBackground'
-import ProfileModal from '../../../../components/ProfileModal'
-import { FIRM_COLORS } from '../../../../lib/constants'
-import { getFirmLogo } from '../../../../lib/firmLogos'
+import { useApp } from '../../AppContext'
+import { supabase } from '../../../../../lib/supabase'
+import JournalPage from '../../../../../components/JournalPage'
+import { FIRM_COLORS } from '../../../../../lib/constants'
+import { getFirmLogo } from '../../../../../lib/firmLogos'
 
 // ============================================================================
 // Helpers : extraction métadonnées Rithmic depuis notes
@@ -55,32 +52,15 @@ function fmtTime(iso) {
 }
 
 // Sidebar partagée — définition unique dans components/AppSidebar.js
-import AppSidebar from '../../../../components/AppSidebar'
 
 // ============================================================================
 // COMPOSANT PRINCIPAL
 // ============================================================================
 export default function JournalSyncPage() {
-  const [user, setUser] = useState(null)
-  const [loadingAuth, setLoadingAuth] = useState(true)
+  const { user } = useApp()
   const [firms, setFirms] = useState([])
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [profile, setProfile] = useState(null)
-  const [showProfileModal, setShowProfileModal] = useState(false)
 
-  // Charge le profil (pseudo + display_name) pour l'affichage sidebar
-  const loadProfile = useCallback(async (userId) => {
-    if (!userId) return
-    const { data } = await supabase
-      .from('profiles')
-      .select('username, display_name, avatar_url')
-      .eq('user_id', userId)
-      .single()
-    setProfile(data || { username: null, display_name: null, avatar_url: null })
-  }, [])
-
-  // Charge firms+accounts+payouts (même shape que /app/page.js loadFirms)
-  // Filtre EXPLICITEMENT par user_id (anti-leak admin RLS).
+  // Charge firms+accounts+payouts (rithmic only)
   const loadFirms = useCallback(async (userId) => {
     if (!userId) return
     const [fd, ad, pd] = await Promise.all([
@@ -108,19 +88,8 @@ export default function JournalSyncPage() {
   }, [])
 
   useEffect(() => {
-    let mounted = true
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return
-      const u = session?.user || null
-      setUser(u)
-      setLoadingAuth(false)
-      if (u) {
-        loadFirms(u.id)
-        loadProfile(u.id)
-      }
-    })
-    return () => { mounted = false }
-  }, [loadFirms, loadProfile])
+    if (user) loadFirms(user.id)
+  }, [user, loadFirms])
 
   function showToast(msg) {
     if (typeof window !== 'undefined') console.log('[journal-sync]', msg)
@@ -130,85 +99,11 @@ export default function JournalSyncPage() {
     if (user?.id) loadFirms(user.id)
   }
 
-  async function signOut() {
-    await supabase.auth.signOut()
-    window.location.href = '/app'
-  }
 
-  // === Gardes ===
-  if (loadingAuth) {
-    return (
-      <div style={{
-        minHeight:'100vh', background:'var(--bg)', color:'var(--text)',
-        display:'flex', alignItems:'center', justifyContent:'center',
-      }}>
-        <div style={{ color:'var(--text3)', fontSize:13 }}>⏳ Chargement...</div>
-      </div>
-    )
-  }
-  if (!user) {
-    return (
-      <div style={{
-        minHeight:'100vh', background:'var(--bg)', color:'var(--text)',
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-        padding:32, textAlign:'center',
-      }}>
-        <div style={{ fontSize:48, marginBottom:16 }}>🔒</div>
-        <h1 style={{ fontSize:22, fontWeight:700, marginBottom:8 }}>Connexion requise</h1>
-        <Link href="/app" style={{ color:'var(--blue-light)', textDecoration:'none' }}>← Page de connexion</Link>
-      </div>
-    )
-  }
 
-  // ==========================================================================
-  // Render principal — même shell que /app (topbar + sidebar + content)
-  // ==========================================================================
+
   return (
-    <div style={{ minHeight:'100vh', background:'transparent', position:'relative' }}>
-      <SpaceBackground />
-      <div style={{ height:'2px', background:'linear-gradient(90deg,var(--blue) 0%,transparent 100%)', position:'relative', zIndex:1 }} />
-
-      {/* TOPBAR */}
-      <div className="top-bar" style={{
-        height:'52px', background:'rgba(13,15,20,0.78)',
-        backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)',
-        borderBottom:'1px solid rgba(255,255,255,0.06)',
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'0 24px', position:'sticky', top:0, zIndex:200,
-      }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
-          <button className="nav-burger" aria-label="Menu" onClick={()=>setMobileNavOpen(o=>!o)}>☰</button>
-          <Link href="/app" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', color:'var(--text)' }}>
-            <QLogoIcon size={44} color="#4d8fff" />
-            <div style={{ display:'flex', alignItems:'baseline', gap:'10px' }}>
-              <div style={{ fontWeight:'700', fontSize:'14px', letterSpacing:'0.14em', color:'var(--text)' }}>QUANTARA</div>
-              <span className="top-bar-brand-sub" style={{ fontSize:'10px', color:'var(--text3)', letterSpacing:'0.18em' }}>TRACK · ANALYZE · GROW</span>
-            </div>
-          </Link>
-        </div>
-        <div className="top-bar-actions" style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-          <button onClick={signOut} style={{
-            fontSize:'12px', padding:'7px 14px', background:'rgba(255,255,255,0.025)',
-            border:'1px solid rgba(255,255,255,0.10)', color:'var(--text2)',
-            borderRadius:'8px', cursor:'pointer', fontFamily:'inherit',
-          }}>Déconnexion</button>
-        </div>
-      </div>
-
-      <div style={{ display:'flex', minHeight:'calc(100vh - 50px)' }}>
-        {/* SIDEBAR */}
-        <AppSidebar
-          user={user}
-          profile={profile}
-          currentHref="/app/journal-sync"
-          onShowProfile={() => setShowProfileModal(true)}
-          isOpenMobile={mobileNavOpen}
-        />
-
-        {mobileNavOpen && <div className="nav-backdrop" onClick={()=>setMobileNavOpen(false)} />}
-
-        {/* CONTENT — JournalPage + historique en dessous */}
-        <div style={{ flex:1, overflow:'auto' }}>
+    <div>
           <JournalPage
             firms={firms}
             user={user}
@@ -228,17 +123,6 @@ export default function JournalSyncPage() {
               />
             )}
           />
-        </div>
-      </div>
-
-      {/* Modal Profil */}
-      {showProfileModal && (
-        <ProfileModal
-          user={user}
-          onClose={()=>setShowProfileModal(false)}
-          onUpdated={()=>loadProfile(user.id)}
-        />
-      )}
     </div>
   )
 }

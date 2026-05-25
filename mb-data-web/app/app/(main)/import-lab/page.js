@@ -14,12 +14,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { supabase } from '../../../lib/supabase'
-import { parseRithmicPnL } from '../../../lib/importers/rithmic-pnl'
-import { parseRithmicDashboard } from '../../../lib/importers/rithmic-dashboard'
-import { T } from '../../../components/dashboard/theme'
-import { Card, Btn, Badge, PageHeader, Section, UIStyles } from '../../../components/dashboard/ui'
-import { defaultChallengePrice } from '../../../lib/constants'
+import { supabase } from '../../../../lib/supabase'
+import { parseRithmicPnL } from '../../../../lib/importers/rithmic-pnl'
+import { parseRithmicDashboard } from '../../../../lib/importers/rithmic-dashboard'
+import { T } from '../../../../components/dashboard/theme'
+import { Card, Btn, Badge, PageHeader, Section, UIStyles } from '../../../../components/dashboard/ui'
+import { defaultChallengePrice } from '../../../../lib/constants'
+import { useApp } from '../AppContext'
 
 // Génère un nom propre depuis un Rithmic ID type LFF050-XXXXXX-PRO007 :
 //   PRO007 → "PRO 7"   (compte financé)
@@ -88,53 +89,34 @@ function findMatchingExistingAccount(rithmicId, existingAccounts) {
 // SES propres comptes/firmes.
 
 export default function ImportLabPage() {
-  // === Auth ===
-  const [user, setUser] = useState(null)
-  const [loadingAuth, setLoadingAuth] = useState(true)
+  const { user } = useApp()
 
-  // === Tab actif : 'trades' | 'dashboard' ===
-  // Onglet par défaut = Dashboard (étape 1 du flow recommandé : créer les comptes d'abord)
   const [tab, setTab] = useState('dashboard')
 
-  // === Données partagées (firmes + comptes existants) ===
   const [existingFirms, setExistingFirms] = useState([])
   const [existingAccounts, setExistingAccounts] = useState([])
   const [loadingExisting, setLoadingExisting] = useState(false)
 
-  // ==========================================================================
-  // Auth + chargement données
-  // Note : on filtre EXPLICITEMENT par user_id côté client, même si RLS le ferait
-  // déjà. Raison : les emails admin ont parfois une policy "see all" pour les
-  // pages /admin → on évite que ça leak dans /app/import-lab.
-  // ==========================================================================
   useEffect(() => {
+    if (!user) return
     let mounted = true
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return
-      const u = session?.user || null
-      setUser(u)
-      setLoadingAuth(false)
-      if (u) loadExisting(u.id)
-    })
-
-    async function loadExisting(userId) {
+    ;(async () => {
       setLoadingExisting(true)
       const [firmsRes, accountsRes] = await Promise.all([
-        supabase.from('firms').select('id, name, color').eq('user_id', userId).order('name'),
+        supabase.from('firms').select('id, name, color').eq('user_id', user.id).order('name'),
         supabase
           .from('accounts')
           .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at, user_id')
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .order('buy_date', { ascending: false }),
       ])
       if (!mounted) return
       setExistingFirms(firmsRes.data || [])
       setExistingAccounts(accountsRes.data || [])
       setLoadingExisting(false)
-    }
-
+    })()
     return () => { mounted = false }
-  }, [])
+  }, [user])
 
   // Réutilisable : déclenche un re-fetch après un import réussi
   async function refreshExisting() {
@@ -152,26 +134,10 @@ export default function ImportLabPage() {
   }
 
   // ==========================================================================
-  // Gardes d'accès
-  // ==========================================================================
-  if (loadingAuth) {
-    return <FullPageState>
-      <div style={{ color: T.color.text3 }}>⏳ Vérification accès...</div>
-    </FullPageState>
-  }
-  if (!user) {
-    return <FullPageState>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Connexion requise</h1>
-      <Link href="/app" style={{ color: T.color.blueLight, textDecoration: 'none' }}>← Page de connexion</Link>
-    </FullPageState>
-  }
-  // ==========================================================================
   // Render principal
   // ==========================================================================
   return (
     <div className="il-root" style={{
-      minHeight: '100vh',
       background: T.color.bg,
       color: T.color.text,
       padding: '32px 24px',
