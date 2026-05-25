@@ -3,6 +3,7 @@ import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { Analytics } from '@vercel/analytics/react'
 import { LanguageProvider } from '../components/LanguageProvider'
+import ErrorBoundary from '../components/ErrorBoundary'
 import './globals.css'
 
 const CookieConsent = dynamic(() => import('../components/CookieConsent'), { ssr: false })
@@ -127,7 +128,9 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         {/* i18n FR/EN — Provider client-side qui injecte useT() partout sous lui */}
         <LanguageProvider>
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </LanguageProvider>
         {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script

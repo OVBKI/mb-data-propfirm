@@ -17,6 +17,10 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteZone, setShowDeleteZone] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   // Form fields
   const [username, setUsername] = useState('')
@@ -352,6 +356,114 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                 }}>{saving ? '⏳ Sauvegarde...' : 'Enregistrer'}</button>
             </div>
           </form>
+        )}
+
+        {/* === Export & Zone dangereuse === */}
+        {!loading && (
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            {/* Export données */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Exporter mes données</div>
+              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, lineHeight: 1.5 }}>
+                Télécharge toutes tes données (comptes, payouts, journal) en CSV.
+              </p>
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={async () => {
+                  setExporting(true)
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const r = await fetch('/api/export?type=all', {
+                      headers: { Authorization: `Bearer ${session.access_token}` },
+                    })
+                    if (!r.ok) throw new Error('Export failed')
+                    const blob = await r.blob()
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `quantara-export-${new Date().toISOString().slice(0, 10)}.csv`
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  } catch { setError('Erreur lors de l\'export') }
+                  setExporting(false)
+                }}
+                style={{
+                  padding: '8px 16px', fontSize: 13, fontWeight: 500,
+                  background: 'var(--surface2)', border: '1px solid var(--border2)',
+                  color: 'var(--text)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >{exporting ? '⏳ Export...' : '📥 Télécharger CSV'}</button>
+            </div>
+
+            {/* Suppression compte */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowDeleteZone(!showDeleteZone)}
+                style={{
+                  fontSize: 12, color: 'var(--red-text)', background: 'none',
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  padding: 0, textDecoration: 'underline',
+                }}
+              >{showDeleteZone ? 'Masquer' : 'Supprimer mon compte'}</button>
+
+              {showDeleteZone && (
+                <div style={{
+                  marginTop: 12, padding: 16, background: 'var(--red-bg)',
+                  border: '1px solid rgba(232,80,74,0.3)', borderRadius: 8,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--red-text)', marginBottom: 6 }}>
+                    Zone dangereuse
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 12 }}>
+                    Cette action est irréversible. Toutes tes données seront supprimées :
+                    firmes, comptes, payouts, journal, profil. Tape <strong>SUPPRIMER MON COMPTE</strong> pour confirmer.
+                  </p>
+                  <input
+                    value={deleteConfirm}
+                    onChange={e => setDeleteConfirm(e.target.value)}
+                    placeholder="SUPPRIMER MON COMPTE"
+                    style={{
+                      ...inputStyle, marginBottom: 10,
+                      borderColor: 'rgba(232,80,74,0.4)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={deleteConfirm !== 'SUPPRIMER MON COMPTE' || deleting}
+                    onClick={async () => {
+                      setDeleting(true)
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession()
+                        const r = await fetch('/api/auth/delete-account', {
+                          method: 'DELETE',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${session.access_token}`,
+                          },
+                          body: JSON.stringify({ confirmation: deleteConfirm }),
+                        })
+                        if (!r.ok) { const d = await r.json(); throw new Error(d.error) }
+                        await supabase.auth.signOut()
+                        window.location.href = '/'
+                      } catch (e) {
+                        setError(e.message || 'Erreur lors de la suppression')
+                        setDeleting(false)
+                      }
+                    }}
+                    style={{
+                      padding: '9px 18px', fontSize: 13, fontWeight: 600,
+                      background: deleteConfirm === 'SUPPRIMER MON COMPTE' ? '#e8504a' : 'var(--surface3)',
+                      color: deleteConfirm === 'SUPPRIMER MON COMPTE' ? '#fff' : 'var(--text3)',
+                      border: 'none', borderRadius: 8, cursor: deleteConfirm === 'SUPPRIMER MON COMPTE' ? 'pointer' : 'not-allowed',
+                      fontFamily: 'inherit', opacity: deleting ? 0.5 : 1,
+                    }}
+                  >{deleting ? '⏳ Suppression...' : 'Supprimer définitivement'}</button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
