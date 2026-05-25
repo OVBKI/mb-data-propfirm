@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/react'
 import { LanguageProvider } from '../components/LanguageProvider'
+import ErrorBoundary from '../components/ErrorBoundary'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -124,7 +125,9 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         {/* i18n FR/EN — Provider client-side qui injecte useT() partout sous lui */}
         <LanguageProvider>
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </LanguageProvider>
         {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script
