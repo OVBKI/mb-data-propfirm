@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import ProfileModal from '../../../../components/ProfileModal'
 import { useApp } from '../AppContext'
+import Skeleton from '../../../../components/Skeleton'
 
 const COUNTRIES = [
   { code: 'FR', label: 'France',         flag: '\u{1F1EB}\u{1F1F7}' },
@@ -300,7 +301,18 @@ export default function ProfilePage() {
         <div style={{ marginBottom: 24 }}>
           <SectionTitle>Stats publiques</SectionTitle>
           {loadingData ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>Chargement...</div>
+            <div style={{ padding: 24, maxWidth: 500, margin: '0 auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+                <Skeleton circle width={80} height={80} />
+                <Skeleton width={160} height={18} />
+                <Skeleton width={220} height={12} />
+              </div>
+              <div style={{ marginTop: 24 }}>
+                <Skeleton width="100%" height={40} style={{ marginBottom: 10, borderRadius: 8 }} />
+                <Skeleton width="100%" height={40} style={{ marginBottom: 10, borderRadius: 8 }} />
+                <Skeleton width="100%" height={40} style={{ borderRadius: 8 }} />
+              </div>
+            </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
               <KpiCard label="Payouts totaux" value={fmtMoney(stats?.totalPayouts)} color="var(--green)" />

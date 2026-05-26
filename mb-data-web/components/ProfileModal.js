@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import Skeleton from './Skeleton'
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
 
@@ -195,7 +196,16 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
 
         {loading ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
-            ⏳ Chargement du profil...
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+              <Skeleton circle width={80} height={80} />
+              <Skeleton width={180} height={18} />
+              <Skeleton width={240} height={13} />
+              <div style={{ width: '100%', maxWidth: 400 }}>
+                <Skeleton width="100%" height={40} style={{ marginBottom: 10, borderRadius: 8 }} />
+                <Skeleton width="100%" height={40} style={{ marginBottom: 10, borderRadius: 8 }} />
+                <Skeleton width="100%" height={40} style={{ borderRadius: 8 }} />
+              </div>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSave}>

@@ -12,6 +12,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadFile, deleteFile } from '../lib/uploadFile'
+import Skeleton from './Skeleton'
 
 const TYPES = [
   { k: 'challenge_passed', l: '🏆 Challenge réussi', color: '#fac775' },
@@ -215,7 +216,16 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
 
           {/* Liste / galerie */}
           {loading ? (
-            <div style={{textAlign:'center', padding:'40px', color:'var(--text3)'}}>⏳ Chargement…</div>
+            <div style={{ padding: '20px 0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} style={{ background: 'var(--surface2)', borderRadius: 10, padding: 12 }}>
+                    <Skeleton width="100%" height={120} style={{ borderRadius: 8, marginBottom: 8 }} />
+                    <Skeleton width="60%" height={12} />
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : error ? (
             <div style={{
               padding:'16px', background:'var(--red-bg)', border:'1px solid var(--red)',

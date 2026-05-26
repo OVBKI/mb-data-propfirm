@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../../../lib/supabase'
 import { useApp } from '../AppContext'
+import Skeleton from '../../../../components/Skeleton'
 
 const C = {
   surface: '#141720', surface2: '#1c2030',
@@ -141,7 +142,15 @@ export default function GroupsPage() {
           {loadingGroups ? 'Chargement…' : `${groups.length} groupe${groups.length > 1 ? 's' : ''}`}
         </h2>
         {loadingGroups ? (
-          <div style={{ padding: 40, textAlign: 'center', color: C.text3, fontSize: 13 }}>{'⏳'}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
+                <Skeleton width="50%" height={14} style={{ marginBottom: 10 }} />
+                <Skeleton width="80%" height={12} style={{ marginBottom: 6 }} />
+                <Skeleton width="40%" height={12} />
+              </div>
+            ))}
+          </div>
         ) : groups.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', background: C.surface, border: `1px dashed ${C.border2}`, borderRadius: 12, color: C.text3, fontSize: 13 }}>
             Tu n&apos;as pas encore de groupe. Crée-en un ou rejoins-en via code.

@@ -22,6 +22,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { accountLabel, planSizeNum } from '../lib/constants'
+import Skeleton from './Skeleton'
 
 const C = {
   surface:  'rgba(20,23,32,0.65)',
@@ -348,7 +349,8 @@ export default function EquityOverlayChart({ firms = [], user }) {
         </div>
       ) : loading ? (
         <div style={{ padding: 40, textAlign: 'center', color: C.text3, fontSize: 12 }}>
-          ⏳ Chargement des trades…
+          <Skeleton width={200} height={14} style={{ margin: '0 auto 16px' }} />
+          <Skeleton width="100%" height={200} style={{ borderRadius: 8 }} />
         </div>
       ) : !chartData || chartData.datasets.length === 0 ? (
         <div style={{ padding: 40, textAlign: 'center', color: C.text3, fontSize: 12 }}>

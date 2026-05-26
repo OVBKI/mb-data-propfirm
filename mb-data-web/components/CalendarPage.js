@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
+import Skeleton from './Skeleton'
 
 const T = {
   fr: {
@@ -529,7 +530,16 @@ export default function CalendarPage({lang='fr',onLangChange}){
       {/* Content */}
       {loading?(
         <div style={{...card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>
-          <div style={{fontSize:'32px',marginBottom:'12px'}}>⏳</div>{t.loading}
+          <div style={{ marginBottom: 14 }}>
+            <Skeleton width={200} height={18} style={{ margin: '0 auto 12px' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 16 }}>
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} width={60} height={28} style={{ borderRadius: 99 }} />)}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+            {Array.from({ length: 7 }).map((_, i) => <Skeleton key={'h'+i} width="100%" height={18} />)}
+            {Array.from({ length: 35 }).map((_, i) => <Skeleton key={i} width="100%" height={60} style={{ borderRadius: 6 }} />)}
+          </div>
         </div>
       ):error?(
         <div style={{...card,padding:'40px',textAlign:'center',color:'var(--red-text)',background:'var(--red-bg)'}}>
