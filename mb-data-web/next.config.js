@@ -82,7 +82,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
-      { protocol: 'https', hostname: 'avatars.githubusercontent.com' }, // user OAuth avatars
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+      { protocol: 'https', hostname: 'flagcdn.com' },
     ],
   },
 

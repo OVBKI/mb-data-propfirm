@@ -20,6 +20,7 @@
 //   Notes    : italic gris
 //   Actions  : Edit (bouton crayon discret)
 
+import Image from 'next/image'
 import { TagDisplay } from './TagSelector'
 import { computeRMultiple, computeRiskReward, formatR, formatRR } from '../lib/tradeMath'
 import { useT } from './LanguageProvider'
@@ -151,19 +152,14 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         {/* Thumbnail screenshot (optionnel) */}
         {e.screenshot_url && (
-          <div style={{ flexShrink: 0 }}>
-            <img
+          <div style={{ position: 'relative', width: '100%', height: 120 }}>
+            <Image
               src={e.screenshot_url}
               alt="Screenshot trade"
+              fill
+              sizes="(max-width: 768px) 100vw, 400px"
+              style={{ objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }}
               onClick={() => onLightbox?.(e.screenshot_url)}
-              style={{
-                width: 96, height: 96, objectFit: 'cover',
-                borderRadius: 8, border: `1px solid ${C.border}`,
-                cursor: 'zoom-in',
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={ev => ev.currentTarget.style.opacity = '0.85'}
-              onMouseLeave={ev => ev.currentTarget.style.opacity = '1'}
             />
           </div>
         )}

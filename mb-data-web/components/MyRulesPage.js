@@ -11,6 +11,7 @@
 // Compatible avec /app?p=myrules — rendu depuis app/app/page.js.
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { uploadFile } from '../lib/uploadFile'
 import { useT } from './LanguageProvider'
@@ -322,11 +323,15 @@ function SetupCard({ setup, onEdit, onDelete }) {
   return (
     <div style={{ ...card, padding: 16, position: 'relative', opacity: setup.active === false ? 0.5 : 1 }}>
       {setup.screenshot_url && (
-        <img
-          src={setup.screenshot_url}
-          alt={setup.name}
-          style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 6, marginBottom: 10, border: `1px solid ${C.border}` }}
-        />
+        <div style={{ position: 'relative', width: '100%', height: 140, marginBottom: 10 }}>
+          <Image
+            src={setup.screenshot_url}
+            alt={setup.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 340px"
+            style={{ objectFit: 'cover', borderRadius: 6, border: `1px solid ${C.border}` }}
+          />
+        </div>
       )}
       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>{setup.name}</div>
       {setup.description && (
@@ -415,7 +420,9 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
             <label style={labelS}>{t('app.myrules.setupScreenshot')}</label>
             {form.screenshot_url ? (
               <div style={{ position: 'relative' }}>
-                <img src={form.screenshot_url} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                <div style={{ position: 'relative', width: '100%', height: 200 }}>
+                  <Image src={form.screenshot_url} alt="" fill sizes="560px" style={{ objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                </div>
                 <button
                   onClick={() => setForm(p => ({ ...p, screenshot_url: '' }))}
                   style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 9px', fontSize: 11, cursor: 'pointer' }}

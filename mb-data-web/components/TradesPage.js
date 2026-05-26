@@ -12,6 +12,7 @@
 // COMPATIBLE avec /app?p=trades — rendu depuis app/app/page.js
 
 import { useState, useMemo, useEffect } from 'react'
+import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { accountLabel } from '../lib/constants'
 import { computeRStats, computeRMultiple, computeRiskReward } from '../lib/tradeMath'
@@ -477,7 +478,9 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, cursor: 'zoom-out',
           }}
         >
-          <img src={lightboxUrl} alt="Screenshot" style={{ maxWidth: '95%', maxHeight: '95%', objectFit: 'contain', borderRadius: 8 }} />
+          <div style={{ position: 'relative', width: '95%', height: '95%' }}>
+            <Image src={lightboxUrl} alt="Screenshot" fill sizes="95vw" style={{ objectFit: 'contain', borderRadius: 8 }} />
+          </div>
           <button onClick={() => setLightboxUrl(null)} style={{
             position: 'absolute', top: 20, right: 20,
             background: 'rgba(255,255,255,0.1)', color: '#fff',

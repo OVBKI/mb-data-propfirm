@@ -10,6 +10,7 @@
 // (voir supabase-schema.sql + lib/uploadFile.js)
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { uploadFile, deleteFile } from '../lib/uploadFile'
 import Skeleton from './Skeleton'
@@ -264,10 +265,14 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
                           <div style={{fontSize:'11px'}}>PDF — clic pour ouvrir</div>
                         </div>
                       ) : (
-                        <img
-                          src={cert.file_url} alt={cert.note || cert.type}
-                          style={{width:'100%', height:'100%', objectFit:'cover'}}
-                        />
+                        <div style={{position:'relative', width:'100%', height:'100%'}}>
+                          <Image
+                            src={cert.file_url} alt={cert.note || cert.type}
+                            fill
+                            sizes="220px"
+                            style={{objectFit:'cover'}}
+                          />
+                        </div>
                       )}
                     </div>
                     {/* Méta */}
@@ -312,10 +317,14 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
           position:'fixed', inset:0, background:'rgba(0,0,0,0.95)', zIndex:600,
           display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', cursor:'zoom-out',
         }}>
-          <img
-            src={zoomCert.file_url} alt="Diplôme"
-            style={{maxWidth:'95%', maxHeight:'95%', objectFit:'contain', borderRadius:'8px'}}
-          />
+          <div style={{position:'relative', width:'95%', height:'95%'}}>
+            <Image
+              src={zoomCert.file_url} alt="Diplôme"
+              fill
+              sizes="95vw"
+              style={{objectFit:'contain', borderRadius:'8px'}}
+            />
+          </div>
           <button onClick={()=>setZoomCert(null)} style={{
             position:'absolute', top:'20px', right:'20px',
             background:'rgba(255,255,255,0.1)', color:'#fff', border:'1px solid rgba(255,255,255,0.2)',

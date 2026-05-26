@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useT } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
@@ -1435,7 +1436,9 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
           position:'fixed',inset:0,background:'rgba(0,0,0,0.92)',zIndex:600,
           display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',cursor:'zoom-out',
         }}>
-          <img src={lightboxUrl} alt="Screenshot" style={{maxWidth:'95%',maxHeight:'95%',objectFit:'contain',borderRadius:'8px'}} />
+          <div style={{ position: 'relative', width: '95%', height: '95%' }}>
+            <Image src={lightboxUrl} alt="Screenshot" fill sizes="95vw" style={{ objectFit: 'contain', borderRadius: 8 }} />
+          </div>
           <button onClick={()=>setLightboxUrl(null)} style={{
             position:'absolute',top:'20px',right:'20px',
             background:'rgba(255,255,255,0.1)',color:'#fff',border:'1px solid rgba(255,255,255,0.2)',
@@ -1596,12 +1599,16 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 <label style={labelS}>{t('app.trade.sectionScreenshot')}</label>
                 {form.screenshotUrl ? (
                   <div style={{position:'relative',marginBottom:'8px'}}>
-                    <img
-                      src={form.screenshotUrl}
-                      alt="Screenshot trade"
-                      onClick={()=>setLightboxUrl(form.screenshotUrl)}
-                      style={{width:'100%',maxHeight:'200px',objectFit:'cover',borderRadius:'8px',cursor:'zoom-in',border:'1px solid var(--border)'}}
-                    />
+                    <div style={{position:'relative',width:'100%',height:'200px'}}>
+                      <Image
+                        src={form.screenshotUrl}
+                        alt="Screenshot trade"
+                        fill
+                        sizes="560px"
+                        onClick={()=>setLightboxUrl(form.screenshotUrl)}
+                        style={{objectFit:'cover',borderRadius:'8px',cursor:'zoom-in',border:'1px solid var(--border)'}}
+                      />
+                    </div>
                     <button onClick={()=>setForm(p=>({...p,screenshotUrl:''}))} style={{
                       position:'absolute',top:'8px',right:'8px',
                       background:'rgba(0,0,0,0.7)',color:'#fff',border:'none',borderRadius:'6px',

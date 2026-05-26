@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
+import Image from 'next/image'
 import Skeleton from './Skeleton'
 
 const T = {
@@ -77,14 +78,11 @@ function Flag({ country, currency, size = 18, style = {} }) {
   if(!code || code.length !== 2) return null
 
   return (
-    <img
+    <Image
       src={`https://flagcdn.com/w40/${code}.png`}
-      srcSet={`https://flagcdn.com/w80/${code}.png 2x`}
       alt={code.toUpperCase()}
-      width={size}
-      height={Math.round(size * 0.75)}
-      loading="lazy"
-      decoding="async"
+      width={20}
+      height={14}
       style={{
         objectFit:'cover',
         borderRadius:2,

@@ -21,6 +21,7 @@
 // Pour ouvrir en mode CRÉATION : passer `entry=null` + éventuellement defaultDate / defaultAccountId.
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { uploadFile } from '../lib/uploadFile'
 import { accountLabel } from '../lib/constants'
@@ -388,12 +389,16 @@ export default function TradeEntryModal({
             <label style={labelS}>{t('app.trade.sectionScreenshot')}</label>
             {form.screenshotUrl ? (
               <div style={{ position: 'relative', marginBottom: '8px' }}>
-                <img
-                  src={form.screenshotUrl}
-                  alt="Screenshot trade"
-                  onClick={() => onLightbox?.(form.screenshotUrl)}
-                  style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', cursor: 'zoom-in', border: '1px solid var(--border)' }}
-                />
+                <div style={{ position: 'relative', width: '100%', height: '200px' }}>
+                  <Image
+                    src={form.screenshotUrl}
+                    alt="Screenshot trade"
+                    fill
+                    sizes="560px"
+                    onClick={() => onLightbox?.(form.screenshotUrl)}
+                    style={{ objectFit: 'cover', borderRadius: '8px', cursor: 'zoom-in', border: '1px solid var(--border)' }}
+                  />
+                </div>
                 <button
                   onClick={() => setForm(p => ({ ...p, screenshotUrl: '' }))}
                   style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}
