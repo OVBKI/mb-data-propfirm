@@ -12,6 +12,7 @@ import TagSelector from './TagSelector'
 import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
 import { fmtMoney, todayISO } from '../lib/format'
 import { cardStyle as card, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn } from '../lib/theme'
+import Skeleton from './Skeleton'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -1051,7 +1052,40 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
       })()}
 
       {loading ? (
-        <div style={{...card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>{t('app.journal.loading')}</div>
+        <div>
+          {/* Equity curve skeleton */}
+          <div style={{ display: 'grid', gap: 16, marginBottom: 20 }}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} style={{...card, padding: 18}}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Skeleton circle width={28} height={28} />
+                    <div>
+                      <Skeleton width={120} height={14} style={{ marginBottom: 4 }} />
+                      <Skeleton width={180} height={10} />
+                    </div>
+                  </div>
+                  <Skeleton width={80} height={20} />
+                </div>
+                <Skeleton width="100%" height={160} style={{ borderRadius: 6 }} />
+              </div>
+            ))}
+          </div>
+          {/* Calendar skeleton */}
+          <div style={{...card, padding: 18}}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+              <Skeleton width={140} height={16} />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Skeleton width={28} height={28} style={{ borderRadius: 6 }} />
+                <Skeleton width={28} height={28} style={{ borderRadius: 6 }} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+              {Array.from({ length: 7 }).map((_, i) => <Skeleton key={'h'+i} width="100%" height={20} />)}
+              {Array.from({ length: 35 }).map((_, i) => <Skeleton key={i} width="100%" height={48} style={{ borderRadius: 6 }} />)}
+            </div>
+          </div>
+        </div>
       ) : (
       <>
         {/* Stats */}

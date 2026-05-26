@@ -20,6 +20,7 @@ import { supabase } from '../lib/supabase'
 import { C, inputStyleCompact as inputS } from '../lib/theme'
 import { fmtMoney } from '../lib/format'
 import { useT } from './LanguageProvider'
+import Skeleton from './Skeleton'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
 
@@ -253,8 +254,47 @@ export default function HeatmapPage({ user, firms, showToast }) {
 
   if (loading) {
     return (
-      <div style={{ padding: 24, color: C.text2 }}>
-        {t('app.heatmap.loading')}
+      <div style={{ padding: '0 4px' }}>
+        {/* Header skeleton */}
+        <div style={{ marginBottom: 20 }}>
+          <Skeleton width={160} height={22} style={{ marginBottom: 8 }} />
+          <Skeleton width={320} height={13} />
+        </div>
+        {/* Filters skeleton */}
+        <div style={{ ...card, padding: 14, marginBottom: 16, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <Skeleton width={50} height={11} />
+              <div style={{ display: 'flex', gap: 4 }}>
+                {Array.from({ length: i === 0 ? 5 : 4 }).map((_, j) => <Skeleton key={j} width={60} height={28} style={{ borderRadius: 5 }} />)}
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Charts skeleton - 2 columns */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 18 }}>
+            <Skeleton width={180} height={14} style={{ marginBottom: 14 }} />
+            <Skeleton width="100%" height={140} />
+          </div>
+          <div style={{ ...card, padding: 18 }}>
+            <Skeleton width={140} height={14} style={{ marginBottom: 14 }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <Skeleton width="100%" height={100} style={{ borderRadius: 8 }} />
+              <Skeleton width="100%" height={100} style={{ borderRadius: 8 }} />
+            </div>
+          </div>
+        </div>
+        {/* Hour chart skeleton */}
+        <div style={{ ...card, padding: 18, marginBottom: 16 }}>
+          <Skeleton width={220} height={14} style={{ marginBottom: 14 }} />
+          <Skeleton width="100%" height={140} />
+        </div>
+        {/* Matrix skeleton */}
+        <div style={{ ...card, padding: 18 }}>
+          <Skeleton width={200} height={14} style={{ marginBottom: 14 }} />
+          <Skeleton width="100%" height={200} />
+        </div>
       </div>
     )
   }

@@ -14,6 +14,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadFile } from '../lib/uploadFile'
 import { useT } from './LanguageProvider'
+import Skeleton from './Skeleton'
 
 const C = {
   surface:   'rgba(20,23,32,0.65)',
@@ -56,7 +57,16 @@ export default function MyRulesPage({ user, showToast }) {
   const [tab, setTab] = useState('plan')
 
   if (!user?.id) {
-    return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.loading')}</div>
+    return (
+      <div style={{ padding: '0 4px', maxWidth: 1100, margin: '0 auto' }}>
+        <Skeleton width={140} height={22} style={{ marginBottom: 8 }} />
+        <Skeleton width={400} height={13} style={{ marginBottom: 20 }} />
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} width={130} height={36} />)}
+        </div>
+        <Skeleton width="100%" height={300} style={{ borderRadius: 10 }} />
+      </div>
+    )
   }
 
   return (
@@ -150,7 +160,15 @@ function PlanTab({ user, showToast }) {
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [content, loading, user.id])
 
-  if (loading) return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.planLoading')}</div>
+  if (loading) return (
+    <div style={{ ...card, padding: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Skeleton width={200} height={14} />
+        <Skeleton width={100} height={11} />
+      </div>
+      <Skeleton width="100%" height={300} style={{ borderRadius: 8 }} />
+    </div>
+  )
 
   return (
     <div>
@@ -241,7 +259,23 @@ function SetupsTab({ user, showToast }) {
     await loadSetups()
   }
 
-  if (loading) return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.setupsLoading')}</div>
+  if (loading) return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+        <Skeleton width={140} height={14} />
+        <Skeleton width={120} height={32} style={{ borderRadius: 7 }} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} style={{ ...card, padding: 16 }}>
+            <Skeleton width="100%" height={120} style={{ borderRadius: 6, marginBottom: 10 }} />
+            <Skeleton width="60%" height={14} style={{ marginBottom: 8 }} />
+            <Skeleton.Text lines={2} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   return (
     <div>
@@ -476,7 +510,21 @@ function RulesTab({ user, showToast }) {
     await loadRules()
   }
 
-  if (loading) return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.rulesLoading')}</div>
+  if (loading) return (
+    <div style={{ display: 'grid', gap: 14 }}>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} style={{ ...card, padding: 16 }}>
+          <Skeleton width={140} height={12} style={{ marginBottom: 12 }} />
+          {Array.from({ length: 3 }).map((_, j) => (
+            <div key={j} style={{ display: 'flex', gap: 10, padding: '8px 10px', marginBottom: 4 }}>
+              <Skeleton width={16} height={16} />
+              <Skeleton width="80%" height={13} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
 
   // Group rules par catégorie
   const grouped = RULE_CATEGORIES.reduce((acc, cat) => {

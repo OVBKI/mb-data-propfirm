@@ -22,6 +22,7 @@ import TagSelector from './TagSelector'
 import { C } from '../lib/theme'
 import { fmtMoney, todayISO, daysAgoISO } from '../lib/format'
 import { useT } from './LanguageProvider'
+import Skeleton from './Skeleton'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
 // Local variants — differ from shared theme (smaller padding/fontSize/borderRadius, no transitions)
@@ -408,7 +409,31 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
 
       {/* === Liste des cards === */}
       {loading ? (
-        <div style={{ ...card, padding: 60, textAlign: 'center', color: C.text3 }}>{t('app.trades.loading')}</div>
+        <div>
+          {/* Stats skeleton */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton.Card key={i} height={70} />)}
+          </div>
+          {/* Filter bar skeleton */}
+          <div style={{ ...card, padding: '14px 16px', marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} width={70} height={28} style={{ borderRadius: 99 }} />)}
+              <div style={{ flex: 1 }}><Skeleton width="100%" height={32} /></div>
+            </div>
+          </div>
+          {/* Trade cards skeleton */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 12 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ ...card, padding: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Skeleton width={120} height={14} />
+                  <Skeleton width={60} height={20} />
+                </div>
+                <Skeleton.Text lines={3} />
+              </div>
+            ))}
+          </div>
+        </div>
       ) : loadError ? (
         <div style={{ ...card, padding: 40, textAlign: 'center', color: C.red }}>{loadError}</div>
       ) : filteredEntries.length === 0 ? (
