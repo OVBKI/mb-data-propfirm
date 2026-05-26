@@ -43,11 +43,15 @@ app/
       rules/page.js      # PropfirmComparator
       myrules/page.js    # MyRulesPage
       sync/page.js       # Coming soon placeholder
+      groups/page.js     # Trading groups
+      profile/page.js    # User profile editor
+      import-lab/page.js # CSV import lab
+      journal-sync/      # Rithmic journal sync
   admin/                 # Admin panel (hardcoded email check in lib/admins.js)
   api/                   # API routes (all use verifyAuth/verifyAdmin from lib/apiAuth.js)
 ```
 
-The `(main)` route group wraps pages with the shared auth shell + sidebar. Pages outside it (groups, profile, import-lab, journal-sync) have their own layout.
+The `(main)` route group wraps all app pages with the shared auth shell + sidebar (unified layout).
 
 ### State Management
 
@@ -91,8 +95,40 @@ When adding new components, import from `lib/theme.js` for colors and style obje
 Client-side only via `components/LanguageProvider.js`. Two locales: FR (default) and EN.
 - `useT()` returns a translation function: `t('hero.title')` → translated string
 - `useLanguage()` returns `{ locale, setLocale }`
-- Translations live in `lib/i18n.js` (single file, ~1600 lines, dot-notation keys)
-- Some components still have hardcoded French text (TradesPage, JournalPage, HeatmapPage, Tutorial) marked with `// TODO i18n v3.1`
+- Translations live in `lib/i18n.js` (single file, ~2260 lines, dot-notation keys)
+- **All app components are fully translated** (v3.1 completed). Keys are organized under:
+  - `app.dashboard.*`, `app.analytics.*`, `app.alerts.*` — dashboard pages
+  - `app.trades.*` — TradesPage (trade log with filters)
+  - `app.journal.*` — JournalPage (calendar + equity curves)
+  - `app.heatmap.*` — HeatmapPage (day/hour/session heatmaps)
+  - `app.myrules.*` — MyRulesPage (trading plan, setups, rules)
+  - `app.comparator.*` — PropfirmComparator (firm comparison cards + drawer)
+  - `app.trade.*` — TradeEntryModal + TradeCard (trade form fields, toasts, previews)
+  - `app.settings.*` — Settings page (profile, notifications, language, data)
+  - `app.auth.*` — AuthPage (login/register)
+- When adding new user-visible text, add keys to both `FR` and `EN` objects in `lib/i18n.js`
+
+### Loading States (Skeleton)
+
+`components/Skeleton.js` provides animated shimmer placeholders for loading states. Available variants:
+- `<Skeleton width={100} height={16} />` — single block
+- `<Skeleton circle width={40} height={40} />` — avatar
+- `<Skeleton.Text lines={3} />` — multi-line text block
+- `<Skeleton.Card />` — stat card placeholder
+- `<Skeleton.StatsRow count={5} />` — row of stat cards
+- `<Skeleton.Grid count={6} />` — grid of content cards
+- `<Skeleton.Table rows={5} />` — table rows
+- `<Skeleton.AppShell />` — full app shell (sidebar + content)
+
+All data-loading pages use Skeleton instead of plain "⏳ Loading..." text: TradesPage, JournalPage, HeatmapPage, MyRulesPage, CalendarPage, ProfileModal, CertificatesModal, EquityOverlayChart, Groups, Profile.
+
+### Responsive
+
+Mobile breakpoints are in `app/globals.css`:
+- `@media (max-width: 1024px)` — tablets: grids collapse, stats become 2-col
+- `@media (max-width: 768px)` — mobile: sidebar becomes drawer, single-column layouts
+
+CSS classes for responsive grids: `stats-4`, `stats-5`, `analytics-charts`, `heatmap-2col`, `firms-grid`, `dash-sidebar-row`. Apply these as `className` alongside inline `gridTemplateColumns`.
 
 ### Shared Utilities
 
@@ -144,5 +180,15 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - Use `lib/format.js` and `lib/theme.js` for formatting and styling — do not duplicate
 - API routes: always use `verifyAuth()` or `verifyAdmin()`, never create ad-hoc auth checks
 - Supabase queries in client components use the anon key client; API routes needing cross-user access use service role
-- French is the primary language. i18n keys go in `lib/i18n.js` under both `fr` and `en` objects
-- Security hook (`security_reminder_hook.py`) runs on Edit/Write and warns about eval, innerHTML, exec, etc.
+- French is the primary language. All user-visible text must use `t('key')` — add keys to both `fr` and `en` in `lib/i18n.js`
+- Loading states: use `<Skeleton>` components, never plain "⏳ Loading..." text
+- Responsive: add the appropriate CSS class from `globals.css` (e.g. `className="heatmap-2col"`) to grids that need to collapse on mobile
+- Touch targets: buttons must be at least 32px (use `minWidth: 32, minHeight: 32`)
+
+## Pending / Roadmap
+
+- **Sentry** — account exists, DSN needed to integrate error tracking
+- **Stripe** — waiting for LLC EIN to set up payments
+- **Sync Rithmic/ProjectX** — waiting for 50 users before building
+- **Tests** — no test framework yet; when adding, use Vitest
+- **next/image** — `<img>` tags should be migrated to `<Image>` for performance
