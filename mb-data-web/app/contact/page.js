@@ -81,7 +81,7 @@ export default function ContactPage() {
             </div>
             <div style={{ fontSize: 14, color: '#9098b0', lineHeight: 1.6 }}>
               Quantara LLC<br />
-              New Mexico, USA
+              Texas, USA
             </div>
           </div>
         </div>

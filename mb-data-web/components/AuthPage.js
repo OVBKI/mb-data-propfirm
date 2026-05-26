@@ -436,16 +436,21 @@ export default function AuthPage({ onAuth }) {
               type="button"
               onClick={async () => {
                 setError(''); setSuccess('')
-                if (!email) {
-                  setError('Saisis ton email d\'abord, puis click "Mot de passe oublié".')
+                const val = emailOrUsername.trim()
+                if (!val) {
+                  setError(t('app.auth.forgotEnterEmail'))
+                  return
+                }
+                if (!val.includes('@')) {
+                  setError(t('app.auth.forgotNeedEmail'))
                   return
                 }
                 if (TURNSTILE_SITE_KEY && !captchaToken) {
-                  setError('Attends que le captcha soit validé (✓ Succès) avant de cliquer "Mot de passe oublié".')
+                  setError(t('app.auth.forgotCaptchaWait'))
                   return
                 }
                 const redirectTo = `${window.location.origin}/auth/callback`
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                const { error } = await supabase.auth.resetPasswordForEmail(val, {
                   redirectTo,
                   captchaToken: captchaToken || undefined,
                 })
@@ -455,7 +460,7 @@ export default function AuthPage({ onAuth }) {
                   setCaptchaToken('')
                 }
                 if (error) setError(error.message)
-                else setSuccess(`📧 Email de réinitialisation envoyé à ${email}. Vérifie ta boîte (et tes spams).`)
+                else setSuccess(t('app.auth.forgotSuccess').replace('{email}', val))
               }}
               style={{
                 background: 'none', border: 'none', color: 'var(--text3)',

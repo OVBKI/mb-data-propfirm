@@ -94,7 +94,7 @@ export const metadata = {
 
   // Verification (à compléter après setup GSC/Bing)
   verification: {
-    // google: 'TOKEN_GSC_ICI',
+    google: 'REPLACE_WITH_YOUR_GSC_VERIFICATION_CODE',
     // bing: 'TOKEN_BING_ICI',
   },
 
