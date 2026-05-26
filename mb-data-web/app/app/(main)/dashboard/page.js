@@ -125,7 +125,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
             {['native', 'eur'].map(c => <button key={c} onClick={() => setCurrencyMode(c)} style={{ padding: '7px 14px', fontSize: '12px', border: 'none', background: currency === c ? 'var(--blue)' : 'transparent', color: currency === c ? '#fff' : 'var(--text2)', cursor: 'pointer', fontWeight: '600', letterSpacing: '0.05em' }}>{c === 'native' ? 'USD' : 'EUR'}</button>)}
           </div>
-          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, width: '180px' }} />
+          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: '180px', width: '100%', minWidth: 0 }} />
           <button data-tour="add-firm-btn" onClick={() => { setFirmModal(true); setNewFirmName('') }} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
         </div>
       </div>

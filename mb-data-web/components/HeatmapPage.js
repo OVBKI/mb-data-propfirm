@@ -424,7 +424,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
       </div>
 
       {/* Grid 2 colonnes pour les vues secondaires */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="heatmap-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         {/* === 1. DAY OF WEEK === */}
         <div style={{ ...card, padding: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -609,7 +609,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
       </div>
 
       {/* === Grid 2 colonnes : Instruments + Sessions === */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
+      <div className="heatmap-2col" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
         {/* === 4. INSTRUMENTS === */}
         <div style={{ ...card, padding: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>

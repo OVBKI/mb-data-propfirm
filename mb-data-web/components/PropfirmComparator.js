@@ -1018,7 +1018,7 @@ function RuleSection({ title, keys, rules, ruleValue, firmName, plan }) {
           if (!value) return null
           return (
             <div key={key} style={{
-              display: 'grid', gridTemplateColumns: '180px 1fr',
+              display: 'grid', gridTemplateColumns: 'minmax(120px, 180px) 1fr',
               gap: 14, padding: '11px 16px',
               borderBottom: i === keys.length - 1 ? 'none' : `1px solid ${C.border}`,
               fontSize: 12,

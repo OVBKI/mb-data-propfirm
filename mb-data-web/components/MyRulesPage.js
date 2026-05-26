@@ -603,7 +603,7 @@ function RulesTab({ user, showToast }) {
                         textDecoration: r.active ? 'none' : 'line-through',
                         flex: 1,
                       }}>{r.rule_text}</span>
-                      <button onClick={() => deleteRule(r.id)} style={{ background: 'transparent', border: 'none', color: C.text3, cursor: 'pointer', fontSize: 14, padding: 2 }} title="Supprimer">🗑</button>
+                      <button onClick={() => deleteRule(r.id)} style={{ background: 'transparent', border: 'none', color: C.text3, cursor: 'pointer', fontSize: 14, padding: '6px 8px', minWidth: 32, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={t('app.myrules.rulesConfirmDelete')}>🗑</button>
                     </div>
                   ))}
                 </div>

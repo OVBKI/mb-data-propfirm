@@ -42,7 +42,7 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
       </div>
       <div style={{ position: 'relative', height: '240px' }}><canvas ref={cRef} /></div>
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+    <div className="analytics-charts" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
       <div style={{ ...cardS, padding: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text2)' }}>Performance annuelle</div>

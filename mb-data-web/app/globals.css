@@ -113,6 +113,12 @@ select { color-scheme: dark; }
 
   /* Sidebar dashboard : 3 col -> 1 col */
   .dash-sidebar-row { grid-template-columns: 1fr !important; }
+
+  /* Analytics charts : 2 col -> 1 col */
+  .analytics-charts { grid-template-columns: 1fr !important; }
+
+  /* Heatmaps : 2 col -> 1 col */
+  .heatmap-2col { grid-template-columns: 1fr !important; }
 }
 
 /* Mobile (≤ 768px) */
