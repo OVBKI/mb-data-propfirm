@@ -1,6 +1,4 @@
 'use client'
-// TODO i18n v3.1 — Composant FR-only pour l'instant. Strings à traduire :
-// header, filtres, labels jours/sessions, vide état, tooltips.
 //
 // components/HeatmapPage.js — Vue analytique heatmaps avancées.
 //
@@ -21,28 +19,26 @@ import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { C, inputStyleCompact as inputS } from '../lib/theme'
 import { fmtMoney } from '../lib/format'
+import { useT } from './LanguageProvider'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
 
 // Filtres période
 const PERIOD_PRESETS = [
-  { k: 'all',   l: 'Tout',        days: null },
-  { k: '30d',   l: '30 jours',    days: 30 },
-  { k: '90d',   l: '3 mois',      days: 90 },
-  { k: '180d',  l: '6 mois',      days: 180 },
-  { k: '365d',  l: '1 an',        days: 365 },
+  { k: 'all',   lk: 'periodAll',   days: null },
+  { k: '30d',   lk: 'period30d',   days: 30 },
+  { k: '90d',   lk: 'period90d',   days: 90 },
+  { k: '180d',  lk: 'period180d',  days: 180 },
+  { k: '365d',  lk: 'period365d',  days: 365 },
 ]
 
 // Filtres statut compte (les statuts FR sont stockés tels quels en DB)
 const STATUS_PRESETS = [
-  { k: 'all',       l: 'Tous',        color: C => C.text2 },
-  { k: 'Challenge', l: 'Challenge',   color: C => C.amber },
-  { k: 'Financé',   l: 'Financé',     color: C => C.green },
-  { k: 'Échoué',    l: 'Échoué',      color: C => C.red },
+  { k: 'all',       lk: 'statusAll',       color: C => C.text2 },
+  { k: 'Challenge', lk: 'statusChallenge', color: C => C.amber },
+  { k: 'Financé',   lk: 'statusFunded',    color: C => C.green },
+  { k: 'Échoué',    lk: 'statusFailed',    color: C => C.red },
 ]
-
-const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']  // index = getDay() 0-6
-const DAYS_FULL = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 
 // Sessions trading (heure locale de l'user — auto-détectée via navigator)
 // Note : pour un trader belge ces sessions sont en heure EU.
@@ -73,6 +69,9 @@ function pnlTextColor(pnl) {
 }
 
 export default function HeatmapPage({ user, firms, showToast }) {
+  const t = useT()
+  const DAYS_SHORT = t('app.heatmap.dayAbbr')
+  const DAYS_LONG = t('app.heatmap.dayFull')
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('90d')
@@ -139,7 +138,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
       if (cancelled) return
       if (error) {
         console.error('[heatmap] fetch error:', error)
-        showToast?.('Erreur chargement trades')
+        showToast?.(t('app.heatmap.loadError'))
         setLoading(false)
         return
       }
@@ -255,7 +254,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
   if (loading) {
     return (
       <div style={{ padding: 24, color: C.text2 }}>
-        Chargement des heatmaps...
+        {t('app.heatmap.loading')}
       </div>
     )
   }
@@ -263,12 +262,12 @@ export default function HeatmapPage({ user, firms, showToast }) {
   if (entries.length === 0) {
     return (
       <div style={{ padding: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, marginBottom: 8 }}>📊 Heatmaps</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, marginBottom: 8 }}>{t('app.heatmap.title')}</h2>
         <div style={{ ...card, padding: 24, textAlign: 'center', color: C.text2 }}>
           <div style={{ fontSize: 38, marginBottom: 12 }}>📭</div>
-          <div style={{ fontWeight: 600, color: C.text, marginBottom: 6 }}>Aucun trade à analyser</div>
+          <div style={{ fontWeight: 600, color: C.text, marginBottom: 6 }}>{t('app.heatmap.emptyTitle')}</div>
           <div style={{ fontSize: 13 }}>
-            Ajoute des trades dans le journal pour voir tes patterns par heure, jour et session.
+            {t('app.heatmap.emptyBody')}
           </div>
         </div>
       </div>
@@ -286,10 +285,10 @@ export default function HeatmapPage({ user, firms, showToast }) {
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0, marginBottom: 4 }}>
-          📊 Heatmaps
+          {t('app.heatmap.title')}
         </h2>
         <p style={{ fontSize: 13, color: C.text2, margin: 0 }}>
-          Découvre tes patterns par heure, jour et session de trading.
+          {t('app.heatmap.subtitle')}
         </p>
       </div>
 
@@ -297,7 +296,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
       <div style={{ ...card, padding: 14, marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
         {/* Période */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Période</span>
+          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('app.heatmap.periodLabel')}</span>
           <div style={{ display: 'flex', gap: 4 }}>
             {PERIOD_PRESETS.map(p => (
               <button
@@ -310,14 +309,14 @@ export default function HeatmapPage({ user, firms, showToast }) {
                   color: period === p.k ? C.blueLt : C.text2,
                   borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit',
                 }}
-              >{p.l}</button>
+              >{t('app.heatmap.' + p.lk)}</button>
             ))}
           </div>
         </div>
 
         {/* Statut compte */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Statut</span>
+          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('app.heatmap.statusLabel')}</span>
           <div style={{ display: 'flex', gap: 4 }}>
             {STATUS_PRESETS.map(s => {
               const col = s.color(C)
@@ -342,7 +341,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     color: active ? col : C.text2,
                     borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit',
                   }}
-                >{s.l}</button>
+                >{t('app.heatmap.' + s.lk)}</button>
               )
             })}
           </div>
@@ -350,9 +349,9 @@ export default function HeatmapPage({ user, firms, showToast }) {
 
         {/* PropFirm */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PropFirm</span>
+          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('app.heatmap.firmLabel')}</span>
           <select value={firmFilter} onChange={e => setFirmFilter(e.target.value)} style={{ ...inputS, fontSize: 12 }}>
-            <option value="all">Toutes</option>
+            <option value="all">{t('app.heatmap.allFirms')}</option>
             {uniqueFirms.map(name => (
               <option key={name} value={name}>{name}</option>
             ))}
@@ -361,24 +360,24 @@ export default function HeatmapPage({ user, firms, showToast }) {
 
         {/* Compte spécifique (filtré par statut + firme) */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Compte</span>
+          <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('app.heatmap.accountLabel')}</span>
           <select value={accountFilter} onChange={e => setAccountFilter(e.target.value)} style={{ ...inputS, fontSize: 12 }}>
             <option value="all">
               {filteredAccountsForDropdown.length === allAccounts.length
-                ? 'Tous les comptes'
-                : `Tous (${filteredAccountsForDropdown.length})`}
+                ? t('app.heatmap.allAccounts')
+                : `${t('app.heatmap.allAccounts')} (${filteredAccountsForDropdown.length})`}
             </option>
             {filteredAccountsForDropdown.map(a => (
-              <option key={a.id} value={a.id}>{a.firmName} · {a.name || 'Compte'} ({a.status})</option>
+              <option key={a.id} value={a.id}>{a.firmName} · {a.name || t('app.heatmap.accountLabel')} ({a.status})</option>
             ))}
           </select>
         </div>
 
         <div style={{ marginLeft: 'auto', fontSize: 12, color: C.text3 }}>
-          <strong style={{ color: C.text2 }}>{filtered.length}</strong> trade{filtered.length > 1 ? 's' : ''} analysé{filtered.length > 1 ? 's' : ''}
+          <strong style={{ color: C.text2 }}>{filtered.length}</strong> trade{filtered.length > 1 ? 's' : ''} {filtered.length > 1 ? t('app.heatmap.analyzedPlural') : t('app.heatmap.analyzed')}
           {missingTimeCount > 0 && (
             <span style={{ marginLeft: 10, color: C.amber, fontSize: 11 }}>
-              ⚠ {missingTimeCount} sans heure (exclus des vues horaires)
+              {t('app.heatmap.noTimeWarning').replace('{n}', missingTimeCount)}
             </span>
           )}
         </div>
@@ -389,8 +388,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
         {/* === 1. DAY OF WEEK === */}
         <div style={{ ...card, padding: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>📅 Par jour de semaine</h3>
-            <span style={{ fontSize: 10, color: C.text3 }}>P&L net</span>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{t('app.heatmap.dayOfWeek')}</h3>
+            <span style={{ fontSize: 10, color: C.text3 }}>{t('app.heatmap.pnlNet')}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 140 }}>
             {stats.dayOfWeek.map((d, i) => {
@@ -411,8 +410,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     borderRadius: '4px 4px 0 0',
                     border: d.count > 0 ? `1px solid ${d.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid rgba(255,255,255,0.05)',
                     transition: 'all 0.2s',
-                  }} title={`${DAYS_FULL[i]} · ${d.count} trade${d.count > 1 ? 's' : ''} · ${fmtMoney(d.pnl)}${d.count > 0 ? ` · WR ${(d.wins / d.count * 100).toFixed(0)}%` : ''}`} />
-                  <div style={{ fontSize: 11, color: C.text3, fontWeight: 600 }}>{DAYS_FR[i]}</div>
+                  }} title={`${DAYS_LONG[i]} · ${d.count} trade${d.count > 1 ? 's' : ''} · ${fmtMoney(d.pnl)}${d.count > 0 ? ` · WR ${(d.wins / d.count * 100).toFixed(0)}%` : ''}`} />
+                  <div style={{ fontSize: 11, color: C.text3, fontWeight: 600 }}>{DAYS_SHORT[i]}</div>
                   <div style={{ fontSize: 9, color: C.text3 }}>{d.count}</div>
                 </div>
               )
@@ -423,8 +422,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
         {/* === 5. LONG vs SHORT === */}
         <div style={{ ...card, padding: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>🔁 Long vs Short</h3>
-            <span style={{ fontSize: 10, color: C.text3 }}>P&L · Win rate</span>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{t('app.heatmap.longVsShort')}</h3>
+            <span style={{ fontSize: 10, color: C.text3 }}>{t('app.heatmap.pnlWinRate')}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             {['Long', 'Short'].map(side => {
@@ -457,8 +456,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
       {/* === 2. HOUR OF DAY === */}
       <div style={{ ...card, padding: 18, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>⏰ Par heure de la journée</h3>
-          <span style={{ fontSize: 10, color: C.text3 }}>Heure locale · P&L net</span>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{t('app.heatmap.hourOfDay')}</h3>
+          <span style={{ fontSize: 10, color: C.text3 }}>{t('app.heatmap.localHourPnl')}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 140 }}>
           {stats.hourOfDay.map((h, i) => {
@@ -480,9 +479,9 @@ export default function HeatmapPage({ user, firms, showToast }) {
           })}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 9, color: C.text3 }}>
-          <span>00h (minuit)</span>
+          <span>{t('app.heatmap.midnight')}</span>
           <span>06h</span>
-          <span>12h (midi)</span>
+          <span>{t('app.heatmap.noon')}</span>
           <span>18h</span>
           <span>23h</span>
         </div>
@@ -491,8 +490,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
       {/* === 3. DAY × HOUR MATRIX (killer chart) === */}
       <div style={{ ...card, padding: 18, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>🔥 Matrice Jour × Heure</h3>
-          <span style={{ fontSize: 10, color: C.text3 }}>Intensité = P&L magnitude</span>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{t('app.heatmap.matrix')}</h3>
+          <span style={{ fontSize: 10, color: C.text3 }}>{t('app.heatmap.matrixHint')}</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <div style={{ display: 'inline-block', minWidth: '100%' }}>
@@ -509,7 +508,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
             {[1, 2, 3, 4, 5, 6, 0].map(dow => (
               <div key={dow} style={{ display: 'grid', gridTemplateColumns: '40px repeat(24, 1fr)', gap: 2, marginBottom: 2 }}>
                 <div style={{ fontSize: 11, color: C.text3, fontWeight: 600, display: 'flex', alignItems: 'center' }}>
-                  {DAYS_FR[dow]}
+                  {DAYS_SHORT[dow]}
                 </div>
                 {Array.from({ length: 24 }, (_, h) => {
                   const cell = stats.matrix[dow][h]
@@ -526,7 +525,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                         cursor: cell.count > 0 ? 'help' : 'default',
                         transition: 'transform 0.15s, border-color 0.15s',
                       }}
-                      title={cell.count > 0 ? `${DAYS_FULL[dow]} ${String(h).padStart(2, '0')}h · ${cell.count} trade${cell.count > 1 ? 's' : ''} · ${fmtMoney(cell.pnl)}` : `${DAYS_FULL[dow]} ${String(h).padStart(2, '0')}h · aucun trade`}
+                      title={cell.count > 0 ? `${DAYS_LONG[dow]} ${String(h).padStart(2, '0')}h · ${cell.count} trade${cell.count > 1 ? 's' : ''} · ${fmtMoney(cell.pnl)}` : `${DAYS_LONG[dow]} ${String(h).padStart(2, '0')}h · ${t('app.heatmap.noTrade')}`}
                       onMouseEnter={ev => { if (cell.count > 0) { ev.currentTarget.style.transform = 'scale(1.4)'; ev.currentTarget.style.zIndex = '10'; ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)' } }}
                       onMouseLeave={ev => { ev.currentTarget.style.transform = 'scale(1)'; ev.currentTarget.style.zIndex = '1'; ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.03)' }}
                     >
@@ -549,23 +548,23 @@ export default function HeatmapPage({ user, firms, showToast }) {
         </div>
         {/* Legend */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, fontSize: 10, color: C.text3 }}>
-          <span>Légende :</span>
+          <span>{t('app.heatmap.legend')}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(29,184,122,0.85)', borderRadius: 2 }}></span> Profit fort
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(29,184,122,0.85)', borderRadius: 2 }}></span> {t('app.heatmap.profitStrong')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(29,184,122,0.3)', borderRadius: 2 }}></span> Profit léger
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(29,184,122,0.3)', borderRadius: 2 }}></span> {t('app.heatmap.profitLight')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: C.neutral, borderRadius: 2 }}></span> Aucun
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: C.neutral, borderRadius: 2 }}></span> {t('app.heatmap.noneLabel')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(232,80,74,0.3)', borderRadius: 2 }}></span> Perte légère
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(232,80,74,0.3)', borderRadius: 2 }}></span> {t('app.heatmap.lossLight')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(232,80,74,0.85)', borderRadius: 2 }}></span> Perte forte
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(232,80,74,0.85)', borderRadius: 2 }}></span> {t('app.heatmap.lossStrong')}
           </span>
-          <span style={{ marginLeft: 'auto', fontSize: 9 }}>Chiffre dans la case = nb trades</span>
+          <span style={{ marginLeft: 'auto', fontSize: 9 }}>{t('app.heatmap.cellCount')}</span>
         </div>
       </div>
 
@@ -574,12 +573,12 @@ export default function HeatmapPage({ user, firms, showToast }) {
         {/* === 4. INSTRUMENTS === */}
         <div style={{ ...card, padding: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>📈 Top instruments</h3>
-            <span style={{ fontSize: 10, color: C.text3 }}>Top 10 · P&L cumulé</span>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{t('app.heatmap.topInstruments')}</h3>
+            <span style={{ fontSize: 10, color: C.text3 }}>{t('app.heatmap.top10')}</span>
           </div>
           {stats.instrumentList.length === 0 ? (
             <div style={{ textAlign: 'center', color: C.text3, fontSize: 12, padding: 24 }}>
-              Aucun instrument renseigné dans tes trades.
+              {t('app.heatmap.noInstrument')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -615,8 +614,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
         {/* === 6. SESSIONS === */}
         <div style={{ ...card, padding: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>🌐 Par session</h3>
-            <span style={{ fontSize: 10, color: C.text3 }}>Heure locale</span>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{t('app.heatmap.bySession')}</h3>
+            <span style={{ fontSize: 10, color: C.text3 }}>{t('app.heatmap.localTime')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {SESSIONS.map(s => {

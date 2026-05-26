@@ -1,11 +1,5 @@
 'use client'
 // components/TradeEntryModal.js
-// TODO i18n v3.1 — Strings encore FR-only :
-//   • Placeholders (ex: 5430.25, Optionnel, ex: 250  ou  -125)
-//   • Messages d'erreur showToast (Date requise, PnL requis…)
-//   • Aperçus calculés (R réalisé, R:R visé, Gross, Décomposition…)
-//   • Bouton Upload screenshot ("Cliquer pour uploader (PNG/JPG, max 5 Mo)")
-//   • confirm() de suppression
 // Modal standalone pour créer / éditer / supprimer un trade.
 // Utilisé par JournalPage (vue calendrier) ET TradesPage (vue cards).
 //
@@ -136,17 +130,17 @@ export default function TradeEntryModal({
     setUploadingScreen(false)
     if (error) {
       alert(error)
-      showToast?.('❌ Upload échoué')
+      showToast?.(t('app.trade.toastUploadFailed'))
       return
     }
     setForm(p => ({ ...p, screenshotUrl: url }))
-    showToast?.('Screenshot ajouté ✓')
+    showToast?.(t('app.trade.toastScreenshotAdded'))
   }
 
   async function saveEntry() {
-    if (!form.accountId) { showToast?.('Sélectionne un compte'); return }
-    if (!form.date) { showToast?.('Date requise'); return }
-    if (form.pnl === '' || isNaN(parseFloat(form.pnl))) { showToast?.('PnL requis (nombre)'); return }
+    if (!form.accountId) { showToast?.(t('app.trade.toastSelectAccount')); return }
+    if (!form.date) { showToast?.(t('app.trade.toastDateRequired')); return }
+    if (form.pnl === '' || isNaN(parseFloat(form.pnl))) { showToast?.(t('app.trade.toastPnlRequired')); return }
     const numOrNull = s => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
     const payload = {
       user_id: user.id,
@@ -179,22 +173,22 @@ export default function TradeEntryModal({
     if (res.error) {
       console.error('[trade save]', res.error)
       const msg = res.error.code === '42P01' || /does not exist/i.test(res.error.message || '')
-        ? '⚠ Table journal_entries manquante dans Supabase'
-        : (res.error.message || 'Erreur enregistrement')
+        ? t('app.trade.toastTableMissing')
+        : (res.error.message || t('app.trade.toastSaveError'))
       showToast?.(msg)
       return
     }
-    showToast?.(entry ? 'Trade modifié ✓' : 'Trade ajouté ✓')
+    showToast?.(entry ? t('app.trade.toastModified') : t('app.trade.toastAdded'))
     onClose?.()
     await onSaved?.()
   }
 
   async function deleteEntry() {
     if (!entry) return
-    if (!confirm('Supprimer ce trade ?')) return
+    if (!confirm(t('app.trade.confirmDelete'))) return
     const { error } = await supabase.from('journal_entries').delete().eq('id', entry.id)
-    if (error) { showToast?.('Erreur suppression'); return }
-    showToast?.('Trade supprimé')
+    if (error) { showToast?.(t('app.trade.toastDeleteError')); return }
+    showToast?.(t('app.trade.toastDeleted'))
     onClose?.()
     await onSaved?.()
   }
@@ -227,7 +221,7 @@ export default function TradeEntryModal({
               onChange={e => setForm(p => ({ ...p, accountId: e.target.value }))}
               style={inputS}
             >
-              <option value="">— Sélectionner —</option>
+              <option value="">{t('app.trade.selectAccount')}</option>
               {firms.map(f => (
                 <optgroup key={f.id} label={f.name}>
                   {(f.accounts || []).filter(a => a.status !== 'Échoué').map(a => (
@@ -255,7 +249,7 @@ export default function TradeEntryModal({
                 value={form.time}
                 onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
                 placeholder="--:--"
-                title="Heure du trade (optionnel) — utilisée pour les heatmaps"
+                title={t('app.trade.timeTitle')}
                 style={inputS}
               />
             </div>
@@ -266,7 +260,7 @@ export default function TradeEntryModal({
               type="number" step="0.01"
               value={form.pnl}
               onChange={e => setForm(p => ({ ...p, pnl: e.target.value }))}
-              placeholder="ex : 250  ou  -125"
+              placeholder={t('app.trade.pnlPlaceholder')}
               style={inputS}
               autoFocus
             />
@@ -308,29 +302,29 @@ export default function TradeEntryModal({
           </div>
           <div>
             <label style={labelS}>{t('app.trade.fieldEntry')}</label>
-            <input type="number" step="0.0001" value={form.entryPrice} onChange={e => setForm(p => ({ ...p, entryPrice: e.target.value }))} placeholder="ex : 5430.25" style={inputS} />
+            <input type="number" step="0.0001" value={form.entryPrice} onChange={e => setForm(p => ({ ...p, entryPrice: e.target.value }))} placeholder={t('app.trade.entryPlaceholder')} style={inputS} />
           </div>
           <div>
             <label style={labelS}>{t('app.trade.fieldExit')}</label>
-            <input type="number" step="0.0001" value={form.exitPrice} onChange={e => setForm(p => ({ ...p, exitPrice: e.target.value }))} placeholder="ex : 5435.50" style={inputS} />
+            <input type="number" step="0.0001" value={form.exitPrice} onChange={e => setForm(p => ({ ...p, exitPrice: e.target.value }))} placeholder={t('app.trade.exitPlaceholder')} style={inputS} />
           </div>
           <div>
             <label style={labelS}>{t('app.trade.fieldStop')}</label>
-            <input type="number" step="0.0001" value={form.stopLoss} onChange={e => setForm(p => ({ ...p, stopLoss: e.target.value }))} placeholder="ex : 5425.00" style={inputS} />
+            <input type="number" step="0.0001" value={form.stopLoss} onChange={e => setForm(p => ({ ...p, stopLoss: e.target.value }))} placeholder={t('app.trade.stopPlaceholder')} style={inputS} />
           </div>
           <div>
             <label style={labelS}>{t('app.trade.fieldTP')}</label>
-            <input type="number" step="0.0001" value={form.takeProfit} onChange={e => setForm(p => ({ ...p, takeProfit: e.target.value }))} placeholder="ex : 5440.00" style={inputS} />
+            <input type="number" step="0.0001" value={form.takeProfit} onChange={e => setForm(p => ({ ...p, takeProfit: e.target.value }))} placeholder={t('app.trade.tpPlaceholder')} style={inputS} />
           </div>
 
           {/* Commissions / Slippage */}
           <div>
             <label style={labelS}>{t('app.trade.fieldCommissions')}</label>
-            <input type="number" step="0.01" min="0" value={form.commissions} onChange={e => setForm(p => ({ ...p, commissions: e.target.value }))} placeholder="ex : 5.40" style={inputS} />
+            <input type="number" step="0.01" min="0" value={form.commissions} onChange={e => setForm(p => ({ ...p, commissions: e.target.value }))} placeholder={t('app.trade.commPlaceholder')} style={inputS} />
           </div>
           <div>
             <label style={labelS}>{t('app.trade.fieldSlippage')}</label>
-            <input type="number" step="0.01" min="0" value={form.slippage} onChange={e => setForm(p => ({ ...p, slippage: e.target.value }))} placeholder="ex : 2.50" style={inputS} />
+            <input type="number" step="0.01" min="0" value={form.slippage} onChange={e => setForm(p => ({ ...p, slippage: e.target.value }))} placeholder={t('app.trade.slippagePlaceholder')} style={inputS} />
           </div>
 
           {/* Aperçu Gross PnL si commissions/slippage renseignés */}
@@ -343,12 +337,12 @@ export default function TradeEntryModal({
             return (
               <div style={{ gridColumn: '1/-1', marginTop: 0, padding: '8px 12px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', fontSize: 11, color: 'var(--text3)' }}>
                 <span style={{ fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: 9 }}>
-                  💵 Décomposition
+                  {t('app.trade.decomposition')}
                 </span>
-                <span>Gross : <strong style={{ color: gross >= 0 ? 'var(--green)' : 'var(--red)' }}>{(gross >= 0 ? '+' : '') + gross.toFixed(2)} $</strong></span>
-                {comm > 0 && <span>− Commissions : <strong style={{ color: 'var(--red)' }}>{comm.toFixed(2)} $</strong></span>}
-                {slip > 0 && <span>− Slippage : <strong style={{ color: 'var(--red)' }}>{slip.toFixed(2)} $</strong></span>}
-                <span>= Net : <strong style={{ color: net >= 0 ? 'var(--green)' : 'var(--red)' }}>{(net >= 0 ? '+' : '') + net.toFixed(2)} $</strong></span>
+                <span>{t('app.trade.grossLabel')} : <strong style={{ color: gross >= 0 ? 'var(--green)' : 'var(--red)' }}>{(gross >= 0 ? '+' : '') + gross.toFixed(2)} $</strong></span>
+                {comm > 0 && <span>{t('app.trade.minusComm')} : <strong style={{ color: 'var(--red)' }}>{comm.toFixed(2)} $</strong></span>}
+                {slip > 0 && <span>{t('app.trade.minusSlip')} : <strong style={{ color: 'var(--red)' }}>{slip.toFixed(2)} $</strong></span>}
+                <span>{t('app.trade.equalsNet')} : <strong style={{ color: net >= 0 ? 'var(--green)' : 'var(--red)' }}>{(net >= 0 ? '+' : '') + net.toFixed(2)} $</strong></span>
               </div>
             )
           })()}
@@ -360,17 +354,17 @@ export default function TradeEntryModal({
             if (r == null && rr == null) return null
             return (
               <div style={{ gridColumn: '1/-1', marginTop: '4px', padding: '10px 14px', background: 'rgba(45,111,255,0.06)', border: '1px solid rgba(45,111,255,0.20)', borderRadius: '8px', display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center', fontSize: '12px' }}>
-                <span style={{ fontWeight: '700', color: 'var(--blue-light)', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>📐 Aperçu</span>
+                <span style={{ fontWeight: '700', color: 'var(--blue-light)', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('app.trade.preview')}</span>
                 {r != null && (
                   <span style={{ color: 'var(--text2)' }}>
-                    R réalisé : <strong style={{ color: r >= 0 ? 'var(--green)' : 'var(--red)', fontSize: '13px' }}>{formatR(r)}</strong>
+                    {t('app.trade.rRealized')} : <strong style={{ color: r >= 0 ? 'var(--green)' : 'var(--red)', fontSize: '13px' }}>{formatR(r)}</strong>
                   </span>
                 )}
                 {rr != null && (
                   <span style={{ color: 'var(--text2)' }}>
-                    R:R visé : <strong style={{ color: rr >= 2 ? 'var(--green)' : rr >= 1 ? 'var(--amber-text)' : 'var(--red)', fontSize: '13px' }}>{formatRR(rr)}</strong>
-                    {rr < 1 && <span style={{ marginLeft: '6px', fontSize: '10px', color: 'var(--red)' }}>⚠ setup risqué (R:R &lt; 1)</span>}
-                    {rr >= 2 && <span style={{ marginLeft: '6px', fontSize: '10px', color: 'var(--green)' }}>✓ bon setup</span>}
+                    {t('app.trade.rrTarget')} : <strong style={{ color: rr >= 2 ? 'var(--green)' : rr >= 1 ? 'var(--amber-text)' : 'var(--red)', fontSize: '13px' }}>{formatRR(rr)}</strong>
+                    {rr < 1 && <span style={{ marginLeft: '6px', fontSize: '10px', color: 'var(--red)' }}>{t('app.trade.rrRisky')}</span>}
+                    {rr >= 2 && <span style={{ marginLeft: '6px', fontSize: '10px', color: 'var(--green)' }}>{t('app.trade.rrGood')}</span>}
                   </span>
                 )}
               </div>
@@ -382,7 +376,7 @@ export default function TradeEntryModal({
             <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
               {t('app.trade.sectionTags')}
               <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 'normal', color: 'var(--text3)', fontSize: '10px', marginLeft: '6px' }}>
-                — pour analyser ta psycho &amp; tes setups
+                {t('app.trade.tagsHint')}
               </span>
             </div>
             <TagSelector value={form.tags} onChange={tags => setForm(p => ({ ...p, tags }))} />
@@ -402,11 +396,11 @@ export default function TradeEntryModal({
                 <button
                   onClick={() => setForm(p => ({ ...p, screenshotUrl: '' }))}
                   style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}
-                >✕ Retirer</button>
+                >{t('app.trade.removeScreenshot')}</button>
               </div>
             ) : (
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px', border: '1px dashed var(--border2)', borderRadius: '8px', cursor: uploadingScreen ? 'wait' : 'pointer', background: 'var(--surface2)', color: 'var(--text2)', fontSize: '12px' }}>
-                {uploadingScreen ? '⏳ Upload en cours...' : '📤 Cliquer pour uploader (PNG/JPG, max 5 Mo)'}
+                {uploadingScreen ? t('app.trade.uploading') : t('app.trade.uploadLabel')}
                 <input
                   type="file" accept="image/*"
                   disabled={uploadingScreen}
@@ -424,7 +418,7 @@ export default function TradeEntryModal({
               rows={3}
               value={form.notes}
               onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              placeholder="Optionnel"
+              placeholder={t('app.trade.notesPlaceholder')}
               style={{ ...inputS, resize: 'vertical', fontFamily: 'inherit' }}
             />
           </div>

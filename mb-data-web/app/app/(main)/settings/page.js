@@ -126,31 +126,27 @@ export default function SettingsPage() {
           fontSize: 11, color: C.amber, letterSpacing: '0.16em',
           marginBottom: 10, textTransform: 'uppercase', fontWeight: 600,
         }}>
-          {/* TODO: i18n key app.settings.eyebrow */}
-          Parametres
+          {t('app.settings.eyebrow')}
         </div>
         <h1 style={{
           fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em',
           margin: 0, marginBottom: 6, lineHeight: 1.1, color: C.text,
         }}>
-          {/* TODO: i18n key app.settings.title */}
-          Reglages
+          {t('app.settings.title')}
         </h1>
         <p style={{ fontSize: 13, color: C.text3, margin: 0 }}>
-          {/* TODO: i18n key app.settings.subtitle */}
-          Gerez votre profil, vos notifications et vos preferences.
+          {t('app.settings.subtitle')}
         </p>
       </div>
 
       {/* ── 1. Profil ── */}
       <SectionTitle icon="👤">
-        {/* TODO: i18n key app.settings.profileSection */}
-        Profil
+        {t('app.settings.profileSection')}
       </SectionTitle>
       <Card>
         <SettingRow
-          label={/* TODO: i18n */ 'Nom d\'utilisateur'}
-          description={displayName || '(non defini)'}
+          label={t('app.settings.username')}
+          description={displayName || t('app.settings.notDefined')}
         >
           <span style={{ fontSize: 12, color: C.text3, fontFamily: 'monospace' }}>
             {displayName || '-'}
@@ -179,33 +175,29 @@ export default function SettingsPage() {
               borderRadius: 8, transition: 'all 0.15s',
             }}
           >
-            {/* TODO: i18n key app.settings.editProfile */}
-            Modifier mon profil
+            {t('app.settings.editProfile')}
           </Link>
         </div>
       </Card>
 
       {/* ── 2. Notifications ── */}
       <SectionTitle icon="🔔">
-        {/* TODO: i18n key app.settings.notificationsSection */}
-        Notifications
+        {t('app.settings.notificationsSection')}
       </SectionTitle>
       <Card>
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 4 }}>
-            {/* TODO: i18n key app.settings.pushLabel */}
-            Notifications push
+            {t('app.settings.pushLabel')}
           </div>
           <div style={{ fontSize: 11, color: C.text3, marginBottom: 12 }}>
-            {/* TODO: i18n key app.settings.pushDesc */}
-            Recevez des alertes en temps reel sur votre navigateur.
+            {t('app.settings.pushDesc')}
           </div>
           <PushNotificationToggle />
         </div>
         <div style={{ height: 1, background: C.border, margin: '16px 0' }} />
         <SettingRow
-          label={/* TODO: i18n */ 'Recap mensuel par email'}
-          description="Recevez chaque mois un resume de vos performances et depenses."
+          label={t('app.settings.monthlyRecap')}
+          description={t('app.settings.monthlyRecapDesc')}
         >
           <Toggle checked={monthlyRecap} onChange={handleMonthlyRecapToggle} />
         </SettingRow>
@@ -213,13 +205,12 @@ export default function SettingsPage() {
 
       {/* ── 3. Langue ── */}
       <SectionTitle icon="🌐">
-        {/* TODO: i18n key app.settings.languageSection */}
-        Langue
+        {t('app.settings.languageSection')}
       </SectionTitle>
       <Card>
         <SettingRow
-          label={/* TODO: i18n */ 'Langue de l\'interface'}
-          description="Choisissez entre francais et anglais."
+          label={t('app.settings.languageLabel')}
+          description={t('app.settings.languageDesc')}
         >
           <LanguageSwitcher />
         </SettingRow>
@@ -227,16 +218,15 @@ export default function SettingsPage() {
 
       {/* ── 4. Donnees ── */}
       <SectionTitle icon="🗂">
-        {/* TODO: i18n key app.settings.dataSection */}
-        Donnees
+        {t('app.settings.dataSection')}
       </SectionTitle>
       <Card>
         <SettingRow
-          label={/* TODO: i18n */ 'Exporter mes donnees'}
-          description="Telechargez toutes vos donnees au format JSON."
+          label={t('app.settings.exportLabel')}
+          description={t('app.settings.exportDesc')}
         >
           <button
-            onClick={() => showToast('Export de donnees bientot disponible.')}
+            onClick={() => showToast(t('app.settings.exportSoon'))}
             style={{
               fontSize: 12, fontWeight: 600, color: C.text2,
               background: 'rgba(255,255,255,0.05)',
@@ -246,8 +236,7 @@ export default function SettingsPage() {
               transition: 'all 0.15s',
             }}
           >
-            {/* TODO: i18n */}
-            Exporter
+            {t('app.settings.exportBtn')}
           </button>
         </SettingRow>
         <div style={{ paddingTop: 14 }}>
@@ -263,8 +252,7 @@ export default function SettingsPage() {
                 transition: 'all 0.15s',
               }}
             >
-              {/* TODO: i18n */}
-              Supprimer mon compte
+              {t('app.settings.deleteAccount')}
             </button>
           ) : (
             <div style={{
@@ -273,14 +261,10 @@ export default function SettingsPage() {
               borderRadius: 10, padding: '16px 18px',
             }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.red, marginBottom: 6 }}>
-                {/* TODO: i18n */}
-                Etes-vous sur ?
+                {t('app.settings.deleteConfirmTitle')}
               </div>
               <p style={{ fontSize: 12, color: C.text2, margin: '0 0 14px', lineHeight: 1.5 }}>
-                {/* TODO: i18n */}
-                La suppression de compte est definitive. Pour proceder,
-                contactez-nous par email. Toutes vos donnees seront effacees
-                conformement a notre politique de confidentialite.
+                {t('app.settings.deleteConfirmBody')}
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <a
@@ -292,8 +276,7 @@ export default function SettingsPage() {
                     textDecoration: 'none', display: 'inline-block',
                   }}
                 >
-                  {/* TODO: i18n */}
-                  Contacter le support
+                  {t('app.settings.contactSupport')}
                 </a>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
@@ -305,8 +288,7 @@ export default function SettingsPage() {
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}
                 >
-                  {/* TODO: i18n */}
-                  Annuler
+                  {t('app.settings.cancel')}
                 </button>
               </div>
             </div>
@@ -316,12 +298,11 @@ export default function SettingsPage() {
 
       {/* ── 5. A propos ── */}
       <SectionTitle icon="ℹ️">
-        {/* TODO: i18n key app.settings.aboutSection */}
-        A propos
+        {t('app.settings.aboutSection')}
       </SectionTitle>
       <Card style={{ marginBottom: 0 }}>
         <SettingRow
-          label={/* TODO: i18n */ 'Version de l\'application'}
+          label={t('app.settings.appVersion')}
         >
           <span style={{
             fontSize: 12, color: C.text3,
@@ -343,14 +324,12 @@ export default function SettingsPage() {
           <Link href="/legal/privacy" style={{
             fontSize: 12, color: C.text2, textDecoration: 'none',
           }}>
-            {/* TODO: i18n */}
-            Confidentialite
+            {t('app.settings.privacy')}
           </Link>
           <Link href="/legal/imprint" style={{
             fontSize: 12, color: C.text2, textDecoration: 'none',
           }}>
-            {/* TODO: i18n */}
-            Mentions legales
+            {t('app.settings.legalNotice')}
           </Link>
         </div>
       </Card>

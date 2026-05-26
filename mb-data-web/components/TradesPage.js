@@ -1,7 +1,4 @@
 'use client'
-// TODO i18n v3.1 — Composant non traduit. Strings FR : header (Trade Log,
-// Toutes tes opérations…), filtres (Période, Compte, Tags, Search), stats
-// rapides, vide état, bouton "Nouveau trade".
 // components/TradesPage.js — Vue analytique de TOUS les trades en cards.
 //
 // Architecture :
@@ -24,6 +21,7 @@ import TradeEntryModal from './TradeEntryModal'
 import TagSelector from './TagSelector'
 import { C } from '../lib/theme'
 import { fmtMoney, todayISO, daysAgoISO } from '../lib/format'
+import { useT } from './LanguageProvider'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
 // Local variants — differ from shared theme (smaller padding/fontSize/borderRadius, no transitions)
@@ -33,24 +31,25 @@ const btnPrimary = { padding: '8px 16px', fontSize: 12, fontWeight: 500, backgro
 
 // Filtres période rapides
 const PERIOD_PRESETS = [
-  { k: 'all',    l: 'Tout',          days: null },
-  { k: 'today',  l: "Aujourd'hui",   days: 0 },
-  { k: '7d',     l: '7 jours',       days: 7 },
-  { k: '30d',    l: '30 jours',      days: 30 },
-  { k: '90d',    l: '3 mois',        days: 90 },
+  { k: 'all',    lk: 'periodAll',    days: null },
+  { k: 'today',  lk: 'periodToday',  days: 0 },
+  { k: '7d',     lk: 'period7d',     days: 7 },
+  { k: '30d',    lk: 'period30d',    days: 30 },
+  { k: '90d',    lk: 'period90d',    days: 90 },
 ]
 
 // Tri options
 const SORT_OPTIONS = [
-  { k: 'date_desc', l: 'Date ↓ (plus récent)' },
-  { k: 'date_asc',  l: 'Date ↑ (plus ancien)' },
-  { k: 'pnl_desc',  l: 'PnL ↓ (plus gros gain)' },
-  { k: 'pnl_asc',   l: 'PnL ↑ (plus grosse perte)' },
-  { k: 'r_desc',    l: 'R-multiple ↓' },
-  { k: 'r_asc',     l: 'R-multiple ↑' },
+  { k: 'date_desc', lk: 'sortDateDesc' },
+  { k: 'date_asc',  lk: 'sortDateAsc' },
+  { k: 'pnl_desc',  lk: 'sortPnlDesc' },
+  { k: 'pnl_asc',   lk: 'sortPnlAsc' },
+  { k: 'r_desc',    lk: 'sortRDesc' },
+  { k: 'r_asc',     lk: 'sortRAsc' },
 ]
 
 export default function TradesPage({ user, firms, showToast, onReload }) {
+  const t = useT()
   // === Données ===
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
@@ -92,7 +91,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
     setLoading(false)
     if (error) {
       console.error('[trades load]', error)
-      setLoadError(error.message || 'Erreur chargement')
+      setLoadError(error.message || t('app.trades.loadError'))
       return
     }
     setEntries(data || [])
@@ -237,7 +236,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv)
     a.download = `quantara-trades-${todayISO()}.csv`
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
-    showToast?.(`📥 ${filteredEntries.length} trades exportés`)
+    showToast?.(`📥 ${filteredEntries.length} ${t('app.trades.exported')}`)
   }
 
   // Reset tous les filtres
@@ -258,47 +257,47 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 10, color: C.blueLt, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
-            Trades détaillés
+            {t('app.trades.eyebrow')}
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: '-0.025em', lineHeight: 1.1 }}>
-            Trade Log
+            {t('app.trades.title')}
           </h1>
           <div style={{ fontSize: 12, color: C.text3, marginTop: 6 }}>
-            Toutes tes opérations · tri, filtres avancés &amp; analyse R-multiple
+            {t('app.trades.subtitle')}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={exportCSV} style={btnGhost} disabled={filteredEntries.length === 0}>
-            ↓ CSV
+            {t('app.trades.btnExport')}
           </button>
           <button onClick={() => setEditing({})} style={btnPrimary}>
-            + Nouveau trade
+            {t('app.trades.btnNew')}
           </button>
         </div>
       </div>
 
       {/* === Stats résumé (4 KPIs + ligne coûts si applicable) === */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }} className="trades-stats">
-        <StatCard label="Trades" value={String(stats.total)} />
-        <StatCard label="PnL total" value={fmtMoney(stats.totalPnl)} color={stats.totalPnl >= 0 ? C.green : C.red} />
-        <StatCard label="Win rate" value={stats.total > 0 ? stats.winRate.toFixed(1) + '%' : '—'} color={stats.winRate >= 50 ? C.green : C.amber} />
-        <StatCard label="R moyen" value={stats.avgR != null ? (stats.avgR >= 0 ? '+' : '') + stats.avgR.toFixed(2) + 'R' : '—'} color={stats.avgR != null && stats.avgR >= 0.5 ? C.green : stats.avgR != null && stats.avgR >= 0 ? C.amber : C.red} />
+        <StatCard label={t('app.trades.statTrades')} value={String(stats.total)} />
+        <StatCard label={t('app.trades.statPnl')} value={fmtMoney(stats.totalPnl)} color={stats.totalPnl >= 0 ? C.green : C.red} />
+        <StatCard label={t('app.trades.statWinRate')} value={stats.total > 0 ? stats.winRate.toFixed(1) + '%' : '—'} color={stats.winRate >= 50 ? C.green : C.amber} />
+        <StatCard label={t('app.trades.statAvgR')} value={stats.avgR != null ? (stats.avgR >= 0 ? '+' : '') + stats.avgR.toFixed(2) + 'R' : '—'} color={stats.avgR != null && stats.avgR >= 0.5 ? C.green : stats.avgR != null && stats.avgR >= 0 ? C.amber : C.red} />
       </div>
 
       {/* Coûts cumulés — affiché uniquement si > 0 (typiquement pour les imports Rithmic) */}
       {(stats.totalCommissions > 0 || stats.totalSlippage > 0) && (
         <div style={{ ...card, padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center', fontSize: 11, color: C.text3 }}>
           <span style={{ fontWeight: 700, color: C.text2, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: 9 }}>
-            💸 Coûts cumulés (filtrés)
+            {t('app.trades.costs')}
           </span>
           {stats.totalCommissions > 0 && (
-            <span>Commissions : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${stats.totalCommissions.toFixed(2)}</strong></span>
+            <span>{t('app.trades.commLabel')} : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${stats.totalCommissions.toFixed(2)}</strong></span>
           )}
           {stats.totalSlippage > 0 && (
-            <span>Slippage : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${stats.totalSlippage.toFixed(2)}</strong></span>
+            <span>{t('app.trades.slipLabel')} : <strong style={{ color: C.red, fontFamily: 'ui-monospace, monospace' }}>−${stats.totalSlippage.toFixed(2)}</strong></span>
           )}
           <span style={{ marginLeft: 'auto' }}>
-            Gross : <strong style={{ color: stats.totalPnl + stats.totalCommissions + stats.totalSlippage >= 0 ? C.green : C.red, fontFamily: 'ui-monospace, monospace' }}>
+            {t('app.trades.grossLabel')} : <strong style={{ color: stats.totalPnl + stats.totalCommissions + stats.totalSlippage >= 0 ? C.green : C.red, fontFamily: 'ui-monospace, monospace' }}>
               {fmtMoney(stats.totalPnl + stats.totalCommissions + stats.totalSlippage)}
             </strong>
           </span>
@@ -323,7 +322,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
                   cursor: 'pointer',
                 }}
               >
-                {p.l}
+                {t('app.trades.' + p.lk)}
               </button>
             ))}
           </div>
@@ -331,17 +330,17 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
           <div style={{ flex: '1 1 200px', minWidth: 160 }}>
             <input
               type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)}
-              placeholder="🔍 Rechercher (notes, instrument, tag)…"
+              placeholder={t('app.trades.searchPlaceholder')}
               style={inputS}
             />
           </div>
 
           <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...inputS, width: 'auto', minWidth: 180 }}>
-            {SORT_OPTIONS.map(s => <option key={s.k} value={s.k}>{s.l}</option>)}
+            {SORT_OPTIONS.map(s => <option key={s.k} value={s.k}>{t('app.trades.' + s.lk)}</option>)}
           </select>
 
           <button onClick={() => setShowFilters(s => !s)} style={btnGhost}>
-            {showFilters ? '▲' : '▼'} Filtres avancés
+            {showFilters ? '▲' : '▼'} {t('app.trades.advancedFilters')}
           </button>
         </div>
 
@@ -349,45 +348,45 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
         {showFilters && (
           <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}`, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
             <div>
-              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>Firme</label>
+              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>{t('app.trades.filterFirm')}</label>
               <select value={firmFilter} onChange={e => setFirmFilter(e.target.value)} style={inputS}>
-                <option value="all">Toutes</option>
+                <option value="all">{t('app.trades.optAllFem')}</option>
                 {firms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>Compte</label>
+              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>{t('app.trades.filterAccount')}</label>
               <select value={accountFilter} onChange={e => setAccountFilter(e.target.value)} style={{ ...inputS, opacity: firmFilter === 'all' ? 0.5 : 1 }} disabled={firmFilter === 'all'}>
-                <option value="all">Tous</option>
+                <option value="all">{t('app.trades.optAll')}</option>
                 {accountsForFirm.map(a => <option key={a.id} value={a.id}>{accountLabel(a)} · {a.status}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>Instrument</label>
+              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>{t('app.trades.filterInstrument')}</label>
               <select value={instrumentFilter} onChange={e => setInstrumentFilter(e.target.value)} style={inputS}>
-                <option value="all">Tous</option>
+                <option value="all">{t('app.trades.optAll')}</option>
                 {availableInstruments.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>Side</label>
+              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>{t('app.trades.filterSide')}</label>
               <select value={sideFilter} onChange={e => setSideFilter(e.target.value)} style={inputS}>
-                <option value="all">Tous</option>
-                <option value="Long">Long uniquement</option>
-                <option value="Short">Short uniquement</option>
+                <option value="all">{t('app.trades.optAll')}</option>
+                <option value="Long">{t('app.trades.longOnly')}</option>
+                <option value="Short">{t('app.trades.shortOnly')}</option>
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>Résultat</label>
+              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>{t('app.trades.filterResult')}</label>
               <select value={resultFilter} onChange={e => setResultFilter(e.target.value)} style={inputS}>
-                <option value="all">Tous</option>
-                <option value="win">Gagnants uniquement</option>
-                <option value="loss">Perdants uniquement</option>
-                <option value="be">Break-even (0)</option>
+                <option value="all">{t('app.trades.optAll')}</option>
+                <option value="win">{t('app.trades.winnersOnly')}</option>
+                <option value="loss">{t('app.trades.losersOnly')}</option>
+                <option value="be">{t('app.trades.breakeven')}</option>
               </select>
             </div>
             <div style={{ gridColumn: '1/-1' }}>
-              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>Tags (AND)</label>
+              <label style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, display: 'block', marginBottom: 5 }}>{t('app.trades.filterTags')}</label>
               <TagSelector value={tagFilter} onChange={setTagFilter} compact />
             </div>
           </div>
@@ -396,12 +395,12 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
         {/* Compteur + reset */}
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: C.text3 }}>
           <span>
-            <strong style={{ color: C.text2 }}>{filteredEntries.length}</strong> trade{filteredEntries.length > 1 ? 's' : ''} affiché{filteredEntries.length > 1 ? 's' : ''}
-            {decoratedEntries.length > filteredEntries.length && ` sur ${decoratedEntries.length}`}
+            <strong style={{ color: C.text2 }}>{filteredEntries.length}</strong> trade{filteredEntries.length > 1 ? 's' : ''} {filteredEntries.length > 1 ? t('app.trades.displayedPlural') : t('app.trades.displayed')}
+            {decoratedEntries.length > filteredEntries.length && ` ${t('app.trades.ofTotal')} ${decoratedEntries.length}`}
           </span>
           {hasActiveFilters && (
             <button onClick={resetAllFilters} style={{ ...btnGhost, padding: '4px 10px', fontSize: 10 }}>
-              ✕ Reset filtres
+              {t('app.trades.resetFilters')}
             </button>
           )}
         </div>
@@ -409,18 +408,18 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
 
       {/* === Liste des cards === */}
       {loading ? (
-        <div style={{ ...card, padding: 60, textAlign: 'center', color: C.text3 }}>⏳ Chargement…</div>
+        <div style={{ ...card, padding: 60, textAlign: 'center', color: C.text3 }}>{t('app.trades.loading')}</div>
       ) : loadError ? (
         <div style={{ ...card, padding: 40, textAlign: 'center', color: C.red }}>{loadError}</div>
       ) : filteredEntries.length === 0 ? (
         <div style={{ ...card, padding: 60, textAlign: 'center', color: C.text3 }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
           <div style={{ fontSize: 13, color: C.text2, marginBottom: 16 }}>
-            {hasActiveFilters ? 'Aucun trade ne correspond aux filtres.' : 'Aucun trade pour le moment.'}
+            {hasActiveFilters ? t('app.trades.emptyFiltered') : t('app.trades.emptyAll')}
           </div>
           {!hasActiveFilters && (
             <button onClick={() => setEditing({})} style={btnPrimary}>
-              + Ajouter ton premier trade
+              {t('app.trades.addFirst')}
             </button>
           )}
         </div>
@@ -458,7 +457,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
             background: 'rgba(255,255,255,0.1)', color: '#fff',
             border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
             padding: '8px 16px', fontSize: 13, cursor: 'pointer', fontWeight: 600,
-          }}>✕ Fermer</button>
+          }}>{t('app.trades.close')}</button>
         </div>
       )}
 

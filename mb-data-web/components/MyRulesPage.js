@@ -1,5 +1,4 @@
 'use client'
-// TODO i18n v3.1 — Composant FR-only pour l'instant.
 //
 // components/MyRulesPage.js — Page "Mes règles" du trader.
 //
@@ -14,6 +13,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadFile } from '../lib/uploadFile'
+import { useT } from './LanguageProvider'
 
 const C = {
   surface:   'rgba(20,23,32,0.65)',
@@ -39,23 +39,24 @@ const btnGhost = { padding: '7px 13px', fontSize: 12, fontWeight: 500, backgroun
 const btnDanger = { padding: '6px 11px', fontSize: 11, fontWeight: 500, background: 'rgba(232,80,74,0.08)', border: '1px solid rgba(232,80,74,0.25)', color: C.red, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
 
 const RULE_CATEGORIES = [
-  { k: 'risk',      l: '🛡 Risk Management',    color: '#e8504a' },
-  { k: 'mindset',   l: '🧠 Mindset',            color: '#a78bfa' },
-  { k: 'execution', l: '🎯 Execution',          color: '#1db87a' },
-  { k: 'other',     l: '📋 Autre',              color: '#9098b0' },
+  { k: 'risk',      lk: 'catRisk',      color: '#e8504a' },
+  { k: 'mindset',   lk: 'catMindset',   color: '#a78bfa' },
+  { k: 'execution', lk: 'catExecution',  color: '#1db87a' },
+  { k: 'other',     lk: 'catOther',     color: '#9098b0' },
 ]
 
 const TABS = [
-  { k: 'plan',    l: '📔 Plan de trading' },
-  { k: 'setups',  l: '🎯 Mes setups' },
-  { k: 'rules',   l: '✓ Mes règles' },
+  { k: 'plan',    lk: 'tabPlan' },
+  { k: 'setups',  lk: 'tabSetups' },
+  { k: 'rules',   lk: 'tabRules' },
 ]
 
 export default function MyRulesPage({ user, showToast }) {
+  const t = useT()
   const [tab, setTab] = useState('plan')
 
   if (!user?.id) {
-    return <div style={{ padding: 24, color: C.text2 }}>Chargement...</div>
+    return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.loading')}</div>
   }
 
   return (
@@ -63,32 +64,32 @@ export default function MyRulesPage({ user, showToast }) {
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0, marginBottom: 4 }}>
-          ⊡ Mes règles
+          {t('app.myrules.title')}
         </h2>
         <p style={{ fontSize: 13, color: C.text2, margin: 0 }}>
-          Documente ton plan de trading, tes setups gagnants et tes règles non négociables. La discipline = ton edge.
+          {t('app.myrules.subtitle')}
         </p>
       </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: `1px solid ${C.border}` }}>
-        {TABS.map(t => (
+        {TABS.map(t_tab => (
           <button
-            key={t.k}
-            onClick={() => setTab(t.k)}
+            key={t_tab.k}
+            onClick={() => setTab(t_tab.k)}
             style={{
               padding: '10px 16px',
               fontSize: 13,
-              fontWeight: tab === t.k ? 600 : 500,
+              fontWeight: tab === t_tab.k ? 600 : 500,
               background: 'transparent',
               border: 'none',
-              borderBottom: `2px solid ${tab === t.k ? C.blueLt : 'transparent'}`,
-              color: tab === t.k ? C.blueLt : C.text2,
+              borderBottom: `2px solid ${tab === t_tab.k ? C.blueLt : 'transparent'}`,
+              color: tab === t_tab.k ? C.blueLt : C.text2,
               cursor: 'pointer',
               fontFamily: 'inherit',
               marginBottom: -1,
             }}
-          >{t.l}</button>
+          >{t('app.myrules.' + t_tab.lk)}</button>
         ))}
       </div>
 
@@ -104,6 +105,7 @@ export default function MyRulesPage({ user, showToast }) {
 // TAB 1 : Plan de trading (textarea avec autosave debounced)
 // ============================================================================
 function PlanTab({ user, showToast }) {
+  const t = useT()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [savedAt, setSavedAt] = useState(null)
@@ -139,7 +141,7 @@ function PlanTab({ user, showToast }) {
         .upsert({ user_id: user.id, content, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
       if (error) {
         console.error('[plan save]', error)
-        showToast?.('Erreur sauvegarde plan')
+        showToast?.(t('app.myrules.planSaveError'))
         return
       }
       lastSavedContent.current = content
@@ -148,27 +150,27 @@ function PlanTab({ user, showToast }) {
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [content, loading, user.id])
 
-  if (loading) return <div style={{ padding: 24, color: C.text2 }}>Chargement du plan...</div>
+  if (loading) return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.planLoading')}</div>
 
   return (
     <div>
       <div style={{ ...card, padding: 18, marginBottom: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>📔 Mon plan de trading</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{t('app.myrules.planTitle')}</h3>
           {savedAt && (
             <span style={{ fontSize: 11, color: C.text3 }}>
-              Sauvegardé à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              {t('app.myrules.planSavedAt')} {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </div>
         <textarea
           value={content}
           onChange={e => setContent(e.target.value)}
-          placeholder={`Quel trader veux-tu devenir ?\n\nExemples de sujets à couvrir :\n• Mon edge (ce qui me distingue)\n• Mes objectifs court / moyen / long terme\n• Mon money management\n• Les marchés que je trade et pourquoi\n• Ma routine pré-marché\n• Ma routine post-trade (journaling, debrief)\n• Comment je gère les pertes\n• Comment je gère les gains\n\nÉcris librement. Auto-sauvegardé.`}
+          placeholder={t('app.myrules.planPlaceholder')}
           style={{ ...inputS, minHeight: 400, resize: 'vertical', fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', fontSize: 13, lineHeight: 1.6 }}
         />
         <div style={{ marginTop: 8, fontSize: 11, color: C.text3, textAlign: 'right' }}>
-          {content.length} caractères · auto-save 1.5s après dernière édit
+          {content.length} {t('app.myrules.planChars')} · {t('app.myrules.planAutosave')}
         </div>
       </div>
     </div>
@@ -179,6 +181,7 @@ function PlanTab({ user, showToast }) {
 // TAB 2 : Setups (cards CRUD)
 // ============================================================================
 function SetupsTab({ user, showToast }) {
+  const t = useT()
   const [setups, setSetups] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)  // null | 'new' | setup object
@@ -193,7 +196,7 @@ function SetupsTab({ user, showToast }) {
       .order('created_at', { ascending: true })
     if (error) {
       console.error('[setups load]', error)
-      showToast?.('Erreur chargement setups')
+      showToast?.(t('app.myrules.setupsLoadError'))
       setLoading(false)
       return
     }
@@ -222,41 +225,41 @@ function SetupsTab({ user, showToast }) {
     }
     if (res.error) {
       console.error('[setup save]', res.error)
-      showToast?.('Erreur sauvegarde setup')
+      showToast?.(t('app.myrules.setupSaveError'))
       return
     }
-    showToast?.(form.id ? 'Setup modifié ✓' : 'Setup ajouté ✓')
+    showToast?.(form.id ? t('app.myrules.setupUpdated') : t('app.myrules.setupAdded'))
     setEditing(null)
     await loadSetups()
   }
 
   async function deleteSetup(id) {
-    if (!confirm('Supprimer ce setup ?')) return
+    if (!confirm(t('app.myrules.setupConfirmDelete'))) return
     const { error } = await supabase.from('trading_setups').delete().eq('id', id)
-    if (error) { showToast?.('Erreur suppression'); return }
-    showToast?.('Setup supprimé')
+    if (error) { showToast?.(t('app.myrules.setupDeleteError')); return }
+    showToast?.(t('app.myrules.setupDeleted'))
     await loadSetups()
   }
 
-  if (loading) return <div style={{ padding: 24, color: C.text2 }}>Chargement des setups...</div>
+  if (loading) return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.setupsLoading')}</div>
 
   return (
     <div>
       {/* Header + Add */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>
-          🎯 Mes setups <span style={{ color: C.text3, fontWeight: 500, marginLeft: 6 }}>({setups.length})</span>
+          {t('app.myrules.setupsTitle')} <span style={{ color: C.text3, fontWeight: 500, marginLeft: 6 }}>({setups.length})</span>
         </h3>
-        <button onClick={() => setEditing('new')} style={btnPrimary}>+ Nouveau setup</button>
+        <button onClick={() => setEditing('new')} style={btnPrimary}>{t('app.myrules.setupsNew')}</button>
       </div>
 
       {/* Liste */}
       {setups.length === 0 ? (
         <div style={{ ...card, padding: 32, textAlign: 'center', color: C.text2 }}>
           <div style={{ fontSize: 38, marginBottom: 10 }}>🎯</div>
-          <div style={{ fontWeight: 600, color: C.text, marginBottom: 4 }}>Aucun setup enregistré</div>
-          <div style={{ fontSize: 13, marginBottom: 16 }}>Documente tes setups gagnants pour les répéter avec discipline.</div>
-          <button onClick={() => setEditing('new')} style={btnPrimary}>+ Créer mon premier setup</button>
+          <div style={{ fontWeight: 600, color: C.text, marginBottom: 4 }}>{t('app.myrules.setupsEmptyTitle')}</div>
+          <div style={{ fontSize: 13, marginBottom: 16 }}>{t('app.myrules.setupsEmptyBody')}</div>
+          <button onClick={() => setEditing('new')} style={btnPrimary}>{t('app.myrules.setupsCreate')}</button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
@@ -281,6 +284,7 @@ function SetupsTab({ user, showToast }) {
 }
 
 function SetupCard({ setup, onEdit, onDelete }) {
+  const t = useT()
   return (
     <div style={{ ...card, padding: 16, position: 'relative', opacity: setup.active === false ? 0.5 : 1 }}>
       {setup.screenshot_url && (
@@ -300,7 +304,7 @@ function SetupCard({ setup, onEdit, onDelete }) {
         </div>
       )}
       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-        <button onClick={onEdit} style={btnGhost}>✎ Modifier</button>
+        <button onClick={onEdit} style={btnGhost}>{t('app.myrules.setupEdit')}</button>
         <button onClick={onDelete} style={btnDanger}>🗑</button>
       </div>
     </div>
@@ -308,6 +312,7 @@ function SetupCard({ setup, onEdit, onDelete }) {
 }
 
 function SetupModal({ user, setup, onClose, onSave, showToast }) {
+  const t = useT()
   const [form, setForm] = useState({
     id: setup?.id,
     name: setup?.name || '',
@@ -330,7 +335,7 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { showToast?.('Nom requis'); return }
+    if (!form.name.trim()) { showToast?.(t('app.myrules.setupNameRequired')); return }
     setSaving(true)
     await onSave(form)
     setSaving(false)
@@ -340,40 +345,40 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, overflowY: 'auto' }}>
       <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 24, width: 560, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 18 }}>
-          {setup ? 'Modifier le setup' : 'Nouveau setup'}
+          {setup ? t('app.myrules.setupModalEdit') : t('app.myrules.setupModalNew')}
         </h3>
         <div style={{ display: 'grid', gap: 14 }}>
           <div>
-            <label style={labelS}>Nom du setup</label>
+            <label style={labelS}>{t('app.myrules.setupName')}</label>
             <input
               value={form.name}
               onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              placeholder="ex : A+ Setup MNQ NY Open"
+              placeholder={t('app.myrules.setupNamePH')}
               style={inputS}
               autoFocus
             />
           </div>
           <div>
-            <label style={labelS}>Description courte</label>
+            <label style={labelS}>{t('app.myrules.setupDesc')}</label>
             <input
               value={form.description}
               onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              placeholder="ex : Breakout du range NY open avec volume confirmé"
+              placeholder={t('app.myrules.setupDescPH')}
               style={inputS}
             />
           </div>
           <div>
-            <label style={labelS}>Conditions d'entrée (1 par ligne)</label>
+            <label style={labelS}>{t('app.myrules.setupConditions')}</label>
             <textarea
               rows={6}
               value={form.conditions}
               onChange={e => setForm(p => ({ ...p, conditions: e.target.value }))}
-              placeholder={`Exemple :\n• Range 15min identifié avant 9h30 ET\n• Volume > 2x moyenne du range\n• Cassure avec close hors du range\n• Stop sous le low du range\n• TP1 = 1R, TP2 = 2R`}
+              placeholder={t('app.myrules.setupConditionsPH')}
               style={{ ...inputS, resize: 'vertical', fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', fontSize: 12 }}
             />
           </div>
           <div>
-            <label style={labelS}>Screenshot (optionnel)</label>
+            <label style={labelS}>{t('app.myrules.setupScreenshot')}</label>
             {form.screenshot_url ? (
               <div style={{ position: 'relative' }}>
                 <img src={form.screenshot_url} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
@@ -384,7 +389,7 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
               </div>
             ) : (
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14, border: `1px dashed ${C.border2}`, borderRadius: 8, cursor: uploading ? 'wait' : 'pointer', background: C.surface2, color: C.text2, fontSize: 12 }}>
-                {uploading ? '⏳ Upload en cours...' : '📤 Cliquer pour uploader (PNG/JPG)'}
+                {uploading ? t('app.myrules.setupUploading') : t('app.myrules.setupUploadCTA')}
                 <input type="file" accept="image/*" disabled={uploading} onChange={e => handleUpload(e.target.files?.[0])} style={{ display: 'none' }} />
               </label>
             )}
@@ -396,13 +401,13 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
               checked={form.active}
               onChange={e => setForm(p => ({ ...p, active: e.target.checked }))}
             />
-            <label htmlFor="setup-active" style={{ fontSize: 12, color: C.text2, cursor: 'pointer' }}>Setup actif (utilisé en ce moment)</label>
+            <label htmlFor="setup-active" style={{ fontSize: 12, color: C.text2, cursor: 'pointer' }}>{t('app.myrules.setupActive')}</label>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-          <button onClick={onClose} style={btnGhost} disabled={saving}>Annuler</button>
+          <button onClick={onClose} style={btnGhost} disabled={saving}>{t('app.myrules.setupCancel')}</button>
           <button onClick={handleSave} style={btnPrimary} disabled={saving}>
-            {saving ? '...' : setup ? 'Sauvegarder' : 'Créer'}
+            {saving ? '...' : setup ? t('app.myrules.setupSave') : t('app.myrules.setupCreate')}
           </button>
         </div>
       </div>
@@ -414,6 +419,7 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
 // TAB 3 : Règles (checklist par catégorie)
 // ============================================================================
 function RulesTab({ user, showToast }) {
+  const t = useT()
   const [rules, setRules] = useState([])
   const [loading, setLoading] = useState(true)
   const [newRule, setNewRule] = useState({ text: '', category: 'risk' })
@@ -429,7 +435,7 @@ function RulesTab({ user, showToast }) {
       .order('created_at', { ascending: true })
     if (error) {
       console.error('[rules load]', error)
-      showToast?.('Erreur chargement règles')
+      showToast?.(t('app.myrules.rulesLoadError'))
       setLoading(false)
       return
     }
@@ -448,7 +454,7 @@ function RulesTab({ user, showToast }) {
       active: true,
       sort_order: rules.filter(r => r.category === newRule.category).length,
     })
-    if (error) { showToast?.('Erreur ajout règle'); return }
+    if (error) { showToast?.(t('app.myrules.rulesAddError')); return }
     setNewRule({ text: '', category: newRule.category })
     await loadRules()
   }
@@ -458,19 +464,19 @@ function RulesTab({ user, showToast }) {
       .from('trading_rule_items')
       .update({ active: !rule.active })
       .eq('id', rule.id)
-    if (error) { showToast?.('Erreur'); return }
+    if (error) { showToast?.(t('app.myrules.rulesToggleError')); return }
     await loadRules()
   }
 
   async function deleteRule(id) {
-    if (!confirm('Supprimer cette règle ?')) return
+    if (!confirm(t('app.myrules.rulesConfirmDelete'))) return
     const { error } = await supabase.from('trading_rule_items').delete().eq('id', id)
-    if (error) { showToast?.('Erreur suppression'); return }
-    showToast?.('Règle supprimée')
+    if (error) { showToast?.(t('app.myrules.rulesDeleteError')); return }
+    showToast?.(t('app.myrules.rulesDeleted'))
     await loadRules()
   }
 
-  if (loading) return <div style={{ padding: 24, color: C.text2 }}>Chargement des règles...</div>
+  if (loading) return <div style={{ padding: 24, color: C.text2 }}>{t('app.myrules.rulesLoading')}</div>
 
   // Group rules par catégorie
   const grouped = RULE_CATEGORIES.reduce((acc, cat) => {
@@ -483,10 +489,10 @@ function RulesTab({ user, showToast }) {
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0, marginBottom: 4 }}>
-          ✓ Mes règles non négociables <span style={{ color: C.text3, fontWeight: 500, marginLeft: 6 }}>({rules.length})</span>
+          {t('app.myrules.rulesTitle')} <span style={{ color: C.text3, fontWeight: 500, marginLeft: 6 }}>({rules.length})</span>
         </h3>
         <div style={{ fontSize: 12, color: C.text3 }}>
-          Décoche une règle si tu veux la mettre en pause (sans la supprimer).
+          {t('app.myrules.rulesSubtitle')}
         </div>
       </div>
 
@@ -497,16 +503,16 @@ function RulesTab({ user, showToast }) {
           onChange={e => setNewRule(p => ({ ...p, category: e.target.value }))}
           style={{ ...inputS, width: 200 }}
         >
-          {RULE_CATEGORIES.map(c => <option key={c.k} value={c.k}>{c.l}</option>)}
+          {RULE_CATEGORIES.map(c => <option key={c.k} value={c.k}>{t('app.myrules.' + c.lk)}</option>)}
         </select>
         <input
           value={newRule.text}
           onChange={e => setNewRule(p => ({ ...p, text: e.target.value }))}
           onKeyDown={e => { if (e.key === 'Enter') addRule() }}
-          placeholder="ex : Max 3 trades par jour"
+          placeholder={t('app.myrules.rulesPlaceholder')}
           style={{ ...inputS, flex: 1 }}
         />
-        <button onClick={addRule} style={btnPrimary} disabled={!newRule.text.trim()}>+ Ajouter</button>
+        <button onClick={addRule} style={btnPrimary} disabled={!newRule.text.trim()}>{t('app.myrules.rulesAdd')}</button>
       </div>
 
       {/* Liste par catégorie */}
@@ -520,12 +526,12 @@ function RulesTab({ user, showToast }) {
                 marginBottom: 12, letterSpacing: '0.02em',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
-                <span>{cat.l}</span>
+                <span>{t('app.myrules.' + cat.lk)}</span>
                 <span style={{ color: C.text3, fontSize: 11, fontWeight: 500 }}>{catRules.length} règle{catRules.length > 1 ? 's' : ''}</span>
               </div>
               {catRules.length === 0 ? (
                 <div style={{ fontSize: 12, color: C.text3, fontStyle: 'italic', padding: 6 }}>
-                  Aucune règle dans cette catégorie pour l'instant.
+                  {t('app.myrules.rulesEmpty')}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

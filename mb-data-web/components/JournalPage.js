@@ -1,11 +1,6 @@
 'use client'
-// TODO i18n v3.1 — Composant non traduit (taille ~1600 lignes).
-// Strings FR encore présentes : header eyebrow/title/subtitle, filtres (Statut,
-// Firme, Compte, Tous), stats (PNL Filtré, Win Rate, Consistency, Jours tradés),
-// calendrier (Lun/Mar/…, Aujourd'hui), libellés CSV export, toasts, modal.
-// La traduction se fera via les props `pageEyebrow`/`pageTitle`/`pageSubtitleSuffix`
-// passées par le parent + un useT() local pour les filtres et stats internes.
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { useT } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { uploadFile } from '../lib/uploadFile'
@@ -23,6 +18,7 @@ const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
 
 // Carte avec courbe de balance pour un compte donné
 function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade, addTradeHref=null }){
+  const t = useT()
   const ref = useRef(null)
   const chart = useRef(null)
 
@@ -338,11 +334,11 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             <button onClick={handleResetClick} style={{
               fontSize:'10px',padding:'3px 8px',borderRadius:'6px',
               background:'transparent',border:'1px solid var(--border2)',color:'var(--text2)',cursor:'pointer',
-            }}>Modifier date</button>
+            }}>{t('app.journal.modifyDate')}</button>
             <button onClick={handleUndoReset} style={{
               fontSize:'10px',padding:'3px 8px',borderRadius:'6px',
               background:'transparent',border:'1px solid var(--border2)',color:'var(--text3)',cursor:'pointer',
-            }}>Annuler</button>
+            }}>{t('app.journal.cancelBtn')}</button>
           </div>
         </div>
       ) : account.status === 'Financé' && onResetBalance ? (
@@ -351,7 +347,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             fontSize:'11px',padding:'6px 12px',borderRadius:'6px',
             background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
             color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',
-          }}>↻ Reset balance (passage en Financé)</button>
+          }}>{t('app.journal.resetBalance')}</button>
           <TooltipIcon text="Quand tu passes Challenge → Financé, ton compte simulé repart à 0 (les trades de la phase challenge sont conservés mais masqués du calcul de balance Financé). Click pour définir manuellement la date du reset." maxWidth={320} />
         </div>
       ) : null}
@@ -461,7 +457,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
 
       {data.labels.length === 0 ? (
         <div style={{padding:'40px',textAlign:'center',color:'var(--text3)',fontSize:'12px'}}>
-          Aucun trade pour ce compte — saisissez votre premier trade pour voir la courbe.
+          {t('app.journal.noEntries')}
         </div>
       ) : (
         <div style={{position:'relative',height:'200px'}}><canvas ref={ref} /></div>
@@ -488,12 +484,20 @@ export default function JournalPage({
   hideRithmicEntries = false,
   onlyRithmicEntries = false,
   addTradeHref = null,
-  addTradeLabel = '+ Ajouter trade',
-  pageEyebrow = 'Journal de trading',
-  pageTitle = 'Chaque trade. Tracké. Analysé.',
-  pageSubtitleSuffix = 'saisie manuelle',
+  addTradeLabel,
+  pageEyebrow,
+  pageTitle,
+  pageSubtitleSuffix,
   renderExtraSection = null,  // (ctx) => JSX — appelé avant le footer. ctx = { filteredEntries, decoratedEntries, allAccounts, firms }
 }){
+  const t = useT()
+  const MONTHS = t('app.journal.monthNames')
+  const DAYS = t('app.journal.dayNames')
+  const _eyebrow = pageEyebrow || t('app.journal.defaultEyebrow')
+  const _title = pageTitle || t('app.journal.defaultTitle')
+  const _subtitle = pageSubtitleSuffix || t('app.journal.defaultSubtitle')
+  const _addLabel = addTradeLabel || t('app.journal.addTrade')
+
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState('all') // 'all' | firmId | `${firmId}:${accountId}`
@@ -738,9 +742,9 @@ export default function JournalPage({
     setEntryModal({ entry:e })
   }
   async function saveEntry(){
-    if(!form.accountId){ showToast?.('Sélectionne un compte'); return }
-    if(!form.date){ showToast?.('Date requise'); return }
-    if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.('PnL requis (nombre)'); return }
+    if(!form.accountId){ showToast?.(t('app.trade.toastSelectAccount')); return }
+    if(!form.date){ showToast?.(t('app.trade.toastDateRequired')); return }
+    if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.(t('app.trade.toastPnlRequired')); return }
     const numOrNull = (s) => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
     // traded_at = date + time (default midi si time vide)
     const timeStr = form.time && /^\d{2}:\d{2}$/.test(form.time) ? `${form.time}:00` : '12:00:00'
@@ -780,7 +784,7 @@ export default function JournalPage({
       return
     }
     setEntryModal(null)
-    showToast?.(entryModal?.entry ? 'Trade modifié ✓' : 'Trade ajouté ✓')
+    showToast?.(entryModal?.entry ? t('app.trade.toastModified') : t('app.trade.toastAdded'))
     await loadEntries()
   }
   // Upload screenshot d'un trade vers Supabase Storage
@@ -792,18 +796,18 @@ export default function JournalPage({
     if(error){
       // Affichage en alert (popup) car les erreurs upload sont critiques et trop longues pour un toast
       alert(error)
-      showToast?.('❌ Upload échoué')
+      showToast?.(t('app.trade.toastUploadFailed'))
       return
     }
     setForm(p => ({ ...p, screenshotUrl: url }))
-    showToast?.('Screenshot ajouté ✓')
+    showToast?.(t('app.trade.toastScreenshotAdded'))
   }
 
   async function deleteEntry(id){
-    if(!confirm('Supprimer ce trade ?')) return
+    if(!confirm(t('app.trade.confirmDelete'))) return
     const { error } = await supabase.from('journal_entries').delete().eq('id', id)
-    if(error){ showToast?.('Erreur suppression'); return }
-    showToast?.('Trade supprimé')
+    if(error){ showToast?.(t('app.trade.toastDeleteError')); return }
+    showToast?.(t('app.trade.toastDeleted'))
     await loadEntries()
   }
 
@@ -859,10 +863,10 @@ export default function JournalPage({
     a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent('﻿'+csv)
     a.download = `Quantara_Journal_${todayISO()}.csv`
     a.click()
-    showToast?.('Export CSV ✓')
+    showToast?.(t('app.journal.exportCsvDone'))
   }
 
-  const monthLabel = MONTHS_FR[calMonth] + ' ' + calYear
+  const monthLabel = (Array.isArray(MONTHS) ? MONTHS[calMonth] : MONTHS_FR[calMonth]) + ' ' + calYear
   const noAccounts = allAccounts.length === 0
 
   return (
@@ -872,11 +876,11 @@ export default function JournalPage({
       <div className="page-header" style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'28px',flexWrap:'wrap',gap:'18px'}}>
         <div>
           <div style={{fontSize:'11px',color:'var(--blue-light)',letterSpacing:'0.16em',marginBottom:'10px',textTransform:'uppercase',fontWeight:'600'}}>
-            {pageEyebrow}
+            {_eyebrow}
           </div>
-          <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{pageTitle}</h1>
+          <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{_title}</h1>
           <div style={{fontSize:'13px',color:'var(--text3)'}}>
-            {decoratedEntries.length} trade{decoratedEntries.length>1?'s':''} enregistré{decoratedEntries.length>1?'s':''} · {pageSubtitleSuffix}
+            {decoratedEntries.length} trade{decoratedEntries.length>1?'s':''} enregistré{decoratedEntries.length>1?'s':''} · {_subtitle}
           </div>
         </div>
         <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
@@ -888,7 +892,7 @@ export default function JournalPage({
             borderColor:'rgba(45,111,255,0.25)',
             color:'var(--blue-light)',
           }}>
-            ⊞ Trade Log détaillé →
+            {t('app.journal.tradeLogLink')}
           </a>
           <button onClick={exportJournalCSV} disabled={!filteredEntries.length} style={{...btnGhost,opacity:filteredEntries.length?1:0.5}}>↓ CSV</button>
           {/* Bouton + Trade :
@@ -896,14 +900,14 @@ export default function JournalPage({
                 - Mode MANUEL : ouvre le modal d'ajout, désactivé si pas de compte */}
           {addTradeHref ? (
             <a href={addTradeHref} style={{...btnPrimary,textDecoration:'none',display:'inline-block'}}>
-              {addTradeLabel}
+              {_addLabel}
             </a>
           ) : (
             (() => {
               const filteredAcct = scope.includes(':') ? allAccounts.find(a => a.id === scope.split(':')[1]) : null
               return (
                 <button onClick={()=>openNewEntry()} disabled={noAccounts} style={{...btnPrimary,opacity:noAccounts?0.5:1}}>
-                  {addTradeLabel}{filteredAcct ? ` · ${accountLabel(filteredAcct)}` : ''}
+                  {_addLabel}{filteredAcct ? ` · ${accountLabel(filteredAcct)}` : ''}
                 </button>
               )
             })()
@@ -989,12 +993,12 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
           <div style={{...card, padding:'14px 18px', marginBottom:'16px',display:'flex',flexDirection:'column',gap:'12px'}}>
             {/* Statut (sans Actifs) */}
             <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
-              <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Statut</span>
+              <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t('app.journal.filterStatus')}</span>
               {[
-                {k:'all',l:'Tous'},
-                {k:'Challenge',l:'🟡 Challenge'},
-                {k:'Financé',l:'✅ Financé'},
-                {k:'Échoué',l:'🔴 Échoué'},
+                {k:'all',l:t('app.journal.filterAll')},
+                {k:'Challenge',l:t('app.journal.filterChallenge')},
+                {k:'Financé',l:t('app.journal.filterFunded')},
+                {k:'Échoué',l:t('app.journal.filterFailed')},
               ].map(s=>(
                 <button key={s.k} onClick={()=>setStatusFilter(s.k)} style={chipBtn(statusFilter===s.k)}>{s.l}</button>
               ))}
@@ -1003,7 +1007,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
             {/* Firme + Compte : 2 selects ergonomiques côte à côte */}
             <div style={{display:'flex',flexWrap:'wrap',gap:'12px',alignItems:'center'}}>
               <div style={{display:'flex',alignItems:'center',gap:'8px',flex:'1 1 240px'}}>
-                <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Firme</span>
+                <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t('app.journal.filterFirm')}</span>
                 <select
                   value={selectedFirmId}
                   onChange={e => {
@@ -1013,7 +1017,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   }}
                   style={{...selectStyle, flex:1}}
                 >
-                  <option value="all">📊 Toutes les firmes</option>
+                  <option value="all">{t('app.journal.selectAllFirms')}</option>
                   {firms.map(f => {
                     const has = (f.accounts || []).some(a => passesStatus(a))
                     if(!has) return null
@@ -1022,7 +1026,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 </select>
               </div>
               <div style={{display:'flex',alignItems:'center',gap:'8px',flex:'1 1 240px'}}>
-                <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>Compte</span>
+                <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t('app.journal.filterAccount')}</span>
                 <select
                   value={selectedAcctId}
                   disabled={selectedFirmId === 'all'}
@@ -1033,7 +1037,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   }}
                   style={{...selectStyle, flex:1, opacity: selectedFirmId === 'all' ? 0.5 : 1}}
                 >
-                  <option value="all">Tous les comptes{selectedFirmId !== 'all' && currentFirm ? ` de ${currentFirm.name}` : ''}</option>
+                  <option value="all">{t('app.journal.selectAllAccounts')}{selectedFirmId !== 'all' && currentFirm ? ` de ${currentFirm.name}` : ''}</option>
                   {accountsForFirm.map(a => (
                     <option key={a.id} value={a.id}>
                       {accountLabel(a)} · {a.status} · acheté {a.buy_date}
@@ -1047,17 +1051,17 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
       })()}
 
       {loading ? (
-        <div style={{...card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>⏳ Chargement…</div>
+        <div style={{...card,padding:'60px',textAlign:'center',color:'var(--text3)'}}>{t('app.journal.loading')}</div>
       ) : (
       <>
         {/* Stats */}
         <div className="stats-5" style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'12px',marginBottom:'20px'}}>
           {[
-            { l:'PnL filtré', v:fmtMoney(stats.totalPnl), c:stats.totalPnl>=0?'var(--green)':'var(--red)', tt:'Somme du PnL de tous les trades correspondant aux filtres actuels (firme/compte/statut).' },
+            { l:t('app.journal.statPnl'), v:fmtMoney(stats.totalPnl), c:stats.totalPnl>=0?'var(--green)':'var(--red)', tt:'Somme du PnL de tous les trades correspondant aux filtres actuels (firme/compte/statut).' },
             { l:`PnL ${monthLabel}`, v:fmtMoney(stats.monthPnl), c:stats.monthPnl>=0?'var(--green)':'var(--red)', tt:`Somme du PnL pour le mois affiché (${monthLabel}).` },
-            { l:'Win rate', v:stats.total?(stats.wr+'%'):'—', c:stats.wr>=50?'var(--green)':'var(--amber-text)', tt:'Pourcentage de trades gagnants (PnL > 0). Calculé sur les trades filtrés.' },
+            { l:t('app.journal.statWinRate'), v:stats.total?(stats.wr+'%'):'—', c:stats.wr>=50?'var(--green)':'var(--amber-text)', tt:'Pourcentage de trades gagnants (PnL > 0). Calculé sur les trades filtrés.' },
             {
-              l:'Consistency',
+              l:t('app.journal.statConsistency'),
               v: stats.consistency!==null ? stats.consistency.toFixed(2)+'%' : '—',
               c: stats.consistency===null ? 'var(--text3)'
                 : stats.consistency<30 ? 'var(--green)'
@@ -1066,7 +1070,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               tt: 'Ratio (meilleur jour gagnant / total des gains positifs). Plus c\'est BAS mieux c\'est. La plupart des PropFirms exigent ≤ 40-50% pour valider tes payouts. Vert <30%, ambre <40%, rouge ≥40%.'
             },
             { l:'Trades', v:stats.total, c:'var(--text)', tt:'Nombre total de trades correspondant aux filtres actuels.' },
-            { l:'Jours tradés', v:stats.monthDays, c:'var(--text)', tt:`Nombre de jours uniques avec au moins 1 trade sur ${monthLabel}.` },
+            { l:t('app.journal.statTradingDays'), v:stats.monthDays, c:'var(--text)', tt:`Nombre de jours uniques avec au moins 1 trade sur ${monthLabel}.` },
           ].map((k,i)=>(
             <div key={i} style={{...card,padding:'16px'}}>
               <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px',display:'inline-flex',alignItems:'center'}}>
@@ -1083,17 +1087,17 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
 
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px',gap:'8px',flexWrap:'wrap'}}>
-              <div style={{fontSize:'15px',fontWeight:'600'}}>Calendrier PnL — {monthLabel}</div>
+              <div style={{fontSize:'15px',fontWeight:'600'}}>{t('app.journal.calendarTitle')} — {monthLabel}</div>
               <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
                 <button onClick={()=>{const d=new Date(calYear,calMonth-1);setCalMonth(d.getMonth());setCalYear(d.getFullYear())}} style={btnGhost}>‹</button>
-                <button onClick={()=>{setCalMonth(new Date().getMonth());setCalYear(new Date().getFullYear());setSelDay(null)}} style={btnGhost}>Aujourd'hui</button>
+                <button onClick={()=>{setCalMonth(new Date().getMonth());setCalYear(new Date().getFullYear());setSelDay(null)}} style={btnGhost}>{t('app.journal.today')}</button>
                 <button onClick={()=>{const d=new Date(calYear,calMonth+1);setCalMonth(d.getMonth());setCalYear(d.getFullYear())}} style={btnGhost}>›</button>
               </div>
             </div>
 
             <div style={{...card, overflow:'hidden'}}>
               <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',background:'var(--surface2)',borderBottom:'0.5px solid var(--border)'}}>
-                {DAYS_FR.map(d=>(
+                {(Array.isArray(DAYS) ? DAYS : DAYS_FR).map(d=>(
                   <div key={d} style={{padding:'8px 0',textAlign:'center',fontSize:'10px',fontWeight:'600',color:'var(--text3)',textTransform:'uppercase'}}>{d}</div>
                 ))}
               </div>
@@ -1146,7 +1150,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                         </>
                       ) : (
                         !day.other && !noAccounts && (
-                          <div style={{fontSize:'10px',color:'var(--text3)',opacity:0.6}}>+ Ajouter</div>
+                          <div style={{fontSize:'10px',color:'var(--text3)',opacity:0.6}}>{t('app.journal.addBtn')}</div>
                         )
                       )}
                     </div>
@@ -1162,7 +1166,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               <div style={{fontSize:'13px',fontWeight:'600'}}>
                 {selDay
                   ? new Date(selDay+'T00:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})
-                  : 'Sélectionnez un jour'}
+                  : t('app.journal.selectDay')}
               </div>
               {selDay && !noAccounts && !addTradeHref && (
                 <button onClick={()=>openNewEntry(selDay)} style={{...btnGhost,padding:'4px 10px',fontSize:'11px'}}>+ Trade</button>
@@ -1171,12 +1175,12 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
 
             {!selDay && (
               <div style={{color:'var(--text3)',fontSize:'12px',padding:'12px 0'}}>
-                Cliquez sur un jour pour voir les trades, ou sur un jour vide pour en ajouter un.
+                {t('app.journal.selectDayHint')}
               </div>
             )}
 
             {selDay && dayEntries.length===0 && (
-              <div style={{color:'var(--text3)',fontSize:'12px',padding:'12px 0'}}>Aucun trade ce jour.</div>
+              <div style={{color:'var(--text3)',fontSize:'12px',padding:'12px 0'}}>{t('app.journal.noTradeDay')}</div>
             )}
 
             {selDay && dayEntries.length>0 && (() => {
@@ -1187,7 +1191,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 <>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'14px'}}>
                     <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'10px 12px'}}>
-                      <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'3px'}}>PnL du jour</div>
+                      <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'3px'}}>{t('app.journal.pnlDay')}</div>
                       <div style={{fontSize:'15px',fontWeight:'700',color:dayPnl>=0?'var(--green)':'var(--red)'}}>{fmtMoney(dayPnl)}</div>
                     </div>
                     <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'10px 12px'}}>
@@ -1260,8 +1264,8 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                               ils s'affichent dans la page Trade Log (/app?p=trades). */}
                           {e.notes && <div style={{fontSize:'11px',color:'var(--text2)',marginTop:'4px',fontStyle:'italic'}}>{e.notes}</div>}
                           <div style={{display:'flex',gap:'6px',marginTop:'6px'}}>
-                            <button onClick={()=>openEditEntry(e)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px'}}>✏ Modifier</button>
-                            <button onClick={()=>deleteEntry(e.id)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px',color:'var(--red-text)'}}>✕ Supprimer</button>
+                            <button onClick={()=>openEditEntry(e)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px'}}>{t('app.journal.modify')}</button>
+                            <button onClick={()=>deleteEntry(e.id)} style={{...btnGhost,padding:'3px 8px',fontSize:'10px',color:'var(--red-text)'}}>{t('app.journal.deleteBtn')}</button>
                           </div>
                         </div>
                       )
@@ -1278,16 +1282,16 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
           <>
           <div className="stats-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px',marginTop:'20px'}}>
             <div style={{...card, padding:'16px'}}>
-              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>Gain moyen</div>
+              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>{t('app.journal.avgWin')}</div>
               <div style={{fontSize:'18px',fontWeight:'600',color:'var(--green)'}}>{fmtMoney(stats.avgWin)}</div>
             </div>
             <div style={{...card, padding:'16px'}}>
-              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>Perte moyenne</div>
+              <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px'}}>{t('app.journal.avgLoss')}</div>
               <div style={{fontSize:'18px',fontWeight:'600',color:'var(--red)'}}>{fmtMoney(stats.avgLoss)}</div>
             </div>
             <div style={{...card, padding:'16px'}}>
               <div style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:'8px',display:'flex',alignItems:'center',gap:'4px'}}>
-                RRR empirique
+                {t('app.journal.rrrEmpirical')}
                 <TooltipIcon text="Ratio Récompense:Risque empirique = |gain moyen / perte moyenne|. Mesure le rapport entre tes gains et tes pertes moyennes. Idéal > 1.5." maxWidth={280} />
               </div>
               <div style={{fontSize:'18px',fontWeight:'600'}}>
@@ -1364,7 +1368,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
           return (
             <div style={{marginTop:'24px'}}>
               <div style={{fontSize:'15px',fontWeight:'600',marginBottom:'12px',display:'flex',alignItems:'center',gap:'8px'}}>
-                📈 Courbes de balance ({acctsToShow.length})
+                {t('app.journal.equityCurves')} ({acctsToShow.length})
               </div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(420px,1fr))',gap:'16px'}}>
                 {acctsToShow.map(acc => {
@@ -1402,7 +1406,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
             position:'absolute',top:'20px',right:'20px',
             background:'rgba(255,255,255,0.1)',color:'#fff',border:'1px solid rgba(255,255,255,0.2)',
             borderRadius:'8px',padding:'8px 16px',fontSize:'13px',cursor:'pointer',fontWeight:'600',
-          }}>✕ Fermer</button>
+          }}>{t('app.journal.closeLightbox')}</button>
         </div>
       )}
 
@@ -1411,13 +1415,13 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
         <div onClick={()=>setEntryModal(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}>
           <div className="modal" onClick={e=>e.stopPropagation()} style={{...card,padding:'28px',width:'560px',maxWidth:'100%',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
             <h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>
-              {entryModal?.entry ? 'Modifier le trade' : 'Nouveau trade'}
+              {entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
             </h3>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
               <div style={{gridColumn:'1/-1'}}>
-                <label style={labelS}>Compte</label>
+                <label style={labelS}>{t('app.trade.fieldAccount')}</label>
                 <select value={form.accountId} onChange={e=>setForm(p=>({...p,accountId:e.target.value}))} style={inputS}>
-                  <option value="">— Sélectionner —</option>
+                  <option value="">{t('app.trade.selectAccount')}</option>
                   {firms.map(f=>(
                     <optgroup key={f.id} label={f.name}>
                       {(f.accounts||[]).filter(a=>a.status!=='Échoué').map(a=>(
@@ -1430,25 +1434,25 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 </select>
               </div>
               <div>
-                <label style={labelS}>Date · Heure</label>
+                <label style={labelS}>{t('app.trade.fieldDate')} · Heure</label>
                 <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:8}}>
                   <input type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} style={inputS} />
                   <input type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))} title="Heure du trade (optionnel) — utilisée pour les heatmaps" style={inputS} />
                 </div>
               </div>
               <div>
-                <label style={labelS}>PnL ($)</label>
+                <label style={labelS}>{t('app.trade.fieldPnL')}</label>
                 <input type="number" step="0.01" value={form.pnl} onChange={e=>setForm(p=>({...p,pnl:e.target.value}))} placeholder="ex : 250  ou  -125" style={inputS} autoFocus />
               </div>
               <div>
-                <label style={labelS}>Instrument</label>
+                <label style={labelS}>{t('app.trade.fieldInstrument')}</label>
                 <input list="instrSugg" value={form.instrument} onChange={e=>setForm(p=>({...p,instrument:e.target.value}))} placeholder="ES, NQ, MNQ, MES, GC..." style={inputS} />
                 <datalist id="instrSugg">
                   {['ES','NQ','MNQ','MES','RTY','M2K','YM','MYM','GC','MGC','SI','CL','MCL','NG','6E','6B','6J','BTC','MBT'].map(s=><option key={s} value={s} />)}
                 </datalist>
               </div>
               <div>
-                <label style={labelS}>Side</label>
+                <label style={labelS}>{t('app.trade.fieldSide')}</label>
                 <select value={form.side} onChange={e=>setForm(p=>({...p,side:e.target.value}))} style={inputS}>
                   <option value="">—</option>
                   <option value="Long">Long</option>
@@ -1459,33 +1463,33 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               {/* === Détails approfondis (optionnels) === */}
               <div style={{gridColumn:'1/-1',marginTop:'8px',paddingTop:'16px',borderTop:'1px solid var(--border)'}}>
                 <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>
-                  📊 Détails du trade (optionnel)
+                  {t('app.trade.sectionDetails')}
                 </div>
               </div>
               <div>
-                <label style={labelS}>Prix d'entrée</label>
+                <label style={labelS}>{t('app.trade.fieldEntry')}</label>
                 <input type="number" step="0.0001" value={form.entryPrice} onChange={e=>setForm(p=>({...p,entryPrice:e.target.value}))} placeholder="ex : 5430.25" style={inputS} />
               </div>
               <div>
-                <label style={labelS}>Prix de sortie</label>
+                <label style={labelS}>{t('app.trade.fieldExit')}</label>
                 <input type="number" step="0.0001" value={form.exitPrice} onChange={e=>setForm(p=>({...p,exitPrice:e.target.value}))} placeholder="ex : 5435.50" style={inputS} />
               </div>
               <div>
-                <label style={labelS}>Stop Loss</label>
+                <label style={labelS}>{t('app.trade.fieldStop')}</label>
                 <input type="number" step="0.0001" value={form.stopLoss} onChange={e=>setForm(p=>({...p,stopLoss:e.target.value}))} placeholder="ex : 5425.00" style={inputS} />
               </div>
               <div>
-                <label style={labelS}>Take Profit</label>
+                <label style={labelS}>{t('app.trade.fieldTP')}</label>
                 <input type="number" step="0.0001" value={form.takeProfit} onChange={e=>setForm(p=>({...p,takeProfit:e.target.value}))} placeholder="ex : 5440.00" style={inputS} />
               </div>
 
               {/* Commissions & Slippage (Phase 4) */}
               <div>
-                <label style={labelS}>Commissions ($)</label>
+                <label style={labelS}>{t('app.trade.fieldCommissions')}</label>
                 <input type="number" step="0.01" min="0" value={form.commissions} onChange={e=>setForm(p=>({...p,commissions:e.target.value}))} placeholder="ex : 5.40" style={inputS} />
               </div>
               <div>
-                <label style={labelS}>Slippage ($)</label>
+                <label style={labelS}>{t('app.trade.fieldSlippage')}</label>
                 <input type="number" step="0.01" min="0" value={form.slippage} onChange={e=>setForm(p=>({...p,slippage:e.target.value}))} placeholder="ex : 2.50" style={inputS} />
               </div>
 
@@ -1542,9 +1546,9 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               {/* === Tags trades (psychologie + setup + contexte) === */}
               <div style={{gridColumn:'1/-1',marginTop:'8px',paddingTop:'16px',borderTop:'1px solid var(--border)'}}>
                 <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>
-                  🏷 Tags du trade (optionnel)
+                  {t('app.trade.sectionTags')}
                   <span style={{textTransform:'none',letterSpacing:0,fontWeight:'normal',color:'var(--text3)',fontSize:'10px',marginLeft:'6px'}}>
-                    — pour analyser ta psycho &amp; tes setups
+                    {t('app.trade.tagsHint')}
                   </span>
                 </div>
                 <TagSelector
@@ -1555,7 +1559,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
 
               {/* === Screenshot du graphique === */}
               <div style={{gridColumn:'1/-1'}}>
-                <label style={labelS}>📷 Screenshot du graphique</label>
+                <label style={labelS}>{t('app.trade.sectionScreenshot')}</label>
                 {form.screenshotUrl ? (
                   <div style={{position:'relative',marginBottom:'8px'}}>
                     <img
@@ -1568,7 +1572,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                       position:'absolute',top:'8px',right:'8px',
                       background:'rgba(0,0,0,0.7)',color:'#fff',border:'none',borderRadius:'6px',
                       padding:'5px 10px',fontSize:'11px',cursor:'pointer',fontWeight:'600',
-                    }}>✕ Retirer</button>
+                    }}>{t('app.trade.removeScreenshot')}</button>
                   </div>
                 ) : (
                   <label style={{
@@ -1577,7 +1581,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                     cursor: uploadingScreen ? 'wait' : 'pointer',background:'var(--surface2)',
                     color:'var(--text2)',fontSize:'12px',
                   }}>
-                    {uploadingScreen ? '⏳ Upload en cours...' : '📤 Cliquer pour uploader (PNG/JPG, max 5 Mo)'}
+                    {uploadingScreen ? t('app.trade.uploading') : t('app.trade.uploadLabel')}
                     <input
                       type="file" accept="image/*"
                       disabled={uploadingScreen}
@@ -1589,19 +1593,19 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
               </div>
 
               <div style={{gridColumn:'1/-1'}}>
-                <label style={labelS}>Notes (setup, émotion, erreur…)</label>
+                <label style={labelS}>{t('app.trade.fieldNotes')}</label>
                 <textarea rows={3} value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Optionnel" style={{...inputS,resize:'vertical',fontFamily:'inherit'}} />
               </div>
             </div>
             <div style={{display:'flex',gap:'8px',justifyContent:'space-between',alignItems:'center',marginTop:'20px'}}>
               <div>
                 {entryModal?.entry && (
-                  <button onClick={()=>{deleteEntry(entryModal.entry.id);setEntryModal(null)}} style={{...btnGhost,color:'var(--red-text)',borderColor:'var(--red-bg)'}}>Supprimer</button>
+                  <button onClick={()=>{deleteEntry(entryModal.entry.id);setEntryModal(null)}} style={{...btnGhost,color:'var(--red-text)',borderColor:'var(--red-bg)'}}>{t('app.trade.btnDelete')}</button>
                 )}
               </div>
               <div style={{display:'flex',gap:'8px'}}>
-                <button onClick={()=>setEntryModal(null)} style={btnGhost}>Annuler</button>
-                <button onClick={saveEntry} style={btnPrimary}>{entryModal?.entry ? 'Enregistrer' : 'Ajouter'}</button>
+                <button onClick={()=>setEntryModal(null)} style={btnGhost}>{t('app.trade.btnCancel')}</button>
+                <button onClick={saveEntry} style={btnPrimary}>{entryModal?.entry ? t('app.trade.btnSave') : t('app.trade.btnAdd')}</button>
               </div>
             </div>
           </div>

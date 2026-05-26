@@ -1,7 +1,4 @@
 'use client'
-// TODO i18n v3.1 — Composant non traduit. Strings FR : titres "Règles firmes",
-// filtres (Drawdown, Profit split, Payout target…), drawer détail, libellés
-// règles (Trailing/EOD/Static, Mini/Pro plans).
 // Comparateur PropFirms — vue CARDS GRID avec filtres + drawer détail.
 // Remplace l'ancienne table horizontale (UX galère pour comparer + mobile cassé).
 //
@@ -15,6 +12,7 @@
 // Admin override : si admin, charge les overrides depuis Supabase et les merge par-dessus.
 
 import { useState, useEffect, useMemo } from 'react'
+import { useT } from './LanguageProvider'
 import { PROPFIRM_RULES } from '../lib/constants'
 import { getFirmLogo } from '../lib/firmLogos'
 import { supabase } from '../lib/supabase'
@@ -211,14 +209,14 @@ const FIRM_META = {
 
 // Filtres disponibles
 const FILTERS = [
-  { id: 'all', label: 'Toutes', test: () => true },
-  { id: 'eod', label: 'EOD trailing', test: m => m.ddType === 'EOD' || m.ddDetail?.includes('EOD') },
-  { id: 'intraday', label: 'Intraday', test: m => m.ddDetail?.includes('INTRADAY') || m.ddDetail?.includes('Intraday') },
-  { id: 'no-dll', label: 'Sans DLL', test: m => m.hasDLL === false },
-  { id: 'onetime', label: 'One-time', test: m => m.pricingModel === 'onetime' || m.pricingModel === 'mixed' },
-  { id: 'monthly', label: 'Mensuel', test: m => m.pricingModel === 'monthly' || m.pricingModel === 'mixed' },
-  { id: '100split', label: '100% split possible', test: m => m.splitMax >= 100 },
-  { id: 'fast-payout', label: 'Payout <24h', test: m => ['15 min', '24h', '1-4h', 'daily', '48h'].includes(m.payoutSpeed) },
+  { id: 'all', lk: 'filterAll', test: () => true },
+  { id: 'eod', lk: 'filterEod', test: m => m.ddType === 'EOD' || m.ddDetail?.includes('EOD') },
+  { id: 'intraday', lk: 'filterIntraday', test: m => m.ddDetail?.includes('INTRADAY') || m.ddDetail?.includes('Intraday') },
+  { id: 'no-dll', lk: 'filterNoDll', test: m => m.hasDLL === false },
+  { id: 'onetime', lk: 'filterOnetime', test: m => m.pricingModel === 'onetime' || m.pricingModel === 'mixed' },
+  { id: 'monthly', lk: 'filterMonthly', test: m => m.pricingModel === 'monthly' || m.pricingModel === 'mixed' },
+  { id: '100split', lk: 'filter100Split', test: m => m.splitMax >= 100 },
+  { id: 'fast-payout', lk: 'filterFastPayout', test: m => ['15 min', '24h', '1-4h', 'daily', '48h'].includes(m.payoutSpeed) },
 ]
 
 // Status badges
@@ -231,6 +229,7 @@ const STATUS_BADGES = {
 
 // === COMPOSANT PRINCIPAL ===
 export default function PropfirmComparator({ user }) {
+  const t = useT()
   const [filter, setFilter] = useState('all')
   const [drawerFirm, setDrawerFirm] = useState(null) // firm key opened in drawer
   const [overrides, setOverrides] = useState({}) // admin overrides from Supabase
@@ -293,15 +292,14 @@ export default function PropfirmComparator({ user }) {
           fontSize: 11, color: C.blueLight, letterSpacing: '0.16em',
           marginBottom: 10, textTransform: 'uppercase', fontWeight: 600,
         }}>
-          Règles PropFirms
+          {t('app.comparator.eyebrow')}
         </div>
         <h1 style={{
           fontSize: 30, fontWeight: 700, letterSpacing: '-0.025em',
           margin: 0, marginBottom: 8, lineHeight: 1.1,
-        }}>Comparateur PropFirms</h1>
+        }}>{t('app.comparator.title')}</h1>
         <p style={{ fontSize: 14, color: C.text3, margin: 0, lineHeight: 1.5 }}>
-          Règles, drawdowns, prix et payouts des {firms.length} PropFirms supportées sur Quantara —
-          vérifiées mai 2026 via sources officielles et 3 sites de review cross-référencés.
+          {t('app.comparator.subtitle').replace('{n}', firms.length)}
         </p>
       </div>
 
@@ -317,7 +315,7 @@ export default function PropfirmComparator({ user }) {
           fontWeight: 600, textTransform: 'uppercase',
           alignSelf: 'center', marginRight: 4,
         }}>
-          Filtrer ·
+          {t('app.comparator.filterLabel')}
         </div>
         {FILTERS.map(f => {
           const isActive = filter === f.id
@@ -335,7 +333,7 @@ export default function PropfirmComparator({ user }) {
                 fontFamily: 'inherit',
                 transition: 'all 0.15s',
               }}>
-              {f.label}
+              {t('app.comparator.' + f.lk)}
             </button>
           )
         })}
@@ -419,10 +417,10 @@ export default function PropfirmComparator({ user }) {
                 gap: 10, paddingTop: 12,
                 borderTop: `1px solid ${C.border}`,
               }}>
-                <StatCell label="DD type" value={meta.ddType} hint={meta.ddDetail} />
-                <StatCell label="Split max" value={meta.splitMax ? `${meta.splitMax}%` : '—'} />
-                <StatCell label="Pricing" value={meta.pricingNote} small />
-                <StatCell label="Payout" value={meta.payoutSpeed} />
+                <StatCell label={t('app.comparator.statDdType')} value={meta.ddType} hint={meta.ddDetail} />
+                <StatCell label={t('app.comparator.statSplitMax')} value={meta.splitMax ? `${meta.splitMax}%` : '—'} />
+                <StatCell label={t('app.comparator.statPricing')} value={meta.pricingNote} small />
+                <StatCell label={t('app.comparator.statPayout')} value={meta.payoutSpeed} />
               </div>
 
               {/* Tags */}
@@ -430,7 +428,7 @@ export default function PropfirmComparator({ user }) {
                 <div style={{
                   display: 'flex', flexWrap: 'wrap', gap: 5,
                 }}>
-                  {meta.tags.slice(0, 4).map((t, i) => (
+                  {meta.tags.slice(0, 4).map((tag, i) => (
                     <span key={i} style={{
                       fontSize: 10, padding: '3px 8px',
                       background: 'rgba(255,255,255,0.04)',
@@ -438,7 +436,7 @@ export default function PropfirmComparator({ user }) {
                       borderRadius: 99, color: C.text3,
                       whiteSpace: 'nowrap',
                     }}>
-                      {t}
+                      {tag}
                     </span>
                   ))}
                 </div>
@@ -451,7 +449,7 @@ export default function PropfirmComparator({ user }) {
                 gap: 10,
               }}>
                 <span style={{ fontSize: 12, color: C.blueLight, fontWeight: 500 }}>
-                  Voir toutes les règles →
+                  {t('app.comparator.viewRules')}
                 </span>
                 {affLink && (
                   <a
@@ -467,7 +465,7 @@ export default function PropfirmComparator({ user }) {
                       borderRadius: 6,
                       whiteSpace: 'nowrap',
                     }}
-                  >Visiter le site →</a>
+                  >{t('app.comparator.visitSite')}</a>
                 )}
               </div>
             </div>
@@ -481,7 +479,7 @@ export default function PropfirmComparator({ user }) {
           background: C.surface, borderRadius: 12,
           border: `1px dashed ${C.border2}`,
         }}>
-          Aucune PropFirm ne correspond à ce filtre.
+          {t('app.comparator.noMatch')}
         </div>
       )}
 
@@ -501,7 +499,7 @@ export default function PropfirmComparator({ user }) {
           background: 'rgba(45,111,255,0.08)', border: `1px solid rgba(45,111,255,0.25)`,
           borderRadius: 8, fontSize: 11, color: C.blueLight,
         }}>
-          🔧 Mode admin · {Object.keys(overrides).length} firmes avec overrides Supabase
+          🔧 Mode admin · {Object.keys(overrides).length} {t('app.comparator.adminOverrides')}
         </div>
       )}
 
@@ -536,6 +534,7 @@ function StatCell({ label, value, hint, small }) {
 
 // === Drawer plein écran avec toutes les règles d'une firme ===
 function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
+  const t = useT()
   // Ferme le drawer avec Escape
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
@@ -685,14 +684,14 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
           border: `1px solid ${C.border}`,
         }}>
           {[
-            { key: 'quick', label: 'Vue rapide' },
-            { key: 'advanced', label: 'Règles avancées' },
-          ].map(t => {
-            const active = viewMode === t.key
+            { key: 'quick', label: t('app.comparator.drawerViewQuick') },
+            { key: 'advanced', label: t('app.comparator.drawerViewFull') },
+          ].map(tab => {
+            const active = viewMode === tab.key
             return (
               <button
-                key={t.key}
-                onClick={() => setViewMode(t.key)}
+                key={tab.key}
+                onClick={() => setViewMode(tab.key)}
                 style={{
                   flex: 1,
                   padding: '8px 14px', fontSize: 12, fontWeight: 600,
@@ -701,7 +700,7 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
                   color: active ? C.blueLight : C.text2,
                   fontFamily: 'inherit', letterSpacing: '0.04em',
                   transition: 'all 0.15s',
-                }}>{t.label}</button>
+                }}>{tab.label}</button>
             )
           })}
         </div>
