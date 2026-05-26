@@ -195,6 +195,7 @@ export default function TradeEntryModal({
 
   return (
     <div
+      className="qt-modal-backdrop"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0,
@@ -204,7 +205,7 @@ export default function TradeEntryModal({
       }}
     >
       <div
-        className="modal"
+        className="modal qt-modal-content"
         onClick={e => e.stopPropagation()}
         style={{ ...card, padding: '28px', width: '560px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
       >

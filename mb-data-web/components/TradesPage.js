@@ -278,7 +278,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
       </div>
 
       {/* === Stats résumé (4 KPIs + ligne coûts si applicable) === */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }} className="trades-stats">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }} className="trades-stats qt-stagger">
         <StatCard label={t('app.trades.statTrades')} value={String(stats.total)} />
         <StatCard label={t('app.trades.statPnl')} value={fmtMoney(stats.totalPnl)} color={stats.totalPnl >= 0 ? C.green : C.red} />
         <StatCard label={t('app.trades.statWinRate')} value={stats.total > 0 ? stats.winRate.toFixed(1) + '%' : '—'} color={stats.winRate >= 50 ? C.green : C.amber} />
@@ -449,7 +449,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
           )}
         </div>
       ) : (
-        <div className="trades-grid" style={{
+        <div className="trades-grid qt-stagger" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
           gap: 12,
@@ -470,6 +470,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
       {/* === Lightbox screenshot plein écran === */}
       {lightboxUrl && (
         <div
+          className="qt-modal-backdrop"
           onClick={() => setLightboxUrl(null)}
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 600,

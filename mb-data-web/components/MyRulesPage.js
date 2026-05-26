@@ -296,7 +296,7 @@ function SetupsTab({ user, showToast }) {
           <button onClick={() => setEditing('new')} style={btnPrimary}>{t('app.myrules.setupsCreate')}</button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+        <div className="qt-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
           {setups.map(s => (
             <SetupCard key={s.id} setup={s} onEdit={() => setEditing(s)} onDelete={() => deleteSetup(s.id)} />
           ))}
@@ -376,8 +376,8 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} style={{ ...card, padding: 24, width: 560, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+    <div className="qt-modal-backdrop" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, overflowY: 'auto' }}>
+      <div className="qt-modal-content" onClick={e => e.stopPropagation()} style={{ ...card, padding: 24, width: 560, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 18 }}>
           {setup ? t('app.myrules.setupModalEdit') : t('app.myrules.setupModalNew')}
         </h3>

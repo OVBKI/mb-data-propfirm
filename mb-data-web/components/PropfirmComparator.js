@@ -340,7 +340,7 @@ export default function PropfirmComparator({ user }) {
       </div>
 
       {/* === Grid de cards === */}
-      <div style={{
+      <div className="qt-stagger" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
         gap: 16,
@@ -356,7 +356,7 @@ export default function PropfirmComparator({ user }) {
               role="button"
               tabIndex={0}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawerFirm(firmName) } }}
-              className="qt-firm-card"
+              className="qt-firm-card qt-card-hover"
               style={{
                 textAlign: 'left',
                 background: C.surface,
@@ -559,6 +559,7 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
 
   return (
     <div
+      className="qt-modal-backdrop"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
@@ -567,6 +568,7 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
       }}
     >
       <div
+        className="qt-drawer"
         onClick={e => e.stopPropagation()}
         style={{
           width: 'min(680px, 100%)', height: '100%',

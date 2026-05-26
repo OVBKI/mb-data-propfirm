@@ -333,7 +333,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
       </div>
 
       {/* Filtres */}
-      <div style={{ ...card, padding: 14, marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="qt-stagger" style={{ ...card, padding: 14, marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
         {/* Période */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('app.heatmap.periodLabel')}</span>

@@ -527,6 +527,108 @@ button, a, input, select, textarea {
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ====================================================================
+   APP — Animations & micro-interactions (v3.1)
+   ==================================================================== */
+
+/* Page content fade-in on mount */
+@keyframes appFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-pad {
+  animation: appFadeIn 0.3s ease-out both;
+}
+
+/* Card hover lift — subtle elevation on hover */
+.qt-card-hover {
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.2s ease,
+              border-color 0.2s ease;
+}
+.qt-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(45,111,255,0.08);
+}
+
+/* Stat card number pop-in */
+@keyframes statPopIn {
+  from { opacity: 0; transform: scale(0.85) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.qt-stat-value {
+  animation: statPopIn 0.35s cubic-bezier(0.16,1,0.3,1) both;
+}
+.qt-stat-value:nth-child(2) { animation-delay: 0.05s; }
+.qt-stat-value:nth-child(3) { animation-delay: 0.10s; }
+.qt-stat-value:nth-child(4) { animation-delay: 0.15s; }
+.qt-stat-value:nth-child(5) { animation-delay: 0.20s; }
+
+/* Toast slide-in from bottom */
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes toastSlideOut {
+  from { opacity: 1; transform: translateX(-50%) translateY(0); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(20px); }
+}
+.qt-toast {
+  animation: toastSlideIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Modal backdrop fade */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modalContentIn {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.qt-modal-backdrop {
+  animation: modalFadeIn 0.2s ease-out both;
+}
+.qt-modal-content {
+  animation: modalContentIn 0.25s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Chip/pill button press effect */
+.qt-chip {
+  transition: transform 0.1s, background 0.15s, border-color 0.15s, color 0.15s;
+}
+.qt-chip:active {
+  transform: scale(0.95);
+}
+
+/* Smooth focus ring for inputs */
+.qt-focus-ring:focus {
+  border-color: rgba(45,111,255,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(45,111,255,0.12);
+  outline: none;
+}
+
+/* Drawer slide-in from right */
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.qt-drawer {
+  animation: drawerSlideIn 0.25s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Stagger delays for lists */
+.qt-stagger > *:nth-child(1)  { animation-delay: 0.03s; }
+.qt-stagger > *:nth-child(2)  { animation-delay: 0.06s; }
+.qt-stagger > *:nth-child(3)  { animation-delay: 0.09s; }
+.qt-stagger > *:nth-child(4)  { animation-delay: 0.12s; }
+.qt-stagger > *:nth-child(5)  { animation-delay: 0.15s; }
+.qt-stagger > *:nth-child(6)  { animation-delay: 0.18s; }
+.qt-stagger > *:nth-child(7)  { animation-delay: 0.21s; }
+.qt-stagger > *:nth-child(8)  { animation-delay: 0.24s; }
+.qt-stagger > *:nth-child(9)  { animation-delay: 0.27s; }
+.qt-stagger > *:nth-child(10) { animation-delay: 0.30s; }
+
 /* Respect du prefers-reduced-motion (accessibilité) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
