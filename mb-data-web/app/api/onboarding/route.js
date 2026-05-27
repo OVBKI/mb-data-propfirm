@@ -3,6 +3,10 @@ import { verifyAuth } from '../../../lib/apiAuth'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
+function escapeHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 const EMAILS = [
   {
     delay: 0,
@@ -118,18 +122,22 @@ export async function POST(request) {
 
   if (!resend) return Response.json({ error: 'Email service not configured' }, { status: 503 })
 
-  const { step = 0, email, username } = await request.json()
+  let body
+  try { body = await request.json() } catch {
+    return Response.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { step = 0 } = body
   if (step < 0 || step > 2) return Response.json({ error: 'Invalid step' }, { status: 400 })
-  if (!email) return Response.json({ error: 'Email required' }, { status: 400 })
 
   const config = EMAILS[step]
 
   try {
     await resend.emails.send({
       from: 'Quantara <noreply@quantara.tech>',
-      to: email,
+      to: auth.user.email,
       subject: config.subject,
-      html: emailTemplate(step, username),
+      html: emailTemplate(step, escapeHtml(auth.user.user_metadata?.username)),
     })
     return Response.json({ ok: true, step })
   } catch (e) {
