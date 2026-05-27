@@ -212,19 +212,19 @@ Crée 2 comptes test (A et B) et vérifie qu'aucune donnée ne fuit :
 
 ### 🏛 LLC & business
 
-- [ ] **LLC Texas** formée et active (utilise **Northwest Registered Agent** ou **LegalZoom**, ~$300)
+- [x] **LLC New Mexico** formée et active — Quantara Technologies LLC
 - [ ] **EIN** obtenu (IRS, gratuit, fait online en 15 min après LLC)
 - [ ] **Compte bancaire business** ouvert :
   - **Mercury** (recommandé pour startups US, accessible aux non-résidents)
   - Wise Business
   - Relay Financial
 - [ ] **Stripe** lié à ton compte business
-- [ ] Trouve un **comptable Texas** (CPA, ~$500-1500/an)
-- [ ] Trouve un **registered agent** au Texas (obligatoire, ~$100/an)
+- [ ] Trouve un **comptable New Mexico** (CPA, ~$500-1500/an)
+- [ ] Trouve un **registered agent** au New Mexico (obligatoire, ~$100/an)
 
 ### 📜 CGU / Privacy validés
 
-- [ ] Avocat US (Texas) review CGU et Privacy → ~$500-1000
+- [ ] Avocat US (New Mexico) review CGU et Privacy → ~$500-1000
 - [ ] Endpoint `/api/user/export-data` (RGPD article 20 — droit à la portabilité)
 - [ ] Endpoint `/api/user/delete-account` self-service (RGPD article 17 — droit à l'oubli)
 - [ ] **Cookie banner** si tu utilises analytics non-essentiels (Plausible n'en a pas besoin, PostHog si)
@@ -232,7 +232,7 @@ Crée 2 comptes test (A et B) et vérifie qu'aucune donnée ne fuit :
 
 ### 📋 Compliance ongoing
 
-- [ ] Annual Public Information Report Texas (chaque année avant le 15 mai)
+- [ ] Annual Report New Mexico (vérifier délais et obligations spécifiques NM)
 - [ ] Federal taxes : forme 1040-SS ou 1120 selon ton statut
 - [ ] Sales tax si tu vends à des résidents US (variable selon state, complexe)
 

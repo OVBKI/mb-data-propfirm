@@ -46,7 +46,7 @@ const SECTIONS_FR = [
   },
   {
     title: '6. Avertissement financier ⚠',
-    body: `Quantara est un outil de journalisation, PAS un conseil financier ni d'investissement. Le trading de futures et de comptes PropFirm comporte des risques substantiels de perte de capital et n'est pas adapté à tous les investisseurs. Les performances passées affichées dans l'app ne préjugent pas des résultats futurs. Vous êtes seul(e) responsable de vos décisions de trading. Quantara LLC décline toute responsabilité pour les pertes financières subies suite à l'utilisation du service.`,
+    body: `Quantara est un outil de journalisation, PAS un conseil financier ni d'investissement. Le trading de futures et de comptes PropFirm comporte des risques substantiels de perte de capital et n'est pas adapté à tous les investisseurs. Les performances passées affichées dans l'app ne préjugent pas des résultats futurs. Vous êtes seul(e) responsable de vos décisions de trading. Quantara Technologies LLC décline toute responsabilité pour les pertes financières subies suite à l'utilisation du service.`,
     danger: true,
   },
   {
@@ -55,7 +55,7 @@ const SECTIONS_FR = [
   },
   {
     title: '8. Limitation de responsabilité',
-    body: `Dans les limites maximales permises par la loi applicable, la responsabilité totale cumulée de Quantara LLC vis-à-vis d'un utilisateur ne pourra excéder le montant total payé par cet utilisateur au cours des 12 derniers mois (donc actuellement 0$ en phase beta). Quantara n'est pas responsable des pertes indirectes, immatérielles, ou de la perte de données résultant d'une utilisation contraire aux présentes CGU.`,
+    body: `Dans les limites maximales permises par la loi applicable, la responsabilité totale cumulée de Quantara Technologies LLC vis-à-vis d'un utilisateur ne pourra excéder le montant total payé par cet utilisateur au cours des 12 derniers mois (donc actuellement 0$ en phase beta). Quantara n'est pas responsable des pertes indirectes, immatérielles, ou de la perte de données résultant d'une utilisation contraire aux présentes CGU.`,
   },
   {
     title: '9. Résiliation',
@@ -68,7 +68,7 @@ const SECTIONS_FR = [
 • **Bénéficiaires** : consommateurs (personnes physiques agissant à des fins non-professionnelles) résidant en UE/EEE.
 • **Délai** : 14 jours calendaires à compter de la date de souscription de l'abonnement payant.
 • **Modalités d'exercice** : envoyer un email à contact@quantara.tech avec la mention claire « demande de rétractation », en précisant votre adresse email de compte et la date de souscription. Un modèle de formulaire de rétractation peut être fourni sur simple demande.
-• **Remboursement** : en cas de rétractation valide, Quantara LLC procédera au remboursement intégral des sommes versées sous 14 jours calendaires à compter de la réception de la demande, par le même moyen de paiement que celui utilisé pour la souscription (sauf accord exprès pour un autre moyen).
+• **Remboursement** : en cas de rétractation valide, Quantara Technologies LLC procédera au remboursement intégral des sommes versées sous 14 jours calendaires à compter de la réception de la demande, par le même moyen de paiement que celui utilisé pour la souscription (sauf accord exprès pour un autre moyen).
 • **Exception (article L221-28 13°)** : le droit de rétractation ne s'applique pas si l'utilisateur a expressément demandé et reçu une prestation pleinement exécutée de contenu numérique avant la fin du délai de 14 jours, et a expressément renoncé à son droit de rétractation à ce moment-là. Cette renonciation expresse sera demandée le cas échéant lors de l'activation immédiate d'un service payant.
 • **Plan Free** : le plan Free n'étant pas un service payant, le droit de rétractation ne lui est pas applicable. La présente clause vise exclusivement les futurs plans Pro et Lifetime.`,
   },
@@ -78,7 +78,7 @@ const SECTIONS_FR = [
   },
   {
     title: '12. Droit applicable & juridiction',
-    body: `Les présentes CGU sont régies par le droit du Texas, USA. Tout litige sera soumis exclusivement aux tribunaux compétents du Texas, sauf disposition légale impérative contraire (RGPD et droit de la consommation pour résidents EU notamment, qui permettent la juridiction du pays de résidence du consommateur).`,
+    body: `Les présentes CGU sont régies par le droit du New Mexico, USA. Tout litige sera soumis exclusivement aux tribunaux compétents du New Mexico, sauf disposition légale impérative contraire (RGPD et droit de la consommation pour résidents EU notamment, qui permettent la juridiction du pays de résidence du consommateur).`,
   },
   {
     title: '13. Contact',
@@ -109,7 +109,7 @@ const SECTIONS_EN = [
   },
   {
     title: '6. Financial disclaimer ⚠',
-    body: `Quantara is a journaling tool, NOT financial or investment advice. Trading futures and PropFirm accounts involves substantial risk of capital loss and is not suitable for all investors. Past performance displayed in the app does not guarantee future results. You are solely responsible for your trading decisions. Quantara LLC disclaims all liability for financial losses suffered as a result of using the service.`,
+    body: `Quantara is a journaling tool, NOT financial or investment advice. Trading futures and PropFirm accounts involves substantial risk of capital loss and is not suitable for all investors. Past performance displayed in the app does not guarantee future results. You are solely responsible for your trading decisions. Quantara Technologies LLC disclaims all liability for financial losses suffered as a result of using the service.`,
     danger: true,
   },
   {
@@ -118,7 +118,7 @@ const SECTIONS_EN = [
   },
   {
     title: '8. Limitation of liability',
-    body: `To the maximum extent permitted by applicable law, the total cumulative liability of Quantara LLC towards any user shall not exceed the total amount paid by that user over the past 12 months (currently $0 during beta). Quantara is not liable for indirect, immaterial losses or data loss resulting from a use contrary to these Terms.`,
+    body: `To the maximum extent permitted by applicable law, the total cumulative liability of Quantara Technologies LLC towards any user shall not exceed the total amount paid by that user over the past 12 months (currently $0 during beta). Quantara is not liable for indirect, immaterial losses or data loss resulting from a use contrary to these Terms.`,
   },
   {
     title: '9. Termination',
@@ -131,7 +131,7 @@ const SECTIONS_EN = [
 • **Beneficiaries**: consumers (natural persons acting for non-professional purposes) residing in the EU/EEA.
 • **Period**: 14 calendar days from the paid subscription date.
 • **How to exercise**: send an email to contact@quantara.tech clearly stating "withdrawal request", with your account email and subscription date. A withdrawal form template can be provided on request.
-• **Refund**: in case of a valid withdrawal, Quantara LLC will refund the full amount paid within 14 calendar days of receiving the request, using the same payment method as the subscription (unless explicitly agreed otherwise).
+• **Refund**: in case of a valid withdrawal, Quantara Technologies LLC will refund the full amount paid within 14 calendar days of receiving the request, using the same payment method as the subscription (unless explicitly agreed otherwise).
 • **Exception (article L221-28 13°)**: the right of withdrawal does not apply if the user explicitly requested and received a fully executed digital content service before the 14-day period expired, and explicitly waived their withdrawal right at that time. This waiver will be requested when immediately activating a paid service.
 • **Free plan**: as the Free plan is not a paid service, the right of withdrawal does not apply. This clause applies solely to future Pro and Lifetime plans.`,
   },
@@ -141,7 +141,7 @@ const SECTIONS_EN = [
   },
   {
     title: '12. Governing law & jurisdiction',
-    body: `These Terms are governed by Texas law, USA. Any dispute will be subject exclusively to the competent courts of Texas, except where mandatory law provides otherwise (notably GDPR and EU consumer law, which allow the jurisdiction of the consumer's country of residence).`,
+    body: `These Terms are governed by New Mexico law, USA. Any dispute will be subject exclusively to the competent courts of New Mexico, except where mandatory law provides otherwise (notably GDPR and EU consumer law, which allow the jurisdiction of the consumer's country of residence).`,
   },
   {
     title: '13. Contact',

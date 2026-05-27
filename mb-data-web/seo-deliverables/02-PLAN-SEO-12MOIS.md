@@ -10,7 +10,7 @@ _Cible : quantara.tech — pre-launch beta → 10k visites/mois organiques sous 
 - **Produit :** Quantara, journal de trading SaaS pour traders PropFirm futures
 - **Modèle :** Beta gratuit → freemium/paid (à définir)
 - **Audience :** Traders futures qui ont (ou veulent) un compte chez Topstep, Apex, Lucid, MyFundedFutures, Tradeify, FundedNext, Funded Futures Network, Futures Elites
-- **Édité par :** Quantara LLC (Texas, USA)
+- **Édité par :** Quantara Technologies LLC (New Mexico, USA)
 - **Géographie :** EU + LATAM en priorité (FR/EN/ES), USA en secondaire
 - **Phase :** Pre-launch — 1 page indexable, 0 backlink, 0 trafic organique
 
@@ -190,7 +190,7 @@ quantara.tech/
 **Trustworthiness :**
 - HTTPS ✓ (Vercel)
 - Mentions légales complètes (privacy, terms, cookies)
-- Quantara LLC Texas — adresse vérifiable
+- Quantara Technologies LLC New Mexico — adresse vérifiable
 - Contact email visible (`admin@quantara.tech`)
 - Newsletter avec double opt-in
 - Status page (uptime — quand le produit mature)

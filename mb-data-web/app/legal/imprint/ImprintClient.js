@@ -23,11 +23,11 @@ const BLOCS_FR = [
   {
     title: 'Éditeur du site',
     rows: [
-      ['Raison sociale', 'Quantara LLC'],
+      ['Raison sociale', 'Quantara Technologies LLC'],
       ['Forme juridique', 'Limited Liability Company (LLC)'],
-      ['Juridiction', 'État du Texas, États-Unis'],
-      ['Adresse', 'Quantara LLC, c/o Registered Agent, 1100 Congress Ave, Suite 400, Austin, TX 78701, United States'],
-      ['Pays', 'États-Unis (Texas)'],
+      ['Juridiction', 'État du New Mexico, États-Unis'],
+      ['Adresse', '1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA'],
+      ['Pays', 'États-Unis (New Mexico)'],
       ['Représentant légal', 'Omar Bakkali, Membre-Gérant (Managing Member)'],
       ['Email contact', 'contact@quantara.tech'],
       ['Email sécurité', 'security@quantara.tech'],
@@ -46,8 +46,8 @@ const BLOCS_FR = [
   {
     title: 'Propriété intellectuelle',
     rows: [
-      ['Marque', 'Quantara™ — usage par Quantara LLC'],
-      ['Code source', 'Propriétaire — Quantara LLC. Tous droits réservés.'],
+      ['Marque', 'Quantara™ — usage par Quantara Technologies LLC'],
+      ['Code source', 'Propriétaire — Quantara Technologies LLC. Tous droits réservés.'],
       ['Données utilisateur', 'Propriété des utilisateurs respectifs (voir CGU)'],
       ['Logos PropFirms', 'Marques de leurs propriétaires respectifs (Topstep®, Apex®, Lucid Trading®, etc.). Utilisés à titre informatif uniquement.'],
     ],
@@ -66,11 +66,11 @@ const BLOCS_EN = [
   {
     title: 'Site publisher',
     rows: [
-      ['Company name', 'Quantara LLC'],
+      ['Company name', 'Quantara Technologies LLC'],
       ['Legal form', 'Limited Liability Company (LLC)'],
-      ['Jurisdiction', 'State of Texas, United States'],
-      ['Address', 'Quantara LLC, c/o Registered Agent, 1100 Congress Ave, Suite 400, Austin, TX 78701, United States'],
-      ['Country', 'United States (Texas)'],
+      ['Jurisdiction', 'State of New Mexico, United States'],
+      ['Address', '1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA'],
+      ['Country', 'United States (New Mexico)'],
       ['Legal representative', 'Omar Bakkali, Managing Member'],
       ['Contact email', 'contact@quantara.tech'],
       ['Security email', 'security@quantara.tech'],
@@ -89,8 +89,8 @@ const BLOCS_EN = [
   {
     title: 'Intellectual property',
     rows: [
-      ['Trademark', 'Quantara™ — used by Quantara LLC'],
-      ['Source code', 'Proprietary — Quantara LLC. All rights reserved.'],
+      ['Trademark', 'Quantara™ — used by Quantara Technologies LLC'],
+      ['Source code', 'Proprietary — Quantara Technologies LLC. All rights reserved.'],
       ['User data', 'Owned by the respective users (see Terms)'],
       ['PropFirm logos', 'Trademarks of their respective owners (Topstep®, Apex®, Lucid Trading®, etc.). Used for informational purposes only.'],
     ],

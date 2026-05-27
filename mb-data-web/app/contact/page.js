@@ -80,8 +80,9 @@ export default function ContactPage() {
               Entreprise
             </div>
             <div style={{ fontSize: 14, color: '#9098b0', lineHeight: 1.6 }}>
-              Quantara LLC<br />
-              Texas, USA
+              Quantara Technologies LLC<br />
+              1209 Mountain Road PL NE, STE R<br />
+              Albuquerque, NM 87110, USA
             </div>
           </div>
         </div>

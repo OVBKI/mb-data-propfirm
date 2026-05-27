@@ -20,7 +20,7 @@
 
 ## Semaine 1 — Setup business
 
-**Objectif** : Quantara LLC opérationnel + emails actifs.
+**Objectif** : Quantara Technologies LLC opérationnel + emails actifs.
 
 ### Lundi
 - [ ] **Forme la LLC via Doola** ($297 + $50 registered agent annuel) — formulaire en ligne 30 min

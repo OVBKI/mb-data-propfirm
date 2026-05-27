@@ -25,13 +25,11 @@ export default function JsonLd({ data }) {
 
 const SITE = 'https://quantara.tech'
 
-// Organization — décrit Quantara LLC comme entité business.
-// Apparaît dans le Knowledge Panel Google si entité reconnue.
 export const ORGANIZATION_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   '@id': `${SITE}/#org`,
-  name: 'Quantara LLC',
+  name: 'Quantara Technologies LLC',
   alternateName: 'Quantara',
   url: SITE,
   logo: `${SITE}/quantara-logo.webp`,
@@ -39,7 +37,10 @@ export const ORGANIZATION_SCHEMA = {
   foundingDate: '2026',
   address: {
     '@type': 'PostalAddress',
-    addressRegion: 'TX',
+    streetAddress: '1209 Mountain Road PL NE, STE R',
+    addressLocality: 'Albuquerque',
+    addressRegion: 'NM',
+    postalCode: '87110',
     addressCountry: 'US',
   },
   contactPoint: {

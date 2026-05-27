@@ -266,7 +266,7 @@ function generateRecapHTML(data) {
         <!-- Footer -->
         <tr><td style="padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.07);background:#0d0f14;">
           <p style="font-size:11px;color:#565e78;margin:0 0 8px;line-height:1.5;">
-            Quantara LLC · Texas, USA<br>
+            Quantara Technologies LLC · Albuquerque, NM, USA<br>
             <a href="https://quantara.tech/legal/privacy" style="color:#565e78;text-decoration:underline;">Privacy</a> · <a href="mailto:admin@quantara.tech" style="color:#565e78;text-decoration:underline;">Contact</a>
           </p>
           <p style="font-size:10px;color:#565e78;margin:0;">

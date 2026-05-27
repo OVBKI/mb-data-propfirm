@@ -57,7 +57,7 @@
 | Objection | Response |
 |-----------|----------|
 | "I already track in a spreadsheet" | A spreadsheet can't calculate trailing drawdown in real time, show your equity curve, or alert you before billing. Quantara replaces the spreadsheet in 90 seconds. |
-| "Is my data safe?" | All data is encrypted, hosted in EU, GDPR compliant. You own your data — export anytime. Quantara LLC is registered in Texas. |
+| "Is my data safe?" | All data is encrypted, hosted in EU, GDPR compliant. You own your data — export anytime. Quantara Technologies LLC is registered in New Mexico, USA. |
 | "Will it support my PropFirm?" | We support 10+ firms (Topstep, Apex, Lucid, MFFU, Tradeify, Bulenox, TPT, Phidias, FFN, FuturesElite, Alpha Futures). More added regularly. |
 
 **Anti-persona:** Crypto traders, forex-only traders, stock/options traders, traders who don't use PropFirms, institutional traders. Quantara is laser-focused on PropFirm futures.

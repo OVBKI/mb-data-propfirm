@@ -68,7 +68,7 @@ const SECTIONS_FR = [
     icon: '◊',
     color: C.green,
     items: [
-      { label: 'GDPR / RGPD', value: 'Quantara LLC est conforme RGPD. Données hébergées en EU (Frankfurt). Droit d\'accès, rectification, suppression, portabilité accessibles via contact@quantara.tech.' },
+      { label: 'GDPR / RGPD', value: 'Quantara Technologies LLC est conforme RGPD. Données hébergées en EU (Frankfurt). Droit d\'accès, rectification, suppression, portabilité accessibles via contact@quantara.tech.' },
       { label: 'Cookies', value: 'Aucun cookie de tracking. Uniquement cookies fonctionnels (session Supabase, préférences). Voir /legal/privacy#cookies.' },
       { label: 'Suppression de compte', value: 'À ta demande par email, ton compte + toutes tes données sont supprimés sous 7 jours ouvrés. Pas de soft-delete : c\'est définitif.' },
     ],
@@ -133,7 +133,7 @@ const SECTIONS_EN = [
     icon: '◊',
     color: C.green,
     items: [
-      { label: 'GDPR', value: 'Quantara LLC is GDPR-compliant. Data hosted in EU (Frankfurt). Right of access, rectification, deletion, portability available via contact@quantara.tech.' },
+      { label: 'GDPR', value: 'Quantara Technologies LLC is GDPR-compliant. Data hosted in EU (Frankfurt). Right of access, rectification, deletion, portability available via contact@quantara.tech.' },
       { label: 'Cookies', value: 'No tracking cookies. Only functional cookies (Supabase session, prefs). See /legal/privacy#cookies.' },
       { label: 'Account deletion', value: 'On email request, your account + all data is deleted within 7 business days. No soft-delete: it\'s final.' },
     ],

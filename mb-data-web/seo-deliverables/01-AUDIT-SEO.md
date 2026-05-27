@@ -93,7 +93,7 @@ export const metadata = {
 
 **Fix :** ajouter dans `app/page.js` (ou layout) un `<script type="application/ld+json">` avec :
 - `SoftwareApplication` schema (avec `applicationCategory: 'FinanceApplication'`, `offers`, `aggregateRating` quand t'auras des reviews)
-- `Organization` schema (Quantara LLC Texas, founder, sameAs Twitter/LinkedIn)
+- `Organization` schema (Quantara Technologies LLC New Mexico, founder, sameAs Twitter/LinkedIn)
 - `FAQPage` schema sur la section "Pourquoi Quantara" (Google rich snippet bonus)
 
 Voir section "Schema templates" en bas de ce doc.
@@ -117,7 +117,7 @@ Standard émergent qui guide les AI crawlers (ChatGPT, Claude, Perplexity) vers 
 - Calcul automatique du trailing drawdown (EOD + intraday)
 - Audit consistency rule en temps réel
 - Multi-langue : Français, Anglais, Espagnol
-- Édité par Quantara LLC (Texas, USA)
+- Édité par Quantara Technologies LLC (New Mexico, USA)
 
 ## Pour les agents AI
 Contenu structuré, citable. Auteurs disponibles pour interviews/quotes : admin@quantara.tech
@@ -141,7 +141,7 @@ Garde le tagline "Track. Analyze. Grow." pour la H1 et l'image OG, mais le title
 WebFetch a remonté 7 balises H1. Une page = un seul H1. Probablement les balises de section sont misalignées (H1 au lieu de H2/H3). Vérifier `components/landing/*` et corriger en `<h2>` pour les sections.
 
 ### 4. ⚠️ Pas de page `/about` ni `/legal/privacy` ni `/legal/terms`
-- E-E-A-T faible (qui édite ? Quantara LLC Texas → personne ne le sait depuis la landing)
+- E-E-A-T faible (qui édite ? Quantara Technologies LLC New Mexico → personne ne le sait depuis la landing)
 - Mentions légales requises pour vendre en EU (RGPD)
 - ChatGPT cite plus volontiers les sites avec page About claire
 
@@ -242,7 +242,7 @@ Pas de données CrUX disponibles (site low-traffic). Estimation à partir du cod
 2. Ajouter pages Person schema pour le founder
 3. Créer présence Reddit (`r/Trading`, `r/propfirms`, `r/Daytrading`, `r/algotrading`) — partager des analyses, pas de spam
 4. Lancer YouTube channel "Quantara — PropFirm Insights" (le signal #1 corrélé citations AI : ~0.737)
-5. Page Wikipedia "Quantara LLC" après 6-12 mois (notabilité construite)
+5. Page Wikipedia "Quantara Technologies LLC" après 6-12 mois (notabilité construite)
 6. Profil LinkedIn Company + posts hebdo founder
 
 ### Images (50/100)
@@ -267,7 +267,7 @@ const jsonLd = {
     {
       "@type": "Organization",
       "@id": "https://quantara.tech/#org",
-      "name": "Quantara LLC",
+      "name": "Quantara Technologies LLC",
       "url": "https://quantara.tech",
       "logo": "https://quantara.tech/quantara-logo.png",
       "foundingDate": "2026",

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Quantara — PropFirm trading analytics platform. Next.js 14 (App Router) + Supabase + Vercel.
+Quantara (Quantara Technologies LLC, New Mexico) — PropFirm trading analytics platform. Next.js 14 (App Router) + Supabase + Vercel.
 Monorepo root is `/mb-data-web/`.
 
 ## Commands

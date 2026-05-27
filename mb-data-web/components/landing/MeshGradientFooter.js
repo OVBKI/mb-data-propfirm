@@ -219,11 +219,11 @@ export default function MeshGradientFooter() {
           fontSize: 11, color: C.text3,
         }}>
           <div>
-            © {new Date().getFullYear()} <strong style={{ color: C.text2 }}>Quantara LLC</strong> — {t('footer.bottom.copyright').replace('Quantara LLC — ', '')}
+            © {new Date().getFullYear()} <strong style={{ color: C.text2 }}>Quantara Technologies LLC</strong> — {t('footer.bottom.copyright').replace('Quantara Technologies LLC — ', '')}
             <span style={{ marginLeft: 8, opacity: 0.7 }}>{t('footer.bottom.texas')}</span>
           </div>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span>🇺🇸 Quantara LLC · 🇪🇺 {t('footer.bottom.eu')}</span>
+            <span>🇺🇸 Quantara Technologies LLC · 🇪🇺 {t('footer.bottom.eu')}</span>
             <span>·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <span style={{

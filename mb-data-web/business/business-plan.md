@@ -156,7 +156,8 @@ Webapp **mono-spécialisée PropFirm** qui :
 
 ## 💼 Structure légale
 
-- **Quantara LLC**, Texas, USA (en cours de formation)
+- **Quantara Technologies LLC**, New Mexico, USA
+- Adresse : 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110
 - EIN : [À COMPLÉTER]
 - Banque : Mercury (US)
 - Paiements : Stripe
