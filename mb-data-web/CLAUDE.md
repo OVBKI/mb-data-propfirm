@@ -185,10 +185,62 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - Responsive: add the appropriate CSS class from `globals.css` (e.g. `className="heatmap-2col"`) to grids that need to collapse on mobile
 - Touch targets: buttons must be at least 32px (use `minWidth: 32, minHeight: 32`)
 
+## Completed (May 2026)
+
+### Semaine 2 — SEO & Discovery
+- **Public comparator** at `/compare` (no login required), JSON-LD FAQ+WebPage schemas
+- **JSON-LD global** — Organization + WebSite in root layout.js (all pages)
+- **hreflang** — fr-FR, en-US, x-default
+- Navigation links added to PageHeader, Footer, MeshGradientFooter
+
+### Semaine 3 — Conversion
+- **Hero headline rewrite** — "Tous tes comptes PropFirm. Un seul dashboard." (PropFirm-specific)
+- **Social proof** — beta badge + 3 testimonial cards on landing
+- **Ghost Mode** — `/demo` page with 4 realistic PropFirm accounts, no signup required
+- **Onboarding emails** — 3-email sequence (Day 0/3/7) via Resend, cron at 10 AM UTC
+
+### Semaine 4 — Growth Engine
+- **Drawdown simulator** — `/tools/drawdown-simulator`, interactive EOD/Intraday calculator
+- **Referral program** — API `/api/referral`, unique codes (QT-XXXXXX)
+- **Drawdown Guardian** — push alert cron Mon-Fri 2:30 PM UTC for accounts below 70%
+- **Compare pages** — `/compare/quantara-vs-tradervue`, `/compare/quantara-vs-excel`
+- **ComparisonPage** reusable component for all vs pages
+
+### LLC Info Update
+- **Quantara Technologies LLC**, New Mexico (not Texas)
+- 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA
+- All 20+ files updated (legal, footers, emails, schema, docs)
+
+## Public Pages (no auth)
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page (hero + 6 product sections + features + CTA) |
+| `/compare` | PropFirm comparator (10+ firms, filters, detail drawer) |
+| `/compare/quantara-vs-tradervue` | Comparison page |
+| `/compare/quantara-vs-excel` | Comparison page |
+| `/tools/drawdown-simulator` | Interactive DD calculator |
+| `/demo` | Ghost Mode dashboard preview |
+| `/pricing` | Pricing page |
+| `/docs` | Documentation |
+| `/integrations` | Supported PropFirms |
+| `/security` | Security & compliance |
+| `/contact` | Contact info |
+| `/legal/*` | CGU, Privacy, Imprint |
+
+## Cron Jobs (vercel.json)
+
+| Path | Schedule | Description |
+|------|----------|-------------|
+| `/api/cron/check-bills` | Daily 9 AM UTC | Push alerts 2 days before billing |
+| `/api/cron/monthly-recap` | 1st of month 8 AM | Email recap via Resend |
+| `/api/cron/onboarding-emails` | Daily 10 AM UTC | 3-email welcome sequence |
+| `/api/cron/drawdown-guardian` | Mon-Fri 2:30 PM UTC | Push alert when DD < 70% |
+
 ## Pending / Roadmap
 
 - **Sentry** — account exists, DSN needed to integrate error tracking
 - **Stripe** — waiting for LLC EIN to set up payments
 - **Sync Rithmic/ProjectX** — waiting for 50 users before building
 - **Tests** — no test framework yet; when adding, use Vitest
-- **next/image** — `<img>` tags should be migrated to `<Image>` for performance
+- **Supabase migrations needed** — referrals table, profiles.referral_code, profiles.onboarding_emails_sent
