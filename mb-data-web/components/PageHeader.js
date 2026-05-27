@@ -25,6 +25,7 @@ export default function PageHeader({ active }) {
 
   // NAV_LINKS construit dynamiquement pour récupérer les labels traduits à chaque render.
   const NAV_LINKS = [
+    { href: '/compare',      label: t('pages.header.compare'),      key: 'compare' },
     { href: '/integrations', label: t('pages.header.integrations'), key: 'integrations' },
     { href: '/security',     label: t('pages.header.security'),     key: 'security' },
     { href: '/docs',         label: t('pages.header.docs'),         key: 'docs' },

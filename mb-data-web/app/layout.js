@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { Analytics } from '@vercel/analytics/react'
 import { LanguageProvider } from '../components/LanguageProvider'
 import ErrorBoundary from '../components/ErrorBoundary'
+import JsonLd, { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA } from '../components/JsonLd'
 import './globals.css'
 
 const CookieConsent = dynamic(() => import('../components/CookieConsent'), { ssr: false })
@@ -38,13 +39,12 @@ export const metadata = {
   category: 'Finance',
   manifest: '/manifest.json',
 
-  // Canonical + alternates langues (à étendre quand /en /es seront actives)
   alternates: {
     canonical: 'https://quantara.tech',
     languages: {
       'fr-FR': 'https://quantara.tech',
-      // 'en-US': 'https://quantara.tech/en',
-      // 'es-ES': 'https://quantara.tech/es',
+      'en-US': 'https://quantara.tech',
+      'x-default': 'https://quantara.tech',
     },
   },
 
@@ -125,8 +125,11 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
+      <head>
+        <JsonLd data={ORGANIZATION_SCHEMA} />
+        <JsonLd data={WEBSITE_SCHEMA} />
+      </head>
       <body className={inter.className}>
-        {/* i18n FR/EN — Provider client-side qui injecte useT() partout sous lui */}
         <LanguageProvider>
           <ErrorBoundary>
             {children}

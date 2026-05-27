@@ -27,8 +27,8 @@ function buildSections(t) {
       title: t('footer.sections.product'),
       links: [
         { label: t('footer.links.features'),   href: '/#features' },
+        { label: t('footer.links.compare'),    href: '/compare' },
         { label: t('footer.links.dashboard'),  href: '/app' },
-        { label: t('footer.links.calendar'),   href: '/app' },
         { label: t('footer.links.pricing'),    href: '/pricing' },
       ],
     },

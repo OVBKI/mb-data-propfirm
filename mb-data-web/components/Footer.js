@@ -24,6 +24,7 @@ export default function Footer() {
       title: t('pages.footer.cols.product'),
       links: [
         { label: t('pages.footer.links.features'),  href: '/#features' },
+        { label: t('pages.footer.links.compare'),   href: '/compare' },
         { label: t('pages.footer.links.dashboard'), href: '/app' },
         { label: t('pages.footer.links.calendar'),  href: '/app' },
         { label: t('pages.footer.links.roadmap'),   href: '/docs#roadmap' },

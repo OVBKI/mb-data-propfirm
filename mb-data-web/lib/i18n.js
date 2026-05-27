@@ -234,6 +234,7 @@ const FR = {
     header: {
       docs: 'Docs',
       integrations: 'PropFirms',
+      compare: 'Comparateur',
       security: 'Sécurité',
       pricing: 'Tarifs',
       features: 'Fonctionnalités',
@@ -250,6 +251,7 @@ const FR = {
       },
       links: {
         features: 'Fonctionnalités',
+        compare: 'Comparateur PropFirm',
         dashboard: 'Tableau de bord',
         calendar: 'Calendrier économique',
         roadmap: 'Roadmap',
@@ -1088,6 +1090,7 @@ const FR = {
     },
     links: {
       features:      'Fonctionnalités',
+      compare:       'Comparateur PropFirm',
       dashboard:     'Tableau de bord',
       calendar:      'Calendrier économique',
       pricing:       'Tarifs',
@@ -1312,6 +1315,7 @@ const EN = {
     header: {
       docs: 'Docs',
       integrations: 'PropFirms',
+      compare: 'Compare',
       security: 'Security',
       pricing: 'Pricing',
       features: 'Features',
@@ -1328,6 +1332,7 @@ const EN = {
       },
       links: {
         features: 'Features',
+        compare: 'PropFirm Comparator',
         dashboard: 'Dashboard',
         calendar: 'Economic calendar',
         roadmap: 'Roadmap',
@@ -2162,6 +2167,7 @@ const EN = {
     },
     links: {
       features:      'Features',
+      compare:       'PropFirm Comparator',
       dashboard:     'Dashboard',
       calendar:      'Economic calendar',
       pricing:       'Pricing',

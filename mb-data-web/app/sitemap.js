@@ -42,6 +42,20 @@ export default function sitemap() {
       priority: 0.8,
     },
 
+    // Comparateur PropFirm (public, no login)
+    {
+      url: `${BASE_URL}/compare`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/contact`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+
     // Pages légales — utile pour trust mais priorité basse
     {
       url: `${BASE_URL}/legal/cgu`,
