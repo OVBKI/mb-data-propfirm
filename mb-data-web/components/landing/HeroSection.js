@@ -140,20 +140,22 @@ export default function HeroSection({ children, hideLogo = false }) {
       </motion.div>
       )}
 
-      {/* QUANTARA wordmark — réactivé puisque le nouveau SVG est Q-only.
-          Spring animation framer-motion + lettré 0.08em pour effet premium. */}
-      <motion.div
+      {/* PropFirm-specific headline */}
+      <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 22, delay: 0.3 }}
         style={{
-          fontSize: 'clamp(38px, 7vw, 64px)',
+          fontSize: 'clamp(28px, 5.5vw, 52px)',
           fontWeight: 800,
-          letterSpacing: '0.08em',
+          letterSpacing: '-0.02em',
+          lineHeight: 1.15,
           color: C.text,
-          marginBottom: 14,
+          marginBottom: 18,
+          whiteSpace: 'pre-line',
+          textAlign: 'center',
         }}
-      >QUANTARA</motion.div>
+      >{t('hero.headline')}</motion.h1>
 
       {/* Tagline 3 mots avec spring sequence */}
       <div style={{
@@ -173,7 +175,7 @@ export default function HeroSection({ children, hideLogo = false }) {
               delay: 0.55 + i * 0.13,
             }}
             style={{
-              fontSize: 'clamp(20px, 3.5vw, 30px)',
+              fontSize: 'clamp(16px, 2.5vw, 22px)',
               fontWeight: 700,
               color: wordColors[i],
               letterSpacing: '0.05em',

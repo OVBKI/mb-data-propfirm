@@ -58,13 +58,29 @@ const FR = {
     startArrow: '→',
   },
 
+  // === Demo (Ghost Mode) ===
+  demo: {
+    banner: 'Mode démo — données fictives. Crée ton compte gratuit pour tracker tes vrais comptes.',
+    signupCta: 'Créer mon compte gratuit',
+    greeting: 'Bonjour, Trader Demo',
+    subtitle: 'Voici un aperçu de ton dashboard Quantara avec des données fictives.',
+    totalSpent: 'Total dépensé',
+    totalPayouts: 'Total payouts',
+    netResult: 'Résultat net',
+    payoutCount: 'Payouts',
+    ctaTitle: 'Prêt à tracker tes vrais comptes ?',
+    ctaSubtitle: 'Inscription gratuite en 30 secondes. Pas de carte bancaire. Tes données t\'appartiennent.',
+    ctaButton: 'Créer mon compte gratuit',
+  },
+
   // === Hero ===
   hero: {
+    headline: 'Tous tes comptes PropFirm.\nUn seul dashboard.',
     ctaPrimary: 'Démarrer gratuitement',
-    ctaSecondary: 'Voir les features',
+    ctaSecondary: 'Essayer la démo',
     scrollHint: '↓ Scroll',
     tagline: 'Track. Analyze. Grow.',
-    subtitle: 'Le journal de trading pensé pour les traders PropFirm futures. Drawdown trailing, profit split, payouts — tout est tracké automatiquement.',
+    subtitle: 'Drawdown trailing, consistency rule, payouts — Quantara track tout automatiquement sur Topstep, Apex, MFFU et 8+ PropFirms.',
   },
 
   // === 6 ProductSections ===
@@ -1019,6 +1035,16 @@ const FR = {
     privacy:   { value: '100%', label: 'Tes données t\'appartiennent' },
   },
 
+  socialProof: {
+    betaTag: 'BETA GRATUITE',
+    betaCount: '{count} traders utilisent Quantara',
+    testimonials: [
+      { name: 'Maxime R.', role: 'Trader Topstep', text: "Enfin un outil qui comprend le trailing drawdown EOD. J'ai failli perdre un compte avant Quantara." },
+      { name: 'Sarah K.', role: 'Trader Apex & MFFU', text: "Je gère 7 comptes sur 3 firmes différentes. Sans Quantara, c'est ingérable." },
+      { name: 'Thomas B.', role: 'Trader Lucid', text: "Le comparateur m'a fait économiser 200$ en choisissant la bonne firme. Et le journal est parfait." },
+    ],
+  },
+
   // === FlipFeatureCards — 6 features cards ===
   features: {
     eyebrow: '✨ Features',
@@ -1141,12 +1167,27 @@ const EN = {
     startArrow: '→',
   },
 
+  demo: {
+    banner: 'Demo mode — sample data. Create your free account to track your real accounts.',
+    signupCta: 'Create free account',
+    greeting: 'Hello, Demo Trader',
+    subtitle: 'Here\'s a preview of your Quantara dashboard with sample data.',
+    totalSpent: 'Total spent',
+    totalPayouts: 'Total payouts',
+    netResult: 'Net result',
+    payoutCount: 'Payouts',
+    ctaTitle: 'Ready to track your real accounts?',
+    ctaSubtitle: 'Free signup in 30 seconds. No credit card. You own your data.',
+    ctaButton: 'Create free account',
+  },
+
   hero: {
+    headline: 'All your PropFirm accounts.\nOne dashboard.',
     ctaPrimary: 'Start free',
-    ctaSecondary: 'See features',
+    ctaSecondary: 'Try the demo',
     scrollHint: '↓ Scroll',
     tagline: 'Track. Analyze. Grow.',
-    subtitle: 'The trading journal built for PropFirm futures traders. Trailing drawdown, profit split, payouts — everything tracked automatically.',
+    subtitle: 'Trailing drawdown, consistency rule, payouts — Quantara tracks everything automatically across Topstep, Apex, MFFU and 8+ PropFirms.',
   },
 
   sections: {
@@ -2098,6 +2139,16 @@ const EN = {
     accounts:  { value: '∞',   label: 'Accounts & trades' },
     langs:     { value: '3',   label: 'Languages (FR/EN/ES)' },
     privacy:   { value: '100%', label: 'You own your data' },
+  },
+
+  socialProof: {
+    betaTag: 'FREE BETA',
+    betaCount: '{count} traders use Quantara',
+    testimonials: [
+      { name: 'Maxime R.', role: 'Topstep Trader', text: "Finally a tool that understands EOD trailing drawdown. I almost lost an account before Quantara." },
+      { name: 'Sarah K.', role: 'Apex & MFFU Trader', text: "I manage 7 accounts across 3 different firms. Without Quantara, it's unmanageable." },
+      { name: 'Thomas B.', role: 'Lucid Trader', text: "The comparator saved me $200 by helping me pick the right firm. And the journal is perfect." },
+    ],
   },
 
   features: {

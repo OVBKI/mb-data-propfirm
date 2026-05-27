@@ -42,6 +42,14 @@ export default function sitemap() {
       priority: 0.8,
     },
 
+    // Demo (Ghost Mode, no login)
+    {
+      url: `${BASE_URL}/demo`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+
     // Comparateur PropFirm (public, no login)
     {
       url: `${BASE_URL}/compare`,

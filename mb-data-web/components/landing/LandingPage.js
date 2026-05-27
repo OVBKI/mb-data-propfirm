@@ -16,6 +16,7 @@ import LandingScrollEffects from './LandingScrollEffects'
 import ScrollProgress from './ScrollProgress'
 import SmoothScrollProvider from './SmoothScrollProvider'
 import AnimatedStats from './AnimatedStats'
+import SocialProof from './SocialProof'
 import Tilted3DFrame from './Tilted3DFrame'
 // SEO — JSON-LD Schema.org pour rich results Google + citations AI search
 import JsonLd, { LANDING_SCHEMAS } from '../JsonLd'
@@ -238,7 +239,7 @@ export default function LandingPage() {
             <MagneticButton href="/app" primary large>
               {t('hero.ctaPrimary')}
             </MagneticButton>
-            <MagneticButton href="#features" large>
+            <MagneticButton href="/demo" large>
               {t('hero.ctaSecondary')}
             </MagneticButton>
           </div>
@@ -256,6 +257,9 @@ export default function LandingPage() {
           {t('hero.scrollHint')}
         </div>
       </section>
+
+      {/* === SOCIAL PROOF — beta counter + testimonials === */}
+      <SocialProof />
 
       {/* === STATS strip avec compteurs animés au scroll === */}
       <AnimatedStats stats={STAT_KEYS.map(k => ({
