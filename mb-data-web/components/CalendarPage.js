@@ -95,7 +95,7 @@ function Flag({ country, currency, size = 18, style = {} }) {
     />
   )
 }
-const IC={High:{dot:'#e8504a',text:'#e8504a',bg:'rgba(232,80,74,0.03)'},Medium:{dot:'#fac775',text:'#fac775',bg:'transparent'},Low:{dot:'#565e78',text:'#565e78',bg:'transparent'},Holiday:{dot:'#2d6fff',text:'#4d8fff',bg:'rgba(45,111,255,0.03)'}}
+const IC={High:{dot:'#e8504a',text:'#e8504a',bg:'rgba(232,80,74,0.03)'},Medium:{dot:'#fac775',text:'#fac775',bg:'transparent'},Low:{dot:'#7b839b',text:'#7b839b',bg:'transparent'},Holiday:{dot:'#2d6fff',text:'#4d8fff',bg:'rgba(45,111,255,0.03)'}}
 
 // Traductions des événements ForexFactory (titres anglais → FR/ES)
 const EVENT_PATTERNS = [
