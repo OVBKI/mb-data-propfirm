@@ -241,33 +241,8 @@ export default function DemoClient() {
             })}
           </div>
 
-          {/* Calendar section */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 24, boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{t('app.dashboard.calendarTitle')}</h2>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)' }}>{MONTHS[calMonth]} {calYear}</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
-              {DAYS_HEADER.map(d => (
-                <div key={d} style={{ textAlign: 'center', fontSize: 10, color: 'var(--text3)', fontWeight: 600, padding: '6px 0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{d}</div>
-              ))}
-              {Array.from({ length: sdow }).map((_, i) => <div key={`e${i}`} />)}
-              {Array.from({ length: dim }).map((_, i) => {
-                const day = i + 1
-                const isToday = day === todayDate
-                return (
-                  <div key={day} style={{
-                    textAlign: 'center', padding: '8px 4px', fontSize: 12,
-                    borderRadius: 6,
-                    background: isToday ? 'rgba(45,111,255,0.15)' : 'transparent',
-                    color: isToday ? '#4d8fff' : 'var(--text2)',
-                    fontWeight: isToday ? 700 : 400,
-                    border: isToday ? '1px solid rgba(45,111,255,0.3)' : '1px solid transparent',
-                  }}>{day}</div>
-                )
-              })}
-            </div>
-          </div>
+          {/* ── CALENDRIER DES TRANSACTIONS (réplique exacte) ── */}
+          <DemoCalendar calMonth={calMonth} calYear={calYear} sdow={sdow} dim={dim} todayDate={todayDate} t={t} />
 
           {/* CTA */}
           <div style={{ padding: 32, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, textAlign: 'center', boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
@@ -285,8 +260,191 @@ export default function DemoClient() {
           main { padding: 20px 16px 60px !important; }
           .stats-5 { grid-template-columns: repeat(2, 1fr) !important; }
           .firms-grid { grid-template-columns: 1fr !important; }
+          .grid-1-280 { grid-template-columns: 1fr !important; }
+          .dash-sidebar-row { grid-template-columns: 1fr !important; }
         }
       `}</style>
+    </div>
+  )
+}
+
+function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
+  const [selDay, setSelDay] = useState(null)
+
+  const DEMO_EVENTS = {
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`]: [{ type: 'buy', firm: 'Bulenox', amount: 95, label: 'Challenge' }],
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-13`]: [{ type: 'buy', firm: 'Take Profit Trader', amount: 119, label: 'Mensualité #1' }, { type: 'pay', firm: 'Lucid Trading', amount: 1130, label: 'Payout' }],
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-18`]: [{ type: 'buy', firm: 'Alpha Futures', amount: 140, label: 'Challenge' }, { type: 'pay', firm: 'Lucid Trading', amount: 1008, label: 'Payout' }],
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-20`]: [{ type: 'buy', firm: 'FuturesELites', amount: 323, label: '5 Challenges' }, { type: 'pay', firm: 'Lucid Trading', amount: 1153, label: 'Payout' }],
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-21`]: [{ type: 'buy', firm: 'Bulenox', amount: 154, label: 'Challenge' }],
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-22`]: [{ type: 'buy', firm: 'Alpha Futures', amount: 159, label: 'Challenge' }],
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-23`]: [{ type: 'buy', firm: 'Topstep', amount: 673, label: '5 Challenges' }],
+    [`${calYear}-${String(calMonth + 1).padStart(2, '0')}-${todayDate}`]: [{ type: 'pay', firm: 'Lucid Trading', amount: 1800, label: 'Payout' }],
+  }
+
+  const msSpent = Object.values(DEMO_EVENTS).flat().filter(e => e.type === 'buy').reduce((s, e) => s + e.amount, 0)
+  const msPayout = Object.values(DEMO_EVENTS).flat().filter(e => e.type === 'pay').reduce((s, e) => s + e.amount, 0)
+  const msNet = msPayout - msSpent
+
+  const recentTx = Object.entries(DEMO_EVENTS)
+    .flatMap(([d, evts]) => evts.map(e => ({ ...e, date: d })))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 5)
+
+  const card = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>{t('app.dashboard.calendarTitle')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button style={{ padding: '6px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'default', fontSize: 14 }}>‹</button>
+          <span style={{ fontWeight: 600, minWidth: 140, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
+          <button style={{ padding: '6px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'default', fontSize: 14 }}>›</button>
+          <button style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'default', fontSize: 12 }}>Aujourd&apos;hui</button>
+        </div>
+      </div>
+
+      {/* 3 stats du mois */}
+      <div className="stats-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
+        {[
+          { l: t('app.dashboard.monthSpent'), v: `${msSpent.toFixed(2)} $`, c: 'var(--red)' },
+          { l: t('app.dashboard.monthPayout'), v: `${msPayout.toFixed(2)} $`, c: 'var(--green)' },
+          { l: t('app.dashboard.monthNet'), v: `${msNet >= 0 ? '+' : ''}${msNet.toFixed(2)} $`, c: msNet >= 0 ? 'var(--green)' : 'var(--red)' },
+        ].map((s, i) => (
+          <div key={i} style={{ ...card, padding: '10px 14px' }}>
+            <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{s.l}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: s.c }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid + Right panel */}
+      <div className="grid-1-280" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'start' }}>
+        {/* Calendar */}
+        <div style={{ ...card, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', background: 'var(--surface2, #1c2030)', borderBottom: '0.5px solid var(--border)' }}>
+            {DAYS_HEADER.map(d => <div key={d} style={{ padding: '12px 0', textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d}</div>)}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
+            {Array.from({ length: sdow }).map((_, i) => (
+              <div key={`e${i}`} style={{ minHeight: 108, padding: 10, borderRight: '0.5px solid var(--border)', borderBottom: '0.5px solid var(--border)', opacity: 0.25 }} />
+            ))}
+            {Array.from({ length: dim }).map((_, i) => {
+              const day = i + 1
+              const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+              const evts = DEMO_EVENTS[dateStr] || []
+              const buyT = evts.filter(e => e.type === 'buy').reduce((s, e) => s + e.amount, 0)
+              const payT = evts.filter(e => e.type === 'pay').reduce((s, e) => s + e.amount, 0)
+              const isToday = day === todayDate
+              const isSelected = dateStr === selDay
+              const cellIdx = sdow + i
+              return (
+                <div key={day} onClick={() => setSelDay(dateStr)} style={{
+                  minHeight: 108, padding: 10, cursor: 'pointer',
+                  borderRight: (cellIdx + 1) % 7 === 0 ? 'none' : '0.5px solid var(--border)',
+                  borderBottom: '0.5px solid var(--border)',
+                  background: isSelected ? 'rgba(45,111,255,0.08)' : 'transparent',
+                  outline: isSelected ? '2px solid var(--blue)' : 'none', outlineOffset: -2,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'var(--blue)' : 'transparent', color: isToday ? '#fff' : 'var(--text2)', marginBottom: 5 }}>{day}</div>
+                  {buyT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--red-bg, rgba(232,80,74,0.12))', color: 'var(--red-text, #e8504a)', marginBottom: 3, display: 'inline-block' }}>-{buyT} $</div>}
+                  {payT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--green-bg, rgba(29,184,122,0.12))', color: 'var(--green-text, #1db87a)', display: 'inline-block' }}>+{payT} $</div>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Selected day */}
+          <div style={{ ...card, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
+              {selDay ? new Date(selDay + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Sélectionnez un jour'}
+            </div>
+            {selDay ? (DEMO_EVENTS[selDay] || []).length > 0 ? (DEMO_EVENTS[selDay] || []).map((e, i) => (
+              <div key={i} style={{ padding: '10px 12px', background: 'var(--surface2, #1c2030)', borderRadius: 8, marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>{e.firm}</span>
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: e.type === 'buy' ? 'var(--red-bg)' : 'var(--green-bg)', color: e.type === 'buy' ? 'var(--red-text)' : 'var(--green-text)', fontWeight: 600 }}>{e.label}</span>
+                </div>
+                <div style={{ fontSize: 12, color: e.type === 'buy' ? 'var(--red)' : 'var(--green)', fontWeight: 600 }}>{e.type === 'buy' ? '-' : '+'}{e.amount.toFixed(2)} $</div>
+              </div>
+            )) : <div style={{ color: 'var(--text3)', fontSize: 12 }}>Aucune transaction.</div> : <div style={{ color: 'var(--text3)', fontSize: 12 }}>Cliquez sur un jour.</div>}
+          </div>
+
+          {/* Transactions récentes */}
+          <div style={{ ...card, padding: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Transactions récentes</div>
+            {recentTx.map((e, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, padding: '7px 0', borderBottom: '0.5px solid var(--border)' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: e.type === 'buy' ? 'var(--red)' : 'var(--green)', marginTop: 4, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 500 }}>{e.firm}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)' }}>{e.date} · {e.type === 'buy' ? 'Achat' : 'Payout'}</div>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: e.type === 'buy' ? 'var(--red)' : 'var(--green)' }}>{e.type === 'buy' ? '-' : '+'}{e.amount.toFixed(2)} $</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 3 cards bottom: Stats + Par firme */}
+      <div className="dash-sidebar-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginTop: 24 }}>
+        <div style={{ ...card, padding: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 10 }}>Par firme ($)</div>
+          <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#e8504a' }} />Dépensé</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#1db87a' }} />Payouts</div>
+          </div>
+          {DEMO_FIRMS.map(f => (
+            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <div style={{ fontSize: 10, color: 'var(--text3)', width: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name.length > 8 ? f.name.slice(0, 8) + '…' : f.name}</div>
+              <div style={{ flex: 1, display: 'flex', gap: 2, height: 8 }}>
+                <div style={{ width: `${(f.spent / 1200) * 100}%`, background: '#e8504a', borderRadius: 2, minWidth: f.spent > 0 ? 4 : 0 }} />
+                <div style={{ width: `${(f.totalPayouts / 5100) * 100}%`, background: '#1db87a', borderRadius: 2, minWidth: f.totalPayouts > 0 ? 4 : 0 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ ...card, padding: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 }}>Statistiques</div>
+          {[
+            ['Taux de réussite', '11%', 'var(--text)'],
+            ['Meilleur payout', '2 713 $', 'var(--green)'],
+            ['Coût moyen challenge', '195 $', 'var(--text)'],
+            ['ROI global', '+88.4%', 'var(--green)'],
+            ['Comptes actifs', '8', 'var(--text)'],
+          ].map(([label, value, color], i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid var(--border)' }}>
+              <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color }}>{value}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ ...card, padding: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 }}>Par firme</div>
+          {DEMO_FIRMS.slice().sort((a, b) => (b.totalPayouts - b.spent) - (a.totalPayouts - a.spent)).map(f => {
+            const net = f.totalPayouts - f.spent
+            return (
+              <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {getFirmLogo(f.name, f.color, 22)}
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600 }}>{f.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{f.accounts.length} compte{f.accounts.length > 1 ? 's' : ''}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: net >= 0 ? 'var(--green)' : 'var(--red)' }}>{net >= 0 ? '+' : ''}{net} $</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
