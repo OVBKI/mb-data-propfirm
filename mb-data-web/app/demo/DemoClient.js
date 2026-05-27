@@ -7,7 +7,7 @@ import Footer from '../../components/Footer'
 import { getFirmLogo } from '../../lib/firmLogos'
 
 const STATUS_COLORS = {
-  Challenge: { bg: 'var(--blue-bg, rgba(45,111,255,0.12))', text: 'var(--blue-light, #4d8fff)' },
+  Challenge: { bg: 'var(--amber-bg, rgba(250,199,117,0.12))', text: 'var(--amber-text, #fac775)' },
   'Financé': { bg: 'var(--green-bg, rgba(29,184,122,0.12))', text: 'var(--green-text, #1db87a)' },
   'Échoué': { bg: 'var(--red-bg, rgba(232,80,74,0.12))', text: 'var(--red-text, #e8504a)' },
 }
@@ -231,10 +231,10 @@ export default function DemoClient() {
                   )}
 
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
-                    {challengeCount > 0 && <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, background: 'rgba(45,111,255,0.12)', color: '#4d8fff', fontWeight: 600 }}>{challengeCount} Challenge{challengeCount > 1 ? 's' : ''}</span>}
-                    {fundedCount > 0 && <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, background: 'rgba(29,184,122,0.12)', color: '#1db87a', fontWeight: 600 }}>{fundedCount} Financé{fundedCount > 1 ? 's' : ''}</span>}
-                    {firm.failedCount > 0 && <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, background: 'rgba(232,80,74,0.12)', color: '#e8504a', fontWeight: 600 }}>{firm.failedCount} Échoué{firm.failedCount > 1 ? 's' : ''}</span>}
-                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, background: 'rgba(250,199,117,0.12)', color: '#fac775', fontWeight: 600, cursor: 'pointer' }}>🎓 Diplômes</span>
+                    {challengeCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--amber-bg, rgba(250,199,117,0.12))', color: 'var(--amber-text, #fac775)', fontWeight: 600, letterSpacing: '0.3px' }}>{challengeCount} Challenge{challengeCount > 1 ? 's' : ''}</span>}
+                    {fundedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--green-bg, rgba(29,184,122,0.12))', color: 'var(--green-text, #1db87a)', fontWeight: 600, letterSpacing: '0.3px' }}>{fundedCount} Financé{fundedCount > 1 ? 's' : ''}</span>}
+                    {firm.failedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--red-bg, rgba(232,80,74,0.12))', color: 'var(--red-text, #e8504a)', fontWeight: 600, letterSpacing: '0.3px' }}>{firm.failedCount} Échoué{firm.failedCount > 1 ? 's' : ''}</span>}
+                    <span style={{ marginLeft: 'auto', fontSize: 11, padding: '3px 9px', borderRadius: 99, background: 'rgba(45,111,255,0.10)', border: '1px solid rgba(45,111,255,0.30)', color: 'var(--blue-light, #4d8fff)', fontWeight: 600, cursor: 'pointer' }}>🎓 Diplômes</span>
                   </div>
                 </div>
               )
