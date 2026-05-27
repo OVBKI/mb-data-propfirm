@@ -185,48 +185,69 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - Responsive: add the appropriate CSS class from `globals.css` (e.g. `className="heatmap-2col"`) to grids that need to collapse on mobile
 - Touch targets: buttons must be at least 32px (use `minWidth: 32, minHeight: 32`)
 
-## Completed (May 2026)
+## Session History (May 27, 2026)
 
-### Semaine 2 — SEO & Discovery
+### LLC Info
+- **Quantara Technologies LLC**, New Mexico (not Texas)
+- 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA
+- All 20+ files updated (legal, footers, emails, schema, docs)
+
+### Semaine 2 — SEO & Discovery (DONE)
 - **Public comparator** at `/compare` (no login required), JSON-LD FAQ+WebPage schemas
 - **JSON-LD global** — Organization + WebSite in root layout.js (all pages)
 - **hreflang** — fr-FR, en-US, x-default
 - Navigation links added to PageHeader, Footer, MeshGradientFooter
 
-### Semaine 3 — Conversion
+### Semaine 3 — Conversion (DONE)
 - **Hero headline rewrite** — "Tous tes comptes PropFirm. Un seul dashboard." (PropFirm-specific)
-- **Social proof** — beta badge + 3 testimonial cards on landing
+- **Social proof** — beta badge + 3 testimonial cards on landing (SocialProof.js)
 - **Ghost Mode** — `/demo` page with 4 realistic PropFirm accounts, no signup required
 - **Onboarding emails** — 3-email sequence (Day 0/3/7) via Resend, cron at 10 AM UTC
 
-### Semaine 4 — Growth Engine
+### Semaine 4 — Growth Engine (DONE)
 - **Drawdown simulator** — `/tools/drawdown-simulator`, interactive EOD/Intraday calculator
-- **Referral program** — API `/api/referral`, unique codes (QT-XXXXXX)
+- **Referral program** — API `/api/referral`, unique codes (QT-XXXXXX), crypto.randomBytes
 - **Drawdown Guardian** — push alert cron Mon-Fri 2:30 PM UTC for accounts below 70%
 - **Compare pages** — `/compare/quantara-vs-tradervue`, `/compare/quantara-vs-excel`
 - **ComparisonPage** reusable component for all vs pages
 
-### LLC Info Update
-- **Quantara Technologies LLC**, New Mexico (not Texas)
-- 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA
-- All 20+ files updated (legal, footers, emails, schema, docs)
+### Full Audit (DONE — May 27, 2026)
+4-axis audit ran: SEO (6.1/10), Security (7.5/10), CRO/UX (6.9/10), Code Quality (7/10).
+
+**Critical fixes applied:**
+- Build crash: moved createClient() from module scope into handlers (3 routes)
+- Security: onboarding email forced to auth.user.email (was accepting arbitrary email)
+- Security: CRON_SECRET undefined bypass fixed (2 cron routes)
+- Security: XSS in email templates fixed (escapeHtml on username)
+- Security: Math.random → crypto.randomBytes for referral codes
+- Crash: try/catch on request.json() in referral + onboarding routes
+- SEO: llms.txt updated with correct LLC + all new page URLs
+
+**Supabase migrations applied by user:**
+- profiles.onboarding_emails_sent (integer, default 0)
+- profiles.referral_code (text, unique)
+- referrals table (referrer_id, referred_id, referral_code)
+- propfirm_rules_overrides table (firm_name, rule_key, plan, value)
+- waitlist table (email, plan, ip_address)
 
 ## Public Pages (no auth)
 
 | Route | Description |
 |-------|-------------|
-| `/` | Landing page (hero + 6 product sections + features + CTA) |
+| `/` | Landing page (hero + social proof + 6 product sections + features + CTA) |
 | `/compare` | PropFirm comparator (10+ firms, filters, detail drawer) |
-| `/compare/quantara-vs-tradervue` | Comparison page |
-| `/compare/quantara-vs-excel` | Comparison page |
-| `/tools/drawdown-simulator` | Interactive DD calculator |
-| `/demo` | Ghost Mode dashboard preview |
-| `/pricing` | Pricing page |
-| `/docs` | Documentation |
-| `/integrations` | Supported PropFirms |
-| `/security` | Security & compliance |
-| `/contact` | Contact info |
+| `/compare/quantara-vs-tradervue` | Feature comparison table |
+| `/compare/quantara-vs-excel` | Feature comparison table |
+| `/tools/drawdown-simulator` | Interactive trailing DD calculator (EOD/Intraday, 6 presets) |
+| `/demo` | Ghost Mode dashboard preview (4 fake accounts, no signup) |
+| `/pricing` | Pricing page (Free/Pro/Lifetime, waitlist form) |
+| `/docs` | Documentation + FAQ |
+| `/integrations` | Supported PropFirms list |
+| `/security` | Security architecture + GDPR compliance |
+| `/contact` | Contact info (hardcoded FR — needs i18n) |
 | `/legal/*` | CGU, Privacy, Imprint |
+| `/u/[username]` | Public user profiles |
+| `/g/[code]` | Group pages |
 
 ## Cron Jobs (vercel.json)
 
@@ -234,8 +255,48 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 |------|----------|-------------|
 | `/api/cron/check-bills` | Daily 9 AM UTC | Push alerts 2 days before billing |
 | `/api/cron/monthly-recap` | 1st of month 8 AM | Email recap via Resend |
-| `/api/cron/onboarding-emails` | Daily 10 AM UTC | 3-email welcome sequence |
+| `/api/cron/onboarding-emails` | Daily 10 AM UTC | 3-email welcome sequence (J0/J3/J7) |
 | `/api/cron/drawdown-guardian` | Mon-Fri 2:30 PM UTC | Push alert when DD < 70% |
+
+## Audit — Open Issues (prioritized)
+
+### CRO (conversion killers — fix next)
+1. **Hero CTA routes to /app (login) instead of /auth?mode=signup** — visitors land on login not signup
+2. **Social proof unconvincing** — 3 anonymous testimonials, hardcoded count=47, no photos
+3. **Demo page is dead end** — sidebar not clickable, only Dashboard view, banner dismissible
+4. **No social login** (Google/Discord) — would increase signups 20-40%
+5. **Pricing not visible** from landing page navigation
+
+### SEO (content gaps)
+6. **GSC not connected** — layout.js line 97 still has placeholder verification code
+7. **0 firm pages, 0 guides, 0 blog** — site at 14% of SEO plan M6 target
+8. **Landing SSR fallback is thin** (~50 words) — crawlers miss product sections
+9. **No internal cross-linking** between content pages
+10. **H1 pollution** in landing mockups (DashboardMockup, AnalyticsMockup, JournalMockup, EconomicCalendarMockup all have <h1>)
+11. **6 pages missing canonical URLs** — /security, /integrations, /contact, /legal/*
+12. **6 pages missing page-specific OG tags** — pricing, docs, security, integrations, contact, demo
+
+### Code quality
+13. **i18n gaps** — ComparisonPage, DrawdownSimulator, DemoClient, contact page have hardcoded strings
+14. **contact/page.js** not following server+client pattern (no PageHeader/Footer, all hardcoded FR)
+15. **22 React Hooks exhaustive-deps warnings** across CalendarPage, JournalPage, MyRulesPage, etc.
+16. **No rate limiting** on /api/referral, /api/onboarding, /api/export, /api/push/*
+
+### Security (medium/low)
+17. **unsafe-eval in CSP** — next.config.js script-src allows eval (should be dev-only)
+18. **Push subscribe/unsubscribe** use ad-hoc auth instead of verifyAuth()
+19. **Admin layout** uses case-sensitive ADMIN_EMAILS.includes() instead of isAdmin()
+20. **Middleware admin check** is bypassable (only checks referer/auth header existence)
+
+## Proposed Innovative Features
+
+| # | Feature | Impact | Complexity |
+|---|---------|--------|------------|
+| 1 | **Danger Zone + Trading Pause** — modal at 15% DD with suggested position size + cooldown timer | Retention, differentiation | Medium |
+| 2 | **Anonymous Leaderboard** — opt-in ROI/consistency rankings at /leaderboard | SEO + social proof + community | Medium |
+| 3 | **AI Trade Coach** — weekly analysis after 30+ trades via Claude API | Core value prop ("Grow") | High |
+| 4 | **Challenge Optimizer** — /tools/challenge-optimizer recommends best firm+plan | SEO lead magnet | Medium |
+| 5 | **Rithmic Browser Extension** — Chrome extension scrapes trades, pushes to Quantara | Removes #1 friction point | High |
 
 ## Pending / Roadmap
 
@@ -243,4 +304,5 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - **Stripe** — waiting for LLC EIN to set up payments
 - **Sync Rithmic/ProjectX** — waiting for 50 users before building
 - **Tests** — no test framework yet; when adding, use Vitest
-- **Supabase migrations needed** — referrals table, profiles.referral_code, profiles.onboarding_emails_sent
+- **SEO content engine** — /firms/[slug], /guides/[slug], /blog/[slug] templates not built yet
+- **Topstep vs Apex page** — highest-value missing content (2.4k/mo keyword)
