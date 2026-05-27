@@ -51,11 +51,11 @@ export default function JournalMockup() {
             letterSpacing: '0.16em', textTransform: 'uppercase',
             fontWeight: 600, marginBottom: 8,
           }}>{t('mockups.journal.eyebrow')}</div>
-          <h1 style={{
+          <div style={{
             fontSize: 22, fontWeight: 700, margin: 0,
             letterSpacing: '-0.025em', lineHeight: 1.1,
             marginBottom: 4,
-          }}>{t('mockups.journal.title')}</h1>
+          }}>{t('mockups.journal.title')}</div>
           <div style={{ fontSize: 11, color: C.text3 }}>
             {t('mockups.journal.subtitle')}
           </div>

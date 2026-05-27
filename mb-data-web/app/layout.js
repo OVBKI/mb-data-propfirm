@@ -130,6 +130,16 @@ export default function RootLayout({ children }) {
         <JsonLd data={WEBSITE_SCHEMA} />
       </head>
       <body className={inter.className}>
+        <a href="#main-content" style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 'auto',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+        }} className="skip-to-content">
+          Skip to content
+        </a>
         <LanguageProvider>
           <ErrorBoundary>
             {children}

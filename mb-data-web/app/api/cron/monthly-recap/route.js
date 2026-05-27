@@ -200,13 +200,13 @@ function generateRecapHTML(data) {
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📔 Trades loggés</div>
+                <div style="font-size:10px;font-weight:700;color:#7b839b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📔 Trades loggés</div>
                 <div style="font-size:28px;font-weight:700;color:#f0ede8;">${tradeCount}</div>
                 <div style="font-size:11px;color:#9098b0;margin-top:4px;">${wins} gains · ${losses} pertes · WR ${winRate}%</div>
               </td>
               <td width="8"></td>
               <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💰 PnL trading</div>
+                <div style="font-size:10px;font-weight:700;color:#7b839b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💰 PnL trading</div>
                 <div style="font-size:28px;font-weight:700;color:${pnlColor};">${pnlSign}${totalPnL.toFixed(0)} $</div>
                 <div style="font-size:11px;color:#9098b0;margin-top:4px;">Performance journal</div>
               </td>
@@ -219,19 +219,19 @@ function generateRecapHTML(data) {
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td width="33%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📉 Dépenses</div>
+                <div style="font-size:10px;font-weight:700;color:#7b839b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📉 Dépenses</div>
                 <div style="font-size:20px;font-weight:700;color:#e8504a;">-${totalSpentMonth.toFixed(0)} $</div>
                 <div style="font-size:11px;color:#9098b0;margin-top:4px;">challenges + activations + mensualités</div>
               </td>
               <td width="8"></td>
               <td width="33%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💸 Payouts</div>
+                <div style="font-size:10px;font-weight:700;color:#7b839b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💸 Payouts</div>
                 <div style="font-size:20px;font-weight:700;color:#1db87a;">+${totalPayoutsAmount.toFixed(0)} $</div>
                 <div style="font-size:11px;color:#9098b0;margin-top:4px;">${payoutCount} payout${payoutCount > 1 ? 's' : ''} net reçu${payoutCount > 1 ? 's' : ''}</div>
               </td>
               <td width="8"></td>
               <td width="33%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;border:1px solid ${netCashFlow >= 0 ? 'rgba(29,184,122,0.3)' : 'rgba(232,80,74,0.3)'};" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⚖️ Bilan du mois</div>
+                <div style="font-size:10px;font-weight:700;color:#7b839b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⚖️ Bilan du mois</div>
                 <div style="font-size:20px;font-weight:700;color:${netColor};">${netSign}${netCashFlow.toFixed(0)} $</div>
                 <div style="font-size:11px;color:#9098b0;margin-top:4px;">cash flow réel</div>
               </td>
@@ -244,13 +244,13 @@ function generateRecapHTML(data) {
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🏢 Firmes</div>
+                <div style="font-size:10px;font-weight:700;color:#7b839b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🏢 Firmes</div>
                 <div style="font-size:20px;font-weight:700;color:#4d8fff;">${newFirmsCount}</div>
                 <div style="font-size:11px;color:#9098b0;margin-top:4px;">ajoutée${newFirmsCount > 1 ? 's' : ''} ce mois</div>
               </td>
               <td width="8"></td>
               <td width="50%" style="padding:14px;background:#1c2030;border-radius:10px;text-align:center;vertical-align:top;" valign="top">
-                <div style="font-size:10px;font-weight:700;color:#565e78;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💼 Comptes</div>
+                <div style="font-size:10px;font-weight:700;color:#7b839b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💼 Comptes</div>
                 <div style="font-size:20px;font-weight:700;color:#fac775;">${newAccountsCount}</div>
                 <div style="font-size:11px;color:#9098b0;margin-top:4px;">créé${newAccountsCount > 1 ? 's' : ''} ce mois</div>
               </td>
@@ -265,13 +265,13 @@ function generateRecapHTML(data) {
 
         <!-- Footer -->
         <tr><td style="padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.07);background:#0d0f14;">
-          <p style="font-size:11px;color:#565e78;margin:0 0 8px;line-height:1.5;">
+          <p style="font-size:11px;color:#7b839b;margin:0 0 8px;line-height:1.5;">
             Quantara Technologies LLC · Albuquerque, NM, USA<br>
-            <a href="https://quantara.tech/legal/privacy" style="color:#565e78;text-decoration:underline;">Privacy</a> · <a href="mailto:admin@quantara.tech" style="color:#565e78;text-decoration:underline;">Contact</a>
+            <a href="https://quantara.tech/legal/privacy" style="color:#7b839b;text-decoration:underline;">Privacy</a> · <a href="mailto:admin@quantara.tech" style="color:#7b839b;text-decoration:underline;">Contact</a>
           </p>
-          <p style="font-size:10px;color:#565e78;margin:0;">
+          <p style="font-size:10px;color:#7b839b;margin:0;">
             Tu reçois cet email parce que tu as un compte actif sur Quantara.<br>
-            <a href="https://quantara.tech/app/settings" style="color:#565e78;">Gérer mes préférences email</a>
+            <a href="https://quantara.tech/app/settings" style="color:#7b839b;">Gérer mes préférences email</a>
           </p>
         </td></tr>
       </table>

@@ -212,7 +212,7 @@ export default async function PublicProfilePage({ params }) {
             <strong style={{ color: '#f0ede8' }}>{profile.followers_count || 0}</strong> followers
           </Link>
           {memberSince && (
-            <span style={{ color: '#565e78' }}>
+            <span style={{ color: '#7b839b' }}>
               · Membre depuis {memberSince}
             </span>
           )}
@@ -259,7 +259,7 @@ export default async function PublicProfilePage({ params }) {
           background: 'rgba(255,255,255,0.02)',
           border: '1px dashed rgba(255,255,255,0.10)',
           borderRadius: 12, textAlign: 'center',
-          fontSize: 12, color: '#565e78',
+          fontSize: 12, color: '#7b839b',
         }}>
           🚧 D'autres fonctionnalités arrivent : groupes privés, leaderboard, chat.
           <br />
@@ -270,7 +270,7 @@ export default async function PublicProfilePage({ params }) {
         <footer style={{
           marginTop: 60, paddingTop: 20,
           borderTop: '1px solid rgba(255,255,255,0.07)',
-          fontSize: 11, color: '#565e78', textAlign: 'center',
+          fontSize: 11, color: '#7b839b', textAlign: 'center',
         }}>
           <Link href="/" style={{ color: '#9098b0', textDecoration: 'none' }}>Quantara</Link>
           {' · '}

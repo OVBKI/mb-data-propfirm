@@ -45,7 +45,7 @@ function LandingFallback() {
           <p style={{ fontSize: 18, color: '#9098b0', lineHeight: 1.6, marginBottom: 40 }}>
             Suis tes comptes, analyse tes trades, gère tes payouts. Le tableau de bord que chaque trader PropFirm mérite.
           </p>
-          <a href="/app" style={{ padding: '14px 32px', background: '#f0ede8', color: '#0a0c10', borderRadius: 10, fontWeight: 600, textDecoration: 'none', fontSize: 15 }}>
+          <a href="/auth?mode=signup" style={{ padding: '14px 32px', background: '#f0ede8', color: '#0a0c10', borderRadius: 10, fontWeight: 600, textDecoration: 'none', fontSize: 15 }}>
             Commencer gratuitement →
           </a>
         </div>

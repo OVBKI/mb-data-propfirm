@@ -103,13 +103,13 @@ function emailTemplate(step, username) {
       </td></tr>
       <!-- Footer -->
       <tr><td style="padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.07);background:#0d0f14;">
-        <p style="font-size:11px;color:#565e78;margin:0 0 8px;line-height:1.5;">
+        <p style="font-size:11px;color:#7b839b;margin:0 0 8px;line-height:1.5;">
           Quantara Technologies LLC · Albuquerque, NM, USA<br>
-          <a href="https://quantara.tech/legal/privacy" style="color:#565e78;text-decoration:underline;">Privacy</a> · <a href="mailto:contact@quantara.tech" style="color:#565e78;text-decoration:underline;">Contact</a>
+          <a href="https://quantara.tech/legal/privacy" style="color:#7b839b;text-decoration:underline;">Privacy</a> · <a href="mailto:contact@quantara.tech" style="color:#7b839b;text-decoration:underline;">Contact</a>
         </p>
-        <p style="font-size:10px;color:#565e78;margin:0;">
+        <p style="font-size:10px;color:#7b839b;margin:0;">
           Tu reçois cet email parce que tu as créé un compte sur Quantara.<br>
-          <a href="https://quantara.tech/app/settings" style="color:#565e78;">Gérer mes préférences email</a>
+          <a href="https://quantara.tech/app/settings" style="color:#7b839b;">Gérer mes préférences email</a>
         </p>
       </td></tr>
     </table>

@@ -34,7 +34,7 @@ function emailBody(step, name) {
 <tr><td style="padding:28px 32px 20px;border-bottom:1px solid rgba(255,255,255,0.07);"><div style="font-weight:800;font-size:14px;letter-spacing:0.08em;color:#f0ede8;">QUANTARA</div></td></tr>
 <tr><td style="padding:28px 32px;">${bodies[step]}<br><a href="https://quantara.tech/app" style="display:inline-block;padding:12px 28px;background:#2d6fff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:12px;">Ouvrir mon dashboard →</a></td></tr>
 <tr><td style="padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.07);background:#0d0f14;">
-<p style="font-size:11px;color:#565e78;margin:0;line-height:1.5;">Quantara Technologies LLC · Albuquerque, NM, USA<br><a href="https://quantara.tech/app/settings" style="color:#565e78;">Gérer mes emails</a></p>
+<p style="font-size:11px;color:#7b839b;margin:0;line-height:1.5;">Quantara Technologies LLC · Albuquerque, NM, USA<br><a href="https://quantara.tech/app/settings" style="color:#7b839b;">Gérer mes emails</a></p>
 </td></tr></table></td></tr></table></body></html>`
 }
 

@@ -16,6 +16,8 @@
 // en passant aux nonces côté server components.
 // ============================================================================
 
+const isDev = process.env.NODE_ENV === 'development'
+
 const securityHeaders = [
   {
     key: 'X-Frame-Options',
@@ -49,7 +51,8 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       // Scripts : Vercel Analytics, Cloudflare Turnstile, et 'unsafe-inline' pour Next inline
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://*.vercel-insights.com https://va.vercel-scripts.com",
+      // 'unsafe-eval' only in dev (Next.js HMR needs it); removed in production
+      `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://challenges.cloudflare.com https://*.vercel-insights.com https://va.vercel-scripts.com`,
       // Styles : inline OK (Next + framer + chart.js)
       "style-src 'self' 'unsafe-inline'",
       // Fonts : self + data URIs (icônes embedded)

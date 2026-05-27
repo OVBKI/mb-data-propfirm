@@ -31,8 +31,8 @@ function MiniBarChart({ firms, firmTotalSpent, firmTotalPayouts }) {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €` } } },
           scales: {
-            x: { grid: { display: false }, ticks: { color: '#565e78', font: { size: 9 } } },
-            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#565e78', font: { size: 9 }, callback: v => v + '€' } }
+            x: { grid: { display: false }, ticks: { color: '#7b839b', font: { size: 9 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7b839b', font: { size: 9 }, callback: v => v + '€' } }
           }
         }
       })

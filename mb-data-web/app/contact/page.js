@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+export const revalidate = 3600 // ISR: revalidate every hour
+
 export const metadata = {
   title: 'Contact — Quantara',
   description: 'Contactez l\'équipe Quantara pour toute question ou suggestion.',
@@ -50,7 +52,7 @@ export default function ContactPage() {
             padding: '20px 24px', background: '#141720',
             border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12,
           }}>
-            <div style={{ fontSize: 11, color: '#565e78', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: '#7b839b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, fontWeight: 600 }}>
               Email
             </div>
             <a href="mailto:support@quantara.tech" style={{
@@ -68,7 +70,7 @@ export default function ContactPage() {
             padding: '20px 24px', background: '#141720',
             border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12,
           }}>
-            <div style={{ fontSize: 11, color: '#565e78', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: '#7b839b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, fontWeight: 600 }}>
               Réseaux sociaux
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -90,7 +92,7 @@ export default function ContactPage() {
             padding: '20px 24px', background: '#141720',
             border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12,
           }}>
-            <div style={{ fontSize: 11, color: '#565e78', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: '#7b839b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, fontWeight: 600 }}>
               Entreprise
             </div>
             <div style={{ fontSize: 14, color: '#9098b0', lineHeight: 1.6 }}>
@@ -101,10 +103,10 @@ export default function ContactPage() {
           </div>
         </div>
 
-        <div style={{ marginTop: 40, fontSize: 12, color: '#565e78', textAlign: 'center' }}>
-          <Link href="/legal/privacy" style={{ color: '#565e78', textDecoration: 'underline' }}>Politique de confidentialité</Link>
+        <div style={{ marginTop: 40, fontSize: 12, color: '#7b839b', textAlign: 'center' }}>
+          <Link href="/legal/privacy" style={{ color: '#7b839b', textDecoration: 'underline' }}>Politique de confidentialité</Link>
           {' · '}
-          <Link href="/legal/cgu" style={{ color: '#565e78', textDecoration: 'underline' }}>CGU</Link>
+          <Link href="/legal/cgu" style={{ color: '#7b839b', textDecoration: 'underline' }}>CGU</Link>
         </div>
       </div>
     </div>

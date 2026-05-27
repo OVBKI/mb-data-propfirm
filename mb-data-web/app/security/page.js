@@ -3,6 +3,8 @@
 
 import SecurityClient from './SecurityClient'
 
+export const revalidate = 3600 // ISR: revalidate every hour
+
 export const metadata = {
   title: 'Sécurité — Quantara',
   description: 'Comment Quantara protège tes données : RLS Postgres, hébergement EU, captcha Turnstile, JWT Supabase, zéro accès broker.',

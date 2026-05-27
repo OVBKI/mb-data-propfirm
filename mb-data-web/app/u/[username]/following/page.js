@@ -135,7 +135,7 @@ function FollowList({ items }) {
                   <span title="Profil vérifié" style={verifiedBadgeStyle}>✓</span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#565e78', fontFamily: 'monospace' }}>{subName}</div>
+              <div style={{ fontSize: 11, color: '#7b839b', fontFamily: 'monospace' }}>{subName}</div>
             </div>
             {isPublic && (
               <span style={{ fontSize: 11, color: '#4d8fff', fontWeight: 600 }}>Voir →</span>
@@ -160,7 +160,7 @@ function EmptyState({ message }) {
     <div style={{
       padding: 60, textAlign: 'center',
       background: '#141720', border: '1px dashed rgba(255,255,255,0.10)',
-      borderRadius: 12, color: '#565e78', fontSize: 13,
+      borderRadius: 12, color: '#7b839b', fontSize: 13,
     }}>
       {message}
     </div>

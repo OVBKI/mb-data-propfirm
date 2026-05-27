@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase'
 import QLogoIcon from '../../components/QLogoIcon'
 // Emails admins autorisés — liste centralisée dans lib/admins.js
 // (doivent matcher les RLS policies Supabase si configurées admin-permissives)
-import { ADMIN_EMAILS } from '../../lib/admins'
+import { isAdmin } from '../../lib/admins'
 
 const C = {
   bg: '#0d0f14',
@@ -19,7 +19,7 @@ const C = {
   border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blue: '#2d6fff',
   blueLight: '#4d8fff',
   red: '#e8504a',
@@ -96,7 +96,7 @@ export default function AdminLayout({ children }) {
   }
 
   // Connecté mais pas admin
-  if (!ADMIN_EMAILS.includes(user.email)) {
+  if (!isAdmin(user.email)) {
     return (
       <div style={{
         minHeight: '100vh', background: C.bg, color: C.text,
