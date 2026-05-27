@@ -201,7 +201,7 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 ### Semaine 3 — Conversion (DONE)
 - **Hero headline rewrite** — "Tous tes comptes PropFirm. Un seul dashboard." (PropFirm-specific)
 - **Social proof** — beta badge + 3 testimonial cards on landing (SocialProof.js)
-- **Ghost Mode** — `/demo` page with 4 realistic PropFirm accounts, no signup required
+- **Ghost Mode** — `/demo` page with realistic dashboard replica, no signup required
 - **Onboarding emails** — 3-email sequence (Day 0/3/7) via Resend, cron at 10 AM UTC
 
 ### Semaine 4 — Growth Engine (DONE)
@@ -211,19 +211,7 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - **Compare pages** — `/compare/quantara-vs-tradervue`, `/compare/quantara-vs-excel`
 - **ComparisonPage** reusable component for all vs pages
 
-### Full Audit v2 (6-agent deep audit — May 27, 2026)
-
-**Scores:**
-| Axe | Score |
-|-----|-------|
-| Functionality/Bugs | 2 High, 2 Medium, 1 Low |
-| Marketing/Copy | 6.0/10 |
-| SEO/AI Visibility | 38/100 |
-| Architecture/Performance | 5.5/10 |
-| i18n completeness | 5/10 |
-| Accessibility (WCAG) | 3/10 |
-
-**Critical fixes already applied (audit v1):**
+### Audit v1 — Security fixes (DONE)
 - Build crash: moved createClient() from module scope into handlers (3 routes)
 - Security: onboarding email forced to auth.user.email (was accepting arbitrary email)
 - Security: CRON_SECRET undefined bypass fixed (2 cron routes)
@@ -232,6 +220,54 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - Crash: try/catch on request.json() in referral + onboarding routes
 - SEO: llms.txt updated with correct LLC + all new page URLs
 
+### Audit v2 — 6-agent deep audit (DONE)
+Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibility 3/10
+
+### Phase 0 — Launch Plan executed (DONE)
+**P0.1 Auth + CTAs (FIXED):**
+- Created `/auth` route (page.js + AuthClient.js) — no more 404
+- AuthPage accepts `initialMode` prop, reads `?mode=signup` from URL
+- 10 signup CTAs changed from `/app` → `/auth?mode=signup`
+- Login buttons ("Se connecter") kept at `/app`
+
+**P0.2 SEO quick wins (FIXED):**
+- SSR fallback enriched (app/page.js LandingFallback) — 300+ words + internal links
+- Canonical URLs added to 6 pages (security, integrations, contact, legal/*)
+- OG + Twitter cards added to 9 pages
+- FAQPage JSON-LD added to /docs
+- H1 pollution fixed in 4 landing mockups (h1 → div)
+
+**P0.3 Security (FIXED):**
+- Rate limiting added to 5 routes (referral, onboarding, export, push/subscribe, push/unsubscribe)
+- CSP unsafe-eval made dev-only in next.config.js
+- Push routes refactored to use verifyAuth()
+- Admin layout uses isAdmin() (case-insensitive)
+
+**P0.4 Architecture (FIXED):**
+- Dead dep removed (react-chartjs-2) — lenis kept (used via dynamic import)
+- Nested selects in loadFirms(): `firms.select('*, accounts(*, payouts(*)')` — 1 query instead of 3
+- Exchange rate caching (30 min TTL module-scope)
+- ISR revalidate=3600 on 6 static public pages
+
+**P0.5 Accessibility (FIXED):**
+- :focus-visible styles added in globals.css
+- Skip-to-content link in root layout
+- --text3 contrast increased #565e78 → #7b839b (4.5:1 ratio, 36 files)
+- Dynamic `<html lang>` via LanguageProvider (already was implemented)
+
+### Landing page nav (FIXED)
+- Added 4 nav links to landing top bar: Comparateur, Simulateur DD, Tarifs, Démo
+- Hidden on mobile (< 768px)
+
+### Demo page rebuilt 3x (FINAL VERSION)
+- Exact replica of real dashboard with real PropFirm logos (getFirmLogo)
+- Sidebar: 4 sections (Vue d'ensemble, Mes trades, PropFirms, Communauté), same icons as real
+- 5 stat cards, firm cards with logos/ROI/accounts/badges
+- Full calendar with events (achats/payouts per day), monthly stats, right panel (day detail + transactions récentes)
+- 3 bottom cards (par firme chart, statistiques, par firme ranking)
+- Badge colors: Challenge=amber, Funded=green, Failed=red, Diplômes=blue with border
+- PageHeader + Footer, responsive
+
 **Supabase migrations applied by user:**
 - profiles.onboarding_emails_sent (integer, default 0)
 - profiles.referral_code (text, unique)
@@ -239,69 +275,66 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - propfirm_rules_overrides table (firm_name, rule_key, plan, value)
 - waitlist table (email, plan, ip_address)
 
-## Audit — Bugs (NOT YET FIXED)
+## What's LEFT to do (Phase 1-5 of LAUNCH_PLAN.md)
 
-| # | Severity | Bug | File |
-|---|----------|-----|------|
-| 1 | **HIGH** | `/auth?mode=signup` = 404 — no `/auth` route exists. Pricing CTA is broken. | `PricingClient.js:134` |
-| 2 | **HIGH** | AuthPage ignores `?mode=signup` — mode state hardcoded to `'login'` | `AuthPage.js:18` |
-| 3 | **MEDIUM** | Demo page has no PageHeader/Footer — navigation dead end. Sidebar items non-interactive. | `DemoClient.js` |
-| 4 | **MEDIUM** | ComparisonPage + both vs pages = 100% hardcoded English, no i18n | `ComparisonPage.js` |
-| 5 | **LOW** | DrawdownSimulator has mixed i18n — status/type labels hardcoded EN | `DrawdownSimulatorClient.js` |
+### Phase 1 — Beta privée (NEXT — Weeks 2-3)
+- [ ] E2E test complet (signup, onboarding, all features, mobile, Safari)
+- [ ] Email deliverability test (mail-tester.com ≥ 9/10)
+- [ ] Supabase RLS audit (2 test accounts, verify no data leaks)
+- [ ] Setup analytics (PostHog or Plausible)
+- [ ] Recruit 10-20 beta testers (Discord trading FR, Twitter, Reddit)
+- [ ] Setup Discord server (6 channels)
+- [ ] Build quick features: Drawdown Health Dashboard, Position Size Calculator
 
-## Audit — Open Issues (prioritized, NOT YET FIXED)
+### Phase 2 — Launch public (Week 4)
+- [ ] Polish based on beta feedback
+- [ ] Marketing assets (screenshot HD, demo video 60-90s, 3 Twitter visuals)
+- [ ] First 5 SEO pages (3 firms + topstep-vs-apex + trailing-drawdown guide)
+- [ ] Launch day: Product Hunt, BetaList, Indie Hackers, HN, Reddit
 
-### P0 — Conversion blockers
-1. Create `/auth` route OR change all CTAs to route correctly to signup mode
-2. Change ALL CTA links from `/app` → proper signup URL (hero, demo, compare, tools, final CTA)
-3. Add PageHeader + Footer to demo page
+### Phase 3 — SEO & Content (Weeks 5-8)
+- [ ] Build /firms/[slug] template + generate 11 firm pages from PROPFIRM_RULES
+- [ ] Build /guides/[slug] template
+- [ ] Create blog infrastructure
+- [ ] Auto-generate comparison pages from firm pairs
+- [ ] Features Sprint 2: Consistency Monitor, Danger Zone, Payout Pipeline
+- [ ] Backlinks: directory submissions, YouTuber outreach
 
-### P1 — SEO critical
-4. Enrich SSR fallback in app/page.js (LandingFallback) — add links + 300 words content for crawlers
-5. Generate 11 `/firms/[slug]` pages from PROPFIRM_RULES data (constants.js) — programmatic SEO
-6. Create `/compare/topstep-vs-apex` — 2400/mo search volume keyword
-7. Add canonical URLs to 6 pages: /security, /integrations, /contact, /legal/*
-8. Add OG + Twitter cards to 9 pages missing them
-9. Add FAQPage JSON-LD to /docs page
-10. Fix H1 pollution in 4 landing mockups (DashboardMockup, AnalyticsMockup, JournalMockup, EconomicCalendarMockup)
+### Phase 4 — Monetization (Weeks 9-10)
+- [ ] Get EIN from IRS
+- [ ] Open Mercury bank account
+- [ ] Setup Stripe (checkout, webhook, customer portal)
+- [ ] Feature gating (Free: 2 firms/100 trades vs Pro: unlimited)
+- [ ] Launch Pro tier + Lifetime promo
+- [ ] Supabase: profiles.plan, stripe_customer_id, stripe_subscription_id
 
-### P2 — Marketing / Trust
-11. Rewrite hero headline — lead with pain not features ("Stop losing funded accounts")
-12. Replace fake social proof with real metrics or PropFirm logos
-13. Add competitor price anchoring on pricing page (Tradervue $49/mo vs Quantara 9€)
-14. Add money-back guarantee 30 days on Lifetime plan
-15. Add share functionality to drawdown simulator
+### Phase 5 — Growth (Weeks 11+)
+- [ ] AI Trade Coach (Claude API weekly analysis)
+- [ ] Account Lifecycle Kanban
+- [ ] Anonymous Leaderboard
+- [ ] Social login (Google + Discord OAuth)
+- [ ] Chrome Extension for Rithmic
+- [ ] Target: MRR $500/mo
 
-### P3 — Architecture
-16. Replace N+1 billing queries in loadFirms() with single Supabase RPC — 10-30x faster login
-17. Use nested selects: `firms.select('*, accounts(*, payouts(*)')` — 75% fewer DB queries
-18. Remove dead dependencies: lenis, react-chartjs-2
-19. Add exchange rate caching (30 min TTL)
-20. Integrate Sentry
-21. Add rate limiting to /api/referral, /api/onboarding, /api/export, /api/push/*
-22. Add ISR (revalidate=3600) to static public pages
+## Still-open audit issues (not yet fixed)
 
-### P4 — Accessibility
-23. Add `:focus-visible` styles + remove `outline: none` from .qt-focus-ring
-24. Add skip-to-content link in root layout
-25. Increase --text3 contrast from #565e78 → #7b839b (4.5:1 ratio) — 294 occurrences
-26. Add `role="dialog"` + aria-label + focus trapping + Escape key to all modals/drawers
-27. Dynamic `<html lang>` based on selected locale (currently hardcoded "fr")
+### i18n gaps (P5)
+- contact/page.js — hardcoded FR
+- not-found.js, error.js, auth/callback — hardcoded FR
+- layout.js drawers/modals — 50+ hardcoded FR strings
+- Tutorial.js — 8 steps hardcoded FR
+- ComparisonPage + vs pages — hardcoded EN
+- DemoClient sidebar/status labels — partially hardcoded EN
+- DrawdownSimulator status/type labels — hardcoded EN
 
-### P5 — i18n gaps
-28. contact/page.js — entire page hardcoded FR, needs refactor to client component with t()
-29. not-found.js, error.js, auth/callback/page.js — hardcoded FR
-30. layout.js drawers/modals — 50+ hardcoded FR strings
-31. Tutorial.js — 8 steps entirely hardcoded FR
-32. ComparisonPage.js + both ComparisonClient — hardcoded EN
-33. DemoClient.js — sidebar labels + status labels hardcoded EN
-34. DrawdownSimulatorClient.js — status/type/badge labels hardcoded EN
+### Security (P6)
+- Middleware admin check is bypassable (only checks referer/auth header existence)
+- Add role="dialog" + focus trapping + Escape key to modals/drawers
 
-### P6 — Security (medium/low)
-35. unsafe-eval in CSP — next.config.js (should be dev-only)
-36. Push subscribe/unsubscribe use ad-hoc auth instead of verifyAuth()
-37. Admin layout uses case-sensitive ADMIN_EMAILS.includes() instead of isAdmin()
-38. Middleware admin check is bypassable (only checks referer/auth header existence)
+### Architecture (remaining)
+- N+1 billing updates in loadFirms (Supabase RPC needed)
+- Sentry integration (DSN exists, needs wiring)
+- Split layout.js monolith (810 lines) into composable pieces
 
 ## Programmatic SEO Opportunity
 
@@ -331,12 +364,6 @@ Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
 | 14 | **Trade Replay Timeline** — TradingView Lightweight Charts | 20 | High |
 | 15 | **Cross-Firm Benchmarking** — anonymized percentiles | 20 | Medium |
 
-**Recommended sprints:**
-- Sprint 1 (1-2w): #1, #5, #6, #11, #9
-- Sprint 2 (2-3w): #2, #4, #3, #8
-- Sprint 3 (3-4w): #7, #13, #12
-- Sprint 4 (4+w): #10, #14, #15
-
 ## Pending / Roadmap
 
 - **Sentry** — account exists, DSN needed
@@ -346,3 +373,4 @@ Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
 - **SEO content engine** — /firms/[slug], /guides/[slug], /blog/[slug] templates not built
 - **Social login** — Google OAuth + Discord OAuth via Supabase Auth providers
 - **Topstep vs Apex page** — highest-value missing content (2.4k/mo keyword)
+- **LAUNCH_PLAN.md** — detailed 5-phase plan with timelines and go/no-go criteria
