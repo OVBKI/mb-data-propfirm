@@ -64,6 +64,28 @@ export default function sitemap() {
       priority: 0.5,
     },
 
+    // Comparison pages
+    {
+      url: `${BASE_URL}/compare/quantara-vs-tradervue`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/compare/quantara-vs-excel`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+
+    // Tools
+    {
+      url: `${BASE_URL}/tools/drawdown-simulator`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+
     // Pages légales — utile pour trust mais priorité basse
     {
       url: `${BASE_URL}/legal/cgu`,

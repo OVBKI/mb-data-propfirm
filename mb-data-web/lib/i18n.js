@@ -1045,6 +1045,30 @@ const FR = {
     ],
   },
 
+  // === Tools ===
+  tools: {
+    ddSim: {
+      title: 'Simulateur de Trailing Drawdown',
+      subtitle: 'Calcule en temps réel ta marge de manœuvre avant de perdre ton compte PropFirm. EOD ou Intraday.',
+      accountSetup: 'Configuration du compte',
+      initialBalance: 'Balance initiale ($)',
+      ddAmountLabel: 'Montant drawdown ($)',
+      ddTypeLabel: 'Type de drawdown',
+      currentState: 'État actuel',
+      currentBalanceLabel: 'Balance actuelle ($)',
+      intradayHighLabel: 'Plus haut intraday ($)',
+      roomLeft: 'de marge restante',
+      visualTitle: 'Visualisation',
+      detailsTitle: 'Détails',
+      initialFloor: 'Floor initial',
+      currentFloor: 'Floor actuel',
+      maxLossLabel: 'Perte max autorisée',
+      ddTypeResult: 'Type DD',
+      ctaText: 'Quantara calcule ton trailing drawdown automatiquement sur chaque compte. En temps réel.',
+      ctaButton: 'Tracker mes comptes gratuitement',
+    },
+  },
+
   // === FlipFeatureCards — 6 features cards ===
   features: {
     eyebrow: '✨ Features',
@@ -2149,6 +2173,29 @@ const EN = {
       { name: 'Sarah K.', role: 'Apex & MFFU Trader', text: "I manage 7 accounts across 3 different firms. Without Quantara, it's unmanageable." },
       { name: 'Thomas B.', role: 'Lucid Trader', text: "The comparator saved me $200 by helping me pick the right firm. And the journal is perfect." },
     ],
+  },
+
+  tools: {
+    ddSim: {
+      title: 'Trailing Drawdown Simulator',
+      subtitle: 'Calculate your real-time margin before blowing your PropFirm account. EOD or Intraday.',
+      accountSetup: 'Account setup',
+      initialBalance: 'Initial balance ($)',
+      ddAmountLabel: 'Drawdown amount ($)',
+      ddTypeLabel: 'Drawdown type',
+      currentState: 'Current state',
+      currentBalanceLabel: 'Current balance ($)',
+      intradayHighLabel: 'Intraday high ($)',
+      roomLeft: 'room left',
+      visualTitle: 'Visualization',
+      detailsTitle: 'Details',
+      initialFloor: 'Initial floor',
+      currentFloor: 'Current floor',
+      maxLossLabel: 'Max allowed loss',
+      ddTypeResult: 'DD type',
+      ctaText: 'Quantara calculates your trailing drawdown automatically on each account. In real time.',
+      ctaButton: 'Track my accounts for free',
+    },
   },
 
   features: {
