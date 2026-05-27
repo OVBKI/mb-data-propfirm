@@ -1,8 +1,22 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Contact',
+  title: 'Contact — Quantara',
   description: 'Contactez l\'équipe Quantara pour toute question ou suggestion.',
+  alternates: {
+    canonical: 'https://quantara.tech/contact',
+  },
+  openGraph: {
+    title: 'Contact — Quantara',
+    description: 'Contactez l\'équipe Quantara pour toute question ou suggestion.',
+    url: 'https://quantara.tech/contact',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Contact — Quantara',
+    description: 'Contactez l\'équipe Quantara pour toute question ou suggestion.',
+  },
 }
 
 export default function ContactPage() {

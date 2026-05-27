@@ -83,7 +83,7 @@ export default function PageHeader({ active }) {
               border: `1px solid ${C.border2}`,
               whiteSpace: 'nowrap',
             }}>{t('pages.header.login')}</Link>
-            <Link href="/app" style={{
+            <Link href="/auth?mode=signup" style={{
               display: 'inline-block', padding: '8px 16px',
               fontSize: 13, fontWeight: 500, borderRadius: 8,
               textDecoration: 'none',

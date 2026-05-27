@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { verifyAuth } from '../../../lib/apiAuth'
+import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -119,6 +120,10 @@ function emailTemplate(step, username) {
 export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
+
+  // Rate limit: 5 req/min per user
+  const limit = rateLimit({ key: `onboarding:${auth.user.id}`, windowMs: 60_000, max: 5 })
+  if (!limit.allowed) return rateLimitResponse(limit)
 
   if (!resend) return Response.json({ error: 'Email service not configured' }, { status: 503 })
 

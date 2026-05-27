@@ -145,7 +145,7 @@ export default function DemoClient() {
           <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
             {t('demo.banner')}
           </span>
-          <Link href="/app" style={{
+          <Link href="/auth?mode=signup" style={{
             padding: '6px 16px', borderRadius: 6,
             fontSize: 12, fontWeight: 600,
             background: '#fff', color: C.blue,
@@ -242,7 +242,7 @@ export default function DemoClient() {
             <p style={{ fontSize: 13, color: C.text2, marginBottom: 20, lineHeight: 1.6 }}>
               {t('demo.ctaSubtitle')}
             </p>
-            <Link href="/app" style={{
+            <Link href="/auth?mode=signup" style={{
               display: 'inline-block', padding: '12px 28px',
               background: C.blue, color: '#fff', borderRadius: 8,
               fontSize: 14, fontWeight: 600, textDecoration: 'none',

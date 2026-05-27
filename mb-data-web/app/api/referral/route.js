@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { verifyAuth } from '../../../lib/apiAuth'
+import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
 
 function getSupabase() {
   return createClient(
@@ -12,6 +13,10 @@ function getSupabase() {
 export async function GET(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
+
+  // Rate limit: 10 req/min per user
+  const limit = rateLimit({ key: `referral-get:${auth.user.id}`, windowMs: 60_000, max: 10 })
+  if (!limit.allowed) return rateLimitResponse(limit)
 
   const supabase = getSupabase()
 
@@ -41,6 +46,10 @@ export async function GET(request) {
 export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
+
+  // Rate limit: 10 req/min per user
+  const limit = rateLimit({ key: `referral-post:${auth.user.id}`, windowMs: 60_000, max: 10 })
+  if (!limit.allowed) return rateLimitResponse(limit)
 
   let body
   try { body = await request.json() } catch {

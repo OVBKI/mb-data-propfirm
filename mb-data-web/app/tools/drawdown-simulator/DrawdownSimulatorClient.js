@@ -224,7 +224,7 @@ export default function DrawdownSimulatorClient() {
               <p style={{ fontSize: 13, color: C.text2, margin: 0, marginBottom: 12, lineHeight: 1.6 }}>
                 {t('tools.ddSim.ctaText')}
               </p>
-              <Link href="/app" style={{
+              <Link href="/auth?mode=signup" style={{
                 display: 'inline-block', padding: '10px 24px',
                 background: C.blue, color: '#fff', borderRadius: 8,
                 fontSize: 13, fontWeight: 600, textDecoration: 'none',

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { verifyAuth } from '../../../lib/apiAuth'
+import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
 
 function escapeCSV(val) {
   if (val === null || val === undefined) return ''
@@ -21,6 +22,10 @@ function toCSV(headers, rows) {
 export async function GET(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
+
+  // Rate limit: 3 req/min per user (export is heavy — multiple DB queries)
+  const limit = rateLimit({ key: `export:${auth.user.id}`, windowMs: 60_000, max: 3 })
+  if (!limit.allowed) return rateLimitResponse(limit)
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY

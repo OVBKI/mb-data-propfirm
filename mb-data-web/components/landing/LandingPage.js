@@ -182,7 +182,7 @@ export default function LandingPage() {
             letterSpacing: '0.005em',
           }}>{t('nav.login')}</Link>
           {/* Démarrer — INVERSÉ premium (off-white sur sombre) */}
-          <Link href="/app" className="qt-topbtn-primary" style={{
+          <Link href="/auth?mode=signup" className="qt-topbtn-primary" style={{
             padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
             borderRadius: 8,
             background: colors.text,
@@ -236,7 +236,7 @@ export default function LandingPage() {
             dans StarField3D apparaît en bas, derrière, comme vue depuis l'orbite. */}
         <HeroSection>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <MagneticButton href="/app" primary large>
+            <MagneticButton href="/auth?mode=signup" primary large>
               {t('hero.ctaPrimary')}
             </MagneticButton>
             <MagneticButton href="/demo" large>
@@ -373,7 +373,7 @@ export default function LandingPage() {
           }}>
             {t('finalCTA.subtitle')}
           </p>
-          <MagneticButton href="/app" primary large>
+          <MagneticButton href="/auth?mode=signup" primary large>
             {t('finalCTA.button')}
           </MagneticButton>
           <p style={{ marginTop: 20, fontSize: 12, color: colors.text3 }}>
