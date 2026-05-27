@@ -56,6 +56,10 @@ const FR = {
     login: 'Se connecter',
     start: 'Démarrer',
     startArrow: '→',
+    compare: 'Comparateur',
+    simulator: 'Simulateur DD',
+    pricing: 'Tarifs',
+    demo: 'Démo',
   },
 
   // === Demo (Ghost Mode) ===
@@ -1189,6 +1193,10 @@ const EN = {
     login: 'Sign in',
     start: 'Get started',
     startArrow: '→',
+    compare: 'Compare',
+    simulator: 'DD Simulator',
+    pricing: 'Pricing',
+    demo: 'Demo',
   },
 
   demo: {
