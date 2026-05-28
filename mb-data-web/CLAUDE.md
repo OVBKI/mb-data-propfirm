@@ -389,7 +389,11 @@ Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
 
 ## Pending / Roadmap
 
-- **Sentry** — account exists, DSN needed
+- **Sentry** — ✅ CODE DEPLOYED + env vars added in Vercel.
+  Test deferred to pre-launch: `curl "https://quantara.tech/api/sentry-test?secret=$CRON_SECRET"`
+  Should produce an issue in https://quantara-ag.sentry.io/issues/ within 30s.
+  Config: DSN, ORG=quantara-ag, PROJECT=quantara-web, AUTH_TOKEN all set.
+  Note: user should rotate the auth token after first verified test (was shared in chat).
 - **Stripe** — waiting for LLC EIN
 - **Sync Rithmic/ProjectX** — waiting for 50 users
 - **Tests** — no framework yet; use Vitest when adding
