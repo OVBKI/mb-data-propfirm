@@ -60,7 +60,7 @@ const securityHeaders = [
       // Images : tout (logos PropFirm en base64, og-image, supabase storage, etc.)
       "img-src 'self' data: blob: https:",
       // Fetch : Supabase + Resend + Finnhub + ForexFactory + ExchangeRate API
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://finnhub.io https://api.exchangerate-api.com https://*.vercel-insights.com https://va.vercel-scripts.com https://nfs.faireconomy.media",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://finnhub.io https://api.exchangerate-api.com https://*.vercel-insights.com https://va.vercel-scripts.com https://nfs.faireconomy.media https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io",
       // iframes : Turnstile uniquement
       "frame-src https://challenges.cloudflare.com",
       // Bloque le reste
@@ -102,3 +102,21 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+
+// === SENTRY WRAPPER ===
+// Wraps config with Sentry build-time integration (source maps, release tagging).
+// Only active if SENTRY_AUTH_TOKEN env var is set (CI/CD).
+// Without it, app still uses runtime Sentry from sentry.{client,server,edge}.config.js
+if (process.env.SENTRY_AUTH_TOKEN) {
+  const { withSentryConfig } = require('@sentry/nextjs')
+  module.exports = withSentryConfig(nextConfig, {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    silent: !process.env.CI,
+    widenClientFileUpload: true,
+    hideSourceMaps: true,           // Don't expose source maps publicly
+    disableLogger: true,             // Tree-shake Sentry logger
+    automaticVercelMonitors: true,   // Track Vercel cron jobs
+  })
+}
