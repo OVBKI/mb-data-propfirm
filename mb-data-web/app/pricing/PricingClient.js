@@ -48,6 +48,7 @@ export default function PricingClient() {
   const freeFeatures = t('pages.pricing.planFree.features')
   const proFeatures = t('pages.pricing.planPro.features')
   const eliteFeatures = t('pages.pricing.planElite.features')
+  const businessFeatures = t('pages.pricing.planBusiness.features')
   const lifetimeBaseFeatures = t('pages.pricing.planLifetime.features')
   const lifetimeLimitTpl = t('pages.pricing.planLifetime.featureLimitTemplate')
   // Concatène la feature dynamique avec le nombre de places à vie.
@@ -195,6 +196,22 @@ export default function PricingClient() {
                 }
               />
 
+              {/* BUSINESS */}
+              <PricingCard
+                badge={t('pages.pricing.planBusiness.badge')}
+                badgeColor="#06b6d4"
+                title={t('pages.pricing.planBusiness.name')}
+                price={t('pages.pricing.planBusiness.price')}
+                priceSub={t('pages.pricing.planBusiness.priceSub')}
+                description={t('pages.pricing.planBusiness.description')}
+                features={businessFeatures}
+                cta={
+                  <button onClick={() => selectPlanFromCard('business')} style={ctaPrimaryStyle()}>
+                    {t('pages.pricing.planBusiness.cta')}
+                  </button>
+                }
+              />
+
               {/* LIFETIME */}
               <PricingCard
                 badge={`${t('pages.pricing.planLifetime.badgePrefix')} ${lifetimeRemaining}/${LIFETIME_TOTAL} ${t('pages.pricing.planLifetime.badgeSuffix')}`}
@@ -249,6 +266,14 @@ export default function PricingClient() {
                     checked={waitlistPlan === 'elite'}
                     onChange={() => setWaitlistPlan('elite')}
                     color="#a78bfa"
+                  />
+                  <PlanRadio
+                    value="business"
+                    label="Business"
+                    sub="129€/mo — 10 seats"
+                    checked={waitlistPlan === 'business'}
+                    onChange={() => setWaitlistPlan('business')}
+                    color="#06b6d4"
                   />
                   <PlanRadio
                     value="lifetime"
