@@ -300,13 +300,36 @@ Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibilit
 - [ ] Features Sprint 2: Consistency Monitor, Danger Zone, Payout Pipeline
 - [ ] Backlinks: directory submissions, YouTuber outreach
 
-### Phase 4 — Monetization (Weeks 9-10)
+### Phase 4 — Monetization (Weeks 9-10) — TO DO AT THE END
+**User decision:** Postpone access control implementation until the rest of the site is finished.
+Full architecture documented but NOT yet coded. When ready, build in this order:
 - [ ] Get EIN from IRS
 - [ ] Open Mercury bank account
-- [ ] Setup Stripe (checkout, webhook, customer portal)
-- [ ] Feature gating (Free: 2 firms/100 trades vs Pro: unlimited)
+- [ ] Add Supabase columns: profiles.plan, plan_status, plan_expires_at, stripe_customer_id, stripe_subscription_id, beta_grandfather, plan_started_at
+- [ ] Create lib/planLimits.js (single source of truth for all tier limits)
+- [ ] Create <RequirePlan> component for UI gating
+- [ ] Server-side enforcement on firms/accounts/trades creation routes (return 402 PLAN_LIMIT_REACHED)
+- [ ] Setup Stripe (account, products, webhook secret)
+- [ ] Create /api/stripe/checkout, /api/stripe/webhook (with idempotency), /api/stripe/portal
+- [ ] Lifetime spot counter check before checkout (max 100)
+- [ ] Settings page: "Mon abonnement" section with Stripe portal link
+- [ ] Grandfather all beta users (SET beta_grandfather = true WHERE created_at < launch_date)
 - [ ] Launch Pro tier + Lifetime promo
-- [ ] Supabase: profiles.plan, stripe_customer_id, stripe_subscription_id
+- [ ] Communication email "Pro est dispo, -50% à vie pour toi"
+
+**Pricing tiers (DONE in i18n, READY for implementation):**
+- Free: 2 firms, 100 trades/mo
+- Pro: €19/mo or €149/yr (-35%) — unlimited + API sync + Drawdown Guardian + PDF
+- Elite: €39/mo or €299/yr (-36%) — AI Trade Coach + 3 team seats + VIP support
+- Lifetime Founders: €249 one-time (100 spots only) — Pro features for life + Founding badge
+- 30-day money-back guarantee on all paid plans
+
+**Access control architecture (documented, ready to implement):**
+- plan stored in profiles.plan (enum: free/pro/elite/lifetime)
+- Source of truth = Stripe webhook (NOT client-side)
+- All server routes check getPlanLimits(profile) before allowing actions
+- AI Coach excluded from Lifetime (Claude API recurring costs) — add-on €15/mo if needed
+- Beta grandfather: free users from before Pro launch keep unlimited Free features at life
 
 ### Phase 5 — Growth (Weeks 11+)
 - [ ] AI Trade Coach (Claude API weekly analysis)
