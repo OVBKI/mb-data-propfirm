@@ -48,8 +48,8 @@ export async function POST(req) {
   if (!email || !EMAIL_RE.test(email)) {
     return Response.json({ error: 'Email invalide' }, { status: 400 })
   }
-  if (!['pro', 'lifetime'].includes(plan)) {
-    return Response.json({ error: 'Plan invalide (pro ou lifetime)' }, { status: 400 })
+  if (!['pro', 'elite', 'lifetime'].includes(plan)) {
+    return Response.json({ error: 'Plan invalide (pro, elite ou lifetime)' }, { status: 400 })
   }
 
   // Insert dans Supabase
@@ -77,7 +77,7 @@ export async function POST(req) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const planLabel = plan === 'lifetime' ? 'Lifetime (VIP)' : 'Pro'
+      const planLabel = plan === 'lifetime' ? 'Lifetime Founders (VIP)' : plan === 'elite' ? 'Elite' : 'Pro'
       await resend.emails.send({
         from: 'Quantara <noreply@quantara.tech>',
         replyTo: 'admin@quantara.tech',

@@ -47,6 +47,7 @@ export default function PricingClient() {
   // Récupération des listes de features depuis i18n (objet retourné par translate).
   const freeFeatures = t('pages.pricing.planFree.features')
   const proFeatures = t('pages.pricing.planPro.features')
+  const eliteFeatures = t('pages.pricing.planElite.features')
   const lifetimeBaseFeatures = t('pages.pricing.planLifetime.features')
   const lifetimeLimitTpl = t('pages.pricing.planLifetime.featureLimitTemplate')
   // Concatène la feature dynamique avec le nombre de places à vie.
@@ -112,13 +113,37 @@ export default function PricingClient() {
           </Reveal>
         </section>
 
+        {/* COMPETITOR ANCHOR */}
+        <section style={{ padding: '0 24px 24px', maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <Reveal>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '8px 18px', borderRadius: 20,
+              background: 'rgba(45,111,255,0.06)', border: `1px solid rgba(45,111,255,0.18)`,
+              fontSize: 12, color: C.text2, fontWeight: 500,
+            }}>
+              <span style={{ fontSize: 14 }}>💰</span>
+              <span>{t('pages.pricing.competitorAnchor')}</span>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <span style={{
+                display: 'inline-block', padding: '6px 16px', borderRadius: 20,
+                fontSize: 12, fontWeight: 600, color: C.green,
+                background: 'rgba(29,184,122,0.08)', border: `1px solid rgba(29,184,122,0.25)`,
+              }}>
+                {t('pages.pricing.guaranteeBadge')}
+              </span>
+            </div>
+          </Reveal>
+        </section>
+
         {/* PRICING CARDS */}
-        <section style={{ padding: '0 24px 60px', maxWidth: 1200, margin: '0 auto' }}>
+        <section style={{ padding: '0 24px 60px', maxWidth: 1280, margin: '0 auto' }}>
           <Reveal>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 18,
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: 16,
               alignItems: 'stretch',
             }}>
               {/* FREE */}
@@ -150,6 +175,22 @@ export default function PricingClient() {
                 cta={
                   <button onClick={() => selectPlanFromCard('pro')} style={ctaPrimaryStyle()}>
                     {t('pages.pricing.planPro.cta')}
+                  </button>
+                }
+              />
+
+              {/* ELITE */}
+              <PricingCard
+                badge={t('pages.pricing.planElite.badge')}
+                badgeColor="#a78bfa"
+                title={t('pages.pricing.planElite.name')}
+                price={t('pages.pricing.planElite.price')}
+                priceSub={t('pages.pricing.planElite.priceSub')}
+                description={t('pages.pricing.planElite.description')}
+                features={eliteFeatures}
+                cta={
+                  <button onClick={() => selectPlanFromCard('elite')} style={ctaPrimaryStyle()}>
+                    {t('pages.pricing.planElite.cta')}
                   </button>
                 }
               />
@@ -192,7 +233,7 @@ export default function PricingClient() {
               </p>
 
               <form onSubmit={handleSubmit}>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
                   <PlanRadio
                     value="pro"
                     label={t('pages.pricing.waitlist.radioProLabel')}
@@ -200,6 +241,14 @@ export default function PricingClient() {
                     checked={waitlistPlan === 'pro'}
                     onChange={() => setWaitlistPlan('pro')}
                     color={C.blueLight}
+                  />
+                  <PlanRadio
+                    value="elite"
+                    label="Elite"
+                    sub="39€/mois — early access"
+                    checked={waitlistPlan === 'elite'}
+                    onChange={() => setWaitlistPlan('elite')}
+                    color="#a78bfa"
                   />
                   <PlanRadio
                     value="lifetime"
