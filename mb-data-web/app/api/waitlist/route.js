@@ -1,5 +1,5 @@
-// POST /api/waitlist — inscription waitlist Pro / Lifetime.
-// Body: { email: string, plan: 'pro' | 'lifetime' }
+// POST /api/waitlist — inscription waitlist Pro / Elite / Business.
+// Body: { email: string, plan: 'pro' | 'elite' | 'business' }
 // Insert dans Supabase + envoie un email de confirmation via Resend si dispo.
 //
 // =====================================================================
@@ -8,7 +8,7 @@
 // create table waitlist (
 //   id uuid primary key default gen_random_uuid(),
 //   email text unique not null,
-//   plan text not null check (plan in ('pro','lifetime')),
+//   plan text not null check (plan in ('pro','elite','business')),
 //   created_at timestamptz default now(),
 //   ip_address text
 // );
@@ -48,8 +48,8 @@ export async function POST(req) {
   if (!email || !EMAIL_RE.test(email)) {
     return Response.json({ error: 'Email invalide' }, { status: 400 })
   }
-  if (!['pro', 'elite', 'business', 'lifetime'].includes(plan)) {
-    return Response.json({ error: 'Plan invalide (pro, elite, business ou lifetime)' }, { status: 400 })
+  if (!['pro', 'elite', 'business'].includes(plan)) {
+    return Response.json({ error: 'Plan invalide (pro, elite ou business)' }, { status: 400 })
   }
 
   // Insert dans Supabase
@@ -77,8 +77,7 @@ export async function POST(req) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const planLabel = plan === 'lifetime' ? 'Lifetime Founders (VIP)'
-        : plan === 'business' ? 'Business (Team)'
+      const planLabel = plan === 'business' ? 'Business (Team)'
         : plan === 'elite' ? 'Elite'
         : 'Pro'
       await resend.emails.send({
@@ -101,7 +100,7 @@ export async function POST(req) {
             Tu es inscrit·e sur la liste <strong style="color:#f0ede8;">${planLabel}</strong>.
           </p>
           <p style="font-size:14px;color:#9098b0;line-height:1.6;margin:0 0 14px;">
-            Quantara reste <strong style="color:#1db87a;">gratuit pendant la beta</strong>. Quand le plan Pro sortira (Q3 2026), tu auras automatiquement <strong style="color:#f0ede8;">-50% à vie</strong>${plan === 'lifetime' ? ' et la priorité pour le pack Lifetime (limité à 100 places)' : ''}.
+            Quantara reste <strong style="color:#1db87a;">gratuit pendant la beta</strong>. Quand le plan Pro sortira (Q3 2026), tu auras automatiquement <strong style="color:#f0ede8;">-50% à vie</strong>${plan === 'business' ? ' et un onboarding prioritaire pour ton équipe' : plan === 'elite' ? ' et l\'accès anticipé aux features Elite' : ''}.
           </p>
           <p style="font-size:14px;color:#9098b0;line-height:1.6;margin:0 0 20px;">
             En attendant, profite à fond de la beta — tracking illimité, CSV Rithmic, alertes.

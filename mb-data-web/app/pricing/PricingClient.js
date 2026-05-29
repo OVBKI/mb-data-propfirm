@@ -1,15 +1,14 @@
 'use client'
-// Page /pricing — 3 cards (Free, Pro, Lifetime) + formulaire waitlist + FAQ.
-// Free est déjà dispo (CTA → /auth?mode=signup) ; Pro et Lifetime sont en waitlist.
+// Page /pricing — 4 tiers (Free, Pro, Elite, Business) + formulaire waitlist + FAQ.
+// Free est déjà dispo (CTA → /auth?mode=signup) ; Pro/Elite/Business sont en waitlist.
 // Le formulaire POST sur /api/waitlist qui insère dans Supabase + envoie un email Resend.
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import Reveal from '../../components/Reveal'
 import { useT } from '../../components/LanguageProvider'
-import { supabase } from '../../lib/supabase'
 
 const C = {
   bg: '#0d0f14',
@@ -26,35 +25,18 @@ const C = {
   amber: '#fac775',
 }
 
-const LIFETIME_TOTAL = 100
-
 export default function PricingClient() {
   const t = useT()
   const [waitlistPlan, setWaitlistPlan] = useState('pro')
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitResult, setSubmitResult] = useState(null)
-  const [lifetimeTaken, setLifetimeTaken] = useState(0)
-
-  useEffect(() => {
-    supabase.from('waitlist').select('id', { count: 'exact', head: true })
-      .eq('plan', 'lifetime')
-      .then(({ count }) => { if (count != null) setLifetimeTaken(count) })
-  }, [])
-
-  const lifetimeRemaining = Math.max(0, LIFETIME_TOTAL - lifetimeTaken)
 
   // Récupération des listes de features depuis i18n (objet retourné par translate).
   const freeFeatures = t('pages.pricing.planFree.features')
   const proFeatures = t('pages.pricing.planPro.features')
   const eliteFeatures = t('pages.pricing.planElite.features')
   const businessFeatures = t('pages.pricing.planBusiness.features')
-  const lifetimeBaseFeatures = t('pages.pricing.planLifetime.features')
-  const lifetimeLimitTpl = t('pages.pricing.planLifetime.featureLimitTemplate')
-  // Concatène la feature dynamique avec le nombre de places à vie.
-  const lifetimeFeatures = Array.isArray(lifetimeBaseFeatures)
-    ? [...lifetimeBaseFeatures, String(lifetimeLimitTpl).replace('{n}', LIFETIME_TOTAL)]
-    : []
 
   const faqItems = t('pages.pricing.faq.items')
 
@@ -211,23 +193,6 @@ export default function PricingClient() {
                   </button>
                 }
               />
-
-              {/* LIFETIME */}
-              <PricingCard
-                badge={`${t('pages.pricing.planLifetime.badgePrefix')} ${lifetimeRemaining}/${LIFETIME_TOTAL} ${t('pages.pricing.planLifetime.badgeSuffix')}`}
-                badgeColor={C.amber}
-                highlighted="lifetime"
-                title={t('pages.pricing.planLifetime.name')}
-                price={t('pages.pricing.planLifetime.price')}
-                priceSub={t('pages.pricing.planLifetime.priceSub')}
-                description={t('pages.pricing.planLifetime.description')}
-                features={lifetimeFeatures}
-                cta={
-                  <button onClick={() => selectPlanFromCard('lifetime')} style={ctaPrimaryStyle('lifetime')}>
-                    {t('pages.pricing.planLifetime.cta')}
-                  </button>
-                }
-              />
             </div>
           </Reveal>
         </section>
@@ -274,14 +239,6 @@ export default function PricingClient() {
                     checked={waitlistPlan === 'business'}
                     onChange={() => setWaitlistPlan('business')}
                     color="#06b6d4"
-                  />
-                  <PlanRadio
-                    value="lifetime"
-                    label={t('pages.pricing.waitlist.radioLifetimeLabel')}
-                    sub={t('pages.pricing.waitlist.radioLifetimeSub')}
-                    checked={waitlistPlan === 'lifetime'}
-                    onChange={() => setWaitlistPlan('lifetime')}
-                    color={C.amber}
                   />
                 </div>
 
