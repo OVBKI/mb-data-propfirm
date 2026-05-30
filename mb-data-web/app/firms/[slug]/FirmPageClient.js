@@ -282,7 +282,29 @@ export default function FirmPageClient({ firmName, firm, meta, otherFirms }) {
           </div>
         </section>
 
-        {/* Other firms */}
+        {/* Comparer avec d'autres firms */}
+        {otherFirms?.length > 0 && (
+          <section style={{ marginBottom: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 12 }}>Comparer {firmName} avec</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {otherFirms.map(({ name, compareSlug }) => (
+                <Link key={compareSlug} href={`/compare/${compareSlug}`} style={{
+                  padding: '8px 14px',
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: C.text2,
+                  textDecoration: 'none',
+                }}>
+                  {firmName} vs {name} →
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Other firm pages */}
         {otherFirms?.length > 0 && (
           <section>
             <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 12 }}>Autres PropFirms</h2>

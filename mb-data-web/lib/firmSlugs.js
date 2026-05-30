@@ -449,3 +449,96 @@ export const RULE_CATEGORIES = [
   { id: 'multi', label: 'Multi-comptes' },
   { id: 'other', label: 'Autres règles' },
 ]
+
+// ============================================================================
+// FIRM-vs-FIRM COMPARISON HELPERS (Phase 3.2)
+// ============================================================================
+
+// Génère toutes les paires uniques (firmA, firmB) avec firmA < firmB (alphabétique)
+// 11 firms → C(11,2) = 55 paires
+export function getAllFirmPairs() {
+  const pairs = []
+  for (let i = 0; i < FIRM_SUGGESTIONS.length; i++) {
+    for (let j = i + 1; j < FIRM_SUGGESTIONS.length; j++) {
+      const a = FIRM_SUGGESTIONS[i]
+      const b = FIRM_SUGGESTIONS[j]
+      // Canonical order = alphabetical by slug (stable URLs)
+      const slugA = firmToSlug(a)
+      const slugB = firmToSlug(b)
+      const [first, firstSlug, second, secondSlug] = slugA < slugB
+        ? [a, slugA, b, slugB]
+        : [b, slugB, a, slugA]
+      pairs.push({ firmA: first, firmB: second, slug: `${firstSlug}-vs-${secondSlug}` })
+    }
+  }
+  return pairs
+}
+
+// Parse "topstep-vs-apex-trader-funding" → { firmA: 'Topstep', firmB: 'Apex Trader Funding' }
+// Returns null if invalid or if either side doesn't match a known firm.
+// Handles -vs- delimiter even when firm slugs themselves contain hyphens.
+export function slugToPair(pairSlug) {
+  if (!pairSlug || !pairSlug.includes('-vs-')) return null
+  // Try every possible split point on '-vs-' (firm slugs can contain '-vs-' theoretically not, but safe)
+  // Greedy: prefer earliest split
+  const parts = pairSlug.split('-vs-')
+  // The slug pattern is exactly two slugs joined by -vs-, but firm slugs can contain hyphens.
+  // Try all splits and validate both sides.
+  for (let i = 1; i < parts.length; i++) {
+    const left = parts.slice(0, i).join('-vs-')
+    const right = parts.slice(i).join('-vs-')
+    const firmA = slugToFirm(left)
+    const firmB = slugToFirm(right)
+    if (firmA && firmB && firmA !== firmB) {
+      return { firmA, firmB, slugA: left, slugB: right }
+    }
+  }
+  return null
+}
+
+// "comparison-friendly" rule keys that exist in most firms — these are the rows
+// we want to display in the head-to-head table. Each entry maps a display label
+// to a regex that matches the rule key in PROPFIRM_RULES.
+// The first matching rule per firm is picked for the comparison.
+export const COMPARISON_ROWS = [
+  { label: 'Type de drawdown', match: /MLL\s*mécanique|drawdown\s+(type|mécanique)/i, fromMeta: 'ddType' },
+  { label: 'Drawdown ($)', match: /^(Max Loss Limit|Drawdown\s+(total|trailing)\s*max|MLL\s*\$|Trailing\s*Drawdown)/i },
+  { label: 'Daily Loss Limit', match: /^Daily\s*Loss\s*Limit|^DLL\b/i },
+  { label: 'Profit Target', match: /^Profit\s*Target\s*\(?(Combine|Evaluation)?\)?\s*$|^Profit\s*Target$/i },
+  { label: 'Profit Split', match: /^Profit\s*Split/i, fromMeta: 'splits' },
+  { label: 'Min winning days (payout)', match: /winning\s*day|min.*winning|XFA\s*Standard.*winning/i },
+  { label: 'Consistency rule', match: /^Consistency\b/i },
+  { label: 'Trading des news', match: /trading\s*des\s*news|news\s*trading/i },
+  { label: 'Auto-flat / overnight', match: /auto-?flat|overnight/i },
+  { label: 'Copy trading externe', match: /copy\s*trading/i },
+  { label: 'Max contracts', match: /^Max\s*contracts?\b/i },
+  { label: 'Méthodes payout', match: /m[ée]thodes?\s*payout/i },
+  { label: 'Cadence payout', match: /cadence\s*payout/i },
+  { label: 'Prix mensuel', match: /^Prix\s*mensuel|monthly\s*price/i },
+]
+
+// Picks a value for a given comparison row + firm + plan.
+// Returns null if no matching rule exists.
+export function pickComparisonValue(firmName, ruleKeys, planSize, row, meta) {
+  // First, fromMeta (editorial metadata) takes precedence
+  if (row.fromMeta && meta && meta[row.fromMeta]) {
+    return meta[row.fromMeta]
+  }
+  if (!ruleKeys) return null
+  const matchingKey = ruleKeys.find((k) => row.match.test(k))
+  if (!matchingKey) return null
+  // ruleKeys is a map. We need to look up firm.rules[matchingKey][plan]
+  // But this function only has ruleKeys (array). The caller must do the lookup.
+  return matchingKey
+}
+
+// Mid-tier plan picker — find the closest plan to 50K (the standard size used
+// for fair comparison across firms).
+export function pickComparisonPlan(firm) {
+  const plans = firm?.plans || []
+  if (!plans.length) return null
+  // Prefer 50k > 100k > first
+  if (plans.includes('50k')) return '50k'
+  if (plans.includes('100k')) return '100k'
+  return plans[0]
+}

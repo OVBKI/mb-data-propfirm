@@ -89,11 +89,19 @@ export default function Page({ params }) {
     })),
   } : null
 
-  // Other firms for "Compare" section
+  // Other firms for "Compare" section + comparison page links
+  const currentSlug = firmToSlug(firmName)
   const otherFirms = FIRM_SUGGESTIONS
     .filter((n) => n !== firmName)
     .slice(0, 5)
-    .map((n) => ({ name: n, slug: firmToSlug(n) }))
+    .map((n) => {
+      const otherSlug = firmToSlug(n)
+      // Build the canonical pair slug (alphabetical order)
+      const pairSlug = currentSlug < otherSlug
+        ? `${currentSlug}-vs-${otherSlug}`
+        : `${otherSlug}-vs-${currentSlug}`
+      return { name: n, slug: otherSlug, compareSlug: pairSlug }
+    })
 
   return (
     <>

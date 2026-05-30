@@ -2,7 +2,7 @@
 // Servi automatiquement à https://quantara.tech/sitemap.xml
 // À updater à chaque nouvelle page indexable ajoutée.
 
-import { getAllFirmSlugs } from '../lib/firmSlugs'
+import { getAllFirmSlugs, getAllFirmPairs } from '../lib/firmSlugs'
 
 const BASE_URL = 'https://quantara.tech'
 
@@ -25,8 +25,17 @@ export default function sitemap() {
     })),
   ]
 
+  // Phase 3.2 : 55 pages /compare/[firmA]-vs-[firmB] générées depuis toutes les paires (11 choose 2)
+  const compareFirmPages = getAllFirmPairs().map(({ slug }) => ({
+    url: `${BASE_URL}/compare/${slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly',
+    priority: 0.75,
+  }))
+
   return [
     ...firmPages,
+    ...compareFirmPages,
     // Landing — priorité max, change quand on update marketing
     {
       url: BASE_URL,
