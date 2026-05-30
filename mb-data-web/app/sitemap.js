@@ -3,6 +3,7 @@
 // À updater à chaque nouvelle page indexable ajoutée.
 
 import { getAllFirmSlugs, getAllFirmPairs } from '../lib/firmSlugs'
+import { getAllGuideSlugs } from '../lib/guides'
 
 const BASE_URL = 'https://quantara.tech'
 
@@ -33,9 +34,26 @@ export default function sitemap() {
     priority: 0.75,
   }))
 
+  // Phase 3.3 : 1 index /guides + N pages /guides/[slug] éducatives
+  const guidePages = [
+    {
+      url: `${BASE_URL}/guides`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    ...getAllGuideSlugs().map((slug) => ({
+      url: `${BASE_URL}/guides/${slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    })),
+  ]
+
   return [
     ...firmPages,
     ...compareFirmPages,
+    ...guidePages,
     // Landing — priorité max, change quand on update marketing
     {
       url: BASE_URL,
