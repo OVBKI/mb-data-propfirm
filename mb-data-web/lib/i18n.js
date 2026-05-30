@@ -509,6 +509,7 @@ const FR = {
       sectionSync:      'Sync',
       // Items "Vue d'ensemble"
       dashboard: 'Dashboard',
+      health:    'Santé',
       analytics: 'Analytics',
       calendar:  'Calendrier éco',
       // Items "Mes trades" (avec sous-groupe Journal)
@@ -1673,6 +1674,7 @@ const EN = {
       sectionSync:      'Sync',
       // Overview items
       dashboard: 'Dashboard',
+      health:    'Health',
       analytics: 'Analytics',
       calendar:  'Eco. calendar',
       // My trades items (with Journal sub-group)

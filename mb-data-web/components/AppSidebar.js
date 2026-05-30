@@ -48,6 +48,7 @@ export default function AppSidebar({
   const navItems = [
     // Vue d'ensemble
     { key: 'dashboard', icon: '◫', label: t('app.sidebar.dashboard'), section: 'Vue' },
+    { key: 'health',    icon: '♡', label: t('app.sidebar.health'),    section: 'Vue' },
     { key: 'analytics', icon: '◐', label: t('app.sidebar.analytics'), section: 'Vue' },
     { key: 'calendar',  icon: '◳', label: t('app.sidebar.calendar'),  section: 'Vue' },
     // Mes Trades — sous-groupe Journal
