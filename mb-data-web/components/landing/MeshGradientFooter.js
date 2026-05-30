@@ -11,7 +11,7 @@ import { useT } from '../LanguageProvider'
 const C = {
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blue: '#2d6fff',
   blueLight: '#4d8fff',
   green: '#1db87a',

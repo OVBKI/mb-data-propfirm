@@ -1,10 +1,9 @@
+import { randomBytes } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { verifyAuth } from '../../../lib/apiAuth'
+import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
 
 function getSupabase() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return null
-  }
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -15,8 +14,11 @@ export async function GET(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
+  // Rate limit: 10 req/min per user
+  const limit = rateLimit({ key: `referral-get:${auth.user.id}`, windowMs: 60_000, max: 10 })
+  if (!limit.allowed) return rateLimitResponse(limit)
+
   const supabase = getSupabase()
-  if (!supabase) return Response.json({ error: 'Supabase not configured' }, { status: 500 })
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -45,11 +47,19 @@ export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const supabase = getSupabase()
-  if (!supabase) return Response.json({ error: 'Supabase not configured' }, { status: 500 })
+  // Rate limit: 10 req/min per user
+  const limit = rateLimit({ key: `referral-post:${auth.user.id}`, windowMs: 60_000, max: 10 })
+  if (!limit.allowed) return rateLimitResponse(limit)
 
-  const { referral_code } = await request.json()
+  let body
+  try { body = await request.json() } catch {
+    return Response.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { referral_code } = body
   if (!referral_code) return Response.json({ error: 'Code required' }, { status: 400 })
+
+  const supabase = getSupabase()
 
   const { data: referrer } = await supabase
     .from('profiles')
@@ -83,7 +93,8 @@ export async function POST(request) {
 
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const bytes = randomBytes(6)
   let code = 'QT-'
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < 6; i++) code += chars[bytes[i] % chars.length]
   return code
 }

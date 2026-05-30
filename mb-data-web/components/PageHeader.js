@@ -14,7 +14,7 @@ const C = {
   border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blue: '#2d6fff',
   blueLight: '#4d8fff',
 }
@@ -83,7 +83,7 @@ export default function PageHeader({ active }) {
               border: `1px solid ${C.border2}`,
               whiteSpace: 'nowrap',
             }}>{t('pages.header.login')}</Link>
-            <Link href="/app" style={{
+            <Link href="/auth?mode=signup" style={{
               display: 'inline-block', padding: '8px 16px',
               fontSize: 13, fontWeight: 500, borderRadius: 8,
               textDecoration: 'none',

@@ -1,7 +1,12 @@
 import { Resend } from 'resend'
 import { verifyAuth } from '../../../lib/apiAuth'
+import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+
+function escapeHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 const EMAILS = [
   {
@@ -98,13 +103,13 @@ function emailTemplate(step, username) {
       </td></tr>
       <!-- Footer -->
       <tr><td style="padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.07);background:#0d0f14;">
-        <p style="font-size:11px;color:#565e78;margin:0 0 8px;line-height:1.5;">
+        <p style="font-size:11px;color:#7b839b;margin:0 0 8px;line-height:1.5;">
           Quantara Technologies LLC · Albuquerque, NM, USA<br>
-          <a href="https://quantara.tech/legal/privacy" style="color:#565e78;text-decoration:underline;">Privacy</a> · <a href="mailto:contact@quantara.tech" style="color:#565e78;text-decoration:underline;">Contact</a>
+          <a href="https://quantara.tech/legal/privacy" style="color:#7b839b;text-decoration:underline;">Privacy</a> · <a href="mailto:contact@quantara.tech" style="color:#7b839b;text-decoration:underline;">Contact</a>
         </p>
-        <p style="font-size:10px;color:#565e78;margin:0;">
+        <p style="font-size:10px;color:#7b839b;margin:0;">
           Tu reçois cet email parce que tu as créé un compte sur Quantara.<br>
-          <a href="https://quantara.tech/app/settings" style="color:#565e78;">Gérer mes préférences email</a>
+          <a href="https://quantara.tech/app/settings" style="color:#7b839b;">Gérer mes préférences email</a>
         </p>
       </td></tr>
     </table>
@@ -116,20 +121,28 @@ export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
+  // Rate limit: 5 req/min per user
+  const limit = rateLimit({ key: `onboarding:${auth.user.id}`, windowMs: 60_000, max: 5 })
+  if (!limit.allowed) return rateLimitResponse(limit)
+
   if (!resend) return Response.json({ error: 'Email service not configured' }, { status: 503 })
 
-  const { step = 0, email, username } = await request.json()
+  let body
+  try { body = await request.json() } catch {
+    return Response.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { step = 0 } = body
   if (step < 0 || step > 2) return Response.json({ error: 'Invalid step' }, { status: 400 })
-  if (!email) return Response.json({ error: 'Email required' }, { status: 400 })
 
   const config = EMAILS[step]
 
   try {
     await resend.emails.send({
       from: 'Quantara <noreply@quantara.tech>',
-      to: email,
+      to: auth.user.email,
       subject: config.subject,
-      html: emailTemplate(step, username),
+      html: emailTemplate(step, escapeHtml(auth.user.user_metadata?.username)),
     })
     return Response.json({ ok: true, step })
   } catch (e) {

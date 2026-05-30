@@ -1,15 +1,14 @@
 'use client'
-// Page /pricing — 3 cards (Free, Pro, Lifetime) + formulaire waitlist + FAQ.
-// Free est déjà dispo (CTA → /auth?mode=signup) ; Pro et Lifetime sont en waitlist.
+// Page /pricing — 4 tiers (Free, Pro, Elite, Business) + formulaire waitlist + FAQ.
+// Free est déjà dispo (CTA → /auth?mode=signup) ; Pro/Elite/Business sont en waitlist.
 // Le formulaire POST sur /api/waitlist qui insère dans Supabase + envoie un email Resend.
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import Reveal from '../../components/Reveal'
 import { useT } from '../../components/LanguageProvider'
-import { supabase } from '../../lib/supabase'
 
 const C = {
   bg: '#0d0f14',
@@ -19,14 +18,12 @@ const C = {
   border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blue: '#2d6fff',
   blueLight: '#4d8fff',
   green: '#1db87a',
   amber: '#fac775',
 }
-
-const LIFETIME_TOTAL = 100
 
 export default function PricingClient() {
   const t = useT()
@@ -34,25 +31,12 @@ export default function PricingClient() {
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitResult, setSubmitResult] = useState(null)
-  const [lifetimeTaken, setLifetimeTaken] = useState(0)
-
-  useEffect(() => {
-    supabase.from('waitlist').select('id', { count: 'exact', head: true })
-      .eq('plan', 'lifetime')
-      .then(({ count }) => { if (count != null) setLifetimeTaken(count) })
-  }, [])
-
-  const lifetimeRemaining = Math.max(0, LIFETIME_TOTAL - lifetimeTaken)
 
   // Récupération des listes de features depuis i18n (objet retourné par translate).
   const freeFeatures = t('pages.pricing.planFree.features')
   const proFeatures = t('pages.pricing.planPro.features')
-  const lifetimeBaseFeatures = t('pages.pricing.planLifetime.features')
-  const lifetimeLimitTpl = t('pages.pricing.planLifetime.featureLimitTemplate')
-  // Concatène la feature dynamique avec le nombre de places à vie.
-  const lifetimeFeatures = Array.isArray(lifetimeBaseFeatures)
-    ? [...lifetimeBaseFeatures, String(lifetimeLimitTpl).replace('{n}', LIFETIME_TOTAL)]
-    : []
+  const eliteFeatures = t('pages.pricing.planElite.features')
+  const businessFeatures = t('pages.pricing.planBusiness.features')
 
   const faqItems = t('pages.pricing.faq.items')
 
@@ -112,13 +96,37 @@ export default function PricingClient() {
           </Reveal>
         </section>
 
+        {/* COMPETITOR ANCHOR */}
+        <section style={{ padding: '0 24px 24px', maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <Reveal>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '8px 18px', borderRadius: 20,
+              background: 'rgba(45,111,255,0.06)', border: `1px solid rgba(45,111,255,0.18)`,
+              fontSize: 12, color: C.text2, fontWeight: 500,
+            }}>
+              <span style={{ fontSize: 14 }}>💰</span>
+              <span>{t('pages.pricing.competitorAnchor')}</span>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <span style={{
+                display: 'inline-block', padding: '6px 16px', borderRadius: 20,
+                fontSize: 12, fontWeight: 600, color: C.green,
+                background: 'rgba(29,184,122,0.08)', border: `1px solid rgba(29,184,122,0.25)`,
+              }}>
+                {t('pages.pricing.guaranteeBadge')}
+              </span>
+            </div>
+          </Reveal>
+        </section>
+
         {/* PRICING CARDS */}
-        <section style={{ padding: '0 24px 60px', maxWidth: 1200, margin: '0 auto' }}>
+        <section style={{ padding: '0 24px 60px', maxWidth: 1280, margin: '0 auto' }}>
           <Reveal>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 18,
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: 16,
               alignItems: 'stretch',
             }}>
               {/* FREE */}
@@ -154,19 +162,34 @@ export default function PricingClient() {
                 }
               />
 
-              {/* LIFETIME */}
+              {/* ELITE */}
               <PricingCard
-                badge={`${t('pages.pricing.planLifetime.badgePrefix')} ${lifetimeRemaining}/${LIFETIME_TOTAL} ${t('pages.pricing.planLifetime.badgeSuffix')}`}
-                badgeColor={C.amber}
-                highlighted="lifetime"
-                title={t('pages.pricing.planLifetime.name')}
-                price={t('pages.pricing.planLifetime.price')}
-                priceSub={t('pages.pricing.planLifetime.priceSub')}
-                description={t('pages.pricing.planLifetime.description')}
-                features={lifetimeFeatures}
+                badge={t('pages.pricing.planElite.badge')}
+                badgeColor="#a78bfa"
+                title={t('pages.pricing.planElite.name')}
+                price={t('pages.pricing.planElite.price')}
+                priceSub={t('pages.pricing.planElite.priceSub')}
+                description={t('pages.pricing.planElite.description')}
+                features={eliteFeatures}
                 cta={
-                  <button onClick={() => selectPlanFromCard('lifetime')} style={ctaPrimaryStyle('lifetime')}>
-                    {t('pages.pricing.planLifetime.cta')}
+                  <button onClick={() => selectPlanFromCard('elite')} style={ctaPrimaryStyle()}>
+                    {t('pages.pricing.planElite.cta')}
+                  </button>
+                }
+              />
+
+              {/* BUSINESS */}
+              <PricingCard
+                badge={t('pages.pricing.planBusiness.badge')}
+                badgeColor="#06b6d4"
+                title={t('pages.pricing.planBusiness.name')}
+                price={t('pages.pricing.planBusiness.price')}
+                priceSub={t('pages.pricing.planBusiness.priceSub')}
+                description={t('pages.pricing.planBusiness.description')}
+                features={businessFeatures}
+                cta={
+                  <button onClick={() => selectPlanFromCard('business')} style={ctaPrimaryStyle()}>
+                    {t('pages.pricing.planBusiness.cta')}
                   </button>
                 }
               />
@@ -192,7 +215,7 @@ export default function PricingClient() {
               </p>
 
               <form onSubmit={handleSubmit}>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
                   <PlanRadio
                     value="pro"
                     label={t('pages.pricing.waitlist.radioProLabel')}
@@ -202,12 +225,20 @@ export default function PricingClient() {
                     color={C.blueLight}
                   />
                   <PlanRadio
-                    value="lifetime"
-                    label={t('pages.pricing.waitlist.radioLifetimeLabel')}
-                    sub={t('pages.pricing.waitlist.radioLifetimeSub')}
-                    checked={waitlistPlan === 'lifetime'}
-                    onChange={() => setWaitlistPlan('lifetime')}
-                    color={C.amber}
+                    value="elite"
+                    label="Elite"
+                    sub="39€/mois — early access"
+                    checked={waitlistPlan === 'elite'}
+                    onChange={() => setWaitlistPlan('elite')}
+                    color="#a78bfa"
+                  />
+                  <PlanRadio
+                    value="business"
+                    label="Business"
+                    sub="129€/mo — 10 seats"
+                    checked={waitlistPlan === 'business'}
+                    onChange={() => setWaitlistPlan('business')}
+                    color="#06b6d4"
                   />
                 </div>
 

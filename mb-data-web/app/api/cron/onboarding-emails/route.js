@@ -7,8 +7,12 @@ const SCHEDULE = [
   { day: 7, subject: 'Astuce : surveille ton trailing drawdown avant chaque session', step: 2 },
 ]
 
+function escapeHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function emailBody(step, name) {
-  const n = name || 'Trader'
+  const n = escapeHtml(name) || 'Trader'
   const bodies = [
     `<h2 style="color:#f0ede8;font-size:20px;font-weight:700;margin:0 0 16px;">Bienvenue ${n} !</h2>
     <p style="color:#9098b0;font-size:14px;line-height:1.7;">Tu as rejoint Quantara. 3 étapes pour démarrer :</p>
@@ -30,26 +34,19 @@ function emailBody(step, name) {
 <tr><td style="padding:28px 32px 20px;border-bottom:1px solid rgba(255,255,255,0.07);"><div style="font-weight:800;font-size:14px;letter-spacing:0.08em;color:#f0ede8;">QUANTARA</div></td></tr>
 <tr><td style="padding:28px 32px;">${bodies[step]}<br><a href="https://quantara.tech/app" style="display:inline-block;padding:12px 28px;background:#2d6fff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:12px;">Ouvrir mon dashboard →</a></td></tr>
 <tr><td style="padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.07);background:#0d0f14;">
-<p style="font-size:11px;color:#565e78;margin:0;line-height:1.5;">Quantara Technologies LLC · Albuquerque, NM, USA<br><a href="https://quantara.tech/app/settings" style="color:#565e78;">Gérer mes emails</a></p>
+<p style="font-size:11px;color:#7b839b;margin:0;line-height:1.5;">Quantara Technologies LLC · Albuquerque, NM, USA<br><a href="https://quantara.tech/app/settings" style="color:#7b839b;">Gérer mes emails</a></p>
 </td></tr></table></td></tr></table></body></html>`
 }
 
 export async function GET(request) {
-  if (!process.env.CRON_SECRET) {
-    return Response.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
-  }
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!process.env.RESEND_API_KEY) {
-    return Response.json({ error: 'Resend not configured' }, { status: 503 })
-  }
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return Response.json({ error: 'Supabase not configured' }, { status: 500 })
-  }
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+  if (!resend) return Response.json({ error: 'Resend not configured' }, { status: 503 })
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY

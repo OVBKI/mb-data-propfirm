@@ -82,7 +82,7 @@ export default function NotFound() {
           paddingTop: 24,
           borderTop: '1px solid rgba(255,255,255,0.07)',
           fontSize: 12,
-          color: '#565e78',
+          color: '#7b839b',
         }}>
           <div style={{ marginBottom: 12, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
             Pages populaires

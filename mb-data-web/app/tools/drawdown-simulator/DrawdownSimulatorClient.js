@@ -12,7 +12,7 @@ const C = {
   border: 'rgba(255,255,255,0.07)',
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blue: '#2d6fff',
   blueLight: '#4d8fff',
   green: '#1db87a',
@@ -224,7 +224,7 @@ export default function DrawdownSimulatorClient() {
               <p style={{ fontSize: 13, color: C.text2, margin: 0, marginBottom: 12, lineHeight: 1.6 }}>
                 {t('tools.ddSim.ctaText')}
               </p>
-              <Link href="/app" style={{
+              <Link href="/auth?mode=signup" style={{
                 display: 'inline-block', padding: '10px 24px',
                 background: C.blue, color: '#fff', borderRadius: 8,
                 fontSize: 13, fontWeight: 600, textDecoration: 'none',

@@ -258,10 +258,10 @@ export default function AnalyticsMockup() {
           letterSpacing: '0.16em', textTransform: 'uppercase',
           fontWeight: 600, marginBottom: 8,
         }}>{t('mockups.analytics.eyebrow')}</div>
-        <h1 style={{
+        <div style={{
           fontSize: 22, fontWeight: 700, margin: 0,
           letterSpacing: '-0.025em', lineHeight: 1.1,
-        }}>{t('mockups.analytics.title')}</h1>
+        }}>{t('mockups.analytics.title')}</div>
         <div style={{ fontSize: 11, color: C.text3, marginTop: 6 }}>
           {t('mockups.analytics.subtitle')
             .replace('{accounts}', String(TOTALS.accountsCount))

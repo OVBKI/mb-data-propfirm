@@ -211,12 +211,12 @@ export default function EquityOverlayChart({ firms = [], user }) {
           scales: {
             x: {
               grid: { display: false },
-              ticks: { color: '#565e78', font: { size: 10 }, maxTicksLimit: 12 },
+              ticks: { color: '#7b839b', font: { size: 10 }, maxTicksLimit: 12 },
             },
             y: {
               grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
-                color: '#565e78', font: { size: 10 },
+                color: '#7b839b', font: { size: 10 },
                 callback: v => mode === 'percent' ? `${v}%` : `${v}$`,
               },
             },

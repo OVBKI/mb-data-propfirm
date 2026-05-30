@@ -226,10 +226,10 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             }
           },
           scales:{
-            x:{grid:{display:false},ticks:{color:'#565e78',font:{size:10},maxTicksLimit:8}},
+            x:{grid:{display:false},ticks:{color:'#7b839b',font:{size:10},maxTicksLimit:8}},
             y:{
               grid:{color:'rgba(255,255,255,0.04)'},
-              ticks:{color:'#565e78',font:{size:10},callback:v=>'$'+v.toLocaleString('fr-FR',{maximumFractionDigits:0})},
+              ticks:{color:'#7b839b',font:{size:10},callback:v=>'$'+v.toLocaleString('fr-FR',{maximumFractionDigits:0})},
               suggestedMin:minVal,
               suggestedMax:maxVal,
             }
@@ -587,7 +587,7 @@ export default function JournalPage({
           ...e,
           _firmId: acc?.firmId,
           _firmName: acc?.firmName || 'Compte supprimé',
-          _firmColor: acc?.firmColor || '#565e78',
+          _firmColor: acc?.firmColor || '#7b839b',
           _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
         }
       })

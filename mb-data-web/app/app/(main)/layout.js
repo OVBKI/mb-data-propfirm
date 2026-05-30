@@ -90,6 +90,10 @@ const FAIL_MESSAGES = [
 
 const cardS = { background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-lg)' }
 
+// ── Exchange rate cache (30 min TTL, persists within browser session) ──
+let ratesCache = { data: null, ts: 0 }
+const RATES_TTL = 30 * 60 * 1000 // 30 min
+
 // ── Styles (shared S object, also exposed via context) ──
 const S = {
   card: { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' },
@@ -169,49 +173,68 @@ export default function AppLayout({ children }) {
   }
 
   async function fetchRates() {
+    // Return cached rates if still fresh (30 min TTL)
+    if (ratesCache.data && Date.now() - ratesCache.ts < RATES_TTL) {
+      setRates(ratesCache.data.rates)
+      setRateInfo(ratesCache.data.info)
+      return
+    }
     try {
       const r = await fetch('https://api.exchangerate-api.com/v4/latest/EUR')
       const d = await r.json()
       const nr = { EUR: 1, USD: 1 / d.rates.USD, GBP: 1 / d.rates.GBP, CHF: 1 / d.rates.CHF }
-      setRates(nr)
       const ts = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      setRateInfo(`1 USD ≈ ${nr.USD.toFixed(4)} EUR · 1 GBP ≈ ${nr.GBP.toFixed(4)} EUR — ${ts}`)
+      const info = `1 USD ≈ ${nr.USD.toFixed(4)} EUR · 1 GBP ≈ ${nr.GBP.toFixed(4)} EUR — ${ts}`
+      ratesCache = { data: { rates: nr, info }, ts: Date.now() }
+      setRates(nr)
+      setRateInfo(info)
     } catch { setRateInfo('Taux hors ligne · 1 USD ≈ 0.9259 €') }
   }
 
   async function loadFirms() {
     if (!user) return
-    const { data: fd } = await supabase.from('firms').select('*').eq('user_id', user.id).order('created_at')
-    if (!fd) return
-    let { data: ad } = await supabase.from('accounts').select('*').eq('user_id', user.id).order('buy_date')
 
-    const now = new Date()
-    const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000)
-    const billingResults = await Promise.all(
-      (ad || [])
-        .filter(a => a.status === 'Challenge' && a.payment_mode === 'monthly' && a.buy_date)
-        .map(async a => {
-          const lastCheck = a.last_bill_check_at ? new Date(a.last_bill_check_at) : null
-          if (lastCheck && lastCheck > fiveMinAgo) return false
-          const expectedMonths = calendarMonthsCount(new Date(a.buy_date), now)
-          const currentMonths = a.months_count || 1
-          if (expectedMonths <= currentMonths) return false
-          const { error } = await supabase
-            .from('accounts')
-            .update({ months_count: expectedMonths, last_bill_check_at: now.toISOString() })
-            .eq('id', a.id)
-            .lt('months_count', expectedMonths)
-          return !error
-        })
-    )
-    const billedAny = billingResults.some(r => r === true)
-    if (billedAny) {
-      const refetch = await supabase.from('accounts').select('*').eq('user_id', user.id).order('buy_date')
-      if (refetch.data) ad = refetch.data
+    // ── Billing check (needs flat accounts list to update individually) ──
+    const { data: ad } = await supabase.from('accounts').select('*').eq('user_id', user.id).order('buy_date')
+    if (ad && ad.length) {
+      const now = new Date()
+      const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000)
+      await Promise.all(
+        ad
+          .filter(a => a.status === 'Challenge' && a.payment_mode === 'monthly' && a.buy_date)
+          .map(async a => {
+            const lastCheck = a.last_bill_check_at ? new Date(a.last_bill_check_at) : null
+            if (lastCheck && lastCheck > fiveMinAgo) return
+            const expectedMonths = calendarMonthsCount(new Date(a.buy_date), now)
+            const currentMonths = a.months_count || 1
+            if (expectedMonths <= currentMonths) return
+            await supabase
+              .from('accounts')
+              .update({ months_count: expectedMonths, last_bill_check_at: now.toISOString() })
+              .eq('id', a.id)
+              .lt('months_count', expectedMonths)
+          })
+      )
     }
 
-    const { data: pd } = await supabase.from('payouts').select('*').eq('user_id', user.id).order('date')
-    setFirms(fd.map((f, i) => ({ ...f, color: f.color || FIRM_COLORS[i % FIRM_COLORS.length], accounts: (ad || []).filter(a => a.firm_id === f.id).map(a => ({ ...a, payouts: (pd || []).filter(p => p.account_id === a.id) })) })))
+    // ── Single nested select: firms → accounts → payouts ──
+    const { data: fd } = await supabase
+      .from('firms')
+      .select('*, accounts(*, payouts(*))')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+    if (!fd) return
+
+    setFirms(fd.map((f, i) => ({
+      ...f,
+      color: f.color || FIRM_COLORS[i % FIRM_COLORS.length],
+      accounts: (f.accounts || [])
+        .sort((a, b) => (a.buy_date || '').localeCompare(b.buy_date || ''))
+        .map(a => ({
+          ...a,
+          payouts: (a.payouts || []).sort((x, y) => (x.date || '').localeCompare(y.date || ''))
+        }))
+    })))
     try {
       const { count: tc } = await supabase.from('journal_entries').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
       setTradesCount(tc || 0)

@@ -4,21 +4,10 @@ import webpush from 'web-push'
 const THRESHOLD = 0.70
 
 export async function GET(request) {
-  if (!process.env.CRON_SECRET) {
-    return Response.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
-  }
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return Response.json({ error: 'Supabase not configured' }, { status: 500 })
-  }
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
 
   if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(
@@ -27,6 +16,11 @@ export async function GET(request) {
       process.env.VAPID_PRIVATE_KEY
     )
   }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
 
   const { data: accounts } = await supabase
     .from('accounts')

@@ -185,74 +185,231 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - Responsive: add the appropriate CSS class from `globals.css` (e.g. `className="heatmap-2col"`) to grids that need to collapse on mobile
 - Touch targets: buttons must be at least 32px (use `minWidth: 32, minHeight: 32`)
 
-## Completed (May 2026)
+## Session History (May 27, 2026)
 
-### Semaine 2 — SEO & Discovery
+### LLC Info
+- **Quantara Technologies LLC**, New Mexico (not Texas)
+- 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA
+- All 20+ files updated (legal, footers, emails, schema, docs)
+
+### Semaine 2 — SEO & Discovery (DONE)
 - **Public comparator** at `/compare` (no login required), JSON-LD FAQ+WebPage schemas
 - **JSON-LD global** — Organization + WebSite in root layout.js (all pages)
 - **hreflang** — fr-FR, en-US, x-default
 - Navigation links added to PageHeader, Footer, MeshGradientFooter
 
-### Semaine 3 — Conversion
+### Semaine 3 — Conversion (DONE)
 - **Hero headline rewrite** — "Tous tes comptes PropFirm. Un seul dashboard." (PropFirm-specific)
-- **Social proof** — beta badge + 3 testimonial cards on landing
-- **Ghost Mode** — `/demo` page with 4 realistic PropFirm accounts, no signup required
+- **Social proof** — beta badge + 3 testimonial cards on landing (SocialProof.js)
+- **Ghost Mode** — `/demo` page with realistic dashboard replica, no signup required
 - **Onboarding emails** — 3-email sequence (Day 0/3/7) via Resend, cron at 10 AM UTC
 
-### Semaine 4 — Growth Engine
+### Semaine 4 — Growth Engine (DONE)
 - **Drawdown simulator** — `/tools/drawdown-simulator`, interactive EOD/Intraday calculator
-- **Referral program** — API `/api/referral`, unique codes (QT-XXXXXX)
+- **Referral program** — API `/api/referral`, unique codes (QT-XXXXXX), crypto.randomBytes
 - **Drawdown Guardian** — push alert cron Mon-Fri 2:30 PM UTC for accounts below 70%
 - **Compare pages** — `/compare/quantara-vs-tradervue`, `/compare/quantara-vs-excel`
 - **ComparisonPage** reusable component for all vs pages
 
-### Phase 3.1 — Programmatic SEO (DONE, commit 8c3049e)
-- **`/firms` index** + **`/firms/[slug]` SSG template** — 11 firm pages auto-generated from PROPFIRM_RULES
-  - topstep, apex-trader-funding, bulenox, lucid-trading, tradeify, take-profit-trader,
-    my-funded-futures, phidias-propfirm, funded-futures-network, futureselites, alpha-futures
-- **`lib/firmSlugs.js`** — editorial layer (taglines, intros 200-300w, key facts, FAQs) separate from rules
-- **JSON-LD per firm** — Product + BreadcrumbList + FAQPage schemas
-- **Rules categorized** — drawdown, profit, trading, contracts, pricing, payouts, multi (via `categorizeRule()`)
-- **Sitemap** — +12 URLs (priority 0.9 index / 0.85 slug)
-- Side-effect: fixed module-scope `createClient()` in drawdown-guardian, onboarding-emails, referral routes (build fix)
+### Audit v1 — Security fixes (DONE)
+- Build crash: moved createClient() from module scope into handlers (3 routes)
+- Security: onboarding email forced to auth.user.email (was accepting arbitrary email)
+- Security: CRON_SECRET undefined bypass fixed (2 cron routes)
+- Security: XSS in email templates fixed (escapeHtml on username)
+- Security: Math.random → crypto.randomBytes for referral codes
+- Crash: try/catch on request.json() in referral + onboarding routes
+- SEO: llms.txt updated with correct LLC + all new page URLs
 
-### LLC Info Update
-- **Quantara Technologies LLC**, New Mexico (not Texas)
-- 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA
-- All 20+ files updated (legal, footers, emails, schema, docs)
+### Audit v2 — 6-agent deep audit (DONE)
+Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibility 3/10
 
-## Public Pages (no auth)
+### Phase 0 — Launch Plan executed (DONE)
+**P0.1 Auth + CTAs (FIXED):**
+- Created `/auth` route (page.js + AuthClient.js) — no more 404
+- AuthPage accepts `initialMode` prop, reads `?mode=signup` from URL
+- 10 signup CTAs changed from `/app` → `/auth?mode=signup`
+- Login buttons ("Se connecter") kept at `/app`
 
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page (hero + 6 product sections + features + CTA) |
-| `/compare` | PropFirm comparator (10+ firms, filters, detail drawer) |
-| `/compare/quantara-vs-tradervue` | Comparison page |
-| `/compare/quantara-vs-excel` | Comparison page |
-| `/firms` | PropFirm reviews index (11 firms) |
-| `/firms/[slug]` | Per-firm review page (SSG, 11 routes) |
-| `/tools/drawdown-simulator` | Interactive DD calculator |
-| `/demo` | Ghost Mode dashboard preview |
-| `/pricing` | Pricing page |
-| `/docs` | Documentation |
-| `/integrations` | Supported PropFirms |
-| `/security` | Security & compliance |
-| `/contact` | Contact info |
-| `/legal/*` | CGU, Privacy, Imprint |
+**P0.2 SEO quick wins (FIXED):**
+- SSR fallback enriched (app/page.js LandingFallback) — 300+ words + internal links
+- Canonical URLs added to 6 pages (security, integrations, contact, legal/*)
+- OG + Twitter cards added to 9 pages
+- FAQPage JSON-LD added to /docs
+- H1 pollution fixed in 4 landing mockups (h1 → div)
 
-## Cron Jobs (vercel.json)
+**P0.3 Security (FIXED):**
+- Rate limiting added to 5 routes (referral, onboarding, export, push/subscribe, push/unsubscribe)
+- CSP unsafe-eval made dev-only in next.config.js
+- Push routes refactored to use verifyAuth()
+- Admin layout uses isAdmin() (case-insensitive)
 
-| Path | Schedule | Description |
-|------|----------|-------------|
-| `/api/cron/check-bills` | Daily 9 AM UTC | Push alerts 2 days before billing |
-| `/api/cron/monthly-recap` | 1st of month 8 AM | Email recap via Resend |
-| `/api/cron/onboarding-emails` | Daily 10 AM UTC | 3-email welcome sequence |
-| `/api/cron/drawdown-guardian` | Mon-Fri 2:30 PM UTC | Push alert when DD < 70% |
+**P0.4 Architecture (FIXED):**
+- Dead dep removed (react-chartjs-2) — lenis kept (used via dynamic import)
+- Nested selects in loadFirms(): `firms.select('*, accounts(*, payouts(*)')` — 1 query instead of 3
+- Exchange rate caching (30 min TTL module-scope)
+- ISR revalidate=3600 on 6 static public pages
+
+**P0.5 Accessibility (FIXED):**
+- :focus-visible styles added in globals.css
+- Skip-to-content link in root layout
+- --text3 contrast increased #565e78 → #7b839b (4.5:1 ratio, 36 files)
+- Dynamic `<html lang>` via LanguageProvider (already was implemented)
+
+### Landing page nav (FIXED)
+- Added 4 nav links to landing top bar: Comparateur, Simulateur DD, Tarifs, Démo
+- Hidden on mobile (< 768px)
+
+### Demo page rebuilt 3x (FINAL VERSION)
+- Exact replica of real dashboard with real PropFirm logos (getFirmLogo)
+- Sidebar: 4 sections (Vue d'ensemble, Mes trades, PropFirms, Communauté), same icons as real
+- 5 stat cards, firm cards with logos/ROI/accounts/badges
+- Full calendar with events (achats/payouts per day), monthly stats, right panel (day detail + transactions récentes)
+- 3 bottom cards (par firme chart, statistiques, par firme ranking)
+- Badge colors: Challenge=amber, Funded=green, Failed=red, Diplômes=blue with border
+- PageHeader + Footer, responsive
+
+**Supabase migrations applied by user:**
+- profiles.onboarding_emails_sent (integer, default 0)
+- profiles.referral_code (text, unique)
+- referrals table (referrer_id, referred_id, referral_code)
+- propfirm_rules_overrides table (firm_name, rule_key, plan, value)
+- waitlist table (email, plan, ip_address)
+
+## What's LEFT to do (Phase 1-5 of LAUNCH_PLAN.md)
+
+### Phase 1 — Beta privée (NEXT — Weeks 2-3)
+- [ ] E2E test complet (signup, onboarding, all features, mobile, Safari)
+- [ ] Email deliverability test (mail-tester.com ≥ 9/10)
+- [ ] Supabase RLS audit (2 test accounts, verify no data leaks)
+- [ ] Setup analytics (PostHog or Plausible)
+- [ ] Recruit 10-20 beta testers (Discord trading FR, Twitter, Reddit)
+- [ ] Setup Discord server (6 channels)
+- [ ] Build quick features: Drawdown Health Dashboard, Position Size Calculator
+
+### Phase 2 — Launch public (Week 4)
+- [ ] Polish based on beta feedback
+- [ ] Marketing assets (screenshot HD, demo video 60-90s, 3 Twitter visuals)
+- [ ] First 5 SEO pages (3 firms + topstep-vs-apex + trailing-drawdown guide)
+- [ ] Launch day: Product Hunt, BetaList, Indie Hackers, HN, Reddit
+
+### Phase 3 — SEO & Content (Weeks 5-8)
+- [x] **Phase 3.1 — `/firms/[slug]` template + 11 firm pages from PROPFIRM_RULES** ✅
+  - `/firms` index + `/firms/[slug]` SSG (generateStaticParams pre-renders all 11)
+  - Slugs: topstep, apex-trader-funding, bulenox, lucid-trading, tradeify,
+    take-profit-trader, my-funded-futures, phidias-propfirm,
+    funded-futures-network, futureselites, alpha-futures
+  - `lib/firmSlugs.js` — editorial layer (FIRM_META: tagline, 200-300w intro,
+    keyFacts, ddType, splits, platform, country, founded, website, FAQs)
+    separate from PROPFIRM_RULES factual data
+  - JSON-LD: Product + BreadcrumbList + FAQPage per firm
+  - Rules grouped by category via `categorizeRule()` (drawdown, profit,
+    trading, contracts, pricing, payouts, multi)
+  - Plans selector → per-plan rule detail
+  - Sitemap updated (+12 URLs, priority 0.9 / 0.85)
+- [ ] Build /guides/[slug] template
+- [ ] Create blog infrastructure
+- [ ] **Phase 3.2 — Auto-generate /compare/[firmA]-vs-[firmB] pages (55 pairs)** ← NEXT
+- [ ] Features Sprint 2: Consistency Monitor, Danger Zone, Payout Pipeline
+- [ ] Backlinks: directory submissions, YouTuber outreach
+
+### Phase 4 — Monetization (Weeks 9-10) — TO DO AT THE END
+**User decision:** Postpone access control implementation until the rest of the site is finished.
+Full architecture documented but NOT yet coded. When ready, build in this order:
+- [ ] Get EIN from IRS
+- [ ] Open Mercury bank account
+- [ ] Add Supabase columns: profiles.plan, plan_status, plan_expires_at, stripe_customer_id, stripe_subscription_id, beta_grandfather, plan_started_at
+- [ ] Create lib/planLimits.js (single source of truth for all tier limits)
+- [ ] Create <RequirePlan> component for UI gating
+- [ ] Server-side enforcement on firms/accounts/trades creation routes (return 402 PLAN_LIMIT_REACHED)
+- [ ] Setup Stripe (account, products, webhook secret)
+- [ ] Create /api/stripe/checkout, /api/stripe/webhook (with idempotency), /api/stripe/portal
+- [ ] Lifetime spot counter check before checkout (max 100)
+- [ ] Settings page: "Mon abonnement" section with Stripe portal link
+- [ ] Grandfather all beta users (SET beta_grandfather = true WHERE created_at < launch_date)
+- [ ] Launch Pro tier + Lifetime promo
+- [ ] Communication email "Pro est dispo, -50% à vie pour toi"
+
+**Pricing tiers (DONE in i18n, READY for implementation):**
+- Free: 2 firms, 100 trades/mo
+- Pro: €19/mo or €149/yr (-35%) — unlimited + API sync + Drawdown Guardian + PDF
+- Elite: €39/mo or €299/yr (-36%) — AI Trade Coach + 3 team seats + VIP support
+- Lifetime Founders: €249 one-time (100 spots only) — Pro features for life + Founding badge
+- 30-day money-back guarantee on all paid plans
+
+**Access control architecture (documented, ready to implement):**
+- plan stored in profiles.plan (enum: free/pro/elite/lifetime)
+- Source of truth = Stripe webhook (NOT client-side)
+- All server routes check getPlanLimits(profile) before allowing actions
+- AI Coach excluded from Lifetime (Claude API recurring costs) — add-on €15/mo if needed
+- Beta grandfather: free users from before Pro launch keep unlimited Free features at life
+
+### Phase 5 — Growth (Weeks 11+)
+- [ ] AI Trade Coach (Claude API weekly analysis)
+- [ ] Account Lifecycle Kanban
+- [ ] Anonymous Leaderboard
+- [ ] Social login (Google + Discord OAuth)
+- [ ] Chrome Extension for Rithmic
+- [ ] Target: MRR $500/mo
+
+## Still-open audit issues (not yet fixed)
+
+### i18n gaps (P5)
+- contact/page.js — hardcoded FR
+- not-found.js, error.js, auth/callback — hardcoded FR
+- layout.js drawers/modals — 50+ hardcoded FR strings
+- Tutorial.js — 8 steps hardcoded FR
+- ComparisonPage + vs pages — hardcoded EN
+- DemoClient sidebar/status labels — partially hardcoded EN
+- DrawdownSimulator status/type labels — hardcoded EN
+
+### Security (P6)
+- Middleware admin check is bypassable (only checks referer/auth header existence)
+- Add role="dialog" + focus trapping + Escape key to modals/drawers
+
+### Architecture (remaining)
+- N+1 billing updates in loadFirms (Supabase RPC needed)
+- Sentry integration (DSN exists, needs wiring)
+- Split layout.js monolith (810 lines) into composable pieces
+
+## Programmatic SEO Opportunity
+
+Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
+- 11 `/firms/[slug]` pages — ~5000/mo keyword volume
+- 33+ `/firms/[slug]/[plan]` sub-pages — long-tail
+- 55 `/compare/[firmA]-vs-[firmB]` pages — comparison queries
+- **Total: ~99 pages from existing data, ~1 week of work**
+
+## Proposed Features (15, ranked by priority score)
+
+| # | Feature | Score | Difficulty |
+|---|---------|:-----:|:----------:|
+| 1 | **Drawdown Health Dashboard** — visual fuel gauge per account | 30 | Low |
+| 2 | **Consistency Score Monitor** — real-time per-firm formula | 28 | Medium |
+| 3 | **Payout Pipeline Tracker** — Eligible→Requested→Received | 27 | Medium |
+| 4 | **Danger Zone + Trading Pause** — modal at 15% DD + cooldown | 27 | Medium |
+| 5 | **Position Size Calculator** — in trade modal + public tool | 26 | Low |
+| 6 | **Daily Pre-Market Checklist** — integrates MyRules | 26 | Low |
+| 7 | **Account Lifecycle Kanban** — pipeline Challenge→Funded | 25 | Medium |
+| 8 | **Rule Violation Detector** — auto-check after each trade | 25 | Medium |
+| 9 | **PropFirm Cost Simulator** — public tool /tools/cost-simulator | 25 | Low |
+| 10 | **AI Trade Coach** — weekly Claude API analysis after 30+ trades | 24 | High |
+| 11 | **Social Payout Certificate** — shareable image @vercel/og | 24 | Low |
+| 12 | **Weekly Recap Card** — shareable PNG every Sunday | 22 | Low |
+| 13 | **Anonymous Leaderboard** — /leaderboard opt-in rankings | 22 | Medium |
+| 14 | **Trade Replay Timeline** — TradingView Lightweight Charts | 20 | High |
+| 15 | **Cross-Firm Benchmarking** — anonymized percentiles | 20 | Medium |
 
 ## Pending / Roadmap
 
-- **Sentry** — account exists, DSN needed to integrate error tracking
-- **Stripe** — waiting for LLC EIN to set up payments
-- **Sync Rithmic/ProjectX** — waiting for 50 users before building
-- **Tests** — no test framework yet; when adding, use Vitest
-- **Supabase migrations needed** — referrals table, profiles.referral_code, profiles.onboarding_emails_sent
+- **Sentry** — ✅ CODE DEPLOYED + env vars added in Vercel.
+  Test deferred to pre-launch: `curl "https://quantara.tech/api/sentry-test?secret=$CRON_SECRET"`
+  Should produce an issue in https://quantara-ag.sentry.io/issues/ within 30s.
+  Config: DSN, ORG=quantara-ag, PROJECT=quantara-web, AUTH_TOKEN all set.
+  Note: user should rotate the auth token after first verified test (was shared in chat).
+- **Stripe** — waiting for LLC EIN
+- **Sync Rithmic/ProjectX** — waiting for 50 users
+- **Tests** — no framework yet; use Vitest when adding
+- **SEO content engine** — /firms/[slug], /guides/[slug], /blog/[slug] templates not built
+- **Social login** — Google OAuth + Discord OAuth via Supabase Auth providers
+- **Topstep vs Apex page** — highest-value missing content (2.4k/mo keyword)
+- **LAUNCH_PLAN.md** — detailed 5-phase plan with timelines and go/no-go criteria

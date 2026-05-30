@@ -47,7 +47,7 @@ const colors = {
   border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blue: '#2d6fff',
   blueLight: '#4d8fff',
   green: '#1db87a',
@@ -157,7 +157,7 @@ export default function LandingPage() {
         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")`,
       }} />
 
-      {/* Top bar minimaliste — style refined cohérent avec MagneticButton */}
+      {/* Top bar — logo + nav liens + CTAs */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
         padding: '14px 24px',
@@ -167,10 +167,17 @@ export default function LandingPage() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <div style={{ fontWeight: 800, letterSpacing: '0.12em', fontSize: 13, color: colors.text }}>QUANTARA</div>
+
+        {/* Nav links desktop */}
+        <nav className="qt-topnav" style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+          <Link href="/compare" style={{ fontSize: 12.5, color: colors.text2, textDecoration: 'none', transition: 'color 0.15s' }} className="qt-navlink">{t('nav.compare')}</Link>
+          <Link href="/tools/drawdown-simulator" style={{ fontSize: 12.5, color: colors.text2, textDecoration: 'none', transition: 'color 0.15s' }} className="qt-navlink">{t('nav.simulator')}</Link>
+          <Link href="/pricing" style={{ fontSize: 12.5, color: colors.text2, textDecoration: 'none', transition: 'color 0.15s' }} className="qt-navlink">{t('nav.pricing')}</Link>
+          <Link href="/demo" style={{ fontSize: 12.5, color: colors.text2, textDecoration: 'none', transition: 'color 0.15s' }} className="qt-navlink">{t('nav.demo')}</Link>
+        </nav>
+
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Switcher FR ↔ EN */}
           <LanguageSwitcher compact />
-          {/* Se connecter — ghost subtle */}
           <Link href="/app" className="qt-topbtn-ghost" style={{
             padding: '8px 16px', fontSize: 12.5, fontWeight: 500,
             borderRadius: 8,
@@ -181,8 +188,7 @@ export default function LandingPage() {
             transition: 'color 0.2s, border-color 0.2s, background 0.2s',
             letterSpacing: '0.005em',
           }}>{t('nav.login')}</Link>
-          {/* Démarrer — INVERSÉ premium (off-white sur sombre) */}
-          <Link href="/app" className="qt-topbtn-primary" style={{
+          <Link href="/auth?mode=signup" className="qt-topbtn-primary" style={{
             padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
             borderRadius: 8,
             background: colors.text,
@@ -202,6 +208,7 @@ export default function LandingPage() {
           </Link>
         </div>
         <style>{`
+          .qt-navlink:hover { color: ${colors.text} !important; }
           .qt-topbtn-ghost:hover {
             color: ${colors.text} !important;
             border-color: rgba(255,255,255,0.18) !important;
@@ -209,6 +216,10 @@ export default function LandingPage() {
           }
           .qt-topbtn-primary:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 6px 18px rgba(0,0,0,0.4) !important; }
           .qt-topbtn-primary:hover .qt-topbtn-arrow { transform: translateX(2px); }
+          @media (max-width: 768px) {
+            .qt-topnav { display: none !important; }
+            .qt-topbtn-ghost { display: none !important; }
+          }
         `}</style>
       </div>
 
@@ -236,7 +247,7 @@ export default function LandingPage() {
             dans StarField3D apparaît en bas, derrière, comme vue depuis l'orbite. */}
         <HeroSection>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <MagneticButton href="/app" primary large>
+            <MagneticButton href="/auth?mode=signup" primary large>
               {t('hero.ctaPrimary')}
             </MagneticButton>
             <MagneticButton href="/demo" large>
@@ -373,7 +384,7 @@ export default function LandingPage() {
           }}>
             {t('finalCTA.subtitle')}
           </p>
-          <MagneticButton href="/app" primary large>
+          <MagneticButton href="/auth?mode=signup" primary large>
             {t('finalCTA.button')}
           </MagneticButton>
           <p style={{ marginTop: 20, fontSize: 12, color: colors.text3 }}>

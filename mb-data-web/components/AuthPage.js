@@ -13,9 +13,9 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
 // Détection naïve email (présence d'un @ avec qqch avant/après)
 const EMAIL_REGEX = /@/
 
-export default function AuthPage({ onAuth }) {
+export default function AuthPage({ onAuth, initialMode }) {
   const t = useT()
-  const [mode, setMode]       = useState('login') // login | register
+  const [mode, setMode]       = useState(initialMode || 'login') // login | register
   // En mode login : peut contenir un email OU un pseudo
   // En mode register : email uniquement
   const [emailOrUsername, setEmailOrUsername] = useState('')

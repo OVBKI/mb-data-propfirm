@@ -2,6 +2,8 @@ import CompareClient from './CompareClient'
 import JsonLd from '../../components/JsonLd'
 import { ORGANIZATION_SCHEMA } from '../../components/JsonLd'
 
+export const revalidate = 3600 // ISR: revalidate every hour
+
 export const metadata = {
   title: 'Compare PropFirm Rules — Topstep, Apex, Lucid, MFFU & More | Quantara',
   description:

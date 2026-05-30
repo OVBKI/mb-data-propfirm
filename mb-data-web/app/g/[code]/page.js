@@ -168,7 +168,7 @@ export default async function GroupPage({ params }) {
           background: 'rgba(255,255,255,0.02)',
           border: '1px dashed rgba(255,255,255,0.10)',
           borderRadius: 12, textAlign: 'center',
-          fontSize: 12, color: '#565e78',
+          fontSize: 12, color: '#7b839b',
         }}>
           🚧 Bientôt : cumul des payouts du groupe, leaderboard, chat de groupe.
           <br />
@@ -179,7 +179,7 @@ export default async function GroupPage({ params }) {
         <footer style={{
           marginTop: 60, paddingTop: 20,
           borderTop: '1px solid rgba(255,255,255,0.07)',
-          fontSize: 11, color: '#565e78', textAlign: 'center',
+          fontSize: 11, color: '#7b839b', textAlign: 'center',
         }}>
           <Link href="/" style={{ color: '#9098b0', textDecoration: 'none' }}>Quantara</Link>
           {' · '}
@@ -246,7 +246,7 @@ function MemberList({ items, ownerId }) {
                   }}>✓</span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#565e78', fontFamily: 'monospace' }}>{subName}</div>
+              <div style={{ fontSize: 11, color: '#7b839b', fontFamily: 'monospace' }}>{subName}</div>
             </div>
           </div>
         )
@@ -268,7 +268,7 @@ function EmptyState({ message }) {
     <div style={{
       padding: 40, textAlign: 'center',
       background: '#141720', border: '1px dashed rgba(255,255,255,0.10)',
-      borderRadius: 12, color: '#565e78', fontSize: 13,
+      borderRadius: 12, color: '#7b839b', fontSize: 13,
     }}>{message}</div>
   )
 }

@@ -11,7 +11,7 @@ const C = {
   border: 'rgba(255,255,255,0.07)',
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blueLight: '#4d8fff',
 }
 

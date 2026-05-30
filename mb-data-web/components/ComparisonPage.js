@@ -9,7 +9,7 @@ const C = {
   border: 'rgba(255,255,255,0.07)',
   text: '#f0ede8',
   text2: '#9098b0',
-  text3: '#565e78',
+  text3: '#7b839b',
   blue: '#2d6fff',
   blueLight: '#4d8fff',
   green: '#1db87a',
@@ -79,7 +79,7 @@ export default function ComparisonPage({ title, subtitle, quantaraName, competit
         {/* CTA */}
         <div style={{ textAlign: 'center', padding: '32px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14 }}>
           <p style={{ fontSize: 14, color: C.text2, margin: 0, marginBottom: 16, lineHeight: 1.6 }}>{ctaText}</p>
-          <Link href="/app" style={{
+          <Link href="/auth?mode=signup" style={{
             display: 'inline-block', padding: '12px 28px',
             background: C.blue, color: '#fff', borderRadius: 8,
             fontSize: 14, fontWeight: 600, textDecoration: 'none',
