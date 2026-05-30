@@ -324,12 +324,19 @@ Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibilit
   - Internal linking: guides ↔ firms ↔ other guides
   - Sitemap: +6 URLs (1 index + 5 guides, priority 0.8-0.85)
 - [ ] Create blog infrastructure (deferred until first 10 articles ready)
-- [ ] Features Sprint 2: Consistency Monitor, Danger Zone, Payout Pipeline
+- [x] **Phase 3.4 — Features Sprint 2: Health Center** ✅ (commit 0aeac4a)
+  - New route `/app/health` with 3 live in-app sections:
+    - Drawdown Health (visual fuel gauge per account)
+    - Consistency Monitor (best day / total ratio vs firm threshold)
+    - Payout Pipeline (4-stage kanban Setup → Building → Eligible → Received)
+  - 3 components in `components/health/`
+  - Sidebar link added under "Vue d'ensemble", i18n FR/EN
+  - No DB schema change (uses existing balance/dd_floor/payout_target fields)
 - [ ] Backlinks: directory submissions, YouTuber outreach
 
-**Phase 3 SEO totals so far:** 1 firms index + 11 firm pages + 55 firm-vs-firm
-comparison pages + 1 guides index + 5 guides = **73 new SEO-indexable pages**
-all generated from data + editorial layer in lib/firmSlugs.js + lib/guides.js
+**Phase 3 totals:**
+- SEO pages: 1 firms index + 11 firm pages + 55 firm-vs-firm + 1 guides index + 5 guides = **73 pages**
+- In-app features: Health Center (Drawdown Health + Consistency Monitor + Payout Pipeline) = **3 new features**
 
 ### Phase 4 — Monetization (Weeks 9-10) — TO DO AT THE END
 **User decision:** Postpone access control implementation until the rest of the site is finished.
