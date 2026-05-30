@@ -306,9 +306,16 @@ Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibilit
     trading, contracts, pricing, payouts, multi)
   - Plans selector → per-plan rule detail
   - Sitemap updated (+12 URLs, priority 0.9 / 0.85)
-- [ ] Build /guides/[slug] template
+- [x] **Phase 3.2 — `/compare/[pair]` template + 55 firm-vs-firm pages** ✅ (commit cfcff1f)
+  - SSG dynamic route, C(11,2) = 55 pairs from PROPFIRM_RULES
+  - Slug pattern : alphabetical, e.g. `apex-trader-funding-vs-topstep`
+  - Existing `/compare/quantara-vs-*` routes take precedence (Next.js routing)
+  - Per page: hero, dual firm cards, 14-row comparison table, verdict, CTAs
+  - JSON-LD: WebPage + BreadcrumbList + ItemList
+  - Cross-linking: `/firms/[slug]` pages now link to all firm-vs-firm pages
+  - Sitemap: +55 URLs (priority 0.75)
+- [ ] Build /guides/[slug] template ← NEXT
 - [ ] Create blog infrastructure
-- [ ] **Phase 3.2 — Auto-generate /compare/[firmA]-vs-[firmB] pages (55 pairs)** ← NEXT
 - [ ] Features Sprint 2: Consistency Monitor, Danger Zone, Payout Pipeline
 - [ ] Backlinks: directory submissions, YouTuber outreach
 
