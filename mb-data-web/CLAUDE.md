@@ -206,6 +206,16 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 - **Compare pages** — `/compare/quantara-vs-tradervue`, `/compare/quantara-vs-excel`
 - **ComparisonPage** reusable component for all vs pages
 
+### Phase 3.1 — Programmatic SEO (DONE, commit 8c3049e)
+- **`/firms` index** + **`/firms/[slug]` SSG template** — 11 firm pages auto-generated from PROPFIRM_RULES
+  - topstep, apex-trader-funding, bulenox, lucid-trading, tradeify, take-profit-trader,
+    my-funded-futures, phidias-propfirm, funded-futures-network, futureselites, alpha-futures
+- **`lib/firmSlugs.js`** — editorial layer (taglines, intros 200-300w, key facts, FAQs) separate from rules
+- **JSON-LD per firm** — Product + BreadcrumbList + FAQPage schemas
+- **Rules categorized** — drawdown, profit, trading, contracts, pricing, payouts, multi (via `categorizeRule()`)
+- **Sitemap** — +12 URLs (priority 0.9 index / 0.85 slug)
+- Side-effect: fixed module-scope `createClient()` in drawdown-guardian, onboarding-emails, referral routes (build fix)
+
 ### LLC Info Update
 - **Quantara Technologies LLC**, New Mexico (not Texas)
 - 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA
@@ -219,6 +229,8 @@ Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
 | `/compare` | PropFirm comparator (10+ firms, filters, detail drawer) |
 | `/compare/quantara-vs-tradervue` | Comparison page |
 | `/compare/quantara-vs-excel` | Comparison page |
+| `/firms` | PropFirm reviews index (11 firms) |
+| `/firms/[slug]` | Per-firm review page (SSG, 11 routes) |
 | `/tools/drawdown-simulator` | Interactive DD calculator |
 | `/demo` | Ghost Mode dashboard preview |
 | `/pricing` | Pricing page |
