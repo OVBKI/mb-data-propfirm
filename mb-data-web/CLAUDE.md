@@ -293,10 +293,22 @@ Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibilit
 - [ ] Launch day: Product Hunt, BetaList, Indie Hackers, HN, Reddit
 
 ### Phase 3 — SEO & Content (Weeks 5-8)
-- [ ] Build /firms/[slug] template + generate 11 firm pages from PROPFIRM_RULES
+- [x] **Phase 3.1 — `/firms/[slug]` template + 11 firm pages from PROPFIRM_RULES** ✅
+  - `/firms` index + `/firms/[slug]` SSG (generateStaticParams pre-renders all 11)
+  - Slugs: topstep, apex-trader-funding, bulenox, lucid-trading, tradeify,
+    take-profit-trader, my-funded-futures, phidias-propfirm,
+    funded-futures-network, futureselites, alpha-futures
+  - `lib/firmSlugs.js` — editorial layer (FIRM_META: tagline, 200-300w intro,
+    keyFacts, ddType, splits, platform, country, founded, website, FAQs)
+    separate from PROPFIRM_RULES factual data
+  - JSON-LD: Product + BreadcrumbList + FAQPage per firm
+  - Rules grouped by category via `categorizeRule()` (drawdown, profit,
+    trading, contracts, pricing, payouts, multi)
+  - Plans selector → per-plan rule detail
+  - Sitemap updated (+12 URLs, priority 0.9 / 0.85)
 - [ ] Build /guides/[slug] template
 - [ ] Create blog infrastructure
-- [ ] Auto-generate comparison pages from firm pairs
+- [ ] **Phase 3.2 — Auto-generate /compare/[firmA]-vs-[firmB] pages (55 pairs)** ← NEXT
 - [ ] Features Sprint 2: Consistency Monitor, Danger Zone, Payout Pipeline
 - [ ] Backlinks: directory submissions, YouTuber outreach
 
