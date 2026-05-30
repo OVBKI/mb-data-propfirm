@@ -314,10 +314,22 @@ Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibilit
   - JSON-LD: WebPage + BreadcrumbList + ItemList
   - Cross-linking: `/firms/[slug]` pages now link to all firm-vs-firm pages
   - Sitemap: +55 URLs (priority 0.75)
-- [ ] Build /guides/[slug] template ← NEXT
-- [ ] Create blog infrastructure
+- [x] **Phase 3.3 — `/guides/[slug]` infrastructure + 5 educational guides** ✅ (commit 4304156)
+  - `/guides` index + `/guides/[slug]` SSG template
+  - 5 initial guides ~1000-1500 words each:
+    trailing-drawdown, eod-vs-intraday-drawdown, consistency-rule,
+    comment-passer-evaluation-topstep, payout-methods-propfirm
+  - `lib/guides.js` — GUIDES object with sections + faqs structure
+  - JSON-LD: Article + BreadcrumbList + FAQPage
+  - Internal linking: guides ↔ firms ↔ other guides
+  - Sitemap: +6 URLs (1 index + 5 guides, priority 0.8-0.85)
+- [ ] Create blog infrastructure (deferred until first 10 articles ready)
 - [ ] Features Sprint 2: Consistency Monitor, Danger Zone, Payout Pipeline
 - [ ] Backlinks: directory submissions, YouTuber outreach
+
+**Phase 3 SEO totals so far:** 1 firms index + 11 firm pages + 55 firm-vs-firm
+comparison pages + 1 guides index + 5 guides = **73 new SEO-indexable pages**
+all generated from data + editorial layer in lib/firmSlugs.js + lib/guides.js
 
 ### Phase 4 — Monetization (Weeks 9-10) — TO DO AT THE END
 **User decision:** Postpone access control implementation until the rest of the site is finished.
