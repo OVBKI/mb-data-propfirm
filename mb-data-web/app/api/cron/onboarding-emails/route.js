@@ -1,13 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
-
 const SCHEDULE = [
   { day: 0, subject: 'Bienvenue sur Quantara — 3 étapes pour démarrer', step: 0 },
   { day: 3, subject: 'As-tu logué ton premier trade ?', step: 1 },
@@ -42,12 +35,25 @@ function emailBody(step, name) {
 }
 
 export async function GET(request) {
+  if (!process.env.CRON_SECRET) {
+    return Response.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
+  }
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!resend) return Response.json({ error: 'Resend not configured' }, { status: 503 })
+  if (!process.env.RESEND_API_KEY) {
+    return Response.json({ error: 'Resend not configured' }, { status: 503 })
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return Response.json({ error: 'Supabase not configured' }, { status: 500 })
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
 
   const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 })
   if (!users?.length) return Response.json({ sent: 0 })

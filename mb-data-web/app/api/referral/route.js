@@ -1,14 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 import { verifyAuth } from '../../../lib/apiAuth'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+function getSupabase() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return null
+  }
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+}
 
 export async function GET(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
+
+  const supabase = getSupabase()
+  if (!supabase) return Response.json({ error: 'Supabase not configured' }, { status: 500 })
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -36,6 +44,9 @@ export async function GET(request) {
 export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
+
+  const supabase = getSupabase()
+  if (!supabase) return Response.json({ error: 'Supabase not configured' }, { status: 500 })
 
   const { referral_code } = await request.json()
   if (!referral_code) return Response.json({ error: 'Code required' }, { status: 400 })

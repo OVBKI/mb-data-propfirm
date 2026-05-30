@@ -2,12 +2,31 @@
 // Servi automatiquement à https://quantara.tech/sitemap.xml
 // À updater à chaque nouvelle page indexable ajoutée.
 
+import { getAllFirmSlugs } from '../lib/firmSlugs'
+
 const BASE_URL = 'https://quantara.tech'
 
 export default function sitemap() {
   const now = new Date()
 
+  // Programmatic SEO : 1 index /firms + 11 pages /firms/[slug] générées depuis PROPFIRM_RULES
+  const firmPages = [
+    {
+      url: `${BASE_URL}/firms`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    ...getAllFirmSlugs().map((slug) => ({
+      url: `${BASE_URL}/firms/${slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    })),
+  ]
+
   return [
+    ...firmPages,
     // Landing — priorité max, change quand on update marketing
     {
       url: BASE_URL,
@@ -108,9 +127,8 @@ export default function sitemap() {
 
     // À ajouter au fur et à mesure de la roadmap SEO :
     // - /about
-    // - /firms/topstep, /firms/apex, /firms/lucid, etc.
     // - /guides/trailing-drawdown, /guides/consistency-rule, etc.
-    // - /compare/topstep-vs-apex, etc.
+    // - /compare/topstep-vs-apex, etc. (firm-vs-firm)
     // - /blog/[slug]
     // - /tools/trailing-drawdown-calculator, etc.
   ]
