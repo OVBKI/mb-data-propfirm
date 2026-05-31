@@ -402,6 +402,81 @@ async def _fetch_fills(
                     logger.warning("order_plant.get_fill_history failed : %s", e)
                     break
 
+    # ── DIAGNOSTIC C : dump complete client + order-plant async methods to Supabase
+    # so we can identify the right fill-fetching method (show_order_history_summary
+    # returns [] for all dates — wrong endpoint). Runs once per process.
+    if user_id is not None and not getattr(_fetch_fills, "_methods_dumped", False):
+        try:
+            import inspect
+            client_methods = {}
+            for name in sorted(dir(client)):
+                if name.startswith("_"):
+                    continue
+                attr = getattr(client, name, None)
+                if attr is None:
+                    continue
+                is_coro = inspect.iscoroutinefunction(attr)
+                is_callable = callable(attr)
+                if is_callable:
+                    try:
+                        sig = str(inspect.signature(attr))
+                    except (ValueError, TypeError):
+                        sig = "?"
+                    client_methods[name] = {
+                        "async": is_coro,
+                        "sig": sig[:200],
+                        "type": type(attr).__name__,
+                    }
+                else:
+                    client_methods[name] = {
+                        "async": False,
+                        "value_type": type(attr).__name__,
+                        "repr": str(attr)[:150],
+                    }
+
+            order_plant_methods: Dict[str, Any] = {}
+            plants = getattr(client, "plants", None)
+            if isinstance(plants, dict):
+                order_plant = plants.get("order") or plants.get("Order")
+                if order_plant is not None:
+                    for name in sorted(dir(order_plant)):
+                        if name.startswith("_"):
+                            continue
+                        attr = getattr(order_plant, name, None)
+                        if attr is None or not callable(attr):
+                            continue
+                        try:
+                            sig = str(inspect.signature(attr))
+                        except (ValueError, TypeError):
+                            sig = "?"
+                        order_plant_methods[name] = {
+                            "async": inspect.iscoroutinefunction(attr),
+                            "sig": sig[:200],
+                        }
+
+            sb = get_supabase()
+            sb.table("rithmic_debug").insert({
+                "user_id": user_id,
+                "account_id": "__client_introspect__",
+                "date_str": "client",
+                "summary_type": "introspection",
+                "summary_repr": f"{len(client_methods)} public attrs on client",
+                "fields_json": client_methods,
+            }).execute()
+            sb.table("rithmic_debug").insert({
+                "user_id": user_id,
+                "account_id": "__order_plant_introspect__",
+                "date_str": "order_plant",
+                "summary_type": "introspection",
+                "summary_repr": f"{len(order_plant_methods)} public attrs on order plant",
+                "fields_json": order_plant_methods,
+            }).execute()
+            logger.info("DIAG C : dumped %d client methods + %d order_plant methods to rithmic_debug",
+                        len(client_methods), len(order_plant_methods))
+        except Exception as e:  # noqa: BLE001
+            logger.warning("DIAG C dump failed : %s", str(e)[:200])
+        _fetch_fills._methods_dumped = True  # type: ignore[attr-defined]
+
     # ── Méthode B : show_order_history_dates + show_order_history_summary
     if hasattr(client, "show_order_history_dates") and hasattr(client, "show_order_history_summary"):
         try:
