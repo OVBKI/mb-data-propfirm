@@ -1,8 +1,12 @@
 'use client'
 // /app/health — Health Center : Drawdown Health + Consistency Monitor + Payout Pipeline.
+// Centralized data loading : 1 query for ALL trades, compute per-account stats once,
+// pass to the 3 child components.
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../AppContext'
+import { supabase } from '../../../../lib/supabase'
+import { planSizeNum, maxDrawdown } from '../../../../lib/constants'
 import DrawdownHealthCard from '../../../../components/health/DrawdownHealthCard'
 import ConsistencyMonitor from '../../../../components/health/ConsistencyMonitor'
 import PayoutPipeline from '../../../../components/health/PayoutPipeline'
@@ -19,10 +23,130 @@ const C = {
   red: '#e8504a',
 }
 
+// Compute per-account derived stats from trades (journal_entries).
+// Returns: { [accountId]: { balance, peakBalance, totalPnl, bestDayAmount,
+//                          totalProfit, daysCount, winningDaysCount } }
+function computeStatsByAccount(trades, accountsById) {
+  // Group PnL by account → by day
+  const byAcct = {}
+  for (const t of trades) {
+    const acctId = t.account_id
+    if (!acctId) continue
+    const acct = accountsById[acctId]
+    if (!acct) continue
+    // Exclude trades before funded_date (for Funded accounts)
+    if (acct.funded_date && t.date && t.date < acct.funded_date) continue
+    const day = (t.date || '').slice(0, 10)
+    if (!day) continue
+    const pnl = Number(t.pnl) || 0
+    if (!byAcct[acctId]) byAcct[acctId] = { byDay: {}, totalPnl: 0 }
+    byAcct[acctId].byDay[day] = (byAcct[acctId].byDay[day] || 0) + pnl
+    byAcct[acctId].totalPnl += pnl
+  }
+
+  // For each account, compute balance (initial + cumulative pnl), peak EOD balance,
+  // best winning day, total profit (sum of winning days only? OR net total?)
+  const stats = {}
+  for (const [acctId, data] of Object.entries(byAcct)) {
+    const acct = accountsById[acctId]
+    const initialBalance = planSizeNum(acct.plan_size) || 0
+
+    // Sort days chronologically + compute cumulative balance per day
+    const days = Object.entries(data.byDay).sort((a, b) => a[0].localeCompare(b[0]))
+    let cum = initialBalance
+    let peak = initialBalance
+    for (const [_, dayPnl] of days) {
+      cum += dayPnl
+      if (cum > peak) peak = cum
+    }
+
+    // Best winning day
+    let bestDayAmount = 0
+    let bestDayDate = ''
+    for (const [d, p] of days) {
+      if (p > bestDayAmount) { bestDayAmount = p; bestDayDate = d }
+    }
+
+    stats[acctId] = {
+      balance: cum,
+      peakBalance: peak,
+      totalPnl: data.totalPnl,
+      bestDayAmount,
+      bestDayDate,
+      daysCount: days.length,
+      winningDaysCount: days.filter(([_, p]) => p > 0).length,
+    }
+  }
+
+  // Fallback for accounts WITH no trades : still provide initial balance
+  for (const a of Object.values(accountsById)) {
+    if (stats[a.id]) continue
+    const init = planSizeNum(a.plan_size) || 0
+    stats[a.id] = {
+      balance: init,
+      peakBalance: init,
+      totalPnl: 0,
+      bestDayAmount: 0,
+      bestDayDate: '',
+      daysCount: 0,
+      winningDaysCount: 0,
+    }
+  }
+  return stats
+}
+
+// Compute drawdown floor per account based on dd_type + firm rules.
+// - static : floor = initial - maxDD
+// - eod    : floor moves with peak EOD high, then locks at initial (Topstep-style)
+// - trailing : floor = peak - maxDD (no cap), tick-by-tick (we approximate with EOD peak)
+function computeDdFloor(account, firmName, peakBalance) {
+  const initial = planSizeNum(account.plan_size) || 0
+  const maxDD = maxDrawdown(firmName, account.plan_size)
+  if (!maxDD || !initial) return null
+
+  const ddType = (account.dd_type || 'static').toLowerCase()
+  if (ddType === 'static') {
+    return initial - maxDD
+  }
+  if (ddType === 'eod') {
+    // Trailing with lock at starting balance
+    const peakOrInitial = Math.max(peakBalance, initial)
+    return Math.min(peakOrInitial - maxDD, initial)
+  }
+  // 'trailing' or unknown : pure trailing, no lock
+  return Math.max(peakBalance, initial) - maxDD
+}
+
 export default function HealthPage() {
   const { firms, user } = useApp()
+  const [trades, setTrades] = useState([])
+  const [tradesLoading, setTradesLoading] = useState(true)
+  const [tradesError, setTradesError] = useState(null)
 
-  // All accounts (funded + challenge) for the Drawdown Health section
+  // Load all trades once with the authenticated supabase client
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      if (!user) { setTradesLoading(false); return }
+      try {
+        const { data, error } = await supabase
+          .from('journal_entries')
+          .select('id, account_id, date, pnl')
+          .eq('user_id', user.id)
+        if (cancelled) return
+        if (error) { setTradesError(error.message || 'Erreur chargement trades'); setTrades([]) }
+        else setTrades(data || [])
+      } catch (e) {
+        if (!cancelled) setTradesError(e.message || 'Erreur réseau')
+      } finally {
+        if (!cancelled) setTradesLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [user])
+
+  // Build lookups
   const monitoredAccounts = useMemo(() => {
     const list = []
     for (const f of (firms || [])) {
@@ -34,20 +158,52 @@ export default function HealthPage() {
     return list
   }, [firms])
 
+  const accountsById = useMemo(() => {
+    const map = {}
+    for (const a of monitoredAccounts) map[a.id] = a
+    return map
+  }, [monitoredAccounts])
+
+  // Compute per-account stats from trades
+  const statsByAccount = useMemo(() => computeStatsByAccount(trades, accountsById), [trades, accountsById])
+
+  // Enrich accounts with computed balance + dd_floor + stats
+  const enrichedAccounts = useMemo(() => {
+    return monitoredAccounts.map((a) => {
+      const s = statsByAccount[a.id] || {}
+      const computedBalance = s.balance
+      // Prefer manually-set balance, else use computed from trades
+      const balance = a.balance != null ? Number(a.balance) : computedBalance
+      const peakBalance = Math.max(s.peakBalance || 0, balance || 0)
+      const computedDdFloor = computeDdFloor(a, a.firmName, peakBalance)
+      const ddFloor = a.dd_floor != null ? Number(a.dd_floor) : computedDdFloor
+      return {
+        ...a,
+        balance,
+        dd_floor: ddFloor,
+        _computed: {
+          totalPnl: s.totalPnl || 0,
+          bestDayAmount: s.bestDayAmount || 0,
+          daysCount: s.daysCount || 0,
+        },
+      }
+    })
+  }, [monitoredAccounts, statsByAccount])
+
   // Summary stats
   const summary = useMemo(() => {
     let safe = 0, caution = 0, danger = 0, noData = 0
-    for (const a of monitoredAccounts) {
+    for (const a of enrichedAccounts) {
       if (a.balance == null || a.dd_floor == null) { noData++; continue }
-      const initial = Number(a.plan_size?.replace(/k$/i, '')) * 1000 || a.balance
+      const initial = planSizeNum(a.plan_size) || a.balance
       const room = Math.max(0, a.balance - a.dd_floor)
       const pct = initial > 0 ? room / initial : 0
       if (pct >= 0.7) safe++
       else if (pct >= 0.5) caution++
       else danger++
     }
-    return { safe, caution, danger, noData, total: monitoredAccounts.length }
-  }, [monitoredAccounts])
+    return { safe, caution, danger, noData, total: enrichedAccounts.length }
+  }, [enrichedAccounts])
 
   return (
     <div style={{ padding: '24px 28px 60px', maxWidth: 1280, width: '100%', boxSizing: 'border-box' }}>
@@ -61,8 +217,22 @@ export default function HealthPage() {
         </p>
       </header>
 
+      {tradesError && (
+        <div style={{
+          padding: '12px 16px',
+          background: 'rgba(232,80,74,0.08)',
+          border: '1px solid rgba(232,80,74,0.3)',
+          borderRadius: 10,
+          fontSize: 13,
+          color: C.red,
+          marginBottom: 20,
+        }}>
+          Erreur chargement des trades : {tradesError}
+        </div>
+      )}
+
       {/* Summary row */}
-      {monitoredAccounts.length > 0 && (
+      {enrichedAccounts.length > 0 && (
         <section style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
@@ -80,9 +250,11 @@ export default function HealthPage() {
       {/* 1. Drawdown Health */}
       <Section
         title="Drawdown Health"
-        subtitle="Room de drawdown par compte. Vert > 70% room (safe), ambre 50-70% (caution), rouge < 50% (danger zone)."
+        subtitle="Room de drawdown par compte. Calculée depuis tes trades + règles de la firm. Vert > 70% room (safe), ambre 50-70% (caution), rouge < 50% (danger zone)."
       >
-        {monitoredAccounts.length === 0 ? (
+        {tradesLoading ? (
+          <EmptyState text="Chargement des trades…" />
+        ) : enrichedAccounts.length === 0 ? (
           <EmptyState text="Aucun compte actif. Crée une firm puis un compte (Challenge ou Financé) pour activer le drawdown tracking." />
         ) : (
           <div style={{
@@ -90,7 +262,7 @@ export default function HealthPage() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
             gap: 12,
           }}>
-            {monitoredAccounts.map((a) => (
+            {enrichedAccounts.map((a) => (
               <DrawdownHealthCard key={a.id} account={a} firmName={a.firmName} />
             ))}
           </div>
@@ -102,7 +274,11 @@ export default function HealthPage() {
         title="Consistency Monitor"
         subtitle="Best winning day / profit total — comparé au seuil consistency de chaque firm. Calculé en live depuis tes trades journal."
       >
-        <ConsistencyMonitor user={user} accounts={monitoredAccounts} firms={firms} />
+        <ConsistencyMonitor
+          firms={firms}
+          statsByAccount={statsByAccount}
+          loading={tradesLoading}
+        />
       </Section>
 
       {/* 3. Payout Pipeline */}
@@ -110,7 +286,7 @@ export default function HealthPage() {
         title="Payout Pipeline"
         subtitle="Suivi des comptes financés à travers les 4 étapes : Setup → Building → Eligible → Received."
       >
-        <PayoutPipeline firms={firms} />
+        <PayoutPipeline firms={firms} statsByAccount={statsByAccount} />
       </Section>
     </div>
   )

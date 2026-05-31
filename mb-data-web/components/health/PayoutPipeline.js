@@ -35,11 +35,11 @@ const STAGES = [
   { id: 'received', label: 'Received',  color: C.blueLight, desc: 'Au moins 1 payout déjà reçu. Continue à scaler.' },
 ]
 
-function classifyAccount(account, firmName) {
+function classifyAccount(account, firmName, computedBalance) {
   const payouts = account.payouts || []
   if (payouts.length > 0) return 'received'
 
-  const balance = account.balance
+  const balance = account.balance != null ? Number(account.balance) : computedBalance
   const initialBalance = planSizeNum(account.plan_size)
   const profit = (balance != null) ? (balance - initialBalance) : null
   const target = account.payout_target
@@ -58,21 +58,23 @@ function classifyAccount(account, firmName) {
   return 'setup'
 }
 
-export default function PayoutPipeline({ firms }) {
+export default function PayoutPipeline({ firms, statsByAccount }) {
   const cards = useMemo(() => {
     const acc = []
     for (const f of (firms || [])) {
       for (const a of (f.accounts || [])) {
         if (a.status !== 'Financé') continue
+        const computedBalance = statsByAccount?.[a.id]?.balance
         acc.push({
           ...a,
           firmName: f.name,
-          stage: classifyAccount(a, f.name),
+          _computedBalance: computedBalance,
+          stage: classifyAccount(a, f.name, computedBalance),
         })
       }
     }
     return acc
-  }, [firms])
+  }, [firms, statsByAccount])
 
   const byStage = useMemo(() => {
     const map = {}
@@ -141,7 +143,7 @@ export default function PayoutPipeline({ firms }) {
             ) : (
               items.map((item) => {
                 const firmColor = FIRM_SUGGESTION_COLORS[item.firmName] || C.blue
-                const balance = item.balance
+                const balance = item.balance != null ? Number(item.balance) : item._computedBalance
                 const initial = planSizeNum(item.plan_size)
                 const profit = balance != null ? balance - initial : null
                 const payoutCount = (item.payouts || []).length
