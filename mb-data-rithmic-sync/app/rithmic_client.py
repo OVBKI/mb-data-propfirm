@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from async_rithmic import RithmicClient
+from async_rithmic.objects import RetrySettings
 
 from .config import get_settings
 
@@ -28,6 +29,13 @@ async def rithmic_session(
             accounts = await client.list_accounts()
     """
     settings = get_settings()
+    # Fail-fast retry settings : 1 retry + 12s timeout instead of default 3×30s=90s
+    # per call. This avoids 10+ minute sync hangs when Rithmic doesn't respond.
+    fast_retry = RetrySettings(
+        max_retries=1,
+        timeout=12.0,
+        jitter_range=(0.5, 1.0),
+    )
     client = RithmicClient(
         user=user,
         password=password,
@@ -35,6 +43,7 @@ async def rithmic_session(
         app_name=APP_NAME,
         app_version=APP_VERSION,
         url=settings.rithmic_gateway_uri,
+        retry_settings=fast_retry,
     )
     try:
         logger.info("Connecting to Rithmic gateway %s (system=%s)", settings.rithmic_gateway_uri, system_name)
