@@ -80,6 +80,23 @@ export default function JournalSyncHub() {
             </div>
             <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.green, fontSize: 18 }}>{'→'}</div>
           </Link>
+
+          <Link href="/app/journal-sync/rithmic" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(167,139,250,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(167,139,250,0.15)' }}
+            onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 14 }}>{'⚡'}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Live Sync</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Rithmic API direct</h3>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
+              Connecte ton compte Rithmic une fois, et Quantara importe automatiquement tes trades (jusqu&apos;à 365j d&apos;historique).
+            </p>
+            <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ padding: '3px 8px', background: 'rgba(167,139,250,0.12)', color: '#a78bfa', borderRadius: 99, fontWeight: 600 }}>BETA</span>
+              <span>Topstep · Apex · Lucid</span><span>{'·'}</span><span>Pas de CSV</span>
+            </div>
+            <div style={{ position: 'absolute', bottom: 16, right: 18, color: '#a78bfa', fontSize: 18 }}>{'→'}</div>
+          </Link>
         </div>
 
         <div style={{ marginTop: 24, padding: 18, background: 'rgba(255,255,255,0.02)', border: `1px dashed ${C.border2}`, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 14 }}>
