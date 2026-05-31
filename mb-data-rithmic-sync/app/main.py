@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
 from .config import get_settings
-from .routers import credentials, health, sync
+from .routers import credentials, cron, health, sync
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("quantara-rithmic-sync")
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(credentials.router)
 app.include_router(sync.router)
+app.include_router(cron.router)
 
 
 @app.on_event("startup")

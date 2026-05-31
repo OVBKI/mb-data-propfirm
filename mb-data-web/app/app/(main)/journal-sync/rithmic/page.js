@@ -68,6 +68,8 @@ export default function RithmicSyncPage() {
   const [formUsername, setFormUsername] = useState('')
   const [formPassword, setFormPassword] = useState('')
   const [formSystem, setFormSystem] = useState(SYSTEMS[0].value)
+  const [formAutoSync, setFormAutoSync] = useState(false)
+  const [formDaysWindow, setFormDaysWindow] = useState(7)
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState(null)
 
@@ -125,6 +127,8 @@ export default function RithmicSyncPage() {
     setFormUsername('')
     setFormPassword('')
     setFormSystem(SYSTEMS[0].value)
+    setFormAutoSync(false)
+    setFormDaysWindow(7)
     setSaveMsg(null)
   }
 
@@ -134,6 +138,8 @@ export default function RithmicSyncPage() {
     setFormUsername('')
     setFormPassword('')
     setFormSystem(creds.system_name)
+    setFormAutoSync(!!creds.auto_sync_enabled)
+    setFormDaysWindow(creds.auto_sync_days_window || 7)
     setSaveMsg(null)
   }
 
@@ -158,6 +164,8 @@ export default function RithmicSyncPage() {
           username: formUsername,
           password: formPassword,
           system_name: formSystem,
+          auto_sync_enabled: formAutoSync,
+          auto_sync_days_window: formDaysWindow,
         }),
       })
       const data = await res.json()
@@ -310,6 +318,50 @@ export default function RithmicSyncPage() {
                     Ce que tu sélectionnes dans la liste &quot;System&quot; de R|Trader Pro / TopstepX au login.
                   </div>
                 </Field>
+
+                {/* Auto-sync toggle */}
+                <div style={{
+                  background: 'rgba(167,139,250,0.06)',
+                  border: `1px solid rgba(167,139,250,0.18)`,
+                  borderRadius: 8,
+                  padding: 12,
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={formAutoSync}
+                      onChange={e => setFormAutoSync(e.target.checked)}
+                      style={{ width: 16, height: 16, cursor: 'pointer', accentColor: C.purple }}
+                    />
+                    <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>
+                      🕒 Sync automatique toutes les 15 min
+                    </span>
+                  </label>
+                  {formAutoSync && (
+                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11.5, color: C.text2 }}>Fenêtre à sync à chaque tour :</span>
+                      <select
+                        value={formDaysWindow}
+                        onChange={e => setFormDaysWindow(parseInt(e.target.value, 10))}
+                        style={{ ...inputStyle, width: 'auto', padding: '4px 8px', fontSize: 12 }}
+                      >
+                        <option value={1}>1 jour</option>
+                        <option value={3}>3 jours</option>
+                        <option value={7}>7 jours</option>
+                        <option value={14}>14 jours</option>
+                        <option value={30}>30 jours</option>
+                      </select>
+                      <span style={{ fontSize: 11, color: C.text3 }}>
+                        (recommandé : 7j — suffisant pour rattraper toute activité récente)
+                      </span>
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: C.text3, marginTop: 8, lineHeight: 1.5 }}>
+                    Quand activé, le cron Vercel sync cette connexion toutes les 15 min sans intervention.
+                    Tes trades arrivent automatiquement dans le journal.
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button type="submit" disabled={saving} style={{
                     padding: '9px 18px', background: saving ? C.text3 : C.purple, color: '#fff', border: 'none',
@@ -457,9 +509,25 @@ function CredentialsCard({ creds, onSync, onEdit, onDelete, syncDisabled }) {
       background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10,
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{creds.label}</div>
-        <div style={{ fontSize: 11, color: C.text3 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {creds.label}
+          {creds.auto_sync_enabled && (
+            <span style={{
+              padding: '2px 8px',
+              background: 'rgba(29,184,122,0.12)',
+              color: C.green,
+              borderRadius: 99,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+            }} title="Sync auto activé">🕒 AUTO</span>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>
           Système : <span style={{ color: C.purple, fontFamily: 'monospace' }}>{creds.system_name}</span>
+          {creds.last_synced_at && (
+            <span style={{ marginLeft: 8 }}>· Dernière sync : {timeAgo(creds.last_synced_at)}</span>
+          )}
         </div>
       </div>
       <button onClick={onSync} disabled={syncDisabled} title="Lancer une sync sur cette connexion seulement" style={{
@@ -476,6 +544,22 @@ function CredentialsCard({ creds, onSync, onEdit, onDelete, syncDisabled }) {
       }}>🗑</button>
     </div>
   )
+}
+
+function timeAgo(iso) {
+  try {
+    const then = new Date(iso).getTime()
+    const diffMs = Date.now() - then
+    const min = Math.floor(diffMs / 60_000)
+    if (min < 1) return "à l'instant"
+    if (min < 60) return `il y a ${min} min`
+    const hours = Math.floor(min / 60)
+    if (hours < 24) return `il y a ${hours} h`
+    const days = Math.floor(hours / 24)
+    return `il y a ${days} j`
+  } catch {
+    return ''
+  }
 }
 
 function SectionHeader({ number, title }) {

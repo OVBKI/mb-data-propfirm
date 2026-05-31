@@ -15,6 +15,8 @@ class CredentialsIn(BaseModel):
     username: str = Field(min_length=1, max_length=200)
     password: str = Field(min_length=1, max_length=200)
     system_name: str = Field(min_length=1, max_length=80, description="e.g. 'LucidTrading', 'TopstepTrader', 'Take Profit Trader'")
+    auto_sync_enabled: bool = Field(default=False, description="If true, the Vercel cron (15min) will auto-sync this connection")
+    auto_sync_days_window: int = Field(default=7, ge=1, le=90, description="How many days back to sync on each auto-sync run")
 
 
 class CredentialsOut(BaseModel):
@@ -25,6 +27,9 @@ class CredentialsOut(BaseModel):
     system_name: str
     has_credentials: bool = True
     updated_at: datetime
+    auto_sync_enabled: bool = False
+    auto_sync_days_window: int = 7
+    last_synced_at: Optional[datetime] = None
 
 
 # ── Sync ───────────────────────────────────────────────────────────────────

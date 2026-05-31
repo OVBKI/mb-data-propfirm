@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -27,6 +27,10 @@ class Settings(BaseSettings):
 
     # Defaults
     default_sync_days: int = 90
+
+    # Cron auth — Vercel cron will send this in X-Cron-Secret header
+    # Must match the same value on Vercel (RITHMIC_CRON_SECRET env var)
+    rithmic_cron_secret: Optional[str] = None
 
     @property
     def cors_origins_list(self) -> List[str]:

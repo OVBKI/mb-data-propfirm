@@ -29,7 +29,7 @@ async def list_credentials_meta(user_id: str) -> List[Dict[str, Any]]:
     sb = get_supabase()
     res = (
         sb.table("rithmic_credentials")
-        .select("id, user_id, label, system_name, updated_at")
+        .select("id, user_id, label, system_name, updated_at, auto_sync_enabled, auto_sync_days_window, last_synced_at")
         .eq("user_id", user_id)
         .order("label")
         .execute()
@@ -68,6 +68,8 @@ async def upsert_credentials(
     username: str,
     password: str,
     system_name: str,
+    auto_sync_enabled: bool = False,
+    auto_sync_days_window: int = 7,
 ) -> Dict[str, Any]:
     """Encrypt + upsert by (user_id, label). Returns the saved row metadata."""
     sb = get_supabase()
@@ -77,28 +79,30 @@ async def upsert_credentials(
         "encrypted_username": encrypt(username),
         "encrypted_password": encrypt(password),
         "system_name": system_name,
+        "auto_sync_enabled": auto_sync_enabled,
+        "auto_sync_days_window": auto_sync_days_window,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     res = sb.table("rithmic_credentials").upsert(payload, on_conflict="user_id,label").execute()
     if not res.data:
-        # Fetch the row after upsert to return the id/updated_at
         meta = (
             sb.table("rithmic_credentials")
-            .select("id, user_id, label, system_name, updated_at")
+            .select("id, user_id, label, system_name, updated_at, auto_sync_enabled, auto_sync_days_window, last_synced_at")
             .eq("user_id", user_id)
             .eq("label", label)
             .single()
             .execute()
         )
         return meta.data
-    row = res.data[0]
-    return {
-        "id": row["id"],
-        "user_id": row["user_id"],
-        "label": row["label"],
-        "system_name": row["system_name"],
-        "updated_at": row["updated_at"],
-    }
+    return res.data[0]
+
+
+async def mark_synced(user_id: str, label: str) -> None:
+    """Update last_synced_at for a (user, label) — called after each successful sync."""
+    sb = get_supabase()
+    sb.table("rithmic_credentials").update({
+        "last_synced_at": datetime.now(timezone.utc).isoformat(),
+    }).eq("user_id", user_id).eq("label", label).execute()
 
 
 async def delete_credentials_by_label(user_id: str, label: str) -> bool:
@@ -126,7 +130,13 @@ async def run_historical_sync(
         creds = await get_credentials_by_label(user_id, label)
         if not creds:
             raise ValueError(f"No credentials with label '{label}' for this user")
-        return await _sync_one(user_id, creds, days, account_filter)
+        summary = await _sync_one(user_id, creds, days, account_filter)
+        # Mark synced even if a few accounts errored, as long as connection worked
+        try:
+            await mark_synced(user_id, label)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Failed to update last_synced_at: %s", e)
+        return summary
 
     # Sync all
     metas = await list_credentials_meta(user_id)
@@ -149,6 +159,10 @@ async def run_historical_sync(
             total_accounts += int(summary.get("accounts_synced", 0) or 0)
             for err in summary.get("errors", []) or []:
                 all_errors.append(f"{cred_label}: {err}")
+            try:
+                await mark_synced(user_id, cred_label)
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Failed to update last_synced_at for %s: %s", cred_label, e)
         except Exception as e:  # noqa: BLE001
             logger.exception("Sync failed for label=%s", cred_label)
             all_errors.append(f"{cred_label}: {e}")
