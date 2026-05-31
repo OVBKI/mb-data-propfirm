@@ -376,19 +376,20 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
             logger.info("After window filter (%s..%s) : %d dates remain : %s",
                         start_compact, end_compact, len(in_window), in_window[:20])
 
-            # If window filter excluded everything, fall back to syncing ALL returned dates.
-            # This handles the case where the user's account has old historical activity
-            # outside the standard 90-day window (very common for PropFirm accounts).
-            dates_to_sync = in_window if in_window else dates_collected
-            if not in_window and dates_collected:
-                logger.warning(
-                    "Window filter excluded all dates — syncing all %d available dates instead",
-                    len(dates_collected),
-                )
+            # IMPORTANT : we DO NOT filter by window here. Rithmic's show_order_history_dates
+            # returns dates the account has been ACCESSED (e.g. login days), not just trading
+            # days. So in_window can contain dates with no actual orders (returning 'no data').
+            # And actual trading days can be OUTSIDE the user's requested window (e.g. older
+            # PropFirm history). Strategy : query ALL extracted dates, skip 'no data' errors.
+            dates_to_sync = dates_collected
+            logger.info("Querying all %d dates extracted (window filter ignored)", len(dates_to_sync))
 
             all_fills = []
+            no_data_count = 0
+            success_count = 0
+            error_count = 0
+
             for d in dates_to_sync:
-                # Try with account_id kwarg first, fall back to no account_id
                 summary = None
                 for kwargs in (
                     {"date": d, "account_id": account_id},
@@ -400,24 +401,57 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
                     except TypeError:
                         continue
                     except Exception as e:  # noqa: BLE001
-                        logger.warning("show_order_history_summary(%s) failed : %s", d, e)
+                        err_str = str(e).lower()
+                        if "no data" in err_str or "'rpcode': ['7'" in err_str:
+                            # Date has no orders — silent skip
+                            no_data_count += 1
+                            summary = None
+                            break
+                        logger.warning("show_order_history_summary(%s, kwargs=%s) failed : %s",
+                                       d, list(kwargs.keys()), str(e)[:200])
+                        error_count += 1
                         break
 
                 if summary is None:
                     continue
 
-                # Log structure once for diagnosis
+                success_count += 1
+
+                # Log first successful response so we can adapt parsing
                 if not getattr(_fetch_fills, "_summary_logged", False):
-                    logger.info("show_order_history_summary(%s) returned : type=%s, content=%s",
-                                d, type(summary).__name__, str(summary)[:400])
+                    logger.info("✓ First successful summary(date=%s) : type=%s, repr=%s",
+                                d, type(summary).__name__, str(summary)[:600])
+                    if hasattr(summary, "ListFields"):
+                        try:
+                            for f_desc, f_value in summary.ListFields():
+                                logger.info("  summary field name=%s, type=%s, repr=%s",
+                                            f_desc.name, type(f_value).__name__,
+                                            str(f_value)[:150])
+                        except Exception:  # noqa: BLE001
+                            pass
+                    elif isinstance(summary, list) and summary:
+                        first = summary[0]
+                        logger.info("  summary[0] type=%s, attrs=%s",
+                                    type(first).__name__,
+                                    [a for a in dir(first) if not a.startswith("_") and not a[0].isupper()][:30])
+                        if hasattr(first, "ListFields"):
+                            try:
+                                for f_desc, f_value in first.ListFields():
+                                    logger.info("  summary[0] field name=%s, type=%s, repr=%s",
+                                                f_desc.name, type(f_value).__name__,
+                                                str(f_value)[:150])
+                            except Exception:  # noqa: BLE001
+                                pass
                     _fetch_fills._summary_logged = True  # type: ignore[attr-defined]
 
                 fills_from_summary = _extract_fills_from_summary(summary, account_id, d)
                 if fills_from_summary:
                     all_fills.extend(fills_from_summary)
 
-            logger.info("Method B returned %d total fills across %d dates",
-                        len(all_fills), len(dates_to_sync))
+            logger.info(
+                "Method B summary : %d dates total → %d with data, %d 'no data', %d errors → %d fills",
+                len(dates_to_sync), success_count, no_data_count, error_count, len(all_fills),
+            )
             return all_fills
         except Exception as e:  # noqa: BLE001
             logger.warning("show_order_history_dates/summary path failed : %s", e, exc_info=True)
