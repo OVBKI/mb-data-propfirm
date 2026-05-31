@@ -355,6 +355,14 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
             logger.info("Trying fallback : show_order_history_dates() + show_order_history_summary(date)")
             dates_result = await client.show_order_history_dates()
 
+            # Always log the raw response so we can diagnose extraction issues.
+            logger.info(
+                "show_order_history_dates raw response : type=%s, len=%s, repr=%s",
+                type(dates_result).__name__,
+                len(dates_result) if hasattr(dates_result, "__len__") else "n/a",
+                str(dates_result)[:500],
+            )
+
             # The result is a list of protobuf messages. Each message has a REPEATED
             # `date` field containing strings in YYYYMMDD format. We extract them all.
             dates_collected = _extract_dates(dates_result)
