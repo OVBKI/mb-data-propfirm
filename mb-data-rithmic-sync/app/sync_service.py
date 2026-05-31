@@ -532,6 +532,14 @@ async def _fetch_fills(
 
                 all_fills = fills_list + captured
                 if all_fills:
+                    if user_id is not None:
+                        try:
+                            _debug_persist(user_id, account_id, "TRACE_methodA_returning_fills",
+                                           {"fills_count": len(fills_list),
+                                            "captured_count": len(captured),
+                                            "kwargs": list(kwargs.keys())})
+                        except Exception:  # noqa: BLE001
+                            pass
                     return all_fills
             except TypeError as e:
                 logger.warning("TypeError calling get_fill_history(%s): %s",
