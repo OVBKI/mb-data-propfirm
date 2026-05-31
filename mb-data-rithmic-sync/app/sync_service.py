@@ -354,58 +354,146 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
         try:
             logger.info("Trying fallback : show_order_history_dates() + show_order_history_summary(date)")
             dates_result = await client.show_order_history_dates()
-            logger.info("show_order_history_dates returned: %s (type=%s)",
-                        str(dates_result)[:200], type(dates_result).__name__)
 
-            # The structure of dates_result is opaque ; try to extract a list of date strings
-            dates = []
-            if isinstance(dates_result, list):
-                dates = dates_result
-            elif hasattr(dates_result, "dates"):
-                dates = list(dates_result.dates)
-            elif isinstance(dates_result, dict):
-                dates = dates_result.get("dates") or []
+            # The result is a list of protobuf messages. Each message has a REPEATED
+            # `date` field containing strings in YYYYMMDD format. We extract them all.
+            dates_collected = _extract_dates(dates_result)
+            logger.info("Extracted %d date(s) from show_order_history_dates : %s",
+                        len(dates_collected), dates_collected[:20])
 
-            # Filter to our window
-            start_str = start.date().isoformat()
-            end_str = end.date().isoformat()
-            in_window = [d for d in dates if start_str <= str(d) <= end_str]
-            logger.info("Found %d dates with activity (%d in window %s..%s)",
-                        len(dates), len(in_window), start_str, end_str)
+            # Filter to our window (window dates are YYYY-MM-DD ; collected are YYYYMMDD).
+            start_compact = start.strftime("%Y%m%d")
+            end_compact = end.strftime("%Y%m%d")
+            in_window = [d for d in dates_collected if start_compact <= d <= end_compact]
+            logger.info("After window filter (%s..%s) : %d dates remain : %s",
+                        start_compact, end_compact, len(in_window), in_window[:20])
+
+            # If window filter excluded everything, fall back to syncing ALL returned dates.
+            # This handles the case where the user's account has old historical activity
+            # outside the standard 90-day window (very common for PropFirm accounts).
+            dates_to_sync = in_window if in_window else dates_collected
+            if not in_window and dates_collected:
+                logger.warning(
+                    "Window filter excluded all dates — syncing all %d available dates instead",
+                    len(dates_collected),
+                )
 
             all_fills = []
-            for d in in_window:
-                try:
-                    summary = await client.show_order_history_summary(date=str(d), account_id=account_id)
-                    # summary structure is unknown — log first time + extract
-                    if not getattr(_fetch_fills, "_summary_logged", False):
-                        logger.info("show_order_history_summary(%s) returned: %s (type=%s)",
-                                    d, str(summary)[:300], type(summary).__name__)
-                        _fetch_fills._summary_logged = True  # type: ignore[attr-defined]
-                    if isinstance(summary, list):
-                        all_fills.extend(summary)
-                    elif hasattr(summary, "orders"):
-                        all_fills.extend(summary.orders)
-                    elif hasattr(summary, "fills"):
-                        all_fills.extend(summary.fills)
-                    elif isinstance(summary, dict):
-                        all_fills.extend(summary.get("orders") or summary.get("fills") or [])
-                except Exception as e:  # noqa: BLE001
-                    logger.warning("show_order_history_summary(%s) failed : %s", d, e)
+            for d in dates_to_sync:
+                # Try with account_id kwarg first, fall back to no account_id
+                summary = None
+                for kwargs in (
+                    {"date": d, "account_id": account_id},
+                    {"date": d},
+                ):
+                    try:
+                        summary = await client.show_order_history_summary(**kwargs)
+                        break
+                    except TypeError:
+                        continue
+                    except Exception as e:  # noqa: BLE001
+                        logger.warning("show_order_history_summary(%s) failed : %s", d, e)
+                        break
+
+                if summary is None:
+                    continue
+
+                # Log structure once for diagnosis
+                if not getattr(_fetch_fills, "_summary_logged", False):
+                    logger.info("show_order_history_summary(%s) returned : type=%s, content=%s",
+                                d, type(summary).__name__, str(summary)[:400])
+                    _fetch_fills._summary_logged = True  # type: ignore[attr-defined]
+
+                fills_from_summary = _extract_fills_from_summary(summary, account_id, d)
+                if fills_from_summary:
+                    all_fills.extend(fills_from_summary)
+
+            logger.info("Method B returned %d total fills across %d dates",
+                        len(all_fills), len(dates_to_sync))
             return all_fills
-        except TypeError as e:
-            # account_id may not be a valid kwarg
-            try:
-                logger.info("Retrying show_order_history_summary without account_id")
-                # We can't easily retry the whole thing here ; just log
-                logger.warning("show_order_history_dates/summary TypeError : %s", e)
-            except Exception:
-                pass
         except Exception as e:  # noqa: BLE001
-            logger.warning("show_order_history_dates/summary path failed : %s", e)
+            logger.warning("show_order_history_dates/summary path failed : %s", e, exc_info=True)
 
     logger.error("All fill-fetching strategies exhausted for account %s", account_id)
     return []
+
+
+def _extract_dates(dates_result: Any) -> List[str]:
+    """Extract YYYYMMDD date strings from the protobuf response.
+
+    The response is typically a list of protobuf messages, each having a
+    REPEATED `date` field. Some messages may also have a single `date` attribute.
+    """
+    collected = []
+
+    def _add(d) -> None:
+        s = str(d).strip()
+        if s and len(s) == 8 and s.isdigit():
+            collected.append(s)
+
+    if dates_result is None:
+        return collected
+
+    # If it's a list/iterable of messages
+    try:
+        iterator = iter(dates_result)
+    except TypeError:
+        iterator = [dates_result]
+
+    for msg in iterator:
+        # Try repeated `date` field first
+        date_field = getattr(msg, "date", None)
+        if date_field is not None:
+            # Repeated fields are iterable in protobuf
+            try:
+                if isinstance(date_field, (list, tuple)) or hasattr(date_field, "__iter__") and not isinstance(date_field, str):
+                    for d in date_field:
+                        _add(d)
+                else:
+                    _add(date_field)
+            except Exception:  # noqa: BLE001
+                _add(date_field)
+        else:
+            # Maybe the message itself IS a date string
+            _add(msg)
+
+    return collected
+
+
+def _extract_fills_from_summary(summary: Any, account_id: str, date_str: str) -> List[Any]:
+    """Extract individual fills/executions from a show_order_history_summary response.
+
+    Response shape varies, but typically has either `orders`, `fills`, or `executions`
+    as repeated fields. We try all of them and accumulate.
+    """
+    fills = []
+    if summary is None:
+        return fills
+
+    # Iterate if summary is a list of messages
+    items = summary if isinstance(summary, (list, tuple)) else [summary]
+
+    for msg in items:
+        for field_name in ("fills", "executions", "orders", "order_history", "fill_history"):
+            field = getattr(msg, field_name, None)
+            if field is None:
+                continue
+            try:
+                if hasattr(field, "__iter__") and not isinstance(field, (str, bytes)):
+                    for item in field:
+                        # Tag with date in case the item doesn't have one
+                        if not hasattr(item, "_quantara_date_str"):
+                            try:
+                                setattr(item, "_quantara_date_str", date_str)
+                            except Exception:  # noqa: BLE001
+                                pass
+                        fills.append(item)
+                else:
+                    fills.append(field)
+            except Exception:  # noqa: BLE001
+                pass
+
+    return fills
 
 
 def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -443,10 +531,18 @@ def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[D
             ts = None
     if ts is None:
         ts = getattr(fill, "timestamp", None) or getattr(fill, "trade_time", None)
+
+    # Fallback : use the YYYYMMDD date tag we set when extracting from show_order_history_summary
+    date_str = None
     if ts is None:
+        tagged = getattr(fill, "_quantara_date_str", None)
+        if tagged and len(tagged) == 8 and tagged.isdigit():
+            date_str = f"{tagged[:4]}-{tagged[4:6]}-{tagged[6:]}"
+    if ts is None and date_str is None:
         ts = datetime.now(timezone.utc)
 
-    date_str = ts.date().isoformat() if isinstance(ts, datetime) else str(ts)[:10]
+    if date_str is None:
+        date_str = ts.date().isoformat() if isinstance(ts, datetime) else str(ts)[:10]
     net_pnl = pnl - commission
 
     return {
