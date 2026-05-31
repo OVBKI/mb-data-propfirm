@@ -276,25 +276,81 @@ def _account_id(rithmic_acct: Any) -> str:
 
 
 async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any) -> List[Any]:
+    """Fetch fill history for a Rithmic account.
+
+    In async_rithmic v1.5, methods like get_fill_history live on the OrderPlant,
+    not directly on the RithmicClient. We try multiple attribute paths defensively
+    because the library's delegation pattern varies between versions.
+    """
     account_id = _account_id(rithmic_acct)
+
+    # Resolve the OrderPlant from the client. Try common attribute names.
+    order_plant = None
+    for attr in ("order", "order_plant", "_order_plant", "orderplant"):
+        candidate = getattr(client, attr, None)
+        if candidate is not None and hasattr(candidate, "get_fill_history"):
+            order_plant = candidate
+            break
+    # Also try via a `plants` namespace
+    if order_plant is None and hasattr(client, "plants"):
+        plants = getattr(client, "plants")
+        for attr in ("order", "order_plant"):
+            candidate = getattr(plants, attr, None)
+            if candidate is not None and hasattr(candidate, "get_fill_history"):
+                order_plant = candidate
+                break
+
+    # Last resort : try methods directly on client (for older versions)
+    target = order_plant if order_plant is not None else client
+
+    # Try get_fill_history first (preferred)
+    last_error = None
+    for args_with in (
+        {"start_time": start, "end_time": end, "account_id": account_id},
+        {"start_time": start, "end_time": end},
+    ):
+        try:
+            fn = getattr(target, "get_fill_history", None)
+            if fn is None:
+                last_error = AttributeError("get_fill_history missing")
+                break
+            fills = await fn(**args_with)
+            return list(fills) if fills else []
+        except TypeError as e:
+            # Try with fewer kwargs
+            last_error = e
+            continue
+        except Exception as e:  # noqa: BLE001
+            last_error = e
+            logger.warning("get_fill_history failed (target=%s, args=%s) : %s",
+                           type(target).__name__, list(args_with.keys()), e)
+            break
+
+    # Fall back to replay_executions
     try:
-        fills = await client.get_fill_history(start_time=start, end_time=end, account_id=account_id)
-        return list(fills) if fills else []
+        fn = getattr(target, "replay_executions", None)
+        if fn is not None:
+            fills = await fn(start_time=start, end_time=end, account_id=account_id)
+            return list(fills) if fills else []
     except TypeError:
         try:
-            fills = await client.get_fill_history(start_time=start, end_time=end)
-            return list(fills) if fills else []
-        except Exception as e:
-            logger.warning("get_fill_history failed : %s — trying replay_executions", e)
-    except Exception as e:
-        logger.warning("get_fill_history failed : %s — trying replay_executions", e)
-
-    try:
-        replay = await client.replay_executions(start_time=start, end_time=end, account_id=account_id)
-        return list(replay) if replay else []
-    except Exception as e:
+            fn = getattr(target, "replay_executions", None)
+            if fn is not None:
+                fills = await fn(start_time=start, end_time=end)
+                return list(fills) if fills else []
+        except Exception as e:  # noqa: BLE001
+            logger.error("replay_executions (no account_id) also failed : %s", e)
+    except Exception as e:  # noqa: BLE001
         logger.error("replay_executions also failed : %s", e)
-        return []
+
+    logger.error(
+        "No method to fetch fills found on Rithmic client (target=%s, last error=%s). "
+        "Available attrs: %s",
+        type(target).__name__,
+        last_error,
+        [a for a in dir(target) if not a.startswith("_") and "fill" in a.lower() or "exec" in a.lower()][:10],
+    )
+    return []
 
 
 def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[Dict[str, Any]]:
