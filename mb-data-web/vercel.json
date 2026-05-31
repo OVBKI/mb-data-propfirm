@@ -19,10 +19,6 @@
     {
       "path": "/api/cron/drawdown-guardian",
       "schedule": "30 14 * * 1-5"
-    },
-    {
-      "path": "/api/cron/rithmic-poll",
-      "schedule": "*/15 * * * *"
     }
   ]
 }
