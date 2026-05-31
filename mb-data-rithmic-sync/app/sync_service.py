@@ -278,78 +278,91 @@ def _account_id(rithmic_acct: Any) -> str:
 async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any) -> List[Any]:
     """Fetch fill history for a Rithmic account.
 
-    In async_rithmic v1.5, methods like get_fill_history live on the OrderPlant,
-    not directly on the RithmicClient. We try multiple attribute paths defensively
-    because the library's delegation pattern varies between versions.
+    async_rithmic exposes methods in different ways depending on version. This function
+    is highly defensive — it logs the full client surface on failure so we can diagnose.
     """
     account_id = _account_id(rithmic_acct)
 
-    # Resolve the OrderPlant from the client. Try common attribute names.
-    order_plant = None
-    for attr in ("order", "order_plant", "_order_plant", "orderplant"):
-        candidate = getattr(client, attr, None)
-        if candidate is not None and hasattr(candidate, "get_fill_history"):
-            order_plant = candidate
-            break
-    # Also try via a `plants` namespace
-    if order_plant is None and hasattr(client, "plants"):
-        plants = getattr(client, "plants")
-        for attr in ("order", "order_plant"):
-            candidate = getattr(plants, attr, None)
-            if candidate is not None and hasattr(candidate, "get_fill_history"):
-                order_plant = candidate
-                break
+    # ── Diagnostic : on logue TOUT ce que le client expose, une seule fois par sync.
+    if not getattr(_fetch_fills, "_diagnostics_logged", False):
+        all_attrs = [a for a in dir(client) if not a.startswith("_")]
+        logger.info("Rithmic client class: %s", type(client).__name__)
+        logger.info("Rithmic client public attrs (%d): %s", len(all_attrs), all_attrs)
+        # For each, log what it is (method, plant, value)
+        for a in all_attrs:
+            try:
+                v = getattr(client, a, None)
+                t = type(v).__name__
+                is_method = callable(v) and not isinstance(v, type)
+                logger.info("  %s -> %s%s", a, t, " (method)" if is_method else "")
+            except Exception:  # noqa: BLE001
+                pass
+        _fetch_fills._diagnostics_logged = True  # type: ignore[attr-defined]
 
-    # Last resort : try methods directly on client (for older versions)
-    target = order_plant if order_plant is not None else client
+    # Try to find a callable named get_fill_history anywhere on the client surface
+    candidates = []
 
-    # Try get_fill_history first (preferred)
-    last_error = None
-    for args_with in (
-        {"start_time": start, "end_time": end, "account_id": account_id},
-        {"start_time": start, "end_time": end},
-    ):
-        try:
-            fn = getattr(target, "get_fill_history", None)
-            if fn is None:
-                last_error = AttributeError("get_fill_history missing")
-                break
-            fills = await fn(**args_with)
-            return list(fills) if fills else []
-        except TypeError as e:
-            # Try with fewer kwargs
-            last_error = e
+    # Direct methods on client
+    for name in ("get_fill_history", "list_executions", "get_executions", "get_fills",
+                 "replay_executions", "fill_history", "execution_history"):
+        fn = getattr(client, name, None)
+        if callable(fn):
+            candidates.append((f"client.{name}", fn))
+
+    # Methods on potential plant attributes
+    for plant_attr in ("order", "order_plant", "plants", "_plants", "history", "history_plant"):
+        plant = getattr(client, plant_attr, None)
+        if plant is None:
             continue
-        except Exception as e:  # noqa: BLE001
-            last_error = e
-            logger.warning("get_fill_history failed (target=%s, args=%s) : %s",
-                           type(target).__name__, list(args_with.keys()), e)
-            break
+        for name in ("get_fill_history", "list_executions", "get_executions", "get_fills",
+                     "replay_executions", "fill_history"):
+            fn = getattr(plant, name, None)
+            if callable(fn):
+                candidates.append((f"client.{plant_attr}.{name}", fn))
+        # If `plants` is a dict/namespace, also try plants["order"]
+        if hasattr(plant, "order"):
+            order = getattr(plant, "order")
+            for name in ("get_fill_history", "list_executions", "get_executions", "get_fills",
+                         "replay_executions", "fill_history"):
+                fn = getattr(order, name, None)
+                if callable(fn):
+                    candidates.append((f"client.{plant_attr}.order.{name}", fn))
 
-    # Fall back to replay_executions
-    try:
-        fn = getattr(target, "replay_executions", None)
-        if fn is not None:
-            fills = await fn(start_time=start, end_time=end, account_id=account_id)
-            return list(fills) if fills else []
-    except TypeError:
-        try:
-            fn = getattr(target, "replay_executions", None)
-            if fn is not None:
-                fills = await fn(start_time=start, end_time=end)
-                return list(fills) if fills else []
-        except Exception as e:  # noqa: BLE001
-            logger.error("replay_executions (no account_id) also failed : %s", e)
-    except Exception as e:  # noqa: BLE001
-        logger.error("replay_executions also failed : %s", e)
+    if not candidates:
+        logger.error(
+            "No fill-fetching method found anywhere on Rithmic client. "
+            "Client class: %s. Public attrs: %s",
+            type(client).__name__,
+            [a for a in dir(client) if not a.startswith("_")],
+        )
+        return []
 
-    logger.error(
-        "No method to fetch fills found on Rithmic client (target=%s, last error=%s). "
-        "Available attrs: %s",
-        type(target).__name__,
-        last_error,
-        [a for a in dir(target) if not a.startswith("_") and "fill" in a.lower() or "exec" in a.lower()][:10],
-    )
+    logger.info("Found %d fill-fetching candidates: %s", len(candidates), [c[0] for c in candidates])
+
+    # Try each candidate with progressively fewer kwargs
+    for path, fn in candidates:
+        for kwargs in (
+            {"start_time": start, "end_time": end, "account_id": account_id},
+            {"start_time": start, "end_time": end},
+            {"start": start, "end": end, "account_id": account_id},
+            {"start": start, "end": end},
+            {"account_id": account_id},
+            {},
+        ):
+            try:
+                logger.info("Trying %s(%s)", path, list(kwargs.keys()))
+                fills = await fn(**kwargs)
+                fills_list = list(fills) if fills else []
+                logger.info("✓ %s returned %d fills for account %s", path, len(fills_list), account_id)
+                return fills_list
+            except TypeError as e:
+                # Wrong kwargs, try next
+                continue
+            except Exception as e:  # noqa: BLE001
+                logger.warning("✗ %s(%s) failed : %s", path, list(kwargs.keys()), e)
+                break  # don't retry same method with other kwargs if it errored
+
+    logger.error("All %d candidates failed for account %s", len(candidates), account_id)
     return []
 
 
