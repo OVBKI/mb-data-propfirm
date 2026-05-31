@@ -40,7 +40,12 @@ def _fetch_jwks() -> dict:
     if _JWKS_CACHE is not None:
         return _JWKS_CACHE
     settings = get_settings()
+    # Defensive : if the user pasted the URL with /rest/v1 (REST API path) or
+    # /auth/v1 (auth API path), strip those suffixes to get the project root.
     base = settings.supabase_url.rstrip("/")
+    for suffix in ("/rest/v1", "/auth/v1"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
     url = f"{base}/auth/v1/.well-known/jwks.json"
     # Supabase requires `apikey` header on auth endpoints; service_role works.
     headers = {"apikey": settings.supabase_service_role_key}
