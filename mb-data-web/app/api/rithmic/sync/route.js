@@ -17,9 +17,9 @@ export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
-  // Rate limit : 1 sync every 5 min — sync is heavy, no need to spam
-  const limit = rateLimit({ key: `rithmic-sync:${auth.user.id}`, windowMs: 5 * 60_000, max: 1 })
-  if (!limit.allowed) return rateLimitResponse(limit, 'Sync déjà en cours ou récent. Attends 5 minutes.')
+  // Rate limit : 3 syncs every 5 min — sync is heavy, allows a few retries during testing
+  const limit = rateLimit({ key: `rithmic-sync:${auth.user.id}`, windowMs: 5 * 60_000, max: 3 })
+  if (!limit.allowed) return rateLimitResponse(limit, 'Trop de syncs lancés récemment. Attends 5 minutes.')
 
   let body
   try { body = await request.json() } catch { body = {} }
