@@ -435,7 +435,7 @@ def _extract_dates(dates_result: Any) -> List[str]:
     collected = []
 
     def _add(d) -> None:
-        s = str(d).strip()
+        s = str(d).strip().strip('"')
         if s and len(s) == 8 and s.isdigit():
             collected.append(s)
 
@@ -444,26 +444,56 @@ def _extract_dates(dates_result: Any) -> List[str]:
 
     # If it's a list/iterable of messages
     try:
-        iterator = iter(dates_result)
+        iterator = list(iter(dates_result))
     except TypeError:
         iterator = [dates_result]
 
-    for msg in iterator:
-        # Try repeated `date` field first
+    for idx, msg in enumerate(iterator):
+        # ── DIAGNOSTIC : log message structure once for the first message
+        if idx == 0 and not getattr(_extract_dates, "_msg_logged", False):
+            msg_attrs = [a for a in dir(msg) if not a.startswith("_") and not a[0].isupper()]
+            logger.info(
+                "First message in dates_result : type=%s, public attrs=%s",
+                type(msg).__name__, msg_attrs[:50],
+            )
+            # Try ListFields() — standard protobuf method
+            if hasattr(msg, "ListFields"):
+                try:
+                    fields = msg.ListFields()
+                    logger.info("ListFields() returned %d fields:", len(fields))
+                    for f_desc, f_value in fields:
+                        logger.info("  field name=%s, type=%s, value=%s",
+                                    f_desc.name, type(f_value).__name__, str(f_value)[:150])
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("ListFields failed: %s", e)
+            _extract_dates._msg_logged = True  # type: ignore[attr-defined]
+
+        # Try direct attribute access
         date_field = getattr(msg, "date", None)
         if date_field is not None:
-            # Repeated fields are iterable in protobuf
             try:
-                if isinstance(date_field, (list, tuple)) or hasattr(date_field, "__iter__") and not isinstance(date_field, str):
-                    for d in date_field:
-                        _add(d)
-                else:
-                    _add(date_field)
-            except Exception:  # noqa: BLE001
+                # Repeated fields are iterable in protobuf
+                for d in date_field:
+                    _add(d)
+            except TypeError:
+                # Not iterable, single value
                 _add(date_field)
         else:
-            # Maybe the message itself IS a date string
-            _add(msg)
+            # Try via ListFields() — guaranteed to work for any protobuf
+            if hasattr(msg, "ListFields"):
+                try:
+                    for f_desc, f_value in msg.ListFields():
+                        if f_desc.name == "date":
+                            try:
+                                for d in f_value:
+                                    _add(d)
+                            except TypeError:
+                                _add(f_value)
+                except Exception:  # noqa: BLE001
+                    pass
+            else:
+                # Last resort: maybe the message itself IS a date string
+                _add(msg)
 
     return collected
 
