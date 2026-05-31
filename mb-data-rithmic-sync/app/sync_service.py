@@ -572,6 +572,111 @@ async def _fetch_fills(
             logger.warning("DIAG D top-level failed : %s", str(e)[:200])
         _fetch_fills._strategies_tested = True  # type: ignore[attr-defined]
 
+    # ── DIAGNOSTIC E : subscribe-then-replay
+    # Theory : show_order_history_summary returns [] immediately (just ACK), then
+    # the actual fills arrive asynchronously via on_rithmic_order_notification.
+    # If we register handlers BEFORE the call and wait, we may capture them.
+    if user_id is not None and not getattr(_fetch_fills, "_subscribe_tested", False):
+        import asyncio as _asyncio
+
+        captured: List[Dict[str, Any]] = []
+
+        def _on_rithmic_order(*args, **kwargs):
+            try:
+                captured.append({
+                    "source": "rithmic_order_notif",
+                    "args_count": len(args),
+                    "args_types": [type(a).__name__ for a in args[:3]],
+                    "args_repr": [str(a)[:300] for a in args[:3]],
+                    "kwargs_keys": list(kwargs.keys())[:10],
+                })
+            except Exception:  # noqa: BLE001
+                pass
+
+        def _on_exchange_order(*args, **kwargs):
+            try:
+                captured.append({
+                    "source": "exchange_order_notif",
+                    "args_count": len(args),
+                    "args_types": [type(a).__name__ for a in args[:3]],
+                    "args_repr": [str(a)[:300] for a in args[:3]],
+                    "kwargs_keys": list(kwargs.keys())[:10],
+                })
+            except Exception:  # noqa: BLE001
+                pass
+
+        subscribe_method_used = "none"
+        try:
+            ev1 = getattr(client, "on_rithmic_order_notification", None)
+            ev2 = getattr(client, "on_exchange_order_notification", None)
+
+            # async_rithmic uses the `events` package — Event objects are callable
+            # and support += operator to add listeners.
+            if ev1 is not None:
+                try:
+                    if hasattr(ev1, "__iadd__"):
+                        client.on_rithmic_order_notification += _on_rithmic_order
+                        subscribe_method_used = "iadd"
+                    elif hasattr(ev1, "subscribe"):
+                        ev1.subscribe(_on_rithmic_order)
+                        subscribe_method_used = "subscribe_method"
+                    elif callable(ev1):
+                        try:
+                            ev1(_on_rithmic_order)
+                            subscribe_method_used = "call"
+                        except Exception:  # noqa: BLE001
+                            pass
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("DIAG E : failed to subscribe to on_rithmic_order : %s", str(e)[:200])
+
+            if ev2 is not None:
+                try:
+                    if hasattr(ev2, "__iadd__"):
+                        client.on_exchange_order_notification += _on_exchange_order
+                    elif hasattr(ev2, "subscribe"):
+                        ev2.subscribe(_on_exchange_order)
+                except Exception:  # noqa: BLE001
+                    pass
+
+            logger.info("DIAG E : subscribed via '%s', calling show_order_history_summary",
+                        subscribe_method_used)
+
+            # Call the trigger — may return [] but should fire async events
+            try:
+                trigger_result = await client.show_order_history_summary(
+                    date="20250413", account_id=account_id
+                )
+                trigger_repr = str(trigger_result)[:200]
+            except Exception as e:  # noqa: BLE001
+                trigger_repr = f"EXC: {type(e).__name__}: {str(e)[:200]}"
+
+            # Wait for events to fire
+            await _asyncio.sleep(10)
+
+            # Persist the result
+            sb = get_supabase()
+            sb.table("rithmic_debug").insert({
+                "user_id": user_id,
+                "account_id": f"__diag_e__{account_id}",
+                "date_str": "E_subscribe_replay",
+                "summary_type": "subscribe_then_replay",
+                "summary_repr": (
+                    f"subscribe_via={subscribe_method_used}, "
+                    f"trigger_result={trigger_repr}, "
+                    f"captured_events={len(captured)}"
+                )[:1500],
+                "fields_json": {
+                    "subscribe_via": subscribe_method_used,
+                    "trigger_result": trigger_repr,
+                    "captured_count": len(captured),
+                    "captured_events": captured[:10],  # first 10 only
+                },
+            }).execute()
+            logger.info("DIAG E : captured %d events after replay trigger", len(captured))
+        except Exception as e:  # noqa: BLE001
+            logger.warning("DIAG E top-level failed : %s", str(e)[:300])
+        _fetch_fills._subscribe_tested = True  # type: ignore[attr-defined]
+
     # ── Méthode B : show_order_history_dates + show_order_history_summary
     if hasattr(client, "show_order_history_dates") and hasattr(client, "show_order_history_summary"):
         try:
