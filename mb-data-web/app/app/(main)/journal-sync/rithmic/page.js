@@ -28,18 +28,20 @@ const C = {
 // The actual list depends on what Rithmic provisions for YOUR account — if your
 // chosen value isn't accepted, the sync will return an error listing the valid
 // values. In that case use the "custom" option and type the exact name.
-// Source: Rithmic OS connect dropdown / what's in the user's account agreement.
+//
+// IMPORTANT : system_name is case- and space-sensitive. Use EXACTLY what R|Trader
+// Pro shows in its "System" dropdown at the login screen.
 const SYSTEMS = [
   { value: 'Rithmic Test', label: 'Rithmic Test (free demo)' },
   { value: 'Rithmic Paper Trading', label: 'Rithmic Paper Trading' },
   { value: 'Rithmic 04 Colo', label: 'Rithmic 04 Colo (production)' },
   { value: 'Rithmic 01', label: 'Rithmic 01' },
   { value: 'Rithmic 04', label: 'Rithmic 04' },
-  { value: 'TopstepTrader', label: 'TopstepTrader' },
+  { value: 'TopstepTrader', label: 'Topstep' },
   { value: 'Apex', label: 'Apex Trader Funding' },
+  { value: 'LucidTrading', label: 'Lucid Trading' },
   { value: 'My Funded Futures', label: 'My Funded Futures' },
   { value: 'Tradeify', label: 'Tradeify' },
-  { value: 'Lucid Trading', label: 'Lucid Trading' },
   { value: 'Take Profit Trader', label: 'Take Profit Trader' },
   { value: 'Bulenox', label: 'Bulenox' },
 ]
