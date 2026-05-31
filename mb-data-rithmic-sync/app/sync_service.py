@@ -579,6 +579,20 @@ async def _fetch_fills(
     if user_id is not None and not getattr(_fetch_fills, "_subscribe_tested", False):
         import asyncio as _asyncio
 
+        # Marker insert : if the block crashes silently, we'll still see this row,
+        # confirming the code path was entered.
+        try:
+            get_supabase().table("rithmic_debug").insert({
+                "user_id": user_id,
+                "account_id": f"__diag_e_marker__{account_id}",
+                "date_str": "E_marker_started",
+                "summary_type": "marker",
+                "summary_repr": "DIAG E block entered",
+                "fields_json": {},
+            }).execute()
+        except Exception as e:  # noqa: BLE001
+            logger.warning("DIAG E marker insert failed : %s", str(e)[:200])
+
         captured: List[Dict[str, Any]] = []
 
         def _on_rithmic_order(*args, **kwargs):
