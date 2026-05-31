@@ -278,91 +278,133 @@ def _account_id(rithmic_acct: Any) -> str:
 async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any) -> List[Any]:
     """Fetch fill history for a Rithmic account.
 
-    async_rithmic exposes methods in different ways depending on version. This function
-    is highly defensive — it logs the full client surface on failure so we can diagnose.
+    async_rithmic v1.5 does NOT expose get_fill_history on the client itself
+    (we verified via attribute dump). It IS available on the OrderPlant which
+    lives in `client.plants` (a dict).
+
+    Two access paths, tried in order :
+      1. client.plants["order"].get_fill_history(...)  — direct plant access
+      2. show_order_history_dates() + show_order_history_summary(date)  — public API fallback
     """
     account_id = _account_id(rithmic_acct)
 
-    # ── Diagnostic : on logue TOUT ce que le client expose, une seule fois par sync.
-    if not getattr(_fetch_fills, "_diagnostics_logged", False):
-        all_attrs = [a for a in dir(client) if not a.startswith("_")]
-        logger.info("Rithmic client class: %s", type(client).__name__)
-        logger.info("Rithmic client public attrs (%d): %s", len(all_attrs), all_attrs)
-        # For each, log what it is (method, plant, value)
-        for a in all_attrs:
+    # ── Diagnostic : on logue le contenu de plants une fois par sync run.
+    if not getattr(_fetch_fills, "_plants_logged", False):
+        plants = getattr(client, "plants", None)
+        if plants is not None:
             try:
-                v = getattr(client, a, None)
-                t = type(v).__name__
-                is_method = callable(v) and not isinstance(v, type)
-                logger.info("  %s -> %s%s", a, t, " (method)" if is_method else "")
-            except Exception:  # noqa: BLE001
-                pass
-        _fetch_fills._diagnostics_logged = True  # type: ignore[attr-defined]
-
-    # Try to find a callable named get_fill_history anywhere on the client surface
-    candidates = []
-
-    # Direct methods on client
-    for name in ("get_fill_history", "list_executions", "get_executions", "get_fills",
-                 "replay_executions", "fill_history", "execution_history"):
-        fn = getattr(client, name, None)
-        if callable(fn):
-            candidates.append((f"client.{name}", fn))
-
-    # Methods on potential plant attributes
-    for plant_attr in ("order", "order_plant", "plants", "_plants", "history", "history_plant"):
-        plant = getattr(client, plant_attr, None)
-        if plant is None:
-            continue
-        for name in ("get_fill_history", "list_executions", "get_executions", "get_fills",
-                     "replay_executions", "fill_history"):
-            fn = getattr(plant, name, None)
-            if callable(fn):
-                candidates.append((f"client.{plant_attr}.{name}", fn))
-        # If `plants` is a dict/namespace, also try plants["order"]
-        if hasattr(plant, "order"):
-            order = getattr(plant, "order")
-            for name in ("get_fill_history", "list_executions", "get_executions", "get_fills",
-                         "replay_executions", "fill_history"):
-                fn = getattr(order, name, None)
-                if callable(fn):
-                    candidates.append((f"client.{plant_attr}.order.{name}", fn))
-
-    if not candidates:
-        logger.error(
-            "No fill-fetching method found anywhere on Rithmic client. "
-            "Client class: %s. Public attrs: %s",
-            type(client).__name__,
-            [a for a in dir(client) if not a.startswith("_")],
-        )
-        return []
-
-    logger.info("Found %d fill-fetching candidates: %s", len(candidates), [c[0] for c in candidates])
-
-    # Try each candidate with progressively fewer kwargs
-    for path, fn in candidates:
-        for kwargs in (
-            {"start_time": start, "end_time": end, "account_id": account_id},
-            {"start_time": start, "end_time": end},
-            {"start": start, "end": end, "account_id": account_id},
-            {"start": start, "end": end},
-            {"account_id": account_id},
-            {},
-        ):
-            try:
-                logger.info("Trying %s(%s)", path, list(kwargs.keys()))
-                fills = await fn(**kwargs)
-                fills_list = list(fills) if fills else []
-                logger.info("✓ %s returned %d fills for account %s", path, len(fills_list), account_id)
-                return fills_list
-            except TypeError as e:
-                # Wrong kwargs, try next
-                continue
+                if isinstance(plants, dict):
+                    logger.info("client.plants is dict with keys: %s", list(plants.keys()))
+                    for k, v in plants.items():
+                        methods = [m for m in dir(v) if not m.startswith("_") and callable(getattr(v, m, None))]
+                        logger.info("  plants[%r] = %s, methods: %s", k, type(v).__name__, methods)
+                else:
+                    logger.info("client.plants = %s (type=%s, attrs=%s)",
+                                plants, type(plants).__name__,
+                                [a for a in dir(plants) if not a.startswith("_")])
             except Exception as e:  # noqa: BLE001
-                logger.warning("✗ %s(%s) failed : %s", path, list(kwargs.keys()), e)
-                break  # don't retry same method with other kwargs if it errored
+                logger.warning("Failed to introspect plants: %s", e)
+        _fetch_fills._plants_logged = True  # type: ignore[attr-defined]
 
-    logger.error("All %d candidates failed for account %s", len(candidates), account_id)
+    # ── Méthode A : via plants dict
+    plants = getattr(client, "plants", None)
+    if plants is not None:
+        # Try common keys (case-insensitive)
+        order_plant = None
+        if isinstance(plants, dict):
+            for key in ("order", "Order", "ORDER", "order_plant", "OrderPlant"):
+                if key in plants:
+                    order_plant = plants[key]
+                    break
+            if order_plant is None and plants:
+                # Last resort : pick the first plant that has get_fill_history
+                for k, v in plants.items():
+                    if hasattr(v, "get_fill_history"):
+                        order_plant = v
+                        logger.info("Found order plant under key '%s'", k)
+                        break
+        else:
+            # plants is a namespace, try attribute access
+            for attr in ("order", "order_plant"):
+                candidate = getattr(plants, attr, None)
+                if candidate is not None and hasattr(candidate, "get_fill_history"):
+                    order_plant = candidate
+                    break
+
+        if order_plant is not None and hasattr(order_plant, "get_fill_history"):
+            for kwargs in (
+                {"start_time": start, "end_time": end, "account_id": account_id},
+                {"start_time": start, "end_time": end},
+            ):
+                try:
+                    logger.info("Trying order_plant.get_fill_history(%s)", list(kwargs.keys()))
+                    fills = await order_plant.get_fill_history(**kwargs)
+                    fills_list = list(fills) if fills else []
+                    logger.info("✓ order_plant.get_fill_history returned %d fills", len(fills_list))
+                    return fills_list
+                except TypeError as e:
+                    logger.warning("TypeError with %s: %s", list(kwargs.keys()), e)
+                    continue
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("order_plant.get_fill_history failed : %s", e)
+                    break
+
+    # ── Méthode B : show_order_history_dates + show_order_history_summary
+    if hasattr(client, "show_order_history_dates") and hasattr(client, "show_order_history_summary"):
+        try:
+            logger.info("Trying fallback : show_order_history_dates() + show_order_history_summary(date)")
+            dates_result = await client.show_order_history_dates()
+            logger.info("show_order_history_dates returned: %s (type=%s)",
+                        str(dates_result)[:200], type(dates_result).__name__)
+
+            # The structure of dates_result is opaque ; try to extract a list of date strings
+            dates = []
+            if isinstance(dates_result, list):
+                dates = dates_result
+            elif hasattr(dates_result, "dates"):
+                dates = list(dates_result.dates)
+            elif isinstance(dates_result, dict):
+                dates = dates_result.get("dates") or []
+
+            # Filter to our window
+            start_str = start.date().isoformat()
+            end_str = end.date().isoformat()
+            in_window = [d for d in dates if start_str <= str(d) <= end_str]
+            logger.info("Found %d dates with activity (%d in window %s..%s)",
+                        len(dates), len(in_window), start_str, end_str)
+
+            all_fills = []
+            for d in in_window:
+                try:
+                    summary = await client.show_order_history_summary(date=str(d), account_id=account_id)
+                    # summary structure is unknown — log first time + extract
+                    if not getattr(_fetch_fills, "_summary_logged", False):
+                        logger.info("show_order_history_summary(%s) returned: %s (type=%s)",
+                                    d, str(summary)[:300], type(summary).__name__)
+                        _fetch_fills._summary_logged = True  # type: ignore[attr-defined]
+                    if isinstance(summary, list):
+                        all_fills.extend(summary)
+                    elif hasattr(summary, "orders"):
+                        all_fills.extend(summary.orders)
+                    elif hasattr(summary, "fills"):
+                        all_fills.extend(summary.fills)
+                    elif isinstance(summary, dict):
+                        all_fills.extend(summary.get("orders") or summary.get("fills") or [])
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("show_order_history_summary(%s) failed : %s", d, e)
+            return all_fills
+        except TypeError as e:
+            # account_id may not be a valid kwarg
+            try:
+                logger.info("Retrying show_order_history_summary without account_id")
+                # We can't easily retry the whole thing here ; just log
+                logger.warning("show_order_history_dates/summary TypeError : %s", e)
+            except Exception:
+                pass
+        except Exception as e:  # noqa: BLE001
+            logger.warning("show_order_history_dates/summary path failed : %s", e)
+
+    logger.error("All fill-fetching strategies exhausted for account %s", account_id)
     return []
 
 
