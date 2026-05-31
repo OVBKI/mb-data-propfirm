@@ -1,67 +1,115 @@
 """Core sync logic — pulls Rithmic fills into Supabase journal_entries.
 
-Mapping strategy :
-1. For each fill returned by Rithmic, look up the matching Quantara account via
-   `accounts.rithmic_account_id` (the user must populate this once when they set up
-   their account in Quantara).
-2. Convert the fill to a `journal_entries` row.
-3. Upsert by (user_id, rithmic_fill_id) — idempotent so re-running the sync doesn't
-   duplicate trades.
-
-The Rithmic `fill` object structure depends on async_rithmic — we defensively pull
-fields by getattr because the proto field names can change between Rithmic versions.
+Multi-credentials model (since migration 002) :
+  - A user can have N sets of credentials, each identified by a `label`
+  - `list_credentials_meta(user_id)` returns metadata for all sets
+  - `get_credentials_by_label(user_id, label)` decrypts a single set
+  - `run_historical_sync(user_id, days, label=None)`:
+      - If label given, sync only that one set
+      - If label None, sync ALL sets sequentially
 """
 from __future__ import annotations
 
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from .crypto import decrypt
+from .crypto import decrypt, encrypt
 from .rithmic_client import rithmic_session
 from .supabase_client import get_supabase
 
 logger = logging.getLogger(__name__)
 
 
-# ── Public API ─────────────────────────────────────────────────────────────
+# ── Credentials CRUD ───────────────────────────────────────────────────────
 
-async def get_credentials(user_id: str) -> Optional[Dict[str, str]]:
-    """Fetch + decrypt the Rithmic credentials for a Quantara user.
-    Returns dict with user, password, system_name — or None if not configured."""
+async def list_credentials_meta(user_id: str) -> List[Dict[str, Any]]:
+    """List metadata for all credentials sets of a user (no decryption)."""
     sb = get_supabase()
-    res = sb.table("rithmic_credentials").select("*").eq("user_id", user_id).execute()
+    res = (
+        sb.table("rithmic_credentials")
+        .select("id, user_id, label, system_name, updated_at")
+        .eq("user_id", user_id)
+        .order("label")
+        .execute()
+    )
+    return res.data or []
+
+
+async def get_credentials_by_label(user_id: str, label: str) -> Optional[Dict[str, str]]:
+    """Fetch + decrypt one credentials set."""
+    sb = get_supabase()
+    res = (
+        sb.table("rithmic_credentials")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("label", label)
+        .execute()
+    )
     if not res.data:
         return None
     row = res.data[0]
     try:
         return {
+            "label": row["label"],
             "user": decrypt(row["encrypted_username"]),
             "password": decrypt(row["encrypted_password"]),
             "system_name": row["system_name"],
         }
     except ValueError:
-        logger.exception("Failed to decrypt credentials for user %s", user_id)
+        logger.exception("Failed to decrypt credentials for user=%s label=%s", user_id, label)
         return None
 
 
-async def upsert_credentials(user_id: str, username: str, password: str, system_name: str) -> None:
-    """Encrypt + upsert (one row per Quantara user)."""
-    from .crypto import encrypt
+async def upsert_credentials(
+    user_id: str,
+    label: str,
+    username: str,
+    password: str,
+    system_name: str,
+) -> Dict[str, Any]:
+    """Encrypt + upsert by (user_id, label). Returns the saved row metadata."""
     sb = get_supabase()
-    sb.table("rithmic_credentials").upsert({
+    payload = {
         "user_id": user_id,
+        "label": label,
         "encrypted_username": encrypt(username),
         "encrypted_password": encrypt(password),
         "system_name": system_name,
         "updated_at": datetime.now(timezone.utc).isoformat(),
-    }, on_conflict="user_id").execute()
+    }
+    res = sb.table("rithmic_credentials").upsert(payload, on_conflict="user_id,label").execute()
+    if not res.data:
+        # Fetch the row after upsert to return the id/updated_at
+        meta = (
+            sb.table("rithmic_credentials")
+            .select("id, user_id, label, system_name, updated_at")
+            .eq("user_id", user_id)
+            .eq("label", label)
+            .single()
+            .execute()
+        )
+        return meta.data
+    row = res.data[0]
+    return {
+        "id": row["id"],
+        "user_id": row["user_id"],
+        "label": row["label"],
+        "system_name": row["system_name"],
+        "updated_at": row["updated_at"],
+    }
 
 
-async def delete_credentials(user_id: str) -> bool:
+async def delete_credentials_by_label(user_id: str, label: str) -> bool:
     sb = get_supabase()
-    res = sb.table("rithmic_credentials").delete().eq("user_id", user_id).execute()
+    res = (
+        sb.table("rithmic_credentials")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("label", label)
+        .execute()
+    )
     return bool(res.data)
 
 
@@ -70,22 +118,58 @@ async def delete_credentials(user_id: str) -> bool:
 async def run_historical_sync(
     user_id: str,
     days: int = 90,
+    label: Optional[str] = None,
     account_filter: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Sync the last `days` of fills for a user. Returns a summary dict.
+    """Sync the last `days` of fills. If label is None, syncs ALL credentials sets."""
+    if label:
+        creds = await get_credentials_by_label(user_id, label)
+        if not creds:
+            raise ValueError(f"No credentials with label '{label}' for this user")
+        return await _sync_one(user_id, creds, days, account_filter)
 
-    Steps :
-      1. Load + decrypt Rithmic creds
-      2. Load Quantara accounts that have rithmic_account_id set
-      3. Connect to Rithmic
-      4. For each Quantara→Rithmic account mapping, pull fill history
-      5. Map fills to journal_entries rows
-      6. Upsert by (user_id, source_id) to avoid duplicates
-    """
-    creds = await get_credentials(user_id)
-    if not creds:
-        raise ValueError("No Rithmic credentials configured for this user")
+    # Sync all
+    metas = await list_credentials_meta(user_id)
+    if not metas:
+        raise ValueError("No Rithmic credentials configured")
 
+    total_trades = 0
+    total_accounts = 0
+    all_errors: List[str] = []
+
+    for meta in metas:
+        cred_label = meta["label"]
+        creds = await get_credentials_by_label(user_id, cred_label)
+        if not creds:
+            all_errors.append(f"{cred_label}: failed to decrypt")
+            continue
+        try:
+            summary = await _sync_one(user_id, creds, days, account_filter)
+            total_trades += int(summary.get("trades_imported", 0) or 0)
+            total_accounts += int(summary.get("accounts_synced", 0) or 0)
+            for err in summary.get("errors", []) or []:
+                all_errors.append(f"{cred_label}: {err}")
+        except Exception as e:  # noqa: BLE001
+            logger.exception("Sync failed for label=%s", cred_label)
+            all_errors.append(f"{cred_label}: {e}")
+
+    return {
+        "status": "completed" if not all_errors else "completed_with_errors",
+        "trades_imported": total_trades,
+        "accounts_synced": total_accounts,
+        "window_days": days,
+        "errors": all_errors,
+        "credentials_used": len(metas),
+    }
+
+
+async def _sync_one(
+    user_id: str,
+    creds: Dict[str, str],
+    days: int,
+    account_filter: Optional[str],
+) -> Dict[str, Any]:
+    """Sync one credentials set against Rithmic."""
     sb = get_supabase()
     accounts_query = (
         sb.table("accounts")
@@ -102,10 +186,10 @@ async def run_historical_sync(
             "status": "completed",
             "trades_imported": 0,
             "accounts_synced": 0,
-            "note": "No Quantara accounts have rithmic_account_id set. Configure your accounts first.",
+            "note": "No Quantara accounts have rithmic_account_id set.",
+            "errors": [],
         }
 
-    # rithmic_account_id → Quantara account row
     acct_by_rithmic_id: Dict[str, Dict[str, Any]] = {
         a["rithmic_account_id"]: a for a in quantara_accounts if a.get("rithmic_account_id")
     }
@@ -122,15 +206,16 @@ async def run_historical_sync(
         password=creds["password"],
         system_name=creds["system_name"],
     ) as client:
-        # Rithmic exposes accounts on the connected client
         rithmic_accounts = await _safe_list_accounts(client)
-        logger.info("Rithmic exposes %d accounts; %d configured in Quantara", len(rithmic_accounts), len(acct_by_rithmic_id))
+        logger.info(
+            "[%s] Rithmic exposes %d accounts; %d configured in Quantara",
+            creds.get("label", "?"), len(rithmic_accounts), len(acct_by_rithmic_id),
+        )
 
         for rithmic_acct in rithmic_accounts:
             rid = _account_id(rithmic_acct)
             if rid not in acct_by_rithmic_id:
-                continue  # not mapped in Quantara, skip
-
+                continue
             quantara_acct = acct_by_rithmic_id[rid]
             try:
                 fills = await _fetch_fills(client, start, end, rithmic_acct)
@@ -140,7 +225,7 @@ async def run_historical_sync(
                     _upsert_journal_rows(rows)
                     total_trades += len(rows)
                 accounts_synced += 1
-            except Exception as e:  # noqa: BLE001 — we want to record per-account failures
+            except Exception as e:  # noqa: BLE001
                 logger.exception("Sync failed for Rithmic account %s", rid)
                 errors.append(f"{rid}: {e}")
 
@@ -153,12 +238,10 @@ async def run_historical_sync(
     }
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+# ── Helpers (unchanged from v1) ────────────────────────────────────────────
 
 async def _safe_list_accounts(client) -> List[Any]:
-    """async_rithmic exposes accounts via client.accounts (property) and/or list_accounts()."""
     try:
-        # Some versions expose a cached property after connect()
         if getattr(client, "accounts", None):
             return list(client.accounts)
     except Exception:
@@ -171,7 +254,6 @@ async def _safe_list_accounts(client) -> List[Any]:
 
 
 def _account_id(rithmic_acct: Any) -> str:
-    """Extract the account_id from a Rithmic account proto, defensively."""
     for attr in ("account_id", "id", "name"):
         v = getattr(rithmic_acct, attr, None)
         if v:
@@ -180,14 +262,11 @@ def _account_id(rithmic_acct: Any) -> str:
 
 
 async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any) -> List[Any]:
-    """Call client.get_fill_history(start_time, end_time) — fallback to replay_executions."""
     account_id = _account_id(rithmic_acct)
-    # Try get_fill_history first (preferred in async_rithmic v1.5+)
     try:
         fills = await client.get_fill_history(start_time=start, end_time=end, account_id=account_id)
         return list(fills) if fills else []
     except TypeError:
-        # Some versions don't accept account_id kwarg
         try:
             fills = await client.get_fill_history(start_time=start, end_time=end)
             return list(fills) if fills else []
@@ -205,8 +284,6 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
 
 
 def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Map a Rithmic fill to a journal_entries row. Returns None if fill is unusable."""
-    # Defensive : grab common Rithmic proto fields
     fill_id = (
         getattr(fill, "exec_id", None)
         or getattr(fill, "execution_id", None)
@@ -232,7 +309,6 @@ def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[D
         or 0
     )
 
-    # Timestamp — Rithmic uses ssboe (seconds since epoch) + usecs
     ts = None
     ssboe = getattr(fill, "ssboe", None) or getattr(fill, "fill_ssboe", None)
     if ssboe:
@@ -246,7 +322,6 @@ def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[D
         ts = datetime.now(timezone.utc)
 
     date_str = ts.date().isoformat() if isinstance(ts, datetime) else str(ts)[:10]
-
     net_pnl = pnl - commission
 
     return {
@@ -261,7 +336,6 @@ def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[D
         "pnl": pnl,
         "net": net_pnl,
         "commission": commission,
-        # Idempotency marker — matches the legacy format used by CSV importer
         "notes": f"[rithmic:{quantara_acct.get('rithmic_account_id', '')}/{fill_id}]",
         "source": "rithmic-sync",
         "source_id": str(fill_id),
@@ -270,10 +344,7 @@ def _fill_to_journal_row(fill: Any, quantara_acct: Dict[str, Any]) -> Optional[D
 
 
 def _upsert_journal_rows(rows: List[Dict[str, Any]]) -> None:
-    """Upsert by (user_id, source_id) — requires a unique index to be present in Supabase."""
     if not rows:
         return
     sb = get_supabase()
-    # We rely on PostgreSQL UPSERT via on_conflict
-    # NOTE : the unique constraint on (user_id, source_id) must exist (see migration SQL)
     sb.table("journal_entries").upsert(rows, on_conflict="user_id,source_id").execute()

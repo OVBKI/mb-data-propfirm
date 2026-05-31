@@ -24,13 +24,14 @@ export async function POST(request) {
   let body
   try { body = await request.json() } catch { body = {} }
   const days = Math.max(1, Math.min(365, parseInt(body.days, 10) || 90))
+  const label = body.label || null  // null = sync all credentials sets
 
   const token = request.headers.get('authorization')?.split(' ', 2)[1]
   try {
     const res = await fetch(`${RITHMIC_SYNC_URL}/sync/historical`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ days, account_id: body.account_id || null }),
+      body: JSON.stringify({ days, label, account_id: body.account_id || null }),
     })
     const data = await res.json().catch(() => ({}))
     return Response.json(data, { status: res.status })

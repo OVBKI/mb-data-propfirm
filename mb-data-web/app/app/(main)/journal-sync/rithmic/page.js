@@ -1,6 +1,6 @@
 'use client'
-// Rithmic Live Sync — UI to connect Rithmic credentials + trigger historical sync.
-// Talks to the FastAPI service via /api/rithmic/* Next.js proxy routes.
+// Rithmic Live Sync — manage MULTIPLE Rithmic credentials sets per user.
+// Each set is identified by a unique `label`.
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -24,13 +24,7 @@ const C = {
   purple: '#a78bfa',
 }
 
-// The list of Rithmic system_name values traders typically need to pick.
-// The actual list depends on what Rithmic provisions for YOUR account — if your
-// chosen value isn't accepted, the sync will return an error listing the valid
-// values. In that case use the "custom" option and type the exact name.
-//
-// IMPORTANT : system_name is case- and space-sensitive. Use EXACTLY what R|Trader
-// Pro shows in its "System" dropdown at the login screen.
+// system_name values to pick from. Use EXACTLY what R|Trader Pro shows.
 const SYSTEMS = [
   { value: 'Rithmic Test', label: 'Rithmic Test (free demo)' },
   { value: 'Rithmic Paper Trading', label: 'Rithmic Paper Trading' },
@@ -62,24 +56,29 @@ async function authedFetch(path, opts = {}) {
 
 export default function RithmicSyncPage() {
   const { firms, user } = useApp()
-  const [credsStatus, setCredsStatus] = useState(null)  // { has_credentials, system_name }
+
+  // List of saved credentials sets
+  const [credsList, setCredsList] = useState([])
   const [credsLoading, setCredsLoading] = useState(true)
   const [credsError, setCredsError] = useState(null)
 
-  // Form state
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [systemName, setSystemName] = useState(SYSTEMS[0].value)
+  // Form state for adding/editing a connection (null = no form open)
+  const [editingLabel, setEditingLabel] = useState(null)  // label of the one being edited, or '__new__' for new
+  const [formLabel, setFormLabel] = useState('')
+  const [formUsername, setFormUsername] = useState('')
+  const [formPassword, setFormPassword] = useState('')
+  const [formSystem, setFormSystem] = useState(SYSTEMS[0].value)
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState(null)
 
-  // Sync state
+  // Sync state — one job at a time displayed
   const [days, setDays] = useState(90)
+  const [syncLabel, setSyncLabel] = useState('')  // '' = sync all
   const [syncing, setSyncing] = useState(false)
   const [currentJob, setCurrentJob] = useState(null)
   const [syncError, setSyncError] = useState(null)
 
-  // Accounts that have a rithmic_account_id (computed from useApp.firms)
+  // Mapped accounts (from useApp.firms)
   const mappedAccounts = []
   for (const f of (firms || [])) {
     for (const a of (f.accounts || [])) {
@@ -87,31 +86,27 @@ export default function RithmicSyncPage() {
     }
   }
 
-  // Load credentials status on mount
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      try {
-        const res = await authedFetch('/api/rithmic/credentials')
-        const data = await res.json()
-        if (cancelled) return
-        if (!res.ok) {
-          setCredsError(data?.error || `HTTP ${res.status}`)
-        } else {
-          setCredsStatus(data)
-          if (data?.system_name) setSystemName(data.system_name)
-        }
-      } catch (e) {
-        if (!cancelled) setCredsError(e.message)
-      } finally {
-        if (!cancelled) setCredsLoading(false)
+  async function loadCreds() {
+    setCredsError(null)
+    try {
+      const res = await authedFetch('/api/rithmic/credentials')
+      const data = await res.json()
+      if (!res.ok) {
+        setCredsError(data?.error || data?.detail || `HTTP ${res.status}`)
+        setCredsList([])
+      } else {
+        setCredsList(Array.isArray(data) ? data : [])
       }
+    } catch (e) {
+      setCredsError(e.message)
+    } finally {
+      setCredsLoading(false)
     }
-    load()
-    return () => { cancelled = true }
-  }, [])
+  }
 
-  // Poll job status every 3s when a sync is in progress
+  useEffect(() => { loadCreds() }, [])
+
+  // Poll job status every 3s when a sync is running
   useEffect(() => {
     if (!currentJob || currentJob.status === 'completed' || currentJob.status === 'failed') return
     const interval = setInterval(async () => {
@@ -124,10 +119,33 @@ export default function RithmicSyncPage() {
     return () => clearInterval(interval)
   }, [currentJob])
 
-  async function saveCredentials(e) {
+  function openNewForm() {
+    setEditingLabel('__new__')
+    setFormLabel('')
+    setFormUsername('')
+    setFormPassword('')
+    setFormSystem(SYSTEMS[0].value)
+    setSaveMsg(null)
+  }
+
+  function openEditForm(creds) {
+    setEditingLabel(creds.label)
+    setFormLabel(creds.label)
+    setFormUsername('')
+    setFormPassword('')
+    setFormSystem(creds.system_name)
+    setSaveMsg(null)
+  }
+
+  function closeForm() {
+    setEditingLabel(null)
+    setSaveMsg(null)
+  }
+
+  async function saveForm(e) {
     e?.preventDefault?.()
-    if (!username || !password || !systemName) {
-      setSaveMsg({ type: 'error', text: 'Username, password et système requis' })
+    if (!formLabel || !formUsername || !formPassword || !formSystem) {
+      setSaveMsg({ type: 'error', text: 'Tous les champs sont requis (label, user, password, système)' })
       return
     }
     setSaving(true)
@@ -135,14 +153,17 @@ export default function RithmicSyncPage() {
     try {
       const res = await authedFetch('/api/rithmic/credentials', {
         method: 'POST',
-        body: JSON.stringify({ username, password, system_name: systemName }),
+        body: JSON.stringify({
+          label: formLabel,
+          username: formUsername,
+          password: formPassword,
+          system_name: formSystem,
+        }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`)
-      setCredsStatus(data)
-      setSaveMsg({ type: 'success', text: 'Credentials chiffrés et sauvegardés ✓' })
-      setUsername('')
-      setPassword('')
+      if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`)
+      await loadCreds()
+      closeForm()
     } catch (e) {
       setSaveMsg({ type: 'error', text: e.message })
     } finally {
@@ -150,33 +171,33 @@ export default function RithmicSyncPage() {
     }
   }
 
-  async function deleteCredentials() {
-    if (!confirm('Supprimer les credentials Rithmic ? La sync sera désactivée.')) return
+  async function deleteCreds(label) {
+    if (!confirm(`Supprimer la connexion "${label}" ?`)) return
     try {
-      const res = await authedFetch('/api/rithmic/credentials', { method: 'DELETE' })
-      if (!res.ok && res.status !== 204) {
+      const res = await authedFetch(`/api/rithmic/credentials?label=${encodeURIComponent(label)}`, { method: 'DELETE' })
+      if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data?.error || `HTTP ${res.status}`)
       }
-      setCredsStatus({ has_credentials: false, system_name: '' })
-      setSaveMsg({ type: 'success', text: 'Credentials supprimés' })
+      await loadCreds()
     } catch (e) {
-      setSaveMsg({ type: 'error', text: e.message })
+      alert(`Erreur suppression : ${e.message}`)
     }
   }
 
-  async function startSync() {
+  async function startSync(label = '') {
     setSyncing(true)
     setSyncError(null)
     setCurrentJob(null)
     try {
       const res = await authedFetch('/api/rithmic/sync', {
         method: 'POST',
-        body: JSON.stringify({ days }),
+        body: JSON.stringify({ days, label: label || null }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`)
+      if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`)
       setCurrentJob(data)
+      setSyncLabel(label)
     } catch (e) {
       setSyncError(e.message)
     } finally {
@@ -186,7 +207,6 @@ export default function RithmicSyncPage() {
 
   return (
     <div style={{ padding: '40px 24px 80px', maxWidth: 900, margin: '0 auto' }}>
-      {/* Breadcrumb */}
       <nav style={{ fontSize: 12, color: C.text3, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
         <Link href="/app/journal-sync" style={{ color: C.text3, textDecoration: 'none' }}>Journal Sync</Link>
         <span>›</span>
@@ -197,167 +217,161 @@ export default function RithmicSyncPage() {
         ⚡ Rithmic Live Sync
       </h1>
       <p style={{ fontSize: 14, color: C.text2, margin: 0, marginBottom: 32, lineHeight: 1.6 }}>
-        Connecte ton compte Rithmic une fois — Quantara importe ensuite tes trades automatiquement
-        via l&apos;API officielle Rithmic Protocol Buffer (le même flux que TopstepX, RTrader Pro, etc.).
-        Pas de CSV à exporter, jusqu&apos;à 365 jours d&apos;historique en un clic.
+        Connecte plusieurs PropFirms en parallèle (une connexion par paire de credentials Rithmic).
+        Quantara importe ensuite tes trades automatiquement via l&apos;API officielle Rithmic Protocol Buffer.
       </p>
 
-      {/* Step 1 — Credentials */}
-      <section style={{
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: 14,
-        padding: '24px 26px',
-        marginBottom: 24,
-      }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, background: C.purple, color: '#fff', borderRadius: '50%', fontSize: 13 }}>1</span>
-          Credentials Rithmic
-          {credsStatus?.has_credentials && (
-            <span style={{ marginLeft: 'auto', fontSize: 11, padding: '3px 10px', background: 'rgba(29,184,122,0.12)', color: C.green, borderRadius: 99, fontWeight: 600 }}>
-              ✓ Connecté ({credsStatus.system_name})
-            </span>
-          )}
-        </h2>
+      {/* Section 1 — Connexions */}
+      <section style={sectionStyle}>
+        <SectionHeader number="1" title="Connexions Rithmic" />
+
+        {credsError && (
+          <div style={{ fontSize: 13, color: C.red, lineHeight: 1.6, marginBottom: 12 }}>
+            Service rithmic-sync indisponible : {credsError}
+          </div>
+        )}
 
         {credsLoading ? (
           <div style={{ fontSize: 13, color: C.text3 }}>Chargement…</div>
-        ) : credsError ? (
-          <div style={{ fontSize: 13, color: C.red, lineHeight: 1.6 }}>
-            Service rithmic-sync indisponible : {credsError}
-            <div style={{ fontSize: 12, color: C.text3, marginTop: 6 }}>
-              Demande à l&apos;admin de configurer la variable d&apos;environnement <code>RITHMIC_SYNC_URL</code> sur Vercel.
-            </div>
-          </div>
         ) : (
-          <form onSubmit={saveCredentials} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label="Username Rithmic">
-                <input
-                  type="text"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder={credsStatus?.has_credentials ? '••••••• (déjà saved)' : 'ex : your_rithmic_login'}
-                  autoComplete="username"
-                  style={inputStyle}
-                />
-              </Field>
-              <Field label="Password Rithmic">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder={credsStatus?.has_credentials ? '••••••• (déjà saved)' : '••••••••'}
-                  autoComplete="new-password"
-                  style={inputStyle}
-                />
-              </Field>
-            </div>
-            <Field label="Système Rithmic">
-              <select value={systemName} onChange={e => setSystemName(e.target.value)} style={inputStyle}>
-                {SYSTEMS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-              <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>
-                Le système est ce que tu sélectionnes dans la liste déroulante de R|Trader Pro / TopstepX au login.
+          <>
+            {/* List of saved credentials */}
+            {credsList.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                {credsList.map((creds) => (
+                  <CredentialsCard
+                    key={creds.id}
+                    creds={creds}
+                    onSync={() => startSync(creds.label)}
+                    onEdit={() => openEditForm(creds)}
+                    onDelete={() => deleteCreds(creds.label)}
+                    syncDisabled={syncing || (currentJob && currentJob.status === 'running')}
+                  />
+                ))}
               </div>
-            </Field>
-            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <button type="submit" disabled={saving} style={{
-                padding: '10px 20px',
-                background: saving ? C.text3 : C.purple,
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: saving ? 'not-allowed' : 'pointer',
-              }}>
-                {saving ? 'Sauvegarde...' : (credsStatus?.has_credentials ? 'Mettre à jour' : 'Sauvegarder')}
-              </button>
-              {credsStatus?.has_credentials && (
-                <button type="button" onClick={deleteCredentials} style={{
-                  padding: '10px 16px',
-                  background: 'transparent',
-                  color: C.red,
-                  border: `1px solid ${C.red}40`,
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}>
-                  Déconnecter
-                </button>
-              )}
-            </div>
-            {saveMsg && (
+            ) : (
               <div style={{
-                fontSize: 12,
-                color: saveMsg.type === 'error' ? C.red : C.green,
-                marginTop: 4,
+                padding: 18, background: 'rgba(255,255,255,0.02)', border: `1px dashed ${C.border2}`, borderRadius: 10,
+                fontSize: 13, color: C.text3, marginBottom: 14, textAlign: 'center',
               }}>
-                {saveMsg.text}
+                Aucune connexion configurée. Ajoute une connexion ci-dessous pour commencer.
               </div>
             )}
-          </form>
-        )}
 
-        <div style={{
-          marginTop: 20,
-          padding: 14,
-          background: 'rgba(45,111,255,0.04)',
-          border: `1px dashed ${C.border2}`,
-          borderRadius: 10,
-          fontSize: 12,
-          color: C.text3,
-          lineHeight: 1.6,
-        }}>
-          🔐 Tes credentials sont chiffrés (AES-128 Fernet) avant insertion en base. Personne — pas même
-          l&apos;équipe Quantara — ne peut les lire en clair. La clé maître vit uniquement en variable
-          d&apos;environnement sur le serveur Rithmic Sync.
-        </div>
+            {/* Add new / Edit form */}
+            {editingLabel ? (
+              <form onSubmit={saveForm} style={{
+                background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16,
+                display: 'flex', flexDirection: 'column', gap: 12,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.purple }}>
+                  {editingLabel === '__new__' ? '➕ Nouvelle connexion' : `✏ Modifier "${editingLabel}"`}
+                </div>
+                <Field label="Label (nom de la connexion)">
+                  <input
+                    type="text"
+                    value={formLabel}
+                    onChange={e => setFormLabel(e.target.value)}
+                    placeholder="ex : Lucid main, TPT, Topstep eval"
+                    disabled={editingLabel !== '__new__'}
+                    style={inputStyle}
+                  />
+                  <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>
+                    Un nom à toi pour distinguer tes connexions. Unique par utilisateur.
+                  </div>
+                </Field>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Username Rithmic">
+                    <input
+                      type="text"
+                      value={formUsername}
+                      onChange={e => setFormUsername(e.target.value)}
+                      placeholder="ex : LT-63Q7ULJ4"
+                      autoComplete="off"
+                      style={inputStyle}
+                    />
+                  </Field>
+                  <Field label="Password Rithmic">
+                    <input
+                      type="password"
+                      value={formPassword}
+                      onChange={e => setFormPassword(e.target.value)}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                      style={inputStyle}
+                    />
+                  </Field>
+                </div>
+                <Field label="Système Rithmic">
+                  <select value={formSystem} onChange={e => setFormSystem(e.target.value)} style={inputStyle}>
+                    {SYSTEMS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                  <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>
+                    Ce que tu sélectionnes dans la liste &quot;System&quot; de R|Trader Pro / TopstepX au login.
+                  </div>
+                </Field>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button type="submit" disabled={saving} style={{
+                    padding: '9px 18px', background: saving ? C.text3 : C.purple, color: '#fff', border: 'none',
+                    borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+                  }}>
+                    {saving ? 'Sauvegarde…' : 'Sauvegarder'}
+                  </button>
+                  <button type="button" onClick={closeForm} style={{
+                    padding: '9px 14px', background: 'transparent', color: C.text2, border: `1px solid ${C.border2}`,
+                    borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  }}>
+                    Annuler
+                  </button>
+                </div>
+                {saveMsg && (
+                  <div style={{ fontSize: 12, color: saveMsg.type === 'error' ? C.red : C.green }}>
+                    {saveMsg.text}
+                  </div>
+                )}
+              </form>
+            ) : (
+              <button onClick={openNewForm} style={{
+                padding: '10px 18px', background: 'transparent', color: C.purple, border: `1px dashed ${C.purple}66`,
+                borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%',
+              }}>
+                + Ajouter une connexion
+              </button>
+            )}
+
+            <div style={{
+              marginTop: 16, padding: 12, background: 'rgba(45,111,255,0.04)', border: `1px dashed ${C.border2}`,
+              borderRadius: 10, fontSize: 11.5, color: C.text3, lineHeight: 1.6,
+            }}>
+              🔐 Chaque paire de credentials est chiffrée (AES-128 Fernet) côté serveur avant insertion en DB.
+              La clé maître n&apos;est jamais commitée et vit uniquement en variable d&apos;environnement Railway.
+            </div>
+          </>
+        )}
       </section>
 
-      {/* Step 2 — Map accounts */}
-      <section style={{
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: 14,
-        padding: '24px 26px',
-        marginBottom: 24,
-      }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, background: C.purple, color: '#fff', borderRadius: '50%', fontSize: 13 }}>2</span>
-          Mapper tes comptes Rithmic
-        </h2>
+      {/* Section 2 — Mapping accounts */}
+      <section style={sectionStyle}>
+        <SectionHeader number="2" title="Mapper tes comptes Rithmic" />
         <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, margin: 0, marginBottom: 14 }}>
           Pour chaque compte Quantara, indique l&apos;<strong>account_id Rithmic</strong> (visible dans
-          R|Trader Pro ou TopstepX, généralement un code type <code>APEX-1234567</code>). Sans ce mapping,
-          la sync ne saura pas où ranger tes trades.
+          R|Trader Pro ou TopstepX, typiquement <code>LFF050-XXXXXXX</code> ou <code>APEX-XXXXX</code>).
+          Cette étape se fait dans la page de chaque compte sur le dashboard.
         </p>
         {mappedAccounts.length === 0 ? (
           <div style={{
-            padding: 16,
-            background: 'rgba(250,199,117,0.08)',
-            border: `1px solid ${C.amber}30`,
-            borderRadius: 10,
-            fontSize: 13,
-            color: C.text2,
-            lineHeight: 1.6,
+            padding: 16, background: 'rgba(250,199,117,0.08)', border: `1px solid ${C.amber}30`,
+            borderRadius: 10, fontSize: 13, color: C.text2, lineHeight: 1.6,
           }}>
-            Aucun compte n&apos;a de <code>rithmic_account_id</code> rempli. Va dans <Link href="/app/dashboard" style={{ color: C.blueLt }}>Dashboard</Link>,
-            édite chacun de tes comptes financés et renseigne le champ. Tu peux aussi le faire directement
-            dans Supabase en éditant la colonne <code>accounts.rithmic_account_id</code>.
+            Aucun compte n&apos;a de <code>rithmic_account_id</code> rempli. Édite tes comptes depuis le{' '}
+            <Link href="/app/dashboard" style={{ color: C.blueLt }}>Dashboard</Link> pour ajouter cette info.
           </div>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {mappedAccounts.map(a => (
               <li key={a.id} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 14px',
-                background: C.surface2,
-                borderRadius: 8,
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                background: C.surface2, borderRadius: 8,
               }}>
                 <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{a.firmName}</span>
                 <span style={{ fontSize: 12, color: C.text3 }}>· {(a.plan_size || '').toUpperCase()}</span>
@@ -370,21 +384,12 @@ export default function RithmicSyncPage() {
         )}
       </section>
 
-      {/* Step 3 — Trigger sync */}
-      <section style={{
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: 14,
-        padding: '24px 26px',
-        marginBottom: 24,
-      }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, background: C.purple, color: '#fff', borderRadius: '50%', fontSize: 13 }}>3</span>
-          Lancer la sync historique
-        </h2>
+      {/* Section 3 — Lancer une sync */}
+      <section style={sectionStyle}>
+        <SectionHeader number="3" title="Lancer une sync" />
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <Field label="Période (jours)" style={{ flex: '0 0 160px' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 6 }}>
+          <Field label="Période (jours)" style={{ flex: '0 0 140px' }}>
             <input
               type="number"
               min={1}
@@ -396,37 +401,30 @@ export default function RithmicSyncPage() {
           </Field>
           <button
             type="button"
-            onClick={startSync}
-            disabled={syncing || !credsStatus?.has_credentials || mappedAccounts.length === 0 || (currentJob && currentJob.status === 'running')}
+            onClick={() => startSync('')}
+            disabled={syncing || credsList.length === 0 || mappedAccounts.length === 0 || (currentJob && currentJob.status === 'running')}
             style={{
               padding: '10px 22px',
-              background: (syncing || !credsStatus?.has_credentials || mappedAccounts.length === 0) ? C.text3 : C.purple,
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: (syncing || !credsStatus?.has_credentials || mappedAccounts.length === 0) ? 'not-allowed' : 'pointer',
+              background: (syncing || credsList.length === 0 || mappedAccounts.length === 0) ? C.text3 : C.purple,
+              color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              cursor: (syncing || credsList.length === 0 || mappedAccounts.length === 0) ? 'not-allowed' : 'pointer',
             }}
           >
-            {syncing ? 'Démarrage...' : (currentJob?.status === 'running' ? 'Sync en cours...' : 'Lancer la sync')}
+            {syncing ? 'Démarrage…' : (currentJob?.status === 'running' ? 'Sync en cours…' : '⚡ Sync TOUTES les connexions')}
           </button>
         </div>
+        <p style={{ fontSize: 11.5, color: C.text3, margin: 0, marginBottom: 14 }}>
+          Tu peux aussi lancer une sync sur <strong>une seule connexion</strong> en cliquant le bouton ⚡ Sync à droite de chaque connexion ci-dessus.
+        </p>
 
-        {syncError && (
-          <div style={{ marginTop: 14, fontSize: 13, color: C.red }}>{syncError}</div>
-        )}
+        {syncError && <div style={{ fontSize: 13, color: C.red, marginBottom: 10 }}>{syncError}</div>}
 
         {currentJob && (
           <div style={{
-            marginTop: 18,
-            padding: 16,
-            background: C.surface2,
-            border: `1px solid ${C.border}`,
-            borderRadius: 10,
+            marginTop: 8, padding: 16, background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10,
           }}>
             <div style={{ fontSize: 12, color: C.text3, marginBottom: 8, fontFamily: 'monospace' }}>
-              Job ID : {currentJob.job_id}
+              Job ID : {currentJob.job_id}{syncLabel ? ` · sync ciblée : "${syncLabel}"` : ' · sync globale (toutes les connexions)'}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
               <Stat label="Statut" value={currentJob.status} color={statusColor(currentJob.status)} />
@@ -440,7 +438,7 @@ export default function RithmicSyncPage() {
             )}
             {currentJob.status === 'completed' && (currentJob.trades_imported || 0) > 0 && (
               <div style={{ marginTop: 12, fontSize: 12, color: C.green }}>
-                ✓ Tu peux voir tes trades dans <Link href="/app/journal-sync/view" style={{ color: C.blueLt }}>le journal sync</Link>.
+                ✓ Vois tes trades dans <Link href="/app/journal-sync/view" style={{ color: C.blueLt }}>le journal sync</Link>.
               </div>
             )}
           </div>
@@ -449,6 +447,46 @@ export default function RithmicSyncPage() {
 
       <Link href="/app/journal-sync" style={{ fontSize: 12, color: C.text3, textDecoration: 'none' }}>← Retour à Journal Sync</Link>
     </div>
+  )
+}
+
+function CredentialsCard({ creds, onSync, onEdit, onDelete, syncDisabled }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+      background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{creds.label}</div>
+        <div style={{ fontSize: 11, color: C.text3 }}>
+          Système : <span style={{ color: C.purple, fontFamily: 'monospace' }}>{creds.system_name}</span>
+        </div>
+      </div>
+      <button onClick={onSync} disabled={syncDisabled} title="Lancer une sync sur cette connexion seulement" style={{
+        padding: '7px 12px', background: syncDisabled ? C.text3 : C.purple, color: '#fff', border: 'none',
+        borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: syncDisabled ? 'not-allowed' : 'pointer',
+      }}>⚡ Sync</button>
+      <button onClick={onEdit} title="Modifier les credentials" style={{
+        padding: '7px 10px', background: 'transparent', color: C.text2, border: `1px solid ${C.border2}`,
+        borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+      }}>✏</button>
+      <button onClick={onDelete} title="Supprimer cette connexion" style={{
+        padding: '7px 10px', background: 'transparent', color: C.red, border: `1px solid ${C.red}33`,
+        borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+      }}>🗑</button>
+    </div>
+  )
+}
+
+function SectionHeader({ number, title }) {
+  return (
+    <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 26, height: 26, background: C.purple, color: '#fff', borderRadius: '50%', fontSize: 13,
+      }}>{number}</span>
+      {title}
+    </h2>
   )
 }
 
@@ -481,6 +519,14 @@ function statusColor(status) {
   if (status === 'running') return C.amber
   if (status === 'failed') return C.red
   return C.text3
+}
+
+const sectionStyle = {
+  background: C.surface,
+  border: `1px solid ${C.border}`,
+  borderRadius: 14,
+  padding: '24px 26px',
+  marginBottom: 20,
 }
 
 const inputStyle = {

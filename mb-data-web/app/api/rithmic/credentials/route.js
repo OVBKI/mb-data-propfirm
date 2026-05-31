@@ -1,6 +1,5 @@
 // Proxy Next.js → Python rithmic-sync service for credential management.
-// We don't handle encryption here ; the Python service stores creds chiffrés in Supabase.
-// We just forward the request with the user's JWT.
+// Supports multi-credentials (since service v0.2). Each row is identified by `label`.
 
 import { verifyAuth } from '../../../../lib/apiAuth'
 import { rateLimit, rateLimitResponse } from '../../../../lib/rateLimit'
@@ -20,6 +19,7 @@ async function getAccessToken(request) {
   return auth.split(' ', 2)[1]
 }
 
+// GET /api/rithmic/credentials — returns list of all credentials sets for user
 export async function GET(request) {
   if (!RITHMIC_SYNC_URL) return configError()
   const auth = await verifyAuth(request)
@@ -39,19 +39,20 @@ export async function GET(request) {
   }
 }
 
+// POST /api/rithmic/credentials — add or update by label
 export async function POST(request) {
   if (!RITHMIC_SYNC_URL) return configError()
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
-  // Tight rate limit : storing creds is rare, 5/hr/user is plenty
-  const limit = rateLimit({ key: `rithmic-creds:${auth.user.id}`, windowMs: 3600_000, max: 5 })
+  // 5 writes per hour per user — credentials don't change often
+  const limit = rateLimit({ key: `rithmic-creds:${auth.user.id}`, windowMs: 3600_000, max: 10 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   let body
   try { body = await request.json() } catch { return Response.json({ error: 'invalid JSON' }, { status: 400 }) }
-  if (!body?.username || !body?.password || !body?.system_name) {
-    return Response.json({ error: 'username, password, system_name required' }, { status: 400 })
+  if (!body?.label || !body?.username || !body?.password || !body?.system_name) {
+    return Response.json({ error: 'label, username, password, system_name required' }, { status: 400 })
   }
 
   const token = await getAccessToken(request)
@@ -68,14 +69,19 @@ export async function POST(request) {
   }
 }
 
+// DELETE /api/rithmic/credentials?label=foo
 export async function DELETE(request) {
   if (!RITHMIC_SYNC_URL) return configError()
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
+  const { searchParams } = new URL(request.url)
+  const label = searchParams.get('label')
+  if (!label) return Response.json({ error: 'label query param required' }, { status: 400 })
+
   const token = await getAccessToken(request)
   try {
-    const res = await fetch(`${RITHMIC_SYNC_URL}/credentials`, {
+    const res = await fetch(`${RITHMIC_SYNC_URL}/credentials/${encodeURIComponent(label)}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })

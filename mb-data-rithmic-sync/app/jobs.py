@@ -23,8 +23,6 @@ _TASKS: Dict[str, asyncio.Task] = {}
 
 
 # Regexes to strip any field that might contain a secret from an error message.
-# Rithmic errors include the full request payload (user, password, etc.) in the
-# string repr of the dict, so we redact those fields aggressively.
 _SECRET_RE = re.compile(
     r"'(password|user|encrypted_username|encrypted_password|token|api_key|secret)'\s*:\s*'[^']*'",
     re.IGNORECASE,
@@ -32,11 +30,9 @@ _SECRET_RE = re.compile(
 
 
 def _sanitize_error(err: str) -> str:
-    """Strip secrets (password / user / token) from an error string."""
     if not err:
         return err
-    sanitized = _SECRET_RE.sub(lambda m: f"'{m.group(1)}': '***REDACTED***'", err)
-    return sanitized
+    return _SECRET_RE.sub(lambda m: f"'{m.group(1)}': '***REDACTED***'", err)
 
 
 def create_job(user_id: str) -> SyncJob:
@@ -59,11 +55,19 @@ def list_user_jobs(user_id: str) -> list[SyncJob]:
     return [j for j in _JOBS.values() if j.user_id == user_id]
 
 
-async def _run_historical(job_id: str, user_id: str, days: int, account_filter: Optional[str]) -> None:
+async def _run_historical(
+    job_id: str,
+    user_id: str,
+    days: int,
+    label: Optional[str],
+    account_filter: Optional[str],
+) -> None:
     job = _JOBS[job_id]
     job.status = "running"
     try:
-        summary: Dict[str, Any] = await run_historical_sync(user_id=user_id, days=days, account_filter=account_filter)
+        summary: Dict[str, Any] = await run_historical_sync(
+            user_id=user_id, days=days, label=label, account_filter=account_filter,
+        )
         job.trades_imported = int(summary.get("trades_imported", 0) or 0)
         job.accounts_synced = int(summary.get("accounts_synced", 0) or 0)
         if summary.get("errors"):
@@ -78,8 +82,15 @@ async def _run_historical(job_id: str, user_id: str, days: int, account_filter: 
         _TASKS.pop(job_id, None)
 
 
-def schedule_historical(user_id: str, days: int = 90, account_filter: Optional[str] = None) -> SyncJob:
+def schedule_historical(
+    user_id: str,
+    days: int = 90,
+    label: Optional[str] = None,
+    account_filter: Optional[str] = None,
+) -> SyncJob:
     job = create_job(user_id)
-    task = asyncio.create_task(_run_historical(job.job_id, user_id, days, account_filter))
+    task = asyncio.create_task(
+        _run_historical(job.job_id, user_id, days, label, account_filter)
+    )
     _TASKS[job.job_id] = task
     return job
