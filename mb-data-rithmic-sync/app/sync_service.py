@@ -838,11 +838,36 @@ async def _fetch_fills(
             logger.warning("DIAG E top-level failed : %s", str(e)[:300])
         _fetch_fills._subscribe_tested = True  # type: ignore[attr-defined]
 
+    # ── Trace : we reached the point after Method A exhausted
+    if user_id is not None:
+        try:
+            _debug_persist(user_id, account_id, "TRACE_methodA_exhausted",
+                           {"has_dates_method": str(hasattr(client, "show_order_history_dates")),
+                            "has_summary_method": str(hasattr(client, "show_order_history_summary"))})
+        except Exception:  # noqa: BLE001
+            pass
+
     # ── Méthode B : show_order_history_dates + show_order_history_summary
     if hasattr(client, "show_order_history_dates") and hasattr(client, "show_order_history_summary"):
         try:
             logger.info("Trying fallback : show_order_history_dates() + show_order_history_summary(date)")
+            # Trace BEFORE the call so we can see if the call itself blocks/raises
+            if user_id is not None:
+                try:
+                    _debug_persist(user_id, account_id, "TRACE_methodB_before_dates_call",
+                                   {"marker": "about_to_call_show_order_history_dates"})
+                except Exception:  # noqa: BLE001
+                    pass
             dates_result = await client.show_order_history_dates()
+            # Trace right after the call
+            if user_id is not None:
+                try:
+                    _debug_persist(user_id, account_id, "TRACE_methodB_after_dates_call",
+                                   {"raw_type": type(dates_result).__name__,
+                                    "raw_len": len(dates_result) if hasattr(dates_result, "__len__") else "n/a",
+                                    "raw_repr": str(dates_result)[:500]})
+                except Exception:  # noqa: BLE001
+                    pass
 
             # Always log the raw response so we can diagnose extraction issues.
             logger.info(
@@ -975,7 +1000,19 @@ async def _fetch_fills(
             return all_fills
         except Exception as e:  # noqa: BLE001
             logger.warning("show_order_history_dates/summary path failed : %s", e, exc_info=True)
+            if user_id is not None:
+                try:
+                    _debug_persist(user_id, account_id, "TRACE_methodB_EXCEPTION",
+                                   {"exc_type": type(e).__name__, "exc_msg": str(e)[:500]})
+                except Exception:  # noqa: BLE001
+                    pass
 
+    if user_id is not None:
+        try:
+            _debug_persist(user_id, account_id, "TRACE_all_strategies_exhausted",
+                           {"final": "returning_empty_list"})
+        except Exception:  # noqa: BLE001
+            pass
     logger.error("All fill-fetching strategies exhausted for account %s", account_id)
     return []
 
