@@ -941,14 +941,22 @@ export function plansForFirm(firmName){
   return PROPFIRM_RULES[firmName]?.plans || GENERIC_PLANS
 }
 
-// Retourne le drawdown max (en $ numérique) pour une firme + plan
-// Cherche dans PROPFIRM_RULES la règle "Drawdown total max" ou "Drawdown trailing max"
+// Retourne le drawdown max (en $ numérique) pour une firme + plan.
+// Cherche dans PROPFIRM_RULES :
+//   - "Drawdown total/trailing max" (formulation standard)
+//   - "Max Loss Limit (MLL)" — Topstep
+//   - "Maximum Loss Limit" — variantes
+// Ne match PAS les clés mécaniques/contextuelles (ex: "MLL mécanique XFA") pour éviter de
+// capter une description plutôt qu'un montant.
 export function maxDrawdown(firmName, plan){
   const rules = PROPFIRM_RULES[firmName]?.rules
   if(!rules || !plan) return null
-  const ddKey = Object.keys(rules).find(k =>
-    /drawdown\s+(total|trailing)/i.test(k)
-  )
+  const ddKey = Object.keys(rules).find(k => {
+    if (/drawdown\s+(total|trailing)/i.test(k)) return true
+    // Topstep-style : "Max Loss Limit (MLL)" mais PAS "MLL mécanique XFA" ni "DLL"
+    if (/^(max(imum)?\s+loss\s+limit|mll)\b/i.test(k) && !/m[ée]canique|xfa|live|lfa/i.test(k)) return true
+    return false
+  })
   if(!ddKey) return null
   const ddStr = rules[ddKey][plan]
   if(!ddStr) return null

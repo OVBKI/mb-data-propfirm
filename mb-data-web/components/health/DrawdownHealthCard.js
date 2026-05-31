@@ -6,7 +6,7 @@
 //   < 50%       → red    (danger zone)
 //   no data     → grey   (need balance + dd_floor)
 
-import { planSizeNum } from '../../lib/constants'
+import { planSizeNum, maxDrawdown } from '../../lib/constants'
 import { getFirmLogo } from '../../lib/firmLogos'
 import { FIRM_SUGGESTION_COLORS } from '../../lib/constants'
 
@@ -42,10 +42,14 @@ export default function DrawdownHealthCard({ account, firmName }) {
   const initialBalance = planSizeNum(account.plan_size)
   const balance = account.balance
   const ddFloor = account.dd_floor
+  // Max drawdown allowance from PROPFIRM_RULES (e.g. $2,000 for Topstep 50K)
+  const maxDD = maxDrawdown(firmName, account.plan_size)
 
-  const hasData = balance != null && ddFloor != null && initialBalance > 0
+  const hasData = balance != null && ddFloor != null && maxDD > 0
   const room = hasData ? Math.max(0, balance - ddFloor) : null
-  const roomPct = hasData ? Math.min(1, Math.max(0, room / initialBalance)) : null
+  // roomPct = how much of the DD allowance is left (1.0 = full safety margin)
+  // Note: peut > 1.0 sur comptes trailing au-dessus du starting balance (DD floor capped)
+  const roomPct = hasData ? Math.min(1, Math.max(0, room / maxDD)) : null
   const color = statusColor(roomPct)
   const label = statusLabel(roomPct)
   const firmColor = FIRM_SUGGESTION_COLORS[firmName] || '#2d6fff'
@@ -138,7 +142,10 @@ export default function DrawdownHealthCard({ account, firmName }) {
 
       {!hasData && (
         <div style={{ fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
-          Renseigne <strong style={{ color: C.text2 }}>balance</strong> et <strong style={{ color: C.text2 }}>dd_floor</strong> dans le drawer du compte pour activer le tracking.
+          {!maxDD
+            ? <>Pas de règle drawdown trouvée pour <strong style={{ color: C.text2 }}>{firmName}</strong>. Vérifie que le compte est lié à une firm supportée.</>
+            : <>Logue des trades ou sync Rithmic pour activer le tracking automatique.</>
+          }
         </div>
       )}
     </div>

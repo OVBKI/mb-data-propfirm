@@ -190,14 +190,17 @@ export default function HealthPage() {
     })
   }, [monitoredAccounts, statsByAccount])
 
-  // Summary stats
+  // Summary stats — % is calculated against the firm's max drawdown allowance,
+  // NOT against total balance. Example: 50K plan / $2K maxDD, balance at $50K
+  // → room $2K / maxDD $2K = 100% (safe), not $2K / $50K = 4% (which was wrong).
   const summary = useMemo(() => {
     let safe = 0, caution = 0, danger = 0, noData = 0
     for (const a of enrichedAccounts) {
       if (a.balance == null || a.dd_floor == null) { noData++; continue }
-      const initial = planSizeNum(a.plan_size) || a.balance
+      const maxDD = maxDrawdown(a.firmName, a.plan_size)
+      if (!maxDD || maxDD <= 0) { noData++; continue }
       const room = Math.max(0, a.balance - a.dd_floor)
-      const pct = initial > 0 ? room / initial : 0
+      const pct = Math.min(1, room / maxDD)
       if (pct >= 0.7) safe++
       else if (pct >= 0.5) caution++
       else danger++
@@ -250,7 +253,7 @@ export default function HealthPage() {
       {/* 1. Drawdown Health */}
       <Section
         title="Drawdown Health"
-        subtitle="Room de drawdown par compte. Calculée depuis tes trades + règles de la firm. Vert > 70% room (safe), ambre 50-70% (caution), rouge < 50% (danger zone)."
+        subtitle="Marge de drawdown restante par compte (en % de l'allowance max de la firm). Ex : $2K room sur $2K maxDD = 100% safe. Vert ≥70%, ambre 50-70%, rouge <50%."
       >
         {tradesLoading ? (
           <EmptyState text="Chargement des trades…" />
