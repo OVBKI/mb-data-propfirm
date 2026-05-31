@@ -79,7 +79,6 @@ export async function DELETE(request) {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
-    if (res.status === 204) return new Response(null, { status: 204 })
     const data = await res.json().catch(() => ({}))
     return Response.json(data, { status: res.status })
   } catch (e) {

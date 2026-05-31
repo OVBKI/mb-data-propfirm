@@ -51,10 +51,8 @@ async def get_credentials_status(user_id: str = Depends(current_user_id)) -> Cre
     )
 
 
-@router.delete("", status_code=204)
-async def remove_credentials(user_id: str = Depends(current_user_id)) -> None:
+@router.delete("")
+async def remove_credentials(user_id: str = Depends(current_user_id)) -> dict:
+    """Delete the user's Rithmic credentials. Always returns 200 (idempotent)."""
     deleted = await delete_credentials(user_id)
-    if not deleted:
-        # Not an error — just nothing to delete
-        return None
-    return None
+    return {"deleted": bool(deleted)}
