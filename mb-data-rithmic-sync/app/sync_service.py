@@ -220,6 +220,14 @@ async def _sync_one(
         password=creds["password"],
         system_name=creds["system_name"],
     ) as client:
+        # ── PATCH async_rithmic : intercept template 351 (RithmicOrderNotification)
+        # When show_order_history_summary() / get_fill_history() is called, Rithmic
+        # responds with N x template 351 (each = 1 order with fill detail) followed
+        # by 1 x template 352 (terminal, just rp_code). The library expects ONLY 352
+        # to match, so the 351 messages with the actual fill data are silently
+        # dropped. We monkey-patch handle_response to capture them.
+        _install_order_notification_capture(client)
+
         rithmic_accounts = await _safe_list_accounts(client)
         logger.info(
             "[%s] Rithmic exposes %d accounts; %d configured in Quantara",
@@ -385,6 +393,80 @@ def _persist_strategy_result(user_id: str, strategy_label: str, account_id: str,
         logger.warning("strategy persist failed for %s : %s", strategy_label, str(e)[:200])
 
 
+# ── Captured-notifications store (populated by the patched handle_response).
+# Keyed by request_id (user_msg uuid). Each value is a list of protobuf messages
+# (template 351 = RithmicOrderNotification) that arrived during that request.
+_captured_notifications: Dict[str, List[Any]] = {}
+
+
+def _install_order_notification_capture(client) -> None:
+    """Monkey-patch the OrderPlant's request_manager.handle_response to capture
+    template 351 (RithmicOrderNotification) messages tied to any pending request.
+
+    async_rithmic's handle_response filters strictly by expected_response (e.g.
+    template_id=352 for show_order_history_summary). Template 351 messages carry
+    the user_msg of the originating request but have template_id=351, so they
+    don't match and are dropped. We intercept them here and stash them by
+    request_id so _fetch_fills can read them out.
+    """
+    plants = getattr(client, "plants", None)
+    if not isinstance(plants, dict):
+        return
+    order_plant = plants.get("order") or plants.get("Order")
+    if order_plant is None:
+        return
+    request_manager = getattr(order_plant, "request_manager", None)
+    if request_manager is None:
+        return
+    if getattr(request_manager, "_quantara_patched", False):
+        return
+
+    original_handle = request_manager.handle_response
+
+    def patched_handle(response):
+        try:
+            tid = getattr(response, "template_id", None)
+            user_msg = getattr(response, "user_msg", None)
+            rp_code = getattr(response, "rp_code", None)
+            # Capture only RithmicOrderNotification (351) tied to a pending request,
+            # and only when it's actual data (not an rp_code terminal).
+            if (
+                tid == 351
+                and user_msg
+                and len(user_msg) > 0
+                and (not rp_code or len(rp_code) == 0)
+            ):
+                request_id = user_msg[0]
+                if request_manager.has_pending(request_id):
+                    _captured_notifications.setdefault(request_id, []).append(response)
+                    # Return True to mark as consumed — original_handle would have
+                    # dropped it anyway (template_id mismatch).
+                    return True
+        except Exception:  # noqa: BLE001
+            pass
+        return original_handle(response)
+
+    request_manager.handle_response = patched_handle
+    request_manager._quantara_patched = True
+    logger.info("OrderPlant.request_manager.handle_response monkey-patched for fill capture")
+
+
+def _drain_captured_for_account(account_id: str) -> List[Any]:
+    """Pop all captured notifications matching the given account_id and return them.
+
+    We don't know which request_id collected which fills, so we drain ALL pending
+    captures and filter by account_id at the message level.
+    """
+    drained: List[Any] = []
+    for request_id in list(_captured_notifications.keys()):
+        messages = _captured_notifications.pop(request_id, [])
+        for msg in messages:
+            msg_account = getattr(msg, "account_id", None)
+            if not msg_account or msg_account == account_id:
+                drained.append(msg)
+    return drained
+
+
 async def _fetch_fills(
     client,
     start: datetime,
@@ -413,11 +495,12 @@ async def _fetch_fills(
                 break
 
     if order_plant is not None and hasattr(order_plant, "get_fill_history"):
-        # Try several kwargs combinations — Rithmic typically wants account_id at minimum
+        # Drain any leftover notifications from prior calls
+        _drain_captured_for_account(account_id)
+
         for kwargs in (
             {"account_id": account_id},
             {"account_id": account_id, "fcm_id": "LucidTrading", "ib_id": "LucidTrading"},
-            {},  # last resort : no filter
         ):
             try:
                 logger.info("get_fill_history(start=%s, end=%s, %s)",
@@ -426,14 +509,20 @@ async def _fetch_fills(
                     start_time=start, end_time=end, **kwargs,
                 )
                 fills_list = list(fills) if fills else []
-                logger.info("✓ get_fill_history returned %d fills (kwargs=%s)",
-                            len(fills_list), list(kwargs.keys()))
-                # Persist first fill structure for inspection
-                if user_id is not None and fills_list and not getattr(_fetch_fills, "_fill_logged", False):
-                    _debug_persist(user_id, account_id, "FILL_SAMPLE", fills_list[0])
-                    _fetch_fills._fill_logged = True  # type: ignore[attr-defined]
-                if fills_list:
-                    return fills_list
+                # Also drain the patched-capture store : these are the template 351
+                # RithmicOrderNotification messages that async_rithmic would have dropped.
+                captured = _drain_captured_for_account(account_id)
+                logger.info(
+                    "✓ get_fill_history returned %d direct fills + %d captured 351 notifications (kwargs=%s)",
+                    len(fills_list), len(captured), list(kwargs.keys()),
+                )
+                if user_id is not None and captured and not getattr(_fetch_fills, "_capture_logged", False):
+                    _debug_persist(user_id, account_id, "CAPTURE_SAMPLE_get_fill_history", captured[0])
+                    _fetch_fills._capture_logged = True  # type: ignore[attr-defined]
+
+                all_fills = fills_list + captured
+                if all_fills:
+                    return all_fills
             except TypeError as e:
                 logger.warning("TypeError calling get_fill_history(%s): %s",
                                 list(kwargs.keys()), str(e)[:200])
@@ -441,14 +530,13 @@ async def _fetch_fills(
             except Exception as e:  # noqa: BLE001
                 logger.warning("get_fill_history(%s) raised: %s",
                                 list(kwargs.keys()), str(e)[:300])
-                # Persist exception for inspection
                 if user_id is not None:
                     _persist_strategy_result(
                         user_id, f"get_fill_history_{list(kwargs.keys())}",
                         account_id, f"EXCEPTION: {type(e).__name__}: {str(e)[:300]}",
                     )
                 continue
-        logger.warning("get_fill_history exhausted all kwargs combos for %s", account_id)
+        logger.warning("get_fill_history (+capture) exhausted all kwargs for %s", account_id)
 
     # ── Legacy fallback (v1.5 path) — kept for older library installations
     logger.info("Falling back to legacy show_order_history_* path")
@@ -788,7 +876,19 @@ async def _fetch_fills(
                     {"date": d},
                 ):
                     try:
+                        # Drain any stale captures before the call so the post-call
+                        # drain returns only this request's fills.
+                        _drain_captured_for_account(account_id)
                         summary = await client.show_order_history_summary(**kwargs)
+                        # Pull the captured 351 notifications (real fill data)
+                        captured_for_date = _drain_captured_for_account(account_id)
+                        if captured_for_date:
+                            all_fills.extend(captured_for_date)
+                            if user_id is not None and not getattr(_fetch_fills, "_capture_logged_b", False):
+                                _debug_persist(user_id, account_id,
+                                               f"CAPTURE_SAMPLE_summary_{d}",
+                                               captured_for_date[0])
+                                _fetch_fills._capture_logged_b = True  # type: ignore[attr-defined]
                         break
                     except TypeError:
                         continue
