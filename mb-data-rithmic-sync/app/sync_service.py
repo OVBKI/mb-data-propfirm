@@ -394,15 +394,64 @@ async def _fetch_fills(
 ) -> List[Any]:
     """Fetch fill history for a Rithmic account.
 
-    async_rithmic v1.5 does NOT expose get_fill_history on the client itself
-    (we verified via attribute dump). It IS available on the OrderPlant which
-    lives in `client.plants` (a dict).
+    Uses async_rithmic v1.6.1 `get_fill_history(start_time, end_time, account_id=...)`
+    on the OrderPlant. This method sends RequestShowFillHistory and synchronously
+    collects the response (returns a list of fills).
 
-    Two access paths, tried in order :
-      1. client.plants["order"].get_fill_history(...)  — direct plant access
-      2. show_order_history_dates() + show_order_history_summary(date)  — public API fallback
+    Falls back to the legacy show_order_history_dates/summary path if the new
+    method is unavailable (e.g. older library version).
     """
     account_id = _account_id(rithmic_acct)
+
+    # ── v1.6.1 path : get_fill_history on order plant
+    plants = getattr(client, "plants", None)
+    order_plant = None
+    if isinstance(plants, dict):
+        for key in ("order", "Order", "order_plant", "OrderPlant"):
+            if key in plants:
+                order_plant = plants[key]
+                break
+
+    if order_plant is not None and hasattr(order_plant, "get_fill_history"):
+        # Try several kwargs combinations — Rithmic typically wants account_id at minimum
+        for kwargs in (
+            {"account_id": account_id},
+            {"account_id": account_id, "fcm_id": "LucidTrading", "ib_id": "LucidTrading"},
+            {},  # last resort : no filter
+        ):
+            try:
+                logger.info("get_fill_history(start=%s, end=%s, %s)",
+                            start.isoformat(), end.isoformat(), list(kwargs.keys()))
+                fills = await order_plant.get_fill_history(
+                    start_time=start, end_time=end, **kwargs,
+                )
+                fills_list = list(fills) if fills else []
+                logger.info("✓ get_fill_history returned %d fills (kwargs=%s)",
+                            len(fills_list), list(kwargs.keys()))
+                # Persist first fill structure for inspection
+                if user_id is not None and fills_list and not getattr(_fetch_fills, "_fill_logged", False):
+                    _debug_persist(user_id, account_id, "FILL_SAMPLE", fills_list[0])
+                    _fetch_fills._fill_logged = True  # type: ignore[attr-defined]
+                if fills_list:
+                    return fills_list
+            except TypeError as e:
+                logger.warning("TypeError calling get_fill_history(%s): %s",
+                                list(kwargs.keys()), str(e)[:200])
+                continue
+            except Exception as e:  # noqa: BLE001
+                logger.warning("get_fill_history(%s) raised: %s",
+                                list(kwargs.keys()), str(e)[:300])
+                # Persist exception for inspection
+                if user_id is not None:
+                    _persist_strategy_result(
+                        user_id, f"get_fill_history_{list(kwargs.keys())}",
+                        account_id, f"EXCEPTION: {type(e).__name__}: {str(e)[:300]}",
+                    )
+                continue
+        logger.warning("get_fill_history exhausted all kwargs combos for %s", account_id)
+
+    # ── Legacy fallback (v1.5 path) — kept for older library installations
+    logger.info("Falling back to legacy show_order_history_* path")
 
     # ── Diagnostic : on logue le contenu de plants une fois par sync run.
     if not getattr(_fetch_fills, "_plants_logged", False):
