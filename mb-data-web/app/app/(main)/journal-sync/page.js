@@ -97,6 +97,23 @@ export default function JournalSyncHub() {
             </div>
             <div style={{ position: 'absolute', bottom: 16, right: 18, color: '#a78bfa', fontSize: 18 }}>{'→'}</div>
           </Link>
+
+          <Link href="/app/journal-sync/accounts" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(45,111,255,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(45,111,255,0.15)' }}
+            onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F3E2}'}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Comptes</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Comptes Rithmic</h3>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
+              Vois chaque compte synchronisé groupé par PropFirm, avec equity curve, calendrier PnL et stats avancées.
+            </p>
+            <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ padding: '3px 8px', background: 'rgba(45,111,255,0.1)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>NEW</span>
+              <span>Hiérarchique</span><span>{'·'}</span><span>Equity + DD curve</span>
+            </div>
+            <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.blueLt, fontSize: 18 }}>{'→'}</div>
+          </Link>
         </div>
 
         <div style={{ marginTop: 24, padding: 18, background: 'rgba(255,255,255,0.02)', border: `1px dashed ${C.border2}`, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 14 }}>
