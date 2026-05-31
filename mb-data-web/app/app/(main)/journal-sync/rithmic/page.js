@@ -25,10 +25,16 @@ const C = {
 }
 
 // The list of Rithmic system_name values traders typically need to pick.
-// Source: Rithmic OS connect dropdown.
+// The actual list depends on what Rithmic provisions for YOUR account — if your
+// chosen value isn't accepted, the sync will return an error listing the valid
+// values. In that case use the "custom" option and type the exact name.
+// Source: Rithmic OS connect dropdown / what's in the user's account agreement.
 const SYSTEMS = [
-  { value: 'Rithmic Paper Trading', label: 'Rithmic Paper Trading (test)' },
+  { value: 'Rithmic Test', label: 'Rithmic Test (free demo)' },
+  { value: 'Rithmic Paper Trading', label: 'Rithmic Paper Trading' },
   { value: 'Rithmic 04 Colo', label: 'Rithmic 04 Colo (production)' },
+  { value: 'Rithmic 01', label: 'Rithmic 01' },
+  { value: 'Rithmic 04', label: 'Rithmic 04' },
   { value: 'TopstepTrader', label: 'TopstepTrader' },
   { value: 'Apex', label: 'Apex Trader Funding' },
   { value: 'My Funded Futures', label: 'My Funded Futures' },
