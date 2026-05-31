@@ -322,6 +322,69 @@ def _debug_persist(user_id: Optional[str], account_id: str, date_str: str, summa
         logger.warning("debug persist failed (table may not exist yet) : %s", str(e)[:200])
 
 
+def _persist_strategy_result(user_id: str, strategy_label: str, account_id: str, result: Any) -> None:
+    """Persist the result of a DIAG D strategy attempt to rithmic_debug."""
+    try:
+        if result is None:
+            s_type = "NoneType"
+            s_repr = "None"
+            fields_json = {}
+        elif isinstance(result, str):  # exception string from _try
+            s_type = "exception_string"
+            s_repr = result[:1500]
+            fields_json = {}
+        else:
+            s_type = type(result).__name__
+            s_repr = str(result)[:1500]
+            fields_json = {}
+            if isinstance(result, (list, tuple)):
+                fields_json["__list_len__"] = len(result)
+                for i, item in enumerate(result[:3]):
+                    item_info: Dict[str, Any] = {
+                        "py_type": type(item).__name__,
+                        "repr": str(item)[:500],
+                    }
+                    if hasattr(item, "ListFields"):
+                        try:
+                            item_fields = {}
+                            for f_desc, f_value in list(item.ListFields())[:30]:
+                                item_fields[f_desc.name] = {
+                                    "py_type": type(f_value).__name__,
+                                    "repr": str(f_value)[:200],
+                                }
+                            item_info["fields"] = item_fields
+                        except Exception as e:  # noqa: BLE001
+                            item_info["fields_error"] = str(e)[:200]
+                    fields_json[f"item_{i}"] = item_info
+            elif hasattr(result, "ListFields"):
+                try:
+                    for f_desc, f_value in list(result.ListFields())[:30]:
+                        fields_json[f_desc.name] = {
+                            "py_type": type(f_value).__name__,
+                            "repr": str(f_value)[:500],
+                        }
+                except Exception as e:  # noqa: BLE001
+                    fields_json["__error__"] = str(e)[:200]
+            elif isinstance(result, dict):
+                for k, v in list(result.items())[:30]:
+                    fields_json[str(k)] = {
+                        "py_type": type(v).__name__,
+                        "repr": str(v)[:200],
+                    }
+
+        sb = get_supabase()
+        sb.table("rithmic_debug").insert({
+            "user_id": user_id,
+            "account_id": f"__strat__{strategy_label}__{account_id}",
+            "date_str": strategy_label,
+            "summary_type": s_type,
+            "summary_repr": s_repr,
+            "fields_json": fields_json,
+        }).execute()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("strategy persist failed for %s : %s", strategy_label, str(e)[:200])
+
+
 async def _fetch_fills(
     client,
     start: datetime,
@@ -476,6 +539,38 @@ async def _fetch_fills(
         except Exception as e:  # noqa: BLE001
             logger.warning("DIAG C dump failed : %s", str(e)[:200])
         _fetch_fills._methods_dumped = True  # type: ignore[attr-defined]
+
+    # ── DIAGNOSTIC D : try multiple fill-fetching strategies, persist each result
+    # to rithmic_debug so we can see which one actually returns fills. Runs once.
+    if user_id is not None and not getattr(_fetch_fills, "_strategies_tested", False):
+        # Pick a known trading date from rithmic_debug history (we saw 20250413 worked
+        # for dates extraction). Use today + a few candidates.
+        test_date_compact = "20250413"
+        test_date_iso = "2025-04-13"
+
+        async def _try(label: str, coro):
+            try:
+                result = await coro
+                _persist_strategy_result(user_id, label, account_id, result)
+                return result
+            except Exception as e:  # noqa: BLE001
+                _persist_strategy_result(user_id, label, account_id, f"EXCEPTION: {type(e).__name__}: {str(e)[:300]}")
+                return None
+
+        try:
+            await _try("D1_list_orders_acct", client.list_orders(account_id=account_id))
+            await _try("D2_list_orders_noargs", client.list_orders())
+            await _try("D3_list_positions_acct", client.list_positions(account_id=account_id))
+            await _try("D4_show_summary_no_acct_compact",
+                       client.show_order_history_summary(date=test_date_compact))
+            await _try("D5_show_summary_iso_with_acct",
+                       client.show_order_history_summary(date=test_date_iso, account_id=account_id))
+            await _try("D6_list_account_summary",
+                       client.list_account_summary(account_id=account_id))
+            logger.info("DIAG D : ran 6 fill-fetching strategies, results in rithmic_debug")
+        except Exception as e:  # noqa: BLE001
+            logger.warning("DIAG D top-level failed : %s", str(e)[:200])
+        _fetch_fills._strategies_tested = True  # type: ignore[attr-defined]
 
     # ── Méthode B : show_order_history_dates + show_order_history_summary
     if hasattr(client, "show_order_history_dates") and hasattr(client, "show_order_history_summary"):
