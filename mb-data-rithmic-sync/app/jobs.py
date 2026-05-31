@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -19,6 +20,23 @@ logger = logging.getLogger(__name__)
 
 _JOBS: Dict[str, SyncJob] = {}
 _TASKS: Dict[str, asyncio.Task] = {}
+
+
+# Regexes to strip any field that might contain a secret from an error message.
+# Rithmic errors include the full request payload (user, password, etc.) in the
+# string repr of the dict, so we redact those fields aggressively.
+_SECRET_RE = re.compile(
+    r"'(password|user|encrypted_username|encrypted_password|token|api_key|secret)'\s*:\s*'[^']*'",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_error(err: str) -> str:
+    """Strip secrets (password / user / token) from an error string."""
+    if not err:
+        return err
+    sanitized = _SECRET_RE.sub(lambda m: f"'{m.group(1)}': '***REDACTED***'", err)
+    return sanitized
 
 
 def create_job(user_id: str) -> SyncJob:
@@ -49,12 +67,12 @@ async def _run_historical(job_id: str, user_id: str, days: int, account_filter: 
         job.trades_imported = int(summary.get("trades_imported", 0) or 0)
         job.accounts_synced = int(summary.get("accounts_synced", 0) or 0)
         if summary.get("errors"):
-            job.error = "; ".join(summary["errors"])
+            job.error = _sanitize_error("; ".join(summary["errors"]))
         job.status = "completed"
     except Exception as e:  # noqa: BLE001
         logger.exception("Sync job %s failed", job_id)
         job.status = "failed"
-        job.error = str(e)
+        job.error = _sanitize_error(str(e))
     finally:
         job.completed_at = datetime.now(timezone.utc)
         _TASKS.pop(job_id, None)
