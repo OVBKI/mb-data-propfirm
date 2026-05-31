@@ -485,6 +485,16 @@ async def _fetch_fills(
     """
     account_id = _account_id(rithmic_acct)
 
+    # ── ALWAYS log entry to rithmic_debug so we see at least one row per sync,
+    # even if everything returns [] silently downstream.
+    if user_id is not None:
+        try:
+            _debug_persist(user_id, account_id, "TRACE_fetch_fills_entry",
+                           {"start": start.isoformat(), "end": end.isoformat(),
+                            "has_order_plant": str(client.plants.get("order") is not None) if hasattr(client, "plants") else "no-plants"})
+        except Exception:  # noqa: BLE001
+            pass
+
     # ── v1.6.1 path : get_fill_history on order plant
     plants = getattr(client, "plants", None)
     order_plant = None
@@ -847,6 +857,16 @@ async def _fetch_fills(
             dates_collected = _extract_dates(dates_result)
             logger.info("Extracted %d date(s) from show_order_history_dates : %s",
                         len(dates_collected), dates_collected[:20])
+            # Trace so we can see this in rithmic_debug even when nothing fails
+            if user_id is not None:
+                try:
+                    _debug_persist(user_id, account_id, "TRACE_methodB_dates",
+                                   {"raw_type": type(dates_result).__name__,
+                                    "raw_len": len(dates_result) if hasattr(dates_result, "__len__") else "n/a",
+                                    "extracted_count": len(dates_collected),
+                                    "first_10_dates": dates_collected[:10]})
+                except Exception:  # noqa: BLE001
+                    pass
 
             # Filter to our window (window dates are YYYY-MM-DD ; collected are YYYYMMDD).
             start_compact = start.strftime("%Y%m%d")
