@@ -232,7 +232,7 @@ async def _sync_one(
                 continue
             quantara_acct = acct_by_rithmic_id[rid]
             try:
-                fills = await _fetch_fills(client, start, end, rithmic_acct)
+                fills = await _fetch_fills(client, start, end, rithmic_acct, user_id=user_id)
                 rows = [_fill_to_journal_row(f, quantara_acct) for f in fills]
                 rows = [r for r in rows if r is not None]
                 if rows:
@@ -275,7 +275,60 @@ def _account_id(rithmic_acct: Any) -> str:
     return str(rithmic_acct)
 
 
-async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any) -> List[Any]:
+def _debug_persist(user_id: Optional[str], account_id: str, date_str: str, summary: Any) -> None:
+    """Persist a single summary response to the rithmic_debug table for offline inspection.
+
+    Logs are silently swallowed by Railway noise — Supabase is reliable.
+    Only the first 5 dates per sync hit this (caller-guarded).
+    """
+    if user_id is None:
+        return
+    try:
+        s_type = type(summary).__name__ if summary is not None else "NoneType"
+        s_repr = str(summary)[:2000] if summary is not None else "None"
+        fields_json: Dict[str, Any] = {}
+        if summary is not None and hasattr(summary, "ListFields"):
+            try:
+                for f_desc, f_value in list(summary.ListFields())[:30]:
+                    fields_json[f_desc.name] = {
+                        "py_type": type(f_value).__name__,
+                        "repr": str(f_value)[:500],
+                    }
+            except Exception as e:  # noqa: BLE001
+                fields_json["__error__"] = str(e)[:200]
+        elif summary is not None and isinstance(summary, (list, tuple)) and summary:
+            fields_json["__list_len__"] = len(summary)
+            first = summary[0]
+            fields_json["__list_0_type__"] = type(first).__name__
+            if hasattr(first, "ListFields"):
+                try:
+                    for f_desc, f_value in list(first.ListFields())[:30]:
+                        fields_json[f"item0.{f_desc.name}"] = {
+                            "py_type": type(f_value).__name__,
+                            "repr": str(f_value)[:500],
+                        }
+                except Exception as e:  # noqa: BLE001
+                    fields_json["__error__"] = str(e)[:200]
+        sb = get_supabase()
+        sb.table("rithmic_debug").insert({
+            "user_id": user_id,
+            "account_id": account_id,
+            "date_str": date_str,
+            "summary_type": s_type,
+            "summary_repr": s_repr,
+            "fields_json": fields_json,
+        }).execute()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("debug persist failed (table may not exist yet) : %s", str(e)[:200])
+
+
+async def _fetch_fills(
+    client,
+    start: datetime,
+    end: datetime,
+    rithmic_acct: Any,
+    user_id: Optional[str] = None,
+) -> List[Any]:
     """Fetch fill history for a Rithmic account.
 
     async_rithmic v1.5 does NOT expose get_fill_history on the client itself
@@ -413,6 +466,10 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
                                        d, list(kwargs.keys()), str(e)[:200])
                         error_count += 1
                         break
+
+                # ── DIAGNOSTIC : persist first 5 summaries to Supabase (rithmic_debug)
+                if d_idx < 5:
+                    _debug_persist(user_id, account_id, d, summary)
 
                 # ── DIAGNOSTIC : log first 5 iterations UNCONDITIONALLY
                 if d_idx < 5:
