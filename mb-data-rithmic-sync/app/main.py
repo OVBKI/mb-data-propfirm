@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import __version__
 from .config import get_settings
 from .routers import credentials, cron, health, sync
+from .scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("quantara-rithmic-sync")
@@ -42,8 +43,18 @@ async def on_startup() -> None:
     logger.info("Quantara Rithmic Sync v%s starting up", __version__)
     logger.info("CORS origins : %s", settings.cors_origins_list)
     logger.info("Rithmic gateway : %s", settings.rithmic_gateway_uri)
+    # Start the internal scheduler — runs poll_all every 15 min directly on this process.
+    # No external cron infra needed (Railway runs the service 24/7).
+    try:
+        start_scheduler()
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Failed to start scheduler : %s", e)
 
 
 @app.on_event("shutdown")
 async def on_shutdown() -> None:
     logger.info("Shutting down")
+    try:
+        stop_scheduler()
+    except Exception:  # noqa: BLE001
+        pass
