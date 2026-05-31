@@ -5,7 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from async_rithmic import RithmicClient
+from async_rithmic import RithmicClient, SysInfraType
 from async_rithmic.objects import RetrySettings
 
 from .config import get_settings
@@ -46,8 +46,12 @@ async def rithmic_session(
         retry_settings=fast_retry,
     )
     try:
-        logger.info("Connecting to Rithmic gateway %s (system=%s)", settings.rithmic_gateway_uri, system_name)
-        await client.connect()
+        logger.info("Connecting to Rithmic gateway %s (system=%s, plants=[ORDER])",
+                    settings.rithmic_gateway_uri, system_name)
+        # Connect ONLY to the order plant. Lucid's API user (LT-*) typically has
+        # permission denied (rpCode 13) on ticker/history/pnl plants, and async_rithmic
+        # otherwise enters an infinite reconnection loop on the failing plant.
+        await client.connect(plants=[SysInfraType.ORDER_PLANT])
         yield client
     finally:
         try:
