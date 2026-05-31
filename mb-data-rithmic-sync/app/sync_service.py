@@ -389,8 +389,9 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
             success_count = 0
             error_count = 0
 
-            for d in dates_to_sync:
+            for d_idx, d in enumerate(dates_to_sync):
                 summary = None
+                exception_caught = None
                 for kwargs in (
                     {"date": d, "account_id": account_id},
                     {"date": d},
@@ -401,6 +402,7 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
                     except TypeError:
                         continue
                     except Exception as e:  # noqa: BLE001
+                        exception_caught = e
                         err_str = str(e).lower()
                         if "no data" in err_str or "'rpcode': ['7'" in err_str:
                             # Date has no orders — silent skip
@@ -412,37 +414,40 @@ async def _fetch_fills(client, start: datetime, end: datetime, rithmic_acct: Any
                         error_count += 1
                         break
 
+                # ── DIAGNOSTIC : log first 5 iterations UNCONDITIONALLY
+                if d_idx < 5:
+                    logger.info(
+                        "DIAG[%d] date=%s : summary=%s, exception=%s",
+                        d_idx, d,
+                        f"type={type(summary).__name__}, repr={str(summary)[:300]}" if summary is not None else "None",
+                        type(exception_caught).__name__ if exception_caught else "none",
+                    )
+                    if summary is not None and hasattr(summary, "ListFields"):
+                        try:
+                            fields = list(summary.ListFields())
+                            logger.info("DIAG[%d] ListFields count=%d", d_idx, len(fields))
+                            for f_desc, f_value in fields[:10]:
+                                logger.info("DIAG[%d]   field name=%s, type=%s, repr=%s",
+                                            d_idx, f_desc.name, type(f_value).__name__,
+                                            str(f_value)[:150])
+                        except Exception as e:  # noqa: BLE001
+                            logger.warning("DIAG[%d] ListFields failed : %s", d_idx, e)
+                    elif summary is not None and isinstance(summary, (list, tuple)) and summary:
+                        first = summary[0]
+                        logger.info("DIAG[%d] list[0] type=%s", d_idx, type(first).__name__)
+                        if hasattr(first, "ListFields"):
+                            try:
+                                for f_desc, f_value in list(first.ListFields())[:10]:
+                                    logger.info("DIAG[%d]   list[0] field=%s, type=%s, repr=%s",
+                                                d_idx, f_desc.name, type(f_value).__name__,
+                                                str(f_value)[:150])
+                            except Exception:  # noqa: BLE001
+                                pass
+
                 if summary is None:
                     continue
 
                 success_count += 1
-
-                # Log first successful response so we can adapt parsing
-                if not getattr(_fetch_fills, "_summary_logged", False):
-                    logger.info("✓ First successful summary(date=%s) : type=%s, repr=%s",
-                                d, type(summary).__name__, str(summary)[:600])
-                    if hasattr(summary, "ListFields"):
-                        try:
-                            for f_desc, f_value in summary.ListFields():
-                                logger.info("  summary field name=%s, type=%s, repr=%s",
-                                            f_desc.name, type(f_value).__name__,
-                                            str(f_value)[:150])
-                        except Exception:  # noqa: BLE001
-                            pass
-                    elif isinstance(summary, list) and summary:
-                        first = summary[0]
-                        logger.info("  summary[0] type=%s, attrs=%s",
-                                    type(first).__name__,
-                                    [a for a in dir(first) if not a.startswith("_") and not a[0].isupper()][:30])
-                        if hasattr(first, "ListFields"):
-                            try:
-                                for f_desc, f_value in first.ListFields():
-                                    logger.info("  summary[0] field name=%s, type=%s, repr=%s",
-                                                f_desc.name, type(f_value).__name__,
-                                                str(f_value)[:150])
-                            except Exception:  # noqa: BLE001
-                                pass
-                    _fetch_fills._summary_logged = True  # type: ignore[attr-defined]
 
                 fills_from_summary = _extract_fills_from_summary(summary, account_id, d)
                 if fills_from_summary:
