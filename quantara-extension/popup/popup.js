@@ -45,14 +45,24 @@ function renderHistoryItem(h) {
   li.appendChild(el('span', { className: 'pill ' + (h.ok ? 'ok' : 'err'), text: h.ok ? 'OK' : 'ERR' }))
   li.appendChild(document.createTextNode(' '))
   li.appendChild(el('strong', { text: h.firm || '?' }))
-  li.appendChild(document.createTextNode(` — ${h.count || 0} trade(s) `))
-  if (h.ok && h.inserted != null) {
-    li.appendChild(el('span', { className: 'pill', text: `+${h.inserted}` }))
-    li.appendChild(document.createTextNode(' '))
-  }
-  if (h.ok && h.updated) {
-    li.appendChild(el('span', { className: 'pill', text: `~${h.updated}` }))
-    li.appendChild(document.createTextNode(' '))
+
+  const isAccounts = h.kind === 'accounts'
+  const noun = isAccounts ? 'compte' : 'trade'
+  const plural = (h.count || 0) > 1 ? 's' : ''
+  li.appendChild(document.createTextNode(` — ${h.count || 0} ${noun}${plural} `))
+
+  // For accounts kind the API returns { created, updated }; for trades { inserted, updated }.
+  if (h.ok) {
+    const newCount = h.inserted != null ? h.inserted : (h.created != null ? h.created : null)
+    if (newCount != null) {
+      const label = isAccounts ? `★${newCount} créé${newCount > 1 ? 's' : ''}` : `+${newCount}`
+      li.appendChild(el('span', { className: 'pill', text: label }))
+      li.appendChild(document.createTextNode(' '))
+    }
+    if (h.updated) {
+      li.appendChild(el('span', { className: 'pill', text: `~${h.updated} maj` }))
+      li.appendChild(document.createTextNode(' '))
+    }
   }
   if (!h.ok && h.error) {
     li.appendChild(el('span', { className: 'meta', text: h.error }))
@@ -99,6 +109,59 @@ async function downloadDebugLog() {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
+function fmtAgo(ts) {
+  if (!ts) return 'jamais'
+  const ms = Date.now() - ts
+  if (ms < 60_000) return 'à l’instant'
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)} min`
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)} h`
+  return `${Math.floor(ms / 86_400_000)} j`
+}
+
+const STATUS_CLASS = {
+  ok: 'ok',
+  running: 'run',
+  session_expired: 'err',
+  timeout: 'warn',
+  error: 'err',
+}
+
+const STATUS_LABEL = {
+  ok: 'OK',
+  running: 'sync…',
+  session_expired: 'session expirée',
+  timeout: 'timeout',
+  error: 'erreur',
+}
+
+function renderFirmItem(firm, st) {
+  const li = document.createElement('li')
+
+  let dotCls = 'off'
+  let label  = 'jamais sync'
+  if (firm.disabled) {
+    dotCls = 'off'; label = 'bientôt'
+  } else if (st && st.lastStatus) {
+    dotCls = STATUS_CLASS[st.lastStatus] || 'off'
+    label  = STATUS_LABEL[st.lastStatus] || st.lastStatus
+  }
+
+  li.appendChild(el('span', { className: 'firm-status ' + dotCls }))
+  const nameWrap = el('div', { className: 'firm-name', style: 'display:flex;flex-direction:column' })
+  nameWrap.appendChild(el('span', { text: firm.label }))
+  const metaTxt = st && st.lastSync ? `${label} · ${fmtAgo(st.lastSync)}` : label
+  nameWrap.appendChild(el('span', { className: 'firm-meta', text: metaTxt }))
+  li.appendChild(nameWrap)
+
+  if (!firm.disabled) {
+    const btn = el('button', { className: 'refresh', text: '⟳' })
+    btn.title = 'Sync maintenant ' + firm.label
+    btn.addEventListener('click', () => send('POPUP_SYNC_FIRM', firm.slug))
+    li.appendChild(btn)
+  }
+  return li
+}
+
 async function refresh() {
   const state = await send('POPUP_GET_STATE')
   if (!state) return
@@ -113,6 +176,21 @@ async function refresh() {
   }
 
   $('#debugToggle').checked = !!state.debugMode
+  $('#autoSyncToggle').checked = !!state.autoSyncEnabled
+
+  const intervalMin = state.autoSyncIntervalMinutes || 120
+  const il = $('#intervalLabel')
+  if (il) il.textContent = intervalMin >= 60 ? `${Math.round(intervalMin / 60)}h` : `${intervalMin} min`
+
+  const firms = state.firms || []
+  const firmStates = state.firmStates || {}
+  const firmsList = $('#firmsList')
+  clear(firmsList)
+  if (!firms.length) {
+    firmsList.appendChild(el('li', { className: 'empty', text: 'Aucune firm configurée' }))
+  } else {
+    firms.forEach(f => firmsList.appendChild(renderFirmItem(f, firmStates[f.slug])))
+  }
 
   const hist = state.syncHistory || []
   const histList = $('#historyList')
@@ -157,6 +235,16 @@ $('#clearDebug').addEventListener('click', async () => {
   refresh()
 })
 $('#exportDebug').addEventListener('click', downloadDebugLog)
+$('#syncNow').addEventListener('click', async (e) => {
+  e.target.disabled = true
+  e.target.textContent = '⟳ Sync en cours…'
+  await send('POPUP_SYNC_NOW')
+  setTimeout(() => { e.target.disabled = false; e.target.textContent = '⟳ Sync maintenant' }, 3000)
+  refresh()
+})
+$('#autoSyncToggle').addEventListener('change', async (e) => {
+  await send('POPUP_SET_AUTOSYNC', e.target.checked)
+})
 $('#logout').addEventListener('click', async () => {
   await send('POPUP_LOGOUT')
   refresh()

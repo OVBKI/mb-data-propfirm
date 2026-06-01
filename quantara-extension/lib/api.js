@@ -34,6 +34,22 @@ export async function submitSync(payload) {
   return data
 }
 
+// POST /api/sync/extension/accounts — submit a list of accounts (auto-create/update).
+// payload = { firm: 'lucid-trading', accounts: [{ accountKey, accountName,
+//             quantaraStatus, planSize, accountBalance, minAccountBalance, ... }] }
+export async function submitAccounts(payload) {
+  const base = await baseUrl()
+  const headers = { 'Content-Type': 'application/json', ...(await authHeader()) }
+  const res = await fetch(`${base}/api/sync/extension/accounts`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+  return data
+}
+
 // GET /api/sync/extension/ping — cheap auth check used by popup.
 export async function ping() {
   const base = await baseUrl()
