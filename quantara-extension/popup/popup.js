@@ -72,8 +72,9 @@ function renderDebugItem(entry) {
   if (entry.ms != null) metaBits.push(entry.ms + 'ms')
   metaBits.push(fmtTime(entry.ts))
   li.appendChild(el('div', { className: 'meta', text: metaBits.join(' · ') }))
-  if (entry.sample) {
-    const slice = entry.sample.slice(0, 200) + (entry.sample.length > 200 ? '…' : '')
+  const body = entry.body != null ? entry.body : entry.sample
+  if (body) {
+    const slice = body.slice(0, 200) + (body.length > 200 ? `… (${body.length} chars)` : '')
     li.appendChild(el('div', {
       className: 'meta',
       style: 'margin-top:4px;color:var(--text2);max-height:50px;overflow:auto;white-space:pre-wrap',
@@ -81,6 +82,21 @@ function renderDebugItem(entry) {
     }))
   }
   return li
+}
+
+async function downloadDebugLog() {
+  const state = await send('POPUP_GET_STATE')
+  const log = (state && state.debugLog) || []
+  const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `quantara-debug-${stamp}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 async function refresh() {
@@ -140,6 +156,7 @@ $('#clearDebug').addEventListener('click', async () => {
   await send('POPUP_CLEAR_DEBUG')
   refresh()
 })
+$('#exportDebug').addEventListener('click', downloadDebugLog)
 $('#logout').addEventListener('click', async () => {
   await send('POPUP_LOGOUT')
   refresh()

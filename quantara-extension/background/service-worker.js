@@ -86,7 +86,9 @@ async function handleCapture(payload, sender) {
       url,
       status: payload.status,
       ms: payload.ms,
-      sample: typeof payload.body === 'string' ? payload.body.slice(0, 800) : null,
+      contentType: payload.contentType,
+      // Full body kept in storage; popup truncates for display, export sends full.
+      body: typeof payload.body === 'string' ? payload.body.slice(0, 50_000) : null,
     })
   }
 
