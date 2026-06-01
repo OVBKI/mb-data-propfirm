@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Quantara Sync</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="hd">
+    <div class="brand">
+      <img src="../icons/icon32.png" width="24" height="24" alt="" />
+      <span>Quantara Sync</span>
+      <span class="ver">v0.3.1</span>
+    </div>
+    <button id="openSite" class="link" title="Ouvrir quantara.tech">↗</button>
+  </header>
+
+  <section id="authBox" class="card hidden">
+    <div class="row">
+      <div class="dot ok"></div>
+      <div class="grow">
+        <div class="lbl">Connecté</div>
+        <div class="sub" id="authEmail">—</div>
+      </div>
+      <button id="logout" class="ghost sm">Déconnexion</button>
+    </div>
+  </section>
+
+  <section id="authNeeded" class="card hidden">
+    <div class="row">
+      <div class="dot warn"></div>
+      <div class="grow">
+        <div class="lbl">Non connecté</div>
+        <div class="sub">Connecte-toi sur quantara.tech, l'extension récupère ta session automatiquement.</div>
+      </div>
+    </div>
+    <button id="goLogin" class="primary">Se connecter à Quantara</button>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab on" data-tab="status">État</button>
+    <button class="tab" data-tab="history">Historique</button>
+    <button class="tab" data-tab="debug">Debug</button>
+  </nav>
+
+  <section id="tab-status" class="pane">
+    <div class="card">
+      <div class="lbl">Comment ça marche</div>
+      <ol class="hint">
+        <li>Connecte-toi sur <a href="#" id="openSiteInline">quantara.tech</a>.</li>
+        <li>Ouvre le dashboard de ta PropFirm (Lucid, TopstepX, etc.).</li>
+        <li>Navigue dans ton historique de trades — l'extension intercepte les appels API et les envoie à Quantara.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="grow">
+          <div class="lbl">Mode debug</div>
+          <div class="sub">Capture toutes les requêtes du dashboard, utile pour valider une nouvelle PropFirm.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="debugToggle" /><span></span></label>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-history" class="pane hidden">
+    <div id="historyEmpty" class="empty">Pas encore de sync.</div>
+    <ul id="historyList" class="list"></ul>
+  </section>
+
+  <section id="tab-debug" class="pane hidden">
+    <div class="row gap">
+      <div class="sub grow">Dernières requêtes interceptées (200 max)</div>
+      <button id="exportDebug" class="ghost sm" title="Télécharger toutes les requêtes capturées en JSON">Exporter</button>
+      <button id="clearDebug" class="ghost sm">Vider</button>
+    </div>
+    <div id="debugEmpty" class="empty">Aucune requête capturée. Ouvre un dashboard PropFirm pour commencer.</div>
+    <ul id="debugList" class="list small"></ul>
+  </section>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
