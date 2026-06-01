@@ -9,7 +9,10 @@ import { useApp } from '../AppContext'
 const C = {
   surface: 'rgba(20,23,32,0.65)', border: 'rgba(255,255,255,0.07)', border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8', text2: '#9098b0', text3: '#5a6275', green: '#1db87a', blue: '#2d6fff', blueLt: '#4d8fff',
+  amber: '#d99a3e',
 }
+
+const EXTENSION_DOC_URL = '/docs/extension'
 
 export default function JournalSyncHub() {
   const { user } = useApp()
@@ -46,7 +49,7 @@ export default function JournalSyncHub() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
           <Link href="/app/import-lab" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
             onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(45,111,255,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(45,111,255,0.15)' }}
             onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
@@ -80,18 +83,23 @@ export default function JournalSyncHub() {
             </div>
             <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.green, fontSize: 18 }}>{'→'}</div>
           </Link>
-        </div>
 
-        <div style={{ marginTop: 24, padding: 18, background: 'rgba(255,255,255,0.02)', border: `1px dashed ${C.border2}`, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ fontSize: 28, opacity: 0.5 }}>{'\u{1F512}'}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.text2, marginBottom: 2 }}>
-              Sync auto via API <span style={{ marginLeft: 8, fontSize: 10, padding: '2px 7px', background: 'rgba(255,255,255,0.06)', color: C.text3, borderRadius: 99, letterSpacing: '0.08em' }}>BIENTÔT</span>
+          <a href={EXTENSION_DOC_URL} style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(217,154,62,0.55)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(217,154,62,0.18)' }}
+            onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F9E9}'}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Sync auto</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Extension navigateur</h3>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
+              Installe l&apos;extension Chrome Quantara Sync. Connecte-toi à ton dashboard PropFirm comme d&apos;habitude, et tes trades sont synchronisés en arrière-plan. Aucune clé API.
+            </p>
+            <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ padding: '3px 8px', background: 'rgba(217,154,62,0.12)', color: C.amber, borderRadius: 99, fontWeight: 600 }}>ALPHA</span>
+              <span>Lucid · TopstepX (bientôt Apex, MFFU, Tradeify)</span>
             </div>
-            <div style={{ fontSize: 12, color: C.text3, lineHeight: 1.5 }}>
-              Synchronisation automatique en temps réel via ProjectX Gateway (Topstep, TPT, MFFU, Tradeify, FFN, Phidias). Q3 2026.
-            </div>
-          </div>
+            <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.amber, fontSize: 18 }}>{'→'}</div>
+          </a>
         </div>
       </div>
     </div>
