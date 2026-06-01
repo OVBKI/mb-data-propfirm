@@ -40,10 +40,15 @@
     } catch { return false }
   }
 
+  function absUrl(u) {
+    try { return new URL(u, location.href).href } catch { return String(u || '') }
+  }
+
   // ── fetch ──────────────────────────────────────────────────────────
   const origFetch = window.fetch
   window.fetch = async function (input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url)
+    const rawUrl = typeof input === 'string' ? input : (input && input.url)
+    const url = absUrl(rawUrl)
     const method = (init && init.method) || (typeof input !== 'string' && input?.method) || 'GET'
     const start = performance.now()
     let res
@@ -79,7 +84,7 @@
   const open = XHR.prototype.open
   const send = XHR.prototype.send
   XHR.prototype.open = function (method, url) {
-    this.__qx = { method, url, start: 0 }
+    this.__qx = { method, url: absUrl(url), start: 0 }
     return open.apply(this, arguments)
   }
   XHR.prototype.send = function () {

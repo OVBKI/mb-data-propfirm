@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Quantara Sync",
   "short_name": "Quantara",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Sync auto de tes trades PropFirm vers Quantara, depuis n'importe quel dashboard (Lucid, TopstepX, Apex, MFFU, etc.).",
   "author": "Quantara Technologies LLC",
   "icons": {

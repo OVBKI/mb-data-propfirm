@@ -75,8 +75,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 async function handleCapture(payload, sender) {
   if (!payload?.url) return
+  // Resolve URL host: prefer payload URL, fall back to the sender tab's URL
+  // for cases where the captured value is still relative.
+  let host = ''
+  try { host = new URL(payload.url).hostname } catch {}
+  if (!host && sender?.tab?.url) {
+    try { host = new URL(sender.tab.url).hostname } catch {}
+  }
   const url = payload.url
-  const host = (() => { try { return new URL(url).hostname } catch { return '' } })()
   const firm = firmSlugFromHost(host)
 
   if (await get('debugMode')) {
