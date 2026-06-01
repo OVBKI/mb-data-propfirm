@@ -10,7 +10,7 @@
     <div class="brand">
       <img src="../icons/icon32.png" width="24" height="24" alt="" />
       <span>Quantara Sync</span>
-      <span class="ver">v0.3.1</span>
+      <span class="ver">v0.4</span>
     </div>
     <button id="openSite" class="link" title="Ouvrir quantara.tech">↗</button>
   </header>
@@ -45,13 +45,21 @@
 
   <section id="tab-status" class="pane">
     <div class="card">
-      <div class="lbl">Comment ça marche</div>
-      <ol class="hint">
-        <li>Connecte-toi sur <a href="#" id="openSiteInline">quantara.tech</a>.</li>
-        <li>Ouvre le dashboard de ta PropFirm (Lucid, TopstepX, etc.).</li>
-        <li>Navigue dans ton historique de trades — l'extension intercepte les appels API et les envoie à Quantara.</li>
-      </ol>
+      <div class="row">
+        <div class="grow">
+          <div class="lbl">Auto-sync</div>
+          <div class="sub" id="autoSyncSub">Sync automatique des firms toutes les <span id="intervalLabel">2h</span> en arrière-plan.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="autoSyncToggle" /><span></span></label>
+      </div>
+      <button id="syncNow" class="primary" style="margin-top:10px">⟳ Sync maintenant</button>
     </div>
+
+    <div id="firmsCard" class="card">
+      <div class="lbl" style="margin-bottom:8px">PropFirms</div>
+      <ul id="firmsList" class="firm-list"></ul>
+    </div>
+
     <div class="card">
       <div class="row">
         <div class="grow">
@@ -60,6 +68,15 @@
         </div>
         <label class="switch"><input type="checkbox" id="debugToggle" /><span></span></label>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="lbl">Comment ça marche</div>
+      <ol class="hint">
+        <li>Connecte-toi sur <a href="#" id="openSiteInline">quantara.tech</a>.</li>
+        <li>Connecte-toi sur chaque dashboard PropFirm une fois (Lucid, TopstepX…).</li>
+        <li>Quantara fait le sync en arrière-plan — tu ne touches plus jamais aux dashboards.</li>
+      </ol>
     </div>
   </section>
 

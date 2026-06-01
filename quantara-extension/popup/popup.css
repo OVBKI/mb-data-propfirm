@@ -61,6 +61,8 @@ body { padding: 12px; }
 .dot.ok { background: var(--green); box-shadow: 0 0 8px rgba(29, 184, 122, 0.5); }
 .dot.warn { background: var(--amber); }
 
+button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
 button.primary {
   width: 100%;
   margin-top: 8px;
@@ -148,3 +150,43 @@ button.ghost.sm { font-size: 11px; padding: 3px 8px; }
 .list .pill.ok { background: rgba(29,184,122,0.15); color: var(--green); }
 .list .pill.err { background: rgba(217,72,86,0.15); color: #ff7a8a; }
 .empty { padding: 20px 12px; text-align: center; color: var(--text3); font-size: 12px; }
+
+.firm-list { list-style: none; margin: 0; padding: 0; }
+.firm-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.firm-list li:last-child { border-bottom: none; }
+.firm-list .firm-name { font-weight: 600; flex: 1; }
+.firm-list .firm-meta { color: var(--text3); font-size: 10px; }
+.firm-list .firm-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.firm-list .firm-status.ok { background: var(--green); }
+.firm-list .firm-status.err { background: #d94856; }
+.firm-list .firm-status.warn { background: var(--amber); }
+.firm-list .firm-status.run { background: var(--blueLt); animation: pulse 1.2s ease-in-out infinite; }
+.firm-list .firm-status.off { background: var(--text3); }
+.firm-list button.refresh {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.firm-list button.refresh:hover { color: var(--text); border-color: var(--border2); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1 }
+  50% { opacity: 0.35 }
+}

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Quantara Sync",
   "short_name": "Quantara",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Sync auto de tes trades PropFirm vers Quantara, depuis n'importe quel dashboard (Lucid, TopstepX, Apex, MFFU, etc.).",
   "author": "Quantara Technologies LLC",
   "icons": {
@@ -26,7 +26,9 @@
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "alarms",
+    "tabs"
   ],
   "host_permissions": [
     "https://*.lucidtrading.com/*",
