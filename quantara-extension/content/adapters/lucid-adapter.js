@@ -1,122 +1,87 @@
-// Lucid Trading adapter.
+// Lucid Trading adapter — verrouillé sur le schéma réel de
+// GET /api/users/accountInfo/<userKey>?accountKey=<accountKey>
 //
-// STATUS: heuristic skeleton. Until we capture a real response payload
-// from dash.lucidtrading.com, this adapter does best-effort field
-// detection on any JSON body whose URL path hints at trades / fills /
-// orders / positions. Once we have a confirmed schema, replace
-// `detectArray` + `mapTrade` with hard-coded shape.
-//
-// Output contract (consumed by service-worker.js → submitSync):
+// Réponse Lucid (vérifiée juin 2026):
 //   [{
-//     external_id,        // unique per-firm id, used for dedup
-//     date,               // 'YYYY-MM-DD'
-//     pnl,                // number (USD)
-//     instrument,         // e.g. 'MNQ', 'ES'
-//     side,               // 'long' | 'short' | ''
-//     entry_price,        // number | null
-//     exit_price,         // number | null
-//     opened_at,          // ISO 8601 | null
-//     closed_at,          // ISO 8601 | null
-//     accountIdentifier,  // string | null
-//     raw,                // original record (kept for debugging)
+//     accountSummary: { userKey, accountKey, accountName, planCode, status,
+//                       accountType, accountBalance, minAccountBalance,
+//                       profitTarget, distToProfitTarget, ... },
+//     accountEquity:  [{ dataDate, accountBalance, minAccountBalance, ... }],
+//     calendarData:   [{ dataDate, netPnl, highPnl, lowPnl, qtyTraded,
+//                        commissions, trades, winPct }],
+//     symbolData:     [{ dataDate, symbol, exchange, netPnl, highPnl, lowPnl,
+//                        qtyTraded, commissions, trades, avgWin, avgLoss,
+//                        winPct, ... }],
 //   }]
+//
+// On utilise symbolData parce qu'il porte le symbole (MNQM6, ES, NQ…) en plus
+// du P&L quotidien. Chaque ligne devient un journal_entries unique :
+//   external_id = `${accountKey}:${dataDate}:${symbol}`
+// Si un jour combine plusieurs symboles, on aura plusieurs entrées ce jour-là
+// — c'est le comportement attendu côté Quantara.
 
-const TRADE_URL_HINTS = [
-  '/trade', '/trades', '/fill', '/fills', '/order', '/orders',
-  '/history', '/position', '/positions', '/journal',
-]
+const ACCOUNT_INFO_RE = /\/api\/users\/accountInfo\//i
 
 export function adaptLucid(payload) {
-  if (!payload || !payload.body || payload.status >= 400) return null
-  const url = String(payload.url || '').toLowerCase()
-  if (!TRADE_URL_HINTS.some(h => url.includes(h))) return null
+  if (!payload || payload.status >= 400) return null
+  const url = String(payload.url || '')
+  if (!ACCOUNT_INFO_RE.test(url)) return null
+  if (typeof payload.body !== 'string' || !payload.body) return null
 
   let body
   try { body = JSON.parse(payload.body) } catch { return null }
+  const root = Array.isArray(body) ? body[0] : body
+  if (!root || typeof root !== 'object') return null
 
-  const array = detectArray(body)
-  if (!array || !array.length) return null
+  const symbolData = Array.isArray(root.symbolData) ? root.symbolData : null
+  if (!symbolData || !symbolData.length) return null
+
+  const summary = root.accountSummary || {}
+  const accountKey = String(summary.accountKey || symbolData[0]?.accountKey || '')
+  const accountName = String(summary.accountName || symbolData[0]?.accountName || '')
 
   const out = []
-  for (const row of array) {
-    const t = mapTrade(row)
-    if (t) out.push(t)
+  for (const row of symbolData) {
+    if (!row || typeof row !== 'object') continue
+    const date = String(row.dataDate || '').slice(0, 10)
+    const symbol = String(row.symbol || '').toUpperCase()
+    if (!date || !symbol) continue
+    const rowAccountKey = String(row.accountKey || accountKey)
+
+    out.push({
+      external_id: `${rowAccountKey}:${date}:${symbol}`,
+      date,
+      pnl: num(row.netPnl),
+      instrument: symbol,
+      side: '',
+      entry_price: null,
+      exit_price: null,
+      opened_at: null,
+      closed_at: null,
+      accountIdentifier: rowAccountKey,
+      accountName: row.accountName || accountName || null,
+      raw: {
+        exchange: row.exchange,
+        highPnl: num(row.highPnl),
+        lowPnl: num(row.lowPnl),
+        qtyTraded: row.qtyTraded,
+        commissions: num(row.commissions),
+        tradesCount: row.trades,
+        avgWin: num(row.avgWin),
+        avgLoss: num(row.avgLoss),
+        winPct: num(row.winPct),
+        maxConsecWin: row.maxConsecWin,
+        maxConsecLoss: row.maxConsecLoss,
+        avgWinDuration: row.avgWinDuration,
+        avgLossDuration: row.avgLossDuration,
+      },
+    })
   }
   return out.length ? out : null
 }
 
-function detectArray(body) {
-  if (Array.isArray(body)) return body
-  if (!body || typeof body !== 'object') return null
-  // Common envelopes: { data: [...] }, { trades: [...] }, { fills: [...] },
-  // { results: [...] }, { items: [...] }
-  for (const k of ['trades', 'fills', 'orders', 'positions', 'data', 'results', 'items']) {
-    if (Array.isArray(body[k])) return body[k]
-    if (body[k] && Array.isArray(body[k].items)) return body[k].items
-  }
-  return null
-}
-
-function mapTrade(row) {
-  if (!row || typeof row !== 'object') return null
-
-  const externalId = pick(row, ['id', 'tradeId', 'fillId', 'orderId', 'uuid', 'reference'])
-  const instrument = String(pick(row, ['symbol', 'instrument', 'contract', 'product', 'ticker']) || '').toUpperCase()
-  const pnl = num(pick(row, ['pnl', 'profit', 'realizedPnl', 'realized_profit', 'netPnl', 'net_profit', 'profitLoss']))
-  if (pnl == null && !externalId) return null
-
-  const sideRaw = String(pick(row, ['side', 'direction', 'action', 'buySell']) || '').toLowerCase()
-  let side = ''
-  if (/buy|long|bid/.test(sideRaw)) side = 'long'
-  else if (/sell|short|ask/.test(sideRaw)) side = 'short'
-
-  const entry = num(pick(row, ['entryPrice', 'entry_price', 'openPrice', 'open_price', 'avgEntry']))
-  const exit  = num(pick(row, ['exitPrice', 'exit_price', 'closePrice', 'close_price', 'avgExit']))
-
-  const openedRaw = pick(row, ['openedAt', 'opened_at', 'openTime', 'open_time', 'entryTime', 'entry_time', 'tradeDate', 'date', 'timestamp', 'createdAt'])
-  const closedRaw = pick(row, ['closedAt', 'closed_at', 'closeTime', 'close_time', 'exitTime', 'exit_time'])
-  const opened = iso(openedRaw)
-  const closed = iso(closedRaw) || opened
-
-  const dateBase = closed || opened
-  const date = dateBase ? dateBase.slice(0, 10) : null
-  if (!date) return null
-
-  return {
-    external_id: String(externalId || `${date}-${instrument}-${pnl}-${entry}-${exit}`),
-    date,
-    pnl: pnl == null ? 0 : pnl,
-    instrument,
-    side,
-    entry_price: entry,
-    exit_price: exit,
-    opened_at: opened,
-    closed_at: closed,
-    accountIdentifier: String(pick(row, ['accountId', 'account_id', 'accountName', 'account', 'accountNumber']) || '') || null,
-    raw: row,
-  }
-}
-
-function pick(obj, keys) {
-  for (const k of keys) {
-    if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k]
-  }
-  return null
-}
-
 function num(v) {
   if (v == null || v === '') return null
-  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/,/g, ''))
+  const n = Number(v)
   return Number.isFinite(n) ? n : null
-}
-
-function iso(v) {
-  if (!v) return null
-  if (typeof v === 'number') {
-    // Heuristic: seconds vs milliseconds
-    const ms = v < 1e12 ? v * 1000 : v
-    return new Date(ms).toISOString()
-  }
-  const d = new Date(v)
-  return Number.isFinite(d.getTime()) ? d.toISOString() : null
 }

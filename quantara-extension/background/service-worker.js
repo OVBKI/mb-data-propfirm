@@ -109,6 +109,7 @@ async function handleCapture(payload, sender) {
     const result = await submitSync({
       firm,
       accountIdentifier: trades[0]?.accountIdentifier || null,
+      accountName:       trades[0]?.accountName       || null,
       trades,
     })
     await pushHistory({ firm, count: trades.length, ok: true, inserted: result.inserted, updated: result.updated })

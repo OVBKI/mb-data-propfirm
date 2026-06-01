@@ -65,7 +65,7 @@ export async function POST(request) {
   //    matching token from the canonical name).
   const { data: firms, error: firmsErr } = await supa
     .from('firms')
-    .select('id, name, accounts(id, name, account_id)')
+    .select('id, name, accounts(id, name, rithmic_account_id, status)')
     .eq('user_id', auth.user.id)
 
   if (firmsErr) return Response.json({ error: 'DB error firms', detail: firmsErr.message }, { status: 500 })
@@ -78,22 +78,15 @@ export async function POST(request) {
       canonical,
     }, { status: 409 })
   }
-  let account = (firm.accounts || [])[0]
-  if (body.accountIdentifier && firm.accounts) {
-    const ident = String(body.accountIdentifier).toLowerCase()
-    const matched = firm.accounts.find(a =>
-      String(a.name || '').toLowerCase().includes(ident) ||
-      String(a.account_id || '').toLowerCase() === ident
-    )
-    if (matched) account = matched
-  }
-  if (!account) {
+  const accounts = firm.accounts || []
+  if (!accounts.length) {
     return Response.json({
       error: 'NO_ACCOUNT',
       hint: `Aucun compte configuré sous ${firm.name}. Ajoute un compte avant de sync.`,
       firmId: firm.id,
     }, { status: 409 })
   }
+  const account = matchAccount(accounts, body.accountIdentifier, body.accountName) || accounts[0]
 
   // 2) Build batch with idempotency tag. Tag goes into notes so we can dedup
   //    via LIKE without a schema change. Production-grade alt = dedicated
@@ -184,6 +177,41 @@ function numOrNull(v) {
   if (v == null || v === '') return null
   const n = Number(v)
   return Number.isFinite(n) ? n : null
+}
+
+// Fuzzy match a user account inside a firm given the broker-supplied
+// account identifier and/or full account name.
+//
+// Lucid sends:
+//   accountIdentifier = "579ZNFS2"                 (short accountKey)
+//   accountName       = "LFF050-579ZNFS2-PRO006"   (full identifier)
+//
+// User stores their Quantara account with either field populated in
+// accounts.name (free-text) or accounts.rithmic_account_id (typed by the
+// Rithmic CSV importer). We test both, in both directions.
+function matchAccount(accounts, identifier, fullName) {
+  const ident = identifier ? String(identifier).toLowerCase() : ''
+  const full  = fullName   ? String(fullName).toLowerCase()   : ''
+  if (!ident && !full) return null
+
+  const fields = (a) => [a.name, a.rithmic_account_id]
+    .map(v => String(v || '').toLowerCase())
+    .filter(Boolean)
+
+  // 1) exact equality on any field
+  for (const a of accounts) {
+    for (const f of fields(a)) {
+      if (f === ident || f === full) return a
+    }
+  }
+  // 2) substring either way (identifier short, can appear inside Quantara name; full name long, can contain Quantara name)
+  for (const a of accounts) {
+    for (const f of fields(a)) {
+      if (ident && (f.includes(ident) || ident.includes(f))) return a
+      if (full  && (f.includes(full)  || full.includes(f)))  return a
+    }
+  }
+  return null
 }
 
 // Fuzzy match a user firm to a canonical PropFirm name. Exact (case-
