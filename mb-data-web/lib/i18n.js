@@ -706,6 +706,10 @@ const FR = {
       submitRegister: 'Créer mon compte →',
       loading: '⏳ Chargement...',
       forgotPassword: 'Mot de passe oublié ?',
+      googleLogin: 'Continuer avec Google',
+      googleRegister: 'S\'inscrire avec Google',
+      orDivider: 'ou avec un email',
+      oauthError: 'Connexion Google indisponible. Réessaie ou utilise l\'email.',
       forgotEnterEmail: 'Saisis ton email d\'abord, puis clique "Mot de passe oublié".',
       forgotNeedEmail: 'Le reset fonctionne uniquement avec une adresse email. Saisis ton email (pas ton pseudo).',
       forgotCaptchaWait: 'Attends que le captcha soit validé (✓ Succès) avant de cliquer "Mot de passe oublié".',
@@ -1071,13 +1075,12 @@ const FR = {
   },
 
   socialProof: {
-    betaTag: 'BETA GRATUITE',
-    betaCount: '{count} traders utilisent Quantara',
-    testimonials: [
-      { name: 'Maxime R.', role: 'Trader Topstep', text: "Enfin un outil qui comprend le trailing drawdown EOD. J'ai failli perdre un compte avant Quantara." },
-      { name: 'Sarah K.', role: 'Trader Apex & MFFU', text: "Je gère 7 comptes sur 3 firmes différentes. Sans Quantara, c'est ingérable." },
-      { name: 'Thomas B.', role: 'Trader Lucid', text: "Le comparateur m'a fait économiser 200$ en choisissant la bonne firme. Et le journal est parfait." },
-    ],
+    betaTag: 'BETA PRIVÉE OUVERTE',
+    betaCount: 'Sois parmi les premiers traders à tester Quantara',
+    testimonials: [],
+    earlyAccessTitle: 'Aucun avis public pour l\'instant',
+    earlyAccessBody: 'Quantara vient d\'ouvrir sa beta privée. Inscris-toi et donne-nous ton retour — tu auras la version Founding Member à vie.',
+    earlyAccessCta: 'Rejoindre la beta',
   },
 
   // === Tools ===
@@ -1871,6 +1874,10 @@ const EN = {
       submitRegister: 'Create my account →',
       loading: '⏳ Loading...',
       forgotPassword: 'Forgot password?',
+      googleLogin: 'Continue with Google',
+      googleRegister: 'Sign up with Google',
+      orDivider: 'or with email',
+      oauthError: 'Google sign-in unavailable. Try again or use email.',
       forgotEnterEmail: 'Enter your email first, then click "Forgot password".',
       forgotNeedEmail: 'Password reset only works with an email address. Enter your email (not your username).',
       forgotCaptchaWait: 'Wait for the captcha to be validated (✓ Success) before clicking "Forgot password".',
@@ -2235,13 +2242,12 @@ const EN = {
   },
 
   socialProof: {
-    betaTag: 'FREE BETA',
-    betaCount: '{count} traders use Quantara',
-    testimonials: [
-      { name: 'Maxime R.', role: 'Topstep Trader', text: "Finally a tool that understands EOD trailing drawdown. I almost lost an account before Quantara." },
-      { name: 'Sarah K.', role: 'Apex & MFFU Trader', text: "I manage 7 accounts across 3 different firms. Without Quantara, it's unmanageable." },
-      { name: 'Thomas B.', role: 'Lucid Trader', text: "The comparator saved me $200 by helping me pick the right firm. And the journal is perfect." },
-    ],
+    betaTag: 'PRIVATE BETA OPEN',
+    betaCount: 'Be one of the first traders to test Quantara',
+    testimonials: [],
+    earlyAccessTitle: 'No public reviews yet',
+    earlyAccessBody: 'Quantara just opened its private beta. Sign up and give us feedback — you\'ll get Founding Member access for life.',
+    earlyAccessCta: 'Join the beta',
   },
 
   tools: {

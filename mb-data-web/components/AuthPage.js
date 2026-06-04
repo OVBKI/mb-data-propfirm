@@ -119,6 +119,30 @@ export default function AuthPage({ onAuth, initialMode }) {
     }
   }, [mode])
 
+  async function handleGoogle() {
+    setError(''); setSuccess('')
+    try {
+      // Persist the "stay logged in" preference before kicking off OAuth so it
+      // survives the redirect back from Google.
+      setSessionPersistence(stayLogged)
+      const redirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : 'https://quantara.tech/auth/callback'
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: { access_type: 'offline', prompt: 'consent' },
+        },
+      })
+      if (error) throw error
+      // Browser is redirected by Supabase — no further action needed.
+    } catch (err) {
+      console.warn('[google oauth]', err)
+      setError(t('app.auth.oauthError'))
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError(''); setSuccess('')
@@ -290,6 +314,49 @@ export default function AuthPage({ onAuth, initialMode }) {
               {m === 'login' ? t('app.auth.login') : t('app.auth.register')}
             </button>
           ))}
+        </div>
+
+        {/* Google OAuth — primary CTA, above the email/password form */}
+        <button
+          type="button"
+          onClick={handleGoogle}
+          disabled={loading}
+          aria-label={mode === 'login' ? t('app.auth.googleLogin') : t('app.auth.googleRegister')}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            padding: '11px 12px',
+            marginBottom: 14,
+            background: '#fff',
+            color: '#1f2937',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 'var(--radius)',
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.6 : 1,
+            transition: 'background 0.15s, transform 0.15s',
+          }}
+          onMouseEnter={ev => { if (!loading) ev.currentTarget.style.background = '#f5f5f5' }}
+          onMouseLeave={ev => { ev.currentTarget.style.background = '#fff' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.836.86-3.048.86-2.344 0-4.328-1.584-5.036-3.71H.957v2.332A8.997 8.997 0 0 0 9 18z" />
+            <path fill="#FBBC05" d="M3.964 10.708A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.708V4.96H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.04l3.007-2.332z" />
+            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.96L3.964 7.29C4.672 5.164 6.656 3.58 9 3.58z" />
+          </svg>
+          <span>{mode === 'login' ? t('app.auth.googleLogin') : t('app.auth.googleRegister')}</span>
+        </button>
+
+        {/* Visual divider between OAuth and email/password */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0 14px' }}>
+          <span style={{ flex: 1, height: 1, background: 'var(--border2)' }} />
+          <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('app.auth.orDivider')}</span>
+          <span style={{ flex: 1, height: 1, background: 'var(--border2)' }} />
         </div>
 
         <form onSubmit={handleSubmit} autoComplete="on">
