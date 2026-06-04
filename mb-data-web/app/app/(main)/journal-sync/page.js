@@ -1,5 +1,5 @@
 'use client'
-// HUB JOURNAL SYNC — Import CSV uniquement.
+// HUB JOURNAL SYNC — 2 cards : Import CSV + View journal.
 // La sync Rithmic live + la gestion des comptes Rithmic ont été retirées du hub
 // jusqu'à nouvel ordre (juin 2026). Les routes /journal-sync/rithmic et
 // /journal-sync/accounts existent toujours et sont accessibles par URL directe
@@ -35,13 +35,13 @@ export default function JournalSyncHub() {
 
   return (
     <div style={{ padding: '40px 24px 80px' }}>
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, marginBottom: 6, letterSpacing: '-0.02em' }}>
             {'◰'} Journal Sync
           </h1>
           <p style={{ fontSize: 14, color: C.text2, margin: 0, maxWidth: 600 }}>
-            Importe tes trades depuis ta plateforme propfirm via un export CSV.
+            Synchronise tes trades depuis ta plateforme propfirm, ou consulte ton journal synchronisé.
             {tradeCount != null && tradeCount > 0 && (
               <span style={{ marginLeft: 8, color: C.blueLt }}>
                 {'·'} <strong>{tradeCount}</strong> trade{tradeCount > 1 ? 's' : ''} déjà synchronisé{tradeCount > 1 ? 's' : ''}
@@ -50,22 +50,41 @@ export default function JournalSyncHub() {
           </p>
         </div>
 
-        <Link href="/app/import-lab" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-          onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(45,111,255,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(45,111,255,0.15)' }}
-          onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
-        >
-          <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F4E5}'}</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.blueLt, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Synchroniser</div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Importer un CSV</h3>
-          <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
-            Upload un export CSV depuis Rithmic R|Trader Pro (Performance ou Trader Dashboard) pour synchroniser tes trades automatiquement.
-          </p>
-          <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ padding: '3px 8px', background: 'rgba(45,111,255,0.1)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
-            <span>Rithmic supporté</span><span>{'·'}</span><span>11+ propfirms détectées</span>
-          </div>
-          <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.blueLt, fontSize: 18 }}>{'→'}</div>
-        </Link>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
+          <Link href="/app/import-lab" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(45,111,255,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(45,111,255,0.15)' }}
+            onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F4E5}'}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.blueLt, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Synchroniser</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Importer un CSV</h3>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
+              Upload un export CSV depuis Rithmic R|Trader Pro (Performance ou Trader Dashboard) pour synchroniser tes trades automatiquement.
+            </p>
+            <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ padding: '3px 8px', background: 'rgba(45,111,255,0.1)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
+              <span>Rithmic supporté</span><span>{'·'}</span><span>11+ propfirms détectées</span>
+            </div>
+            <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.blueLt, fontSize: 18 }}>{'→'}</div>
+          </Link>
+
+          <Link href="/app/journal-sync/view" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(29,184,122,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(29,184,122,0.15)' }}
+            onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F4CA}'}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Consulter</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Accéder au journal Sync</h3>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
+              Vois tes trades synchronisés avec leurs métadonnées Rithmic complètes : entry/exit prices, fills, hold time, etc.
+            </p>
+            <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {tradeCount != null && <span style={{ padding: '3px 8px', background: 'rgba(29,184,122,0.1)', color: C.green, borderRadius: 99, fontWeight: 600 }}>{tradeCount} trade{tradeCount > 1 ? 's' : ''}</span>}
+              <span>Filtres avancés</span><span>{'·'}</span><span>Stats Rithmic</span>
+            </div>
+            <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.green, fontSize: 18 }}>{'→'}</div>
+          </Link>
+        </div>
       </div>
     </div>
   )
