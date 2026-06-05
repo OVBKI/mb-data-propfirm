@@ -23,11 +23,14 @@ export function remove(key) {
   })
 }
 
-const DEBUG_LOG_MAX = 200
-export async function pushDebug(entry) {
+const DEBUG_LOG_MAX_DEFAULT = 200
+export async function pushDebug(entry, maxOverride) {
+  const cap = Number.isFinite(maxOverride) && maxOverride > 0
+    ? Math.min(DEBUG_LOG_MAX_DEFAULT, Math.floor(maxOverride))
+    : DEBUG_LOG_MAX_DEFAULT
   const cur = (await get('debugLog')) || []
   cur.unshift({ ts: Date.now(), ...entry })
-  if (cur.length > DEBUG_LOG_MAX) cur.length = DEBUG_LOG_MAX
+  if (cur.length > cap) cur.length = cap
   await set('debugLog', cur)
 }
 

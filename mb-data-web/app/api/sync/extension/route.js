@@ -91,11 +91,21 @@ export async function POST(request) {
   // 2) Build batch with idempotency tag. Tag goes into notes so we can dedup
   //    via LIKE without a schema change. Production-grade alt = dedicated
   //    external_id column + unique index; this is the no-migration path.
+  //
+  // SECURITY: external_id flows from the browser-extension adapter into a
+  // PostgREST `.or(notes.like.<tag>%, ...)` query below. PostgREST treats
+  // `,`, `)`, `*`, `%`, `(` and the like as operator delimiters, and `%`
+  // would inject a SQL wildcard that matches arbitrary rows. We restrict
+  // external_id to a strict charset so the tag we build can never escape
+  // the like-pattern's literal interpretation, even when the upstream
+  // PropFirm API returns something exotic.
+  const EXT_ID_OK = /^[A-Za-z0-9:_.-]{1,80}$/
   const rows = []
+  let invalidIds = 0
   for (const t of trades) {
     if (!t || !t.date) continue
     const extId = String(t.external_id || '').slice(0, 80)
-    if (!extId) continue
+    if (!extId || !EXT_ID_OK.test(extId)) { invalidIds++; continue }
     const tag = `[ext:${firmSlug}:${extId}]`
     const userNotes = String(t.notes || '').slice(0, 500)
     rows.push({
@@ -168,6 +178,7 @@ export async function POST(request) {
     inserted,
     updated,
     skipped: trades.length - rows.length,
+    invalidIds,
     firmId: firm.id,
     accountId: account.id,
   })

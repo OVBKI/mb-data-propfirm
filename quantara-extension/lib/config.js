@@ -34,6 +34,12 @@ export function firmSlugFromHost(host) {
   return null
 }
 
-// Debug mode dumps every captured request to the popup's debug log.
-// Toggled via the popup UI (stored in chrome.storage.local under 'debugMode').
-export const DEFAULT_DEBUG = true
+// Debug mode is OFF by default. When enabled it still does NOT capture
+// response bodies — only method/url/status/ms — to keep PropFirm JWTs
+// and PII out of chrome.storage.local. A separate "rich debug" toggle
+// (richDebugMode) enables body capture for short troubleshooting
+// sessions, capped at 2k chars per entry and 30 entries total.
+export const DEFAULT_DEBUG = false
+export const DEFAULT_RICH_DEBUG = false
+export const RICH_DEBUG_BODY_MAX = 2000
+export const RICH_DEBUG_ENTRY_MAX = 30

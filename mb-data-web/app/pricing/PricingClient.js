@@ -3,7 +3,7 @@
 // Free est déjà dispo (CTA → /auth?mode=signup) ; Pro/Elite/Business sont en waitlist.
 // Le formulaire POST sur /api/waitlist qui insère dans Supabase + envoie un email Resend.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
@@ -31,6 +31,50 @@ export default function PricingClient() {
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitResult, setSubmitResult] = useState(null)
+
+  // Lifetime Founding Members — separate inline form + live counter
+  const LIFETIME_TOTAL_SPOTS = 100
+  const [lifetimeEmail, setLifetimeEmail] = useState('')
+  const [lifetimeSubmitting, setLifetimeSubmitting] = useState(false)
+  const [lifetimeResult, setLifetimeResult] = useState(null)
+  const [lifetimeCount, setLifetimeCount] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/waitlist?plan=lifetime')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d) setLifetimeCount(Number(d.count) || 0) })
+      .catch(() => { /* silent — counter just stays at null */ })
+    return () => { cancelled = true }
+  }, [])
+
+  async function handleLifetimeSubmit(e) {
+    e.preventDefault()
+    if (lifetimeSubmitting) return
+    setLifetimeResult(null)
+    setLifetimeSubmitting(true)
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: lifetimeEmail.trim(), plan: 'lifetime' }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setLifetimeResult({ type: 'error', msg: data?.error || 'Erreur, réessaie' })
+      } else if (data.alreadyRegistered) {
+        setLifetimeResult({ type: 'ok', msg: 'Tu es déjà sur la liste ✓' })
+      } else {
+        setLifetimeResult({ type: 'ok', msg: 'Spot réservé ✓ Email de confirmation envoyé.' })
+        setLifetimeEmail('')
+        setLifetimeCount(c => (c == null ? 1 : c + 1))
+      }
+    } catch (err) {
+      setLifetimeResult({ type: 'error', msg: 'Erreur réseau, réessaie' })
+    } finally {
+      setLifetimeSubmitting(false)
+    }
+  }
 
   // Récupération des listes de features depuis i18n (objet retourné par translate).
   const freeFeatures = t('pages.pricing.planFree.features')
@@ -193,6 +237,120 @@ export default function PricingClient() {
                   </button>
                 }
               />
+            </div>
+          </Reveal>
+        </section>
+
+        {/* LIFETIME FOUNDING MEMBERS — 100-spot hard cap, prominent amber CTA */}
+        <section id="lifetime-founders" style={{ padding: '40px 24px 30px', maxWidth: 760, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{
+              position: 'relative',
+              padding: '32px 28px',
+              background: 'linear-gradient(135deg, rgba(250,199,117,0.12), rgba(250,199,117,0.04))',
+              border: `1px solid rgba(250,199,117,0.32)`,
+              borderRadius: 18,
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                position: 'absolute', top: 0, right: 0,
+                padding: '5px 14px 7px 18px',
+                background: 'linear-gradient(135deg, #fac775, #f4a460)',
+                color: '#0a0c10',
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                borderBottomLeftRadius: 12,
+              }}>100 spots only</div>
+
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.amber, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+                Founding Member · Lifetime
+              </div>
+              <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, marginBottom: 6, color: C.text, letterSpacing: '-0.02em' }}>
+                €249 payé une fois — accès à vie
+              </h2>
+              <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, margin: '0 0 18px', maxWidth: 540 }}>
+                Réserve une des 100 places Founding Member avant le lancement Stripe. Toutes les features Pro (tracking illimité, sync auto extension, journal complet, alertes drawdown) débloquées à vie. Pas d&apos;abonnement. Pas de renouvellement.
+              </p>
+
+              {/* Live counter — fetched from /api/waitlist?plan=lifetime */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                  fontSize: 12, color: C.text3, marginBottom: 6,
+                }}>
+                  <span>{lifetimeCount == null ? 'Chargement…' : `${lifetimeCount} / ${LIFETIME_TOTAL_SPOTS} spots réservés`}</span>
+                  <span style={{ color: C.amber, fontWeight: 700 }}>
+                    {lifetimeCount != null ? Math.max(0, LIFETIME_TOTAL_SPOTS - lifetimeCount) : '—'} restants
+                  </span>
+                </div>
+                <div style={{
+                  width: '100%', height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden',
+                }}>
+                  <div style={{
+                    width: `${lifetimeCount == null ? 0 : Math.min(100, (lifetimeCount / LIFETIME_TOTAL_SPOTS) * 100)}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #fac775, #f4a460)',
+                    transition: 'width 0.4s ease',
+                  }} />
+                </div>
+              </div>
+
+              <form onSubmit={handleLifetimeSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+                <input
+                  type="email"
+                  required
+                  value={lifetimeEmail}
+                  onChange={e => setLifetimeEmail(e.target.value)}
+                  placeholder="ton@email.com"
+                  aria-label="Email pour Lifetime Founding Member"
+                  style={{
+                    flex: 1, minWidth: 200,
+                    padding: '12px 14px',
+                    background: 'rgba(0,0,0,0.4)',
+                    border: `1px solid ${C.border2}`,
+                    borderRadius: 10,
+                    color: C.text,
+                    fontSize: 14,
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={lifetimeSubmitting || (lifetimeCount != null && lifetimeCount >= LIFETIME_TOTAL_SPOTS)}
+                  style={{
+                    padding: '12px 22px',
+                    background: 'linear-gradient(135deg, #fac775, #f4a460)',
+                    color: '#0a0c10',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    border: 'none',
+                    borderRadius: 10,
+                    cursor: (lifetimeSubmitting || (lifetimeCount != null && lifetimeCount >= LIFETIME_TOTAL_SPOTS)) ? 'not-allowed' : 'pointer',
+                    opacity: (lifetimeSubmitting || (lifetimeCount != null && lifetimeCount >= LIFETIME_TOTAL_SPOTS)) ? 0.55 : 1,
+                  }}
+                >
+                  {lifetimeSubmitting ? 'Inscription…'
+                    : (lifetimeCount != null && lifetimeCount >= LIFETIME_TOTAL_SPOTS) ? 'Complet'
+                    : 'Réserver mon spot →'}
+                </button>
+              </form>
+
+              {lifetimeResult && (
+                <div style={{
+                  fontSize: 12,
+                  color: lifetimeResult.type === 'ok' ? C.green : '#ff7a8a',
+                  marginTop: 6,
+                }}>
+                  {lifetimeResult.msg}
+                </div>
+              )}
+
+              <div style={{ fontSize: 11, color: C.text3, marginTop: 14, lineHeight: 1.5 }}>
+                🔒 Aucun paiement maintenant. Tu seras contacté par email avant le lancement Stripe pour confirmer ton spot et payer les €249 une seule fois. Garantie remboursement 30 jours après activation. Quantara Technologies LLC.
+              </div>
             </div>
           </Reveal>
         </section>

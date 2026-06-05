@@ -5,8 +5,18 @@
 //
 // We refresh this on every page load and on every storage event so the
 // extension's auth stays in sync with the website.
+//
+// SECURITY: this script is matched against `*.quantara.tech` (manifest
+// content_scripts), so it could also execute on a future Vercel preview
+// deployment or a sub-domain that happens to fall under that pattern.
+// We harden against that by short-circuiting unless the page is served
+// from the canonical https://quantara.tech origin. The service worker
+// performs the same check independently before persisting the token.
 
-(function () {
+const TRUSTED_ORIGIN = 'https://quantara.tech'
+
+;(function () {
+  if (location.origin !== TRUSTED_ORIGIN) return
   function findSupabaseSession() {
     try {
       for (let i = 0; i < localStorage.length; i++) {
