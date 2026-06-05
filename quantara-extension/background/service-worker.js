@@ -3,7 +3,7 @@
 //   * receives auth tokens from the Quantara bridge (AUTH_FROM_QUANTARA)
 //   * receives popup commands (POPUP_*)
 
-import { firmSlugFromHost, DEFAULT_DEBUG } from '../lib/config.js'
+import { firmSlugFromHost, DEFAULT_DEBUG, DEFAULT_RICH_DEBUG, RICH_DEBUG_BODY_MAX, RICH_DEBUG_ENTRY_MAX } from '../lib/config.js'
 import { get, set, pushDebug, pushHistory } from '../lib/storage.js'
 import { submitSync, submitAccounts, ping } from '../lib/api.js'
 import { adaptLucid } from '../content/adapters/lucid-adapter.js'
@@ -20,8 +20,17 @@ const ADAPTERS = {
   },
 }
 
+// Hosts allowed to push a Supabase token into the extension via the
+// AUTH_FROM_QUANTARA bridge. Any other origin trying that channel is
+// silently dropped — closes the multi-tenant Vercel preview hijack risk
+// flagged in the security audit (P1-1).
+const TRUSTED_AUTH_ORIGINS = new Set([
+  'https://quantara.tech',
+])
+
 chrome.runtime.onInstalled.addListener(async () => {
   if ((await get('debugMode')) === undefined) await set('debugMode', DEFAULT_DEBUG)
+  if ((await get('richDebugMode')) === undefined) await set('richDebugMode', DEFAULT_RICH_DEBUG)
   if ((await get('autoSyncEnabled')) === undefined) await set('autoSyncEnabled', true)
   await ensureAlarm()
 })
@@ -30,24 +39,54 @@ chrome.runtime.onStartup.addListener(async () => {
   if (await get('autoSyncEnabled')) await ensureAlarm()
 })
 
+// Identify messages that came from the extension itself (popup / options
+// pages). Content scripts on PropFirm dashboards do NOT carry a sender.id
+// equal to chrome.runtime.id, so they can't trigger POPUP_* commands.
+function isExtensionInternal(sender) {
+  if (!sender) return false
+  if (sender.id && sender.id !== chrome.runtime.id) return false
+  // Popup/options pages have sender.url starting with chrome-extension://<id>/
+  if (sender.url && sender.url.startsWith(`chrome-extension://${chrome.runtime.id}/`)) return true
+  // Some Chrome versions omit url on the popup but always set tab === undefined for it.
+  if (!sender.tab && !sender.frameId) return true
+  return false
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     try {
-      switch (msg?.type) {
+      const type = msg?.type
+      const popupCommand = typeof type === 'string' && type.startsWith('POPUP_')
+      if (popupCommand && !isExtensionInternal(sender)) {
+        sendResponse({ ok: false, error: 'FORBIDDEN' })
+        return
+      }
+
+      switch (type) {
         case 'CAPTURE_REQUEST':
           await handleCapture(msg.payload, sender)
           sendResponse({ ok: true })
           break
 
-        case 'AUTH_FROM_QUANTARA':
+        case 'AUTH_FROM_QUANTARA': {
+          // Only the real quantara.tech tab may push an auth token. Preview
+          // deployments, custom-domain forks, or any other host trying this
+          // channel are silently rejected.
+          const senderOrigin = (() => { try { return new URL(sender?.url || '').origin } catch { return '' } })()
+          if (!TRUSTED_AUTH_ORIGINS.has(senderOrigin)) {
+            sendResponse({ ok: false, error: 'UNTRUSTED_ORIGIN' })
+            break
+          }
           await set('auth', msg.payload)
           sendResponse({ ok: true })
           break
+        }
 
         case 'POPUP_GET_STATE':
           sendResponse({
             auth: await get('auth'),
             debugMode: (await get('debugMode')) ?? DEFAULT_DEBUG,
+            richDebugMode: (await get('richDebugMode')) ?? DEFAULT_RICH_DEBUG,
             debugLog: (await get('debugLog')) || [],
             syncHistory: (await get('syncHistory')) || [],
             firms: Object.entries(FIRMS).map(([slug, def]) => ({ slug, label: def.label, disabled: !!def.disabled })),
@@ -87,6 +126,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         case 'POPUP_SET_DEBUG':
           await set('debugMode', !!msg.payload)
+          if (!msg.payload) await set('richDebugMode', false)
+          sendResponse({ ok: true })
+          break
+
+        case 'POPUP_SET_RICH_DEBUG':
+          // Rich debug = capture bodies. Auto-clears existing log so we don't
+          // keep pre-existing bodies around when the user toggles it on.
+          await set('richDebugMode', !!msg.payload)
+          if (!msg.payload) {
+            // Strip bodies from any existing entries when turning off.
+            const cur = (await get('debugLog')) || []
+            await set('debugLog', cur.map(e => ({ ...e, body: undefined })))
+          }
           sendResponse({ ok: true })
           break
 
@@ -132,16 +184,21 @@ async function handleCapture(payload, sender) {
   const firm = firmSlugFromHost(host)
 
   if (await get('debugMode')) {
-    await pushDebug({
+    const richDebug = !!(await get('richDebugMode'))
+    const entry = {
       firm: firm || host,
       method: payload.method,
       url,
       status: payload.status,
       ms: payload.ms,
       contentType: payload.contentType,
-      // Full body kept in storage; popup truncates for display, export sends full.
-      body: typeof payload.body === 'string' ? payload.body.slice(0, 50_000) : null,
-    })
+    }
+    if (richDebug && typeof payload.body === 'string') {
+      // Cap body size aggressively to limit blast radius if the log is
+      // ever exported or the device is compromised.
+      entry.body = payload.body.slice(0, RICH_DEBUG_BODY_MAX)
+    }
+    await pushDebug(entry, richDebug ? RICH_DEBUG_ENTRY_MAX : undefined)
   }
 
   if (!firm) return

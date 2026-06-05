@@ -1,6 +1,9 @@
-// POST /api/waitlist — inscription waitlist Pro / Elite / Business.
-// Body: { email: string, plan: 'pro' | 'elite' | 'business' }
+// POST /api/waitlist — inscription waitlist Pro / Elite / Business / Lifetime.
+// Body: { email: string, plan: 'pro' | 'elite' | 'business' | 'lifetime' }
 // Insert dans Supabase + envoie un email de confirmation via Resend si dispo.
+//
+// GET /api/waitlist?plan=lifetime — retourne { count } pour le compteur public
+// "X / 100 spots claimed" sur la pricing page Lifetime.
 //
 // =====================================================================
 // SQL à exécuter une fois dans Supabase SQL editor pour créer la table :
@@ -8,12 +11,17 @@
 // create table waitlist (
 //   id uuid primary key default gen_random_uuid(),
 //   email text unique not null,
-//   plan text not null check (plan in ('pro','elite','business')),
+//   plan text not null check (plan in ('pro','elite','business','lifetime')),
 //   created_at timestamptz default now(),
 //   ip_address text
 // );
 // alter table waitlist enable row level security;
 // create policy "anyone can insert" on waitlist for insert with check (true);
+//
+// Si la table existe déjà avec un check sans 'lifetime' :
+//   alter table waitlist drop constraint if exists waitlist_plan_check;
+//   alter table waitlist add constraint waitlist_plan_check
+//     check (plan in ('pro','elite','business','lifetime'));
 // =====================================================================
 
 import { createClient } from '@supabase/supabase-js'
@@ -48,8 +56,8 @@ export async function POST(req) {
   if (!email || !EMAIL_RE.test(email)) {
     return Response.json({ error: 'Email invalide' }, { status: 400 })
   }
-  if (!['pro', 'elite', 'business'].includes(plan)) {
-    return Response.json({ error: 'Plan invalide (pro, elite ou business)' }, { status: 400 })
+  if (!['pro', 'elite', 'business', 'lifetime'].includes(plan)) {
+    return Response.json({ error: 'Plan invalide (pro, elite, business ou lifetime)' }, { status: 400 })
   }
 
   // Insert dans Supabase
@@ -77,7 +85,8 @@ export async function POST(req) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const planLabel = plan === 'business' ? 'Business (Team)'
+      const planLabel = plan === 'lifetime' ? 'Lifetime Founding Member'
+        : plan === 'business' ? 'Business (Team)'
         : plan === 'elite' ? 'Elite'
         : 'Pro'
       await resend.emails.send({
@@ -127,4 +136,33 @@ export async function POST(req) {
   }
 
   return Response.json({ ok: true })
+}
+
+// GET /api/waitlist?plan=lifetime — public counter used by the pricing page
+// to display "X / 100 spots claimed". No PII returned, only the integer.
+// Cached for 60s at the edge so spam refresh can't hammer the DB.
+const ALLOWED_COUNT_PLANS = new Set(['lifetime', 'pro', 'elite', 'business'])
+
+export async function GET(req) {
+  const url = new URL(req.url)
+  const plan = (url.searchParams.get('plan') || '').toLowerCase()
+  if (!ALLOWED_COUNT_PLANS.has(plan)) {
+    return Response.json({ error: 'plan invalide' }, { status: 400 })
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return Response.json({ count: 0 })
+  }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+  const { count, error } = await supabase
+    .from('waitlist')
+    .select('id', { count: 'exact', head: true })
+    .eq('plan', plan)
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(
+    { count: count || 0 },
+    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+  )
 }
