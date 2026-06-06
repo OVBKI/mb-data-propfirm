@@ -1,0 +1,7 @@
+# Local worktrees created by Claude Code subagents (isolation: "worktree").
+# These are ephemeral local checkouts — never commit them.
+.claude/worktrees/
+
+# Editor / OS junk
+.DS_Store
+Thumbs.db
