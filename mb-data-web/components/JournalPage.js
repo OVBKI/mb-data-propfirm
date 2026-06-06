@@ -25,7 +25,12 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   const chart = useRef(null)
 
   const planSize = planSizeNum(account.plan_size)
-  const ddMax = maxDrawdown(account.firmName, account.plan_size)
+  // Per-account custom_drawdown override wins over the PropFirm default,
+  // so the equity-curve DD line matches the Health Center gauge.
+  const customDD = account.custom_drawdown != null && account.custom_drawdown > 0
+    ? Number(account.custom_drawdown)
+    : null
+  const ddMax = customDD ?? maxDrawdown(account.firmName, account.plan_size)
   // 3 types possibles : 'static' | 'eod' | 'trailing'
   // - static : ligne fixe à (planSize - ddMax)
   // - eod : trailing basé sur la balance de fin de journée (peak EOD only)

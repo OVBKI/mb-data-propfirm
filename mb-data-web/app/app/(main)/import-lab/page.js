@@ -258,6 +258,29 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
   const [importResult, setImportResult] = useState(null)
   const fileInputRef = useRef(null)
 
+  // The user picks a target firm BEFORE dropping the CSV. Only that firm's
+  // accounts with status Challenge or Failed are then offered for mapping.
+  // Funded accounts use the live extension sync, so they're intentionally
+  // excluded from CSV import. The picker remembers the last choice across
+  // visits via localStorage.
+  const [selectedFirmId, setSelectedFirmId] = useState('')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = window.localStorage.getItem('importLab.selectedFirmId')
+    if (saved) setSelectedFirmId(saved)
+  }, [])
+  function changeSelectedFirm(id) {
+    setSelectedFirmId(id)
+    if (typeof window !== 'undefined') {
+      if (id) window.localStorage.setItem('importLab.selectedFirmId', id)
+      else window.localStorage.removeItem('importLab.selectedFirmId')
+    }
+    // Resetting the firm invalidates any CSV/mapping already loaded.
+    if (parsed) reset()
+  }
+
+  const selectedFirm = existingFirms.find(f => f.id === selectedFirmId) || null
+
   function handleFile(file) {
     setFileName(file.name)
     setImportResult(null)
@@ -501,16 +524,34 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
 
   return (
     <>
-      <Section title="1 · Sélectionne ton CSV PnL Statement">
+      <Section title="1 · Choisis ta PropFirm">
         <Card padding="lg">
+          <FirmPicker
+            firms={existingFirms}
+            selectedFirmId={selectedFirmId}
+            onChange={changeSelectedFirm}
+            loading={loadingExisting}
+          />
+          {!loadingExisting && existingFirms.length === 0 && (
+            <div style={{ marginTop: 12, fontSize: 12, color: T.color.text3 }}>
+              Tu n&apos;as pas encore de firme dans Quantara. <Link href="/app/dashboard" style={{ color: T.color.blueLight }}>Crée-en une d&apos;abord</Link>, puis reviens ici.
+            </div>
+          )}
+        </Card>
+      </Section>
+
+      <Section title="2 · Sélectionne ton CSV PnL Statement">
+        <Card padding="lg" style={!selectedFirmId ? { opacity: 0.45, pointerEvents: 'none' } : undefined}>
           <DropZone
             fileName={fileName}
             dragOver={dragOver}
-            onDrop={onDrop}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDrop={selectedFirmId ? onDrop : undefined}
+            onDragOver={(e) => { e.preventDefault(); if (selectedFirmId) setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
-            onClick={() => fileInputRef.current?.click()}
-            placeholder="Format : Rithmic R|Trader Pro → Performance → Export CSV"
+            onClick={() => { if (selectedFirmId) fileInputRef.current?.click() }}
+            placeholder={selectedFirmId
+              ? `Format : Rithmic R|Trader Pro → Performance → Export CSV (cible : ${selectedFirm?.name || 'firme sélectionnée'})`
+              : '↑ Choisis d\'abord ta PropFirm ci-dessus'}
           />
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
@@ -575,6 +616,8 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
                 existingAccounts={existingAccounts}
                 existingFirms={existingFirms}
                 loadingExisting={loadingExisting}
+                forcedFirmId={selectedFirmId}
+                allowedStatuses={['Challenge', 'Échoué', 'Failed']}
                 onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
               />
             ))}
@@ -612,6 +655,24 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState(null)
   const fileInputRef = useRef(null)
+
+  // Same firm-first selection as the Trades importer. Shared localStorage
+  // key so picking a firm on one tab pre-selects it on the other.
+  const [selectedFirmId, setSelectedFirmId] = useState('')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = window.localStorage.getItem('importLab.selectedFirmId')
+    if (saved) setSelectedFirmId(saved)
+  }, [])
+  function changeSelectedFirm(id) {
+    setSelectedFirmId(id)
+    if (typeof window !== 'undefined') {
+      if (id) window.localStorage.setItem('importLab.selectedFirmId', id)
+      else window.localStorage.removeItem('importLab.selectedFirmId')
+    }
+    if (parsed) reset()
+  }
+  const selectedFirm = existingFirms.find(f => f.id === selectedFirmId) || null
 
   function handleFile(file) {
     setFileName(file.name)
@@ -848,16 +909,34 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
 
   return (
     <>
-      <Section title="1 · Sélectionne ton CSV Trader Dashboard">
+      <Section title="1 · Choisis ta PropFirm">
         <Card padding="lg">
+          <FirmPicker
+            firms={existingFirms}
+            selectedFirmId={selectedFirmId}
+            onChange={changeSelectedFirm}
+            loading={loadingExisting}
+          />
+          {!loadingExisting && existingFirms.length === 0 && (
+            <div style={{ marginTop: 12, fontSize: 12, color: T.color.text3 }}>
+              Tu n&apos;as pas encore de firme dans Quantara. <Link href="/app/dashboard" style={{ color: T.color.blueLight }}>Crée-en une d&apos;abord</Link>, puis reviens ici.
+            </div>
+          )}
+        </Card>
+      </Section>
+
+      <Section title="2 · Sélectionne ton CSV Trader Dashboard">
+        <Card padding="lg" style={!selectedFirmId ? { opacity: 0.45, pointerEvents: 'none' } : undefined}>
           <DropZone
             fileName={fileName}
             dragOver={dragOver}
-            onDrop={onDrop}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDrop={selectedFirmId ? onDrop : undefined}
+            onDragOver={(e) => { e.preventDefault(); if (selectedFirmId) setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
-            onClick={() => fileInputRef.current?.click()}
-            placeholder="Format : Rithmic R|Trader Pro → Trader Dashboard → Export CSV"
+            onClick={() => { if (selectedFirmId) fileInputRef.current?.click() }}
+            placeholder={selectedFirmId
+              ? `Format : Rithmic R|Trader Pro → Trader Dashboard → Export CSV (cible : ${selectedFirm?.name || 'firme sélectionnée'})`
+              : '↑ Choisis d\'abord ta PropFirm ci-dessus'}
           />
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
@@ -869,7 +948,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
       {parsed && (
         <>
           <Section
-            title="2 · État des comptes"
+            title="3 · État des comptes"
             action={
               <div style={{ display: 'flex', gap: 8 }}>
                 <Badge tone="blue">{parsed.accounts.length} comptes</Badge>
@@ -892,6 +971,8 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
                 existingAccounts={existingAccounts}
                 existingFirms={existingFirms}
                 loadingExisting={loadingExisting}
+                forcedFirmId={selectedFirmId}
+                allowedStatuses={['Challenge', 'Échoué', 'Failed']}
                 onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
               />
             ))}
@@ -917,7 +998,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
 // ============================================================================
 // CARD : compte du PnL Statement (mode Trades)
 // ============================================================================
-function TradesAccountCard({ account, mapping, existingAccounts, existingFirms, loadingExisting, onChangeMapping }) {
+function TradesAccountCard({ account, mapping, existingAccounts, existingFirms, loadingExisting, forcedFirmId, allowedStatuses, onChangeMapping }) {
   const [expanded, setExpanded] = useState(true)
   const isProfit = account.summary.netPnL >= 0
   if (!mapping) return null
@@ -954,6 +1035,8 @@ function TradesAccountCard({ account, mapping, existingAccounts, existingFirms, 
             loadingExisting={loadingExisting}
             allowCreate={true}
             account={account}
+            forcedFirmId={forcedFirmId}
+            allowedStatuses={allowedStatuses}
             onChangeMapping={onChangeMapping}
           />
           <TradesPreviewTable trades={account.trades} />
@@ -966,7 +1049,7 @@ function TradesAccountCard({ account, mapping, existingAccounts, existingFirms, 
 // ============================================================================
 // CARD : compte du Dashboard (mode État)
 // ============================================================================
-function DashboardAccountCard({ account, mapping, existingAccounts, existingFirms, loadingExisting, onChangeMapping }) {
+function DashboardAccountCard({ account, mapping, existingAccounts, existingFirms, loadingExisting, forcedFirmId, allowedStatuses, onChangeMapping }) {
   const [expanded, setExpanded] = useState(true)
   if (!mapping) return null
 
@@ -1022,6 +1105,8 @@ function DashboardAccountCard({ account, mapping, existingAccounts, existingFirm
             allowCreate={false}
             dashboardMode={true}
             account={account}
+            forcedFirmId={forcedFirmId}
+            allowedStatuses={allowedStatuses}
             onChangeMapping={onChangeMapping}
           />
 
@@ -1067,21 +1152,35 @@ function KV({ k, v }) {
 // Filtre les comptes par firme détectée (ex: Lucid Trading) pour ne pas
 // noyer l'user dans tous ses comptes Apex / PropFirm / etc.
 // Toggle "Tout afficher" pour revenir à la liste complète.
-function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExisting, allowCreate, dashboardMode, account, onChangeMapping }) {
+function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExisting, allowCreate, dashboardMode, account, forcedFirmId, allowedStatuses, onChangeMapping }) {
   // Mode Dashboard : mapping = { accountId, autoMatched }
   // Mode Trades :   mapping = { mode: 'create'|'existing', accountId?, newName?, planSize? }
+  //
+  // When the caller passes `forcedFirmId` (set by the firm picker at the top
+  // of the page), that firm overrides whatever the CSV-content auto-detection
+  // would have produced. `allowedStatuses` further restricts which existing
+  // accounts are offered for mapping (e.g. ['Challenge', 'Échoué'] hides
+  // funded accounts from CSV import — those use the live extension sync).
 
   const [showAll, setShowAll] = useState(false)
 
   // Détecte la firme du compte CSV (account.firm = "Lucid Trading" via parser)
   const detectedFirmName = account?.firm
-  const matchingFirm = detectedFirmName
+  const detectedFirm = detectedFirmName
     ? existingFirms.find(f => f.name.toLowerCase() === detectedFirmName.toLowerCase())
     : null
+  const forcedFirm = forcedFirmId ? existingFirms.find(f => f.id === forcedFirmId) : null
+  const matchingFirm = forcedFirm || detectedFirm
+  const firmIsForced = !!forcedFirm
+  const allowedStatusSet = (allowedStatuses && allowedStatuses.length)
+    ? new Set(allowedStatuses.map(s => String(s).toLowerCase()))
+    : null
 
-  // Filtre les comptes : si on a matché une firme et qu'on n'est pas en "tout afficher"
+  // Filtre les comptes : firme cible + statuses autorisés.
+  // Le toggle "Tout afficher" ne lève QUE le filtre firme — pas le filtre
+  // statuts, qui est une règle métier (les funded ne passent pas par CSV).
   const filteredAccounts = (matchingFirm && !showAll)
-    ? existingAccounts.filter(ea => ea.firm_id === matchingFirm.id)
+    ? existingAccounts.filter(ea => ea.firm_id === matchingFirm.id && (!allowedStatusSet || allowedStatusSet.has(String(ea.status || '').toLowerCase())))
     : existingAccounts
 
   const optionStyle = { background: T.color.surfaceSolid, color: T.color.text }
@@ -1140,7 +1239,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                   · filtré sur {matchingFirm.name}
                 </span>
               )}
-              {matchingFirm && (
+              {matchingFirm && !firmIsForced && (
                 <span style={{ marginLeft: 8 }}>
                   <FilterToggle showAll={showAll} setShowAll={setShowAll} firmName={matchingFirm.name} />
                 </span>
@@ -1335,7 +1434,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             </span>
           )}
         </div>
-        {matchingFirm && (
+        {matchingFirm && !firmIsForced && (
           <FilterToggle showAll={showAll} setShowAll={setShowAll} firmName={matchingFirm.name} />
         )}
       </div>
@@ -1517,6 +1616,52 @@ function MicroLabel({ children }) {
       textTransform: 'uppercase', letterSpacing: '0.1em',
       marginBottom: 4, fontFamily: T.font.mono,
     }}>{children}</div>
+  )
+}
+
+// Required firm picker shown at the very top of each importer. Without a
+// firm chosen, the user can't drop a CSV — that forces a deliberate
+// account-of-correct-firm pairing instead of relying on CSV auto-detection
+// (which can silently match the wrong firm if the user has overlapping
+// naming, multiple PropFirms with the same Rithmic backend, etc.).
+function FirmPicker({ firms, selectedFirmId, onChange, loading }) {
+  return (
+    <div>
+      <div style={{
+        fontSize: 11, color: T.color.text3,
+        textTransform: 'uppercase', letterSpacing: '0.12em',
+        marginBottom: 8, fontFamily: T.font.mono,
+      }}>
+        PropFirm cible {loading ? '· chargement…' : ''}
+      </div>
+      <select
+        value={selectedFirmId || ''}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading || (firms && firms.length === 0)}
+        style={{
+          width: '100%',
+          padding: '12px 14px',
+          fontSize: 14,
+          background: T.color.surfaceSolid,
+          color: T.color.text,
+          border: `1px solid ${selectedFirmId ? T.color.blueRing : T.color.borderStrong}`,
+          borderRadius: T.radius.md,
+          fontFamily: T.font.sans,
+          cursor: (loading || firms?.length === 0) ? 'not-allowed' : 'pointer',
+          outline: 'none',
+        }}
+      >
+        <option value="">— Sélectionne la PropFirm dans laquelle importer —</option>
+        {(firms || []).map(f => (
+          <option key={f.id} value={f.id} style={{ background: T.color.surfaceSolid, color: T.color.text }}>
+            {f.name}
+          </option>
+        ))}
+      </select>
+      <div style={{ fontSize: 11, color: T.color.text3, marginTop: 8, lineHeight: 1.5 }}>
+        Seuls les comptes <strong style={{ color: T.color.text2 }}>Challenge</strong> et <strong style={{ color: T.color.text2 }}>Échoué</strong> de cette firme seront proposés pour le mapping. Les comptes financés utilisent la synchronisation automatique via l&apos;extension navigateur.
+      </div>
+    </div>
   )
 }
 
