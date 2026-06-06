@@ -42,8 +42,14 @@ export default function DrawdownHealthCard({ account, firmName }) {
   const initialBalance = planSizeNum(account.plan_size)
   const balance = account.balance
   const ddFloor = account.dd_floor
-  // Max drawdown allowance from PROPFIRM_RULES (e.g. $2,000 for Topstep 50K)
-  const maxDD = maxDrawdown(firmName, account.plan_size)
+  // Max drawdown allowance: per-account override (account.custom_drawdown,
+  // set in the account edit modal) takes precedence over the PropFirm default
+  // pulled from PROPFIRM_RULES. Lets a trader run tighter than the firm's
+  // official threshold — e.g. force 2000 or 2500 on a 50K instead of 2500.
+  const customDD = account.custom_drawdown != null && account.custom_drawdown > 0
+    ? Number(account.custom_drawdown)
+    : null
+  const maxDD = customDD ?? maxDrawdown(firmName, account.plan_size)
 
   const hasData = balance != null && ddFloor != null && maxDD > 0
   const room = hasData ? Math.max(0, balance - ddFloor) : null

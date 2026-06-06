@@ -71,6 +71,20 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
   const [sort, setSort] = useState('date_desc')
   const [showFilters, setShowFilters] = useState(false) // mobile/UX : masquer par défaut sur petit écran
 
+  // View mode for the trade log: 'cards' (default, screenshot-friendly),
+  // 'compact' (one trade per row, dense), 'table' (true table for power
+  // users who want to scan many trades fast). Persisted across visits.
+  const [viewMode, setViewMode] = useState('cards')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = window.localStorage.getItem('tradesPage.viewMode')
+    if (saved === 'cards' || saved === 'compact' || saved === 'table') setViewMode(saved)
+  }, [])
+  function changeViewMode(mode) {
+    setViewMode(mode)
+    if (typeof window !== 'undefined') window.localStorage.setItem('tradesPage.viewMode', mode)
+  }
+
   // === Comptes plat (pour résolution name + filtres) ===
   const allAccounts = useMemo(() => {
     return firms.flatMap(f => (f.accounts || []).map(a => ({
@@ -344,6 +358,46 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
           <button onClick={() => setShowFilters(s => !s)} style={btnGhost}>
             {showFilters ? '▲' : '▼'} {t('app.trades.advancedFilters')}
           </button>
+
+          {/* View mode picker (cards / compact / table) — persists in localStorage */}
+          <div role="group" aria-label="Vue" style={{
+            display: 'flex',
+            gap: 0,
+            background: 'rgba(255,255,255,0.04)',
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            padding: 2,
+            marginLeft: 'auto',
+          }}>
+            {[
+              { v: 'cards',   label: 'Cartes',  icon: '▦' },
+              { v: 'compact', label: 'Compact', icon: '☰' },
+              { v: 'table',   label: 'Tableau', icon: '▤' },
+            ].map(opt => (
+              <button
+                key={opt.v}
+                onClick={() => changeViewMode(opt.v)}
+                title={`Vue ${opt.label}`}
+                aria-pressed={viewMode === opt.v}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  background: viewMode === opt.v ? 'rgba(45,111,255,0.18)' : 'transparent',
+                  color: viewMode === opt.v ? C.blueLt : C.text2,
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <span>{opt.icon}</span><span>{opt.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Ligne 2 : filtres avancés (collapse) */}
@@ -449,6 +503,20 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
             </button>
           )}
         </div>
+      ) : viewMode === 'table' ? (
+        <TradeTableView
+          entries={filteredEntries}
+          onEdit={(e) => setEditing({ entry: e })}
+          C={C}
+          card={card}
+        />
+      ) : viewMode === 'compact' ? (
+        <TradeCompactView
+          entries={filteredEntries}
+          onEdit={(e) => setEditing({ entry: e })}
+          C={C}
+          card={card}
+        />
       ) : (
         <div className="trades-grid qt-stagger" style={{
           display: 'grid',
@@ -526,6 +594,144 @@ function StatCard({ label, value, color }) {
       <div style={{ fontSize: 17, fontWeight: 700, color: color || C.text, letterSpacing: '-0.015em', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
         {value}
       </div>
+    </div>
+  )
+}
+
+// Compact view — one row per trade, dense, ~3x more visible at once
+// than the card grid. Click anywhere on the row to edit.
+function TradeCompactView({ entries, onEdit, C, card }) {
+  return (
+    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+      {entries.map((e, idx) => {
+        const pnl = Number(e.pnl) || 0
+        const pnlColor = pnl > 0 ? C.green : pnl < 0 ? C.red : C.text2
+        const sideColor = e.side === 'long' ? C.green : e.side === 'short' ? C.red : C.text3
+        return (
+          <div
+            key={e.id}
+            onClick={() => onEdit(e)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={ev => { if (ev.key === 'Enter') onEdit(e) }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '90px 1fr 70px 60px 70px 110px',
+              gap: 10,
+              alignItems: 'center',
+              padding: '10px 14px',
+              borderBottom: idx < entries.length - 1 ? `1px solid ${C.border}` : 'none',
+              cursor: 'pointer',
+              transition: 'background 0.12s',
+              fontSize: 12,
+            }}
+            onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+            onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
+          >
+            <span style={{ color: C.text3, fontFamily: 'ui-monospace, monospace', fontSize: 11 }}>{e.date}</span>
+            <span style={{ color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ color: e._firmColor || C.blueLt, marginRight: 6 }}>●</span>
+              {e._accountLabel || '—'}
+              {e.instrument && (
+                <span style={{ marginLeft: 8, color: C.text2, fontFamily: 'ui-monospace, monospace' }}>{e.instrument}</span>
+              )}
+            </span>
+            <span style={{ color: sideColor, fontSize: 11, textTransform: 'uppercase', fontWeight: 600 }}>
+              {e.side || '—'}
+            </span>
+            <span style={{ color: C.text3, textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 11 }}>
+              {e.quantity != null ? e.quantity : ''}
+            </span>
+            <span style={{ color: C.text3, fontSize: 10, textAlign: 'right' }}>
+              {Array.isArray(e.tags) && e.tags.length > 0 ? `${e.tags.length} tag${e.tags.length > 1 ? 's' : ''}` : ''}
+            </span>
+            <span style={{
+              color: pnlColor,
+              fontWeight: 700,
+              textAlign: 'right',
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: 13,
+            }}>
+              {fmtMoney(pnl)}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Table view — true HTML table for power users. Sortable header would
+// be nice but tradesPage already exposes a sort dropdown, so we just
+// surface the columns. Click row to edit.
+function TradeTableView({ entries, onEdit, C, card }) {
+  const th = {
+    textAlign: 'left',
+    padding: '10px 12px',
+    fontSize: 10,
+    color: C.text3,
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    fontWeight: 700,
+    background: 'rgba(255,255,255,0.02)',
+    borderBottom: `1px solid ${C.border}`,
+    position: 'sticky',
+    top: 0,
+    zIndex: 1,
+  }
+  const td = { padding: '9px 12px', fontSize: 12, color: C.text, borderBottom: `1px solid ${C.border}` }
+  return (
+    <div style={{ ...card, padding: 0, overflow: 'auto', maxHeight: '70vh' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'inherit' }}>
+        <thead>
+          <tr>
+            <th style={th}>Date</th>
+            <th style={th}>Compte</th>
+            <th style={th}>Instr.</th>
+            <th style={th}>Côté</th>
+            <th style={{ ...th, textAlign: 'right' }}>Qty</th>
+            <th style={{ ...th, textAlign: 'right' }}>Entrée</th>
+            <th style={{ ...th, textAlign: 'right' }}>Sortie</th>
+            <th style={{ ...th, textAlign: 'right' }}>R</th>
+            <th style={{ ...th, textAlign: 'right' }}>PnL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map(e => {
+            const pnl = Number(e.pnl) || 0
+            const pnlColor = pnl > 0 ? C.green : pnl < 0 ? C.red : C.text2
+            const sideColor = e.side === 'long' ? C.green : e.side === 'short' ? C.red : C.text3
+            return (
+              <tr
+                key={e.id}
+                onClick={() => onEdit(e)}
+                style={{ cursor: 'pointer', transition: 'background 0.12s' }}
+                onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
+              >
+                <td style={{ ...td, color: C.text3, fontFamily: 'ui-monospace, monospace', fontSize: 11, whiteSpace: 'nowrap' }}>{e.date}</td>
+                <td style={td}>
+                  <span style={{ color: e._firmColor || C.blueLt, marginRight: 6 }}>●</span>
+                  {e._accountLabel || '—'}
+                </td>
+                <td style={{ ...td, color: C.text2, fontFamily: 'ui-monospace, monospace' }}>{e.instrument || ''}</td>
+                <td style={{ ...td, color: sideColor, fontSize: 11, textTransform: 'uppercase', fontWeight: 600 }}>
+                  {e.side || '—'}
+                </td>
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: C.text3 }}>{e.quantity != null ? e.quantity : ''}</td>
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: C.text3 }}>{e.entry_price != null ? Number(e.entry_price) : ''}</td>
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: C.text3 }}>{e.exit_price != null ? Number(e.exit_price) : ''}</td>
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: e.r_multiple != null ? (e.r_multiple >= 0 ? C.green : C.red) : C.text3 }}>
+                  {e.r_multiple != null ? (e.r_multiple >= 0 ? '+' : '') + Number(e.r_multiple).toFixed(2) + 'R' : ''}
+                </td>
+                <td style={{ ...td, textAlign: 'right', color: pnlColor, fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>
+                  {fmtMoney(pnl)}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }

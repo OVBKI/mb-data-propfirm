@@ -58,6 +58,13 @@ alter table accounts add column if not exists rithmic_synced_at   timestamptz;
 alter table accounts add column if not exists liquidated_at       timestamptz;
 alter table accounts add column if not exists total_commissions   numeric(12,2);
 
+-- custom_drawdown : seuil de drawdown personnalisé par compte (USD).
+-- NULL = utilise la valeur par défaut de la PropFirm (PROPFIRM_RULES).
+-- Exemple : un user sur un compte 50k Lucid peut forcer 2000 ou 2500
+-- à la place du 2500 standard. Utilisé par DrawdownHealthCard +
+-- JournalPage equity chart quand non-NULL.
+alter table accounts add column if not exists custom_drawdown    numeric(12,2);
+
 -- Index pour le lookup rithmic_account_id → account
 create index if not exists accounts_rithmic_account_id_idx on accounts(rithmic_account_id) where rithmic_account_id is not null;
 
