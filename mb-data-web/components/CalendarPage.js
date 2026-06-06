@@ -307,6 +307,11 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
   const [lastUpd, setLastUpd] = useState('')
   const [nowTimeStr, setNowTimeStr] = useState('')
   const [currencyModalOpen, setCurrencyModalOpen] = useState(false)
+  // Source telemetry — 'fmp' or 'forexfactory'. FF doesn't provide actuals,
+  // so the UI uses this to render an honest "—" instead of misleading ⏳
+  // and shows a discreet footnote suggesting FMP_API_KEY for live actuals.
+  const [source, setSource] = useState(null)
+  const [sourceHasActuals, setSourceHasActuals] = useState(false)
   const t = T[lang] || T.fr
   const today = todayFF()
   const nowTs = Date.now()
@@ -319,6 +324,8 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
       const data = await r.json()
       if (data.error) throw new Error(data.error)
       setEvents(data.events || [])
+      setSource(data.source || null)
+      setSourceHasActuals(!!data.hasActuals)
       setLastUpd(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
     } catch (e) { setError(e.message); setEvents([]) }
     setLoading(false)
@@ -717,11 +724,35 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
         fontSize: 10.5, color: 'var(--text3)',
         fontFamily: monoFont, letterSpacing: '0.06em',
         position: 'relative', zIndex: 1,
+        lineHeight: 1.7,
       }}>
-        {t.sourceLine}{' '}
-        <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" style={{ color: '#4d8fff', textDecoration: 'none' }}>
-          forexfactory.com
-        </a>
+        <div>
+          {source === 'fmp' ? (
+            <>
+              {lang === 'fr' ? 'Données' : lang === 'es' ? 'Datos' : 'Data'} :{' '}
+              <a href="https://site.financialmodelingprep.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#4d8fff', textDecoration: 'none' }}>Financial Modeling Prep</a>
+              {' · '}
+              {lang === 'fr' ? 'Indicatif uniquement.' : lang === 'es' ? 'Indicativo solamente.' : 'Indicative only.'}
+            </>
+          ) : (
+            <>
+              {t.sourceLine}{' '}
+              <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" style={{ color: '#4d8fff', textDecoration: 'none' }}>
+                forexfactory.com
+              </a>
+            </>
+          )}
+        </div>
+        {/* Honest note when source doesn't provide actuals */}
+        {source === 'forexfactory' && (
+          <div style={{ fontSize: 10, opacity: 0.65, marginTop: 4 }}>
+            {lang === 'fr'
+              ? 'Note : ce flux fournit forecast + previous mais pas les résultats publiés. Pour les "Réel" en temps réel, configure FMP_API_KEY (free) sur Vercel.'
+              : lang === 'es'
+              ? 'Nota: este flujo proporciona forecast + previous pero no resultados publicados. Para "Real" en tiempo real, configura FMP_API_KEY (gratis) en Vercel.'
+              : 'Note: this feed provides forecast + previous but not released results. For live "Actual" values, configure FMP_API_KEY (free) on Vercel.'}
+          </div>
+        )}
       </div>
 
       {/* Global keyframes + responsive */}
@@ -1128,9 +1159,11 @@ function EventRow({ event: ev, lang, t, mono, nowTs, isLast }) {
 }
 
 // Data cell — Actual / Forecast / Previous with label above value
-function DataCell({ label, value, muted, isPast, hasActual, t, diff }) {
+// Note: when actual is missing we always show "—" (honest) rather than a
+// loading glyph, since the source may simply not provide actuals at all
+// (e.g. ForexFactory community mirror). The footer surfaces this.
+function DataCell({ label, value, muted, hasActual, diff }) {
   const isActualCell = !muted
-  // Actual cell: show value if released, else "pending" or "—"
   let displayValue = value || '—'
   let valueColor = 'var(--text2)'
   let valueWeight = 500
@@ -1138,9 +1171,6 @@ function DataCell({ label, value, muted, isPast, hasActual, t, diff }) {
     if (hasActual && diff) {
       valueColor = diff.color
       valueWeight = 700
-    } else if (isPast && !hasActual) {
-      displayValue = '⏳'
-      valueColor = 'var(--text3)'
     } else if (!hasActual) {
       displayValue = '—'
       valueColor = 'var(--text3)'
