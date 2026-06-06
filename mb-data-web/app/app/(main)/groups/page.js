@@ -1,5 +1,11 @@
 'use client'
 // Page /app/groups — Gestion des groupes (Phase 3 réseau social).
+//
+// ADMIN-GATED (juin 2026) : la section Communauté est verrouillée pour
+// tout le monde sauf les admins (cf. lib/admins.js). Les non-admins qui
+// tapent l'URL directement voient un placeholder "Bientôt disponible".
+// La sidebar affiche déjà un cadenas pour eux. Quand la feature est
+// prête, retirer le guard `if (!userIsAdmin) return <ComingSoon />`.
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -7,12 +13,34 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '../../../../lib/supabase'
 import { useApp } from '../AppContext'
 import Skeleton from '../../../../components/Skeleton'
+import { isAdmin } from '../../../../lib/admins'
 
 const C = {
   surface: '#141720', surface2: '#1c2030',
   border: 'rgba(255,255,255,0.07)', border2: 'rgba(255,255,255,0.13)',
   text: '#f0ede8', text2: '#9098b0', text3: '#7b839b',
   blue: '#2d6fff', blueLight: '#4d8fff', green: '#10b981', amber: '#fac775', red: '#e8504a',
+}
+
+function CommunityComingSoon() {
+  return (
+    <div style={{ padding: '60px 24px 80px', maxWidth: 640, margin: '0 auto', textAlign: 'center', color: C.text }}>
+      <div style={{ fontSize: 56, marginBottom: 14 }}>{'\u{1F512}'}</div>
+      <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, marginBottom: 10, letterSpacing: '-0.02em' }}>
+        Communauté — Bientôt disponible
+      </h1>
+      <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, margin: '0 0 22px' }}>
+        Cette section est en cours de construction. On la déverrouille pour tous les utilisateurs dès qu&apos;elle est prête.
+        En attendant, profite à fond du tracking, des analytics et de la synchronisation extension.
+      </p>
+      <Link href="/app/dashboard" style={{
+        display: 'inline-block', padding: '11px 22px',
+        background: C.blue, color: '#fff',
+        fontSize: 13, fontWeight: 700,
+        borderRadius: 10, textDecoration: 'none',
+      }}>← Retour au dashboard</Link>
+    </div>
+  )
 }
 
 export default function GroupsPage() {
@@ -103,6 +131,11 @@ export default function GroupsPage() {
       setJoining(false)
     }
   }
+
+  // Admin gate — placed after all hooks to respect React's Rules of Hooks.
+  // Until the Community feature ships, non-admin users get the placeholder
+  // even if they hit /app/groups directly by URL.
+  if (!isAdmin(user?.email)) return <CommunityComingSoon />
 
   return (
     <div style={{ maxWidth: 980, margin: '0 auto', padding: 32 }}>

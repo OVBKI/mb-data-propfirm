@@ -43,6 +43,10 @@ export default function AppSidebar({
   isOpenMobile = false,
 }) {
   const t = useT()
+  // Community is admin-gated for now (work in progress). Non-admins see
+  // the entry locked with a 🔒 badge so they know it's coming, but can't
+  // navigate to it.
+  const userIsAdmin = isAdmin(user?.email)
 
   // === Source of truth : définition unique des items de nav ===
   const navItems = [
@@ -64,7 +68,12 @@ export default function AppSidebar({
     { key: 'rules',  icon: '◊', label: t('app.sidebar.rules'),  section: 'PropFirm' },
     { key: 'alerts', icon: '◉', label: t('app.sidebar.alerts'), section: 'PropFirm', badge: alertsBadgeCount },
     // Communauté (Phase 3 réseau social — mai 2026)
-    { href: '/app/groups', icon: '◈', label: t('app.sidebar.groups'), section: 'Communaute' },
+    // Locked for non-admins until the feature is finished. Admins see
+    // the live link and can dogfood it; everyone else sees a disabled
+    // entry with a lock badge.
+    userIsAdmin
+      ? { href: '/app/groups', icon: '◈', label: t('app.sidebar.groups'), section: 'Communaute' }
+      : { icon: '◈', label: t('app.sidebar.groups'), section: 'Communaute', disabled: true, badgeLabel: '🔒' },
   ]
 
   const SECTION_LABELS = {
