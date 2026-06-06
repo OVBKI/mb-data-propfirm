@@ -397,6 +397,99 @@ Full architecture documented but NOT yet coded. When ready, build in this order:
 - Sentry integration (DSN exists, needs wiring)
 - Split layout.js monolith (810 lines) into composable pieces
 
+## Session History (June 6, 2026)
+
+### Calendar — Finnhub → ForexFactory + FMP layered (commits 384b344, ed52980 on main)
+User reported Finnhub data was incomplete and the design was generic. Two-step fix shipped to main.
+
+**Step 1 — Data source swap:**
+- `app/api/calendar/route.js` switched primary source to ForexFactory community mirror
+  (`https://nfs.faireconomy.media/ff_calendar_{this,next}week.json`), free, no API key.
+- Dropped `FINNHUB_API_KEY` requirement (user can delete the env var from Vercel).
+- Cache 5 min in-memory + 30 req/min/IP rate limit preserved.
+- Output shape kept identical so CalendarPage didn't need refactoring.
+
+**Step 2 — CalendarPage redesign ("Financial Terminal Editorial"):**
+- Hero: monospace eyebrow with animated dot + `ui-serif` italic title +
+  3-KPI strip (Today count, High-impact count, Live clock pulse).
+- Week navigator: horizontal scrollable day chips with per-day event-density
+  dot rows (red/amber/grey) + click-to-scroll.
+- Filters: inline major-currency flag chips in toolbar + modal for full list.
+- Day cards: italic serif day name, monospace date, impact summary chips.
+- Event rows: 5-col CSS grid (4px accent | time | flag+ccy | title | data),
+  NOT a `<table>`. Impact-colored left accent bar (red glow on High).
+- Per-event data: 3 tabular columns (Actual / Forecast / Previous) + a
+  diff chip (Beat ↑ / Miss ↓ / Inline =) colored green/red/amber.
+- Subtle dot-grid background masked to top 60%.
+- All numbers in `tabular-nums` + JetBrains Mono fallback.
+
+**Step 3 — Missing actuals fix (user flagged ⏳ everywhere on past events):**
+- Root cause: FF community mirror NEVER publishes the `actual` field —
+  it only generates schedule + forecast + previous before events release.
+- Solution: layered sources in `app/api/calendar/route.js`
+  - Primary: Financial Modeling Prep (`/api/v3/economic_calendar`) when
+    `FMP_API_KEY` env var is set. FMP returns all 4 fields incl. actual.
+    Free tier 250 calls/day (more than enough with 5-min cache).
+  - Fallback: ForexFactory (no actuals but full calendar still works).
+  - Returns `{source, hasActuals}` in payload so UI can adapt.
+- UI fix: removed misleading ⏳, now shows `—` honestly when no actual.
+  Footer adapts per source, shows discreet FR/EN/ES note when source=FF
+  explaining FMP_API_KEY enables live actuals.
+- **TODO user**: signup at financialmodelingprep.com (free), add
+  `FMP_API_KEY` to Vercel env vars for live actuals.
+
+### TradesPage — Notion-style compact + table views (commit 238ef71 on main)
+User said original compact/table views felt like Excel. Rewrote both in
+"Notion" aesthetic. Card view kept unchanged.
+
+- **Compact view → List aérée**: 62px rows, 4px side-color accent bar
+  (green long / red short), 2-line layout (symbol monospace + firm dot +
+  account + tag pills | date + side badge + qty + entry→exit), big PnL
+  block right with R multiple subline.
+- **Table view → Table Pro**: sticky header with column-type glyphs
+  (📅 # ▾ → ◈ $ ⊕) + backdrop blur. Side as LONG/SHORT pill with arrow.
+  Tags as colored pills via `getTagMeta()` taxonomy. Inline mini PnL bar
+  (56px, centered on zero, width = |pnl|/maxAbsPnl across visible).
+  Hover row reveals 2px blue left accent that scales-in (Notion signature).
+- Shared helpers: `fmtShortDate(iso)`, `TagPills({tags, max})`, `SideBadge({side})`.
+
+### Magic MCP — configured but blocked by sandbox network policy
+- `.mcp.json` at repo root declares Magic server with `${MAGIC_API_KEY}` interpolation.
+- User rotated key to: `38b82b557e18b175a4b0029b882a2635ff3398b61b8ff14495ab64bd41a7eed9`
+  (user explicitly accepted leak risk on prior key, this is the replacement).
+- Magic installed in user-level config via `claude mcp add magic --scope user`,
+  but `/root/.claude.json` is **ephemeral** in Claude Code Web — wiped on
+  container reclaim. The `.mcp.json` is the durable path.
+- **Magic API calls FAIL from sandbox**: 21st.dev returns
+  "Host not in allowlist" — the network policy "De confiance" doesn't
+  whitelist `api.21st.dev` / `magic.21st.dev`. Need user to either
+  upgrade their environment to fully-open mode OR run Claude Code locally.
+
+### Claude Code Web — environment settings location (for future Claude sessions)
+User accesses Claude Code via **claude.ai/code** (web version), NOT desktop.
+Settings location (found through user screenshots):
+- **Left sidebar → "Customize"** button → opens modal "Mettre à jour l'environnement cloud"
+- Modal has 4 fields:
+  1. **Nom** — environment name (default: "Default")
+  2. **Accès réseau** — dropdown (current: "De confiance"). Links to "politique réseau" + "niveaux d'accès" docs.
+  3. **Variables d'environnement** — `.env` format. THIS is where `MAGIC_API_KEY` and other env vars must be added for persistence.
+  4. **Script de configuration** — bash script that runs at session start.
+- Footer: Archiver / Annuler / Enregistrer les modifications.
+- ⚠️ Changes apply to **NEW sessions only**, not the current one.
+- User instructed (June 6) to add `MAGIC_API_KEY=38b82b...` to this Variables d'environnement field for Magic persistence.
+
+### 3 Landing previews pending user review (NOT merged to main yet)
+After user nuked the 7 previous landing variants ("efface moi toutes ces preview c'est de la merde"), they asked for 3 new ones with constraint: **sober + fluid + beautiful animations**, carte blanche on rest. Built in parallel via worktree-isolated subagents. All compile clean, all on preview branches awaiting Vercel deploy + user verdict.
+
+- **`landing-v2-editorial`** (V1 Editorial Whisper) — cream `#faf8f4`, near-black `#0e0e0e`, accent bordeaux `#6b2737`, Instrument Serif italic massive headlines, Inter body, magazine asymmetric layout, word-by-word reveal on scroll, hairline rules drawing in left-to-right. Sections: Nav / Hero / Manifesto / 3 Principles (Clarté / Discipline / Souveraineté) / Pull Quote / Final CTA / Footer. Helpers in `components/landing/v2editorial/`.
+- **`landing-v2-mist`** (V2 Mist & Mesh) — pastel mesh gradient (dusty rose + lavender + sky + cream) animated on 80s loop, base `#fbf7f2`, text deep slate `#2d2a3e`, accent peach `#e8b394`. Cabinet Grotesk + Inter. Frosted glass cards floating with lift-on-hover (framer-motion). Sections: Floating frosted nav / Hero / 3 Stats / 6 Features / Mac-style browser product preview / 3-tier Pricing / FAQ accordion / Final CTA / 4-col Footer. Helpers in `components/landing/v2mist/`.
+- **`landing-v2-atmospheric`** (V3 Atmospheric Dark) — navy `#0a0e1a`, warm white `#f4f0e8`, accent coral `#ff7a59`, Fraunces italic for ALL headlines, Inter body, JetBrains Mono for numbers. Coral scroll progress bar at top, vertical coral lines drawing down on section reveal, counter-up animation on stats, dot-grid bg fading under hero. Sections: Slim Nav / Left-aligned Hero / 4 KPIs with count-up / 3 Pillars (vertical stacked rows) / 6 Features grid / 3-step vertical timeline / Italic pull quote / Final CTA / Footer. Helpers in `components/landing/v2atmo/`.
+
+When user picks one: cherry-pick its commit to main, then delete the 3 preview branches (proxy still blocks `git push --delete`, user must do it via github.com/ovbki/mb-data-propfirm/branches manually).
+
+### Remote branch deletion limitation (persists from prior sessions)
+The Claude Code Web git proxy at `http://127.0.0.1:*/git/OVBKI/mb-data-propfirm` **blocks** `git push origin --delete <branch>` and `git push origin :refs/heads/<branch>` with HTTP 403. GitHub MCP also has no `delete_branch` tool. User MUST delete remote branches via GitHub UI manually (`/branches` page → trash icon). Local branches + worktrees can be cleaned via `git branch -D` and `git worktree remove --force`.
+
 ## Programmatic SEO Opportunity
 
 Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
