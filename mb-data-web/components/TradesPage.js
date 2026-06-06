@@ -16,7 +16,7 @@ import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { accountLabel } from '../lib/constants'
 import { computeRStats, computeRMultiple, computeRiskReward } from '../lib/tradeMath'
-import { TRADE_TAGS } from '../lib/tradeTags'
+import { TRADE_TAGS, getTagMeta } from '../lib/tradeTags'
 import TradeCard from './TradeCard'
 import TradeEntryModal from './TradeEntryModal'
 import TagSelector from './TagSelector'
@@ -598,15 +598,83 @@ function StatCard({ label, value, color }) {
   )
 }
 
-// Compact view — one row per trade, dense, ~3x more visible at once
-// than the card grid. Click anywhere on the row to edit.
+// Helper: format ISO date "2026-06-04" → "04 juin" (short, scannable).
+// Uses browser locale, falls back to raw string if Intl fails.
+function fmtShortDate(iso) {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso + 'T00:00:00')
+    return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
+  } catch { return iso }
+}
+
+// Helper: render up to 2 tag pills inline + a "+N" overflow indicator.
+// Uses getTagMeta() to color-match the trade-tag taxonomy when known,
+// falls back to neutral grey pill for free-form tags.
+function TagPills({ tags, max = 2 }) {
+  if (!Array.isArray(tags) || tags.length === 0) return null
+  const visible = tags.slice(0, max)
+  const overflow = tags.length - visible.length
+  return (
+    <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap' }}>
+      {visible.map((tag, i) => {
+        const meta = getTagMeta(tag)
+        const color = meta?.color || C.text2
+        const bg = meta?.bg || 'rgba(144,152,176,0.14)'
+        const label = meta?.label || tag
+        return (
+          <span key={i} style={{
+            padding: '2px 7px', borderRadius: 5,
+            background: bg, color,
+            fontSize: 10, fontWeight: 600,
+            letterSpacing: '0.01em',
+            whiteSpace: 'nowrap',
+          }}>{label}</span>
+        )
+      })}
+      {overflow > 0 && (
+        <span style={{
+          padding: '2px 6px', borderRadius: 5,
+          background: 'rgba(255,255,255,0.04)', color: C.text3,
+          fontSize: 10, fontWeight: 600,
+        }}>+{overflow}</span>
+      )}
+    </span>
+  )
+}
+
+// Helper: side badge (LONG/SHORT) as a Notion-style pill.
+function SideBadge({ side }) {
+  if (!side) return <span style={{ color: C.text3, fontSize: 11 }}>—</span>
+  const isLong = side === 'long'
+  const color = isLong ? C.green : C.red
+  const bg = isLong ? 'rgba(29,184,122,0.15)' : 'rgba(232,80,74,0.15)'
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '3px 9px', borderRadius: 5,
+      background: bg, color,
+      fontSize: 10, fontWeight: 700,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase',
+    }}>
+      <span style={{ fontSize: 9 }}>{isLong ? '↗' : '↘'}</span>
+      {side}
+    </span>
+  )
+}
+
+// ── OPTION A : List view (Notion-style aérée) ──────────────────────────────
+// Two-line rows, ~62px high. Left border in side color. Symbol prominent.
+// Tags as colored pills. PnL big on the right. Click row to edit.
 function TradeCompactView({ entries, onEdit, C, card }) {
   return (
     <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
       {entries.map((e, idx) => {
         const pnl = Number(e.pnl) || 0
         const pnlColor = pnl > 0 ? C.green : pnl < 0 ? C.red : C.text2
-        const sideColor = e.side === 'long' ? C.green : e.side === 'short' ? C.red : C.text3
+        const sideAccent = e.side === 'long' ? C.green : e.side === 'short' ? C.red : C.text3
+        const rMult = e.r_multiple != null ? Number(e.r_multiple) : null
         return (
           <div
             key={e.id}
@@ -614,124 +682,293 @@ function TradeCompactView({ entries, onEdit, C, card }) {
             role="button"
             tabIndex={0}
             onKeyDown={ev => { if (ev.key === 'Enter') onEdit(e) }}
+            className="qt-list-row"
             style={{
               display: 'grid',
-              gridTemplateColumns: '90px 1fr 70px 60px 70px 110px',
-              gap: 10,
-              alignItems: 'center',
-              padding: '10px 14px',
+              gridTemplateColumns: '4px 1fr auto',
+              gap: 0,
+              alignItems: 'stretch',
               borderBottom: idx < entries.length - 1 ? `1px solid ${C.border}` : 'none',
               cursor: 'pointer',
-              transition: 'background 0.12s',
-              fontSize: 12,
+              transition: 'background 0.15s, padding-left 0.15s',
+              position: 'relative',
             }}
-            onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-            onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
           >
-            <span style={{ color: C.text3, fontFamily: 'ui-monospace, monospace', fontSize: 11 }}>{e.date}</span>
-            <span style={{ color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              <span style={{ color: e._firmColor || C.blueLt, marginRight: 6 }}>●</span>
-              {e._accountLabel || '—'}
-              {e.instrument && (
-                <span style={{ marginLeft: 8, color: C.text2, fontFamily: 'ui-monospace, monospace' }}>{e.instrument}</span>
-              )}
-            </span>
-            <span style={{ color: sideColor, fontSize: 11, textTransform: 'uppercase', fontWeight: 600 }}>
-              {e.side || '—'}
-            </span>
-            <span style={{ color: C.text3, textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 11 }}>
-              {e.quantity != null ? e.quantity : ''}
-            </span>
-            <span style={{ color: C.text3, fontSize: 10, textAlign: 'right' }}>
-              {Array.isArray(e.tags) && e.tags.length > 0 ? `${e.tags.length} tag${e.tags.length > 1 ? 's' : ''}` : ''}
-            </span>
-            <span style={{
-              color: pnlColor,
-              fontWeight: 700,
-              textAlign: 'right',
-              fontFamily: 'ui-monospace, monospace',
-              fontSize: 13,
+            {/* Side accent bar — full height, color = trade side */}
+            <div style={{ background: sideAccent, opacity: 0.55 }} />
+
+            {/* Body — 2 lines */}
+            <div style={{ padding: '14px 18px', minWidth: 0 }}>
+              {/* Line 1 — symbol + account + tags */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6, minWidth: 0 }}>
+                {/* Symbol monospace, prominent */}
+                <span style={{
+                  color: C.text,
+                  fontFamily: 'ui-monospace, SF Mono, monospace',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  letterSpacing: '0.02em',
+                  minWidth: 64,
+                }}>
+                  {e.instrument || '—'}
+                </span>
+                {/* Firm dot + account label */}
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  color: C.text2, fontSize: 13,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  minWidth: 0,
+                }}>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: e._firmColor || C.blueLt, flexShrink: 0,
+                  }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {e._accountLabel || '—'}
+                  </span>
+                </span>
+                {/* Tag pills — push right with margin-left auto */}
+                <span style={{ marginLeft: 'auto', flexShrink: 0 }}>
+                  <TagPills tags={e.tags} max={2} />
+                </span>
+              </div>
+
+              {/* Line 2 — date + side badge + qty */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11.5, color: C.text3 }}>
+                <span style={{ fontFamily: 'ui-monospace, monospace' }}>{fmtShortDate(e.date)}</span>
+                <span style={{ color: C.border, fontSize: 10 }}>·</span>
+                <SideBadge side={e.side} />
+                {e.quantity != null && (
+                  <>
+                    <span style={{ color: C.border, fontSize: 10 }}>·</span>
+                    <span style={{ fontFamily: 'ui-monospace, monospace' }}>
+                      {e.quantity}<span style={{ color: C.text3, marginLeft: 2 }}>ct</span>
+                    </span>
+                  </>
+                )}
+                {e.entry_price != null && e.exit_price != null && (
+                  <>
+                    <span style={{ color: C.border, fontSize: 10 }}>·</span>
+                    <span style={{ fontFamily: 'ui-monospace, monospace', color: C.text3 }}>
+                      {Number(e.entry_price)} → {Number(e.exit_price)}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* PnL block — big number + R multiple */}
+            <div style={{
+              padding: '14px 22px 14px 18px',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'flex-end', justifyContent: 'center',
+              minWidth: 110,
+              borderLeft: `1px solid ${C.border}`,
             }}>
-              {fmtMoney(pnl)}
-            </span>
+              <span style={{
+                color: pnlColor,
+                fontWeight: 700,
+                fontSize: 16,
+                fontFamily: 'ui-monospace, SF Mono, monospace',
+                letterSpacing: '-0.01em',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {fmtMoney(pnl)}
+              </span>
+              {rMult != null && (
+                <span style={{
+                  color: rMult >= 0 ? C.green : C.red,
+                  opacity: 0.75,
+                  fontSize: 10.5, fontWeight: 600,
+                  fontFamily: 'ui-monospace, monospace',
+                  marginTop: 2,
+                  letterSpacing: '0.02em',
+                }}>
+                  {rMult >= 0 ? '+' : ''}{rMult.toFixed(2)}R
+                </span>
+              )}
+            </div>
           </div>
         )
       })}
+      <style>{`
+        .qt-list-row:hover {
+          background: rgba(255,255,255,0.025);
+        }
+        .qt-list-row:hover > div:first-child {
+          opacity: 1 !important;
+        }
+      `}</style>
     </div>
   )
 }
 
-// Table view — true HTML table for power users. Sortable header would
-// be nice but tradesPage already exposes a sort dropdown, so we just
-// surface the columns. Click row to edit.
+// ── OPTION B : Table Pro (Notion-style) ────────────────────────────────────
+// Column-type icons in headers, side/tag pills, mini PnL bar inline,
+// hover row reveals 2px blue left border (Notion signature).
+// Click row to edit.
 function TradeTableView({ entries, onEdit, C, card }) {
+  // Max abs PnL across visible entries — used to scale the inline PnL bar.
+  // Min 1 to avoid div-by-zero and keep tiny bars from looking weird.
+  const maxAbsPnl = useMemo(() => {
+    let m = 1
+    for (const e of entries) {
+      const a = Math.abs(Number(e.pnl) || 0)
+      if (a > m) m = a
+    }
+    return m
+  }, [entries])
+
   const th = {
     textAlign: 'left',
-    padding: '10px 12px',
+    padding: '12px 14px',
     fontSize: 10,
     color: C.text3,
     textTransform: 'uppercase',
-    letterSpacing: '0.1em',
+    letterSpacing: '0.08em',
     fontWeight: 700,
-    background: 'rgba(255,255,255,0.02)',
+    background: 'rgba(13,15,20,0.85)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
     borderBottom: `1px solid ${C.border}`,
     position: 'sticky',
     top: 0,
     zIndex: 1,
+    whiteSpace: 'nowrap',
+    userSelect: 'none',
   }
-  const td = { padding: '9px 12px', fontSize: 12, color: C.text, borderBottom: `1px solid ${C.border}` }
+  const td = {
+    padding: '12px 14px',
+    fontSize: 12.5,
+    color: C.text,
+    borderBottom: `1px solid ${C.border}`,
+    verticalAlign: 'middle',
+    fontVariantNumeric: 'tabular-nums',
+  }
+  // Column-type icon helper — Notion uses small glyphs to hint at the
+  // type of each column. Keeps the header scannable.
+  const Hdr = ({ icon, children, right }) => (
+    <th style={{ ...th, textAlign: right ? 'right' : 'left' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, opacity: 0.85 }}>
+        <span style={{ fontSize: 11, opacity: 0.7 }}>{icon}</span>
+        {children}
+      </span>
+    </th>
+  )
+
   return (
-    <div style={{ ...card, padding: 0, overflow: 'auto', maxHeight: '70vh' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'inherit' }}>
+    <div style={{ ...card, padding: 0, overflow: 'auto', maxHeight: '72vh' }}>
+      <table className="qt-table-pro" style={{
+        width: '100%',
+        borderCollapse: 'separate',
+        borderSpacing: 0,
+        fontFamily: 'inherit',
+      }}>
         <thead>
           <tr>
-            <th style={th}>Date</th>
-            <th style={th}>Compte</th>
-            <th style={th}>Instr.</th>
-            <th style={th}>Côté</th>
-            <th style={{ ...th, textAlign: 'right' }}>Qty</th>
-            <th style={{ ...th, textAlign: 'right' }}>Entrée</th>
-            <th style={{ ...th, textAlign: 'right' }}>Sortie</th>
-            <th style={{ ...th, textAlign: 'right' }}>R</th>
-            <th style={{ ...th, textAlign: 'right' }}>PnL</th>
+            <Hdr icon="📅">Date</Hdr>
+            <Hdr icon="●">Compte</Hdr>
+            <Hdr icon="#">Symbole</Hdr>
+            <Hdr icon="▾">Side</Hdr>
+            <Hdr icon="#" right>Qty</Hdr>
+            <Hdr icon="→">Entrée → Sortie</Hdr>
+            <Hdr icon="◈" right>R</Hdr>
+            <Hdr icon="$" right>PnL</Hdr>
+            <Hdr icon="⊕">Tags</Hdr>
           </tr>
         </thead>
         <tbody>
           {entries.map(e => {
             const pnl = Number(e.pnl) || 0
             const pnlColor = pnl > 0 ? C.green : pnl < 0 ? C.red : C.text2
-            const sideColor = e.side === 'long' ? C.green : e.side === 'short' ? C.red : C.text3
+            const barWidth = Math.min(100, (Math.abs(pnl) / maxAbsPnl) * 100)
+            const rMult = e.r_multiple != null ? Number(e.r_multiple) : null
             return (
               <tr
                 key={e.id}
                 onClick={() => onEdit(e)}
-                style={{ cursor: 'pointer', transition: 'background 0.12s' }}
-                onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
+                className="qt-table-row"
+                style={{ cursor: 'pointer', position: 'relative' }}
               >
-                <td style={{ ...td, color: C.text3, fontFamily: 'ui-monospace, monospace', fontSize: 11, whiteSpace: 'nowrap' }}>{e.date}</td>
+                <td style={{ ...td, color: C.text2, fontFamily: 'ui-monospace, monospace', fontSize: 11.5, whiteSpace: 'nowrap', position: 'relative' }}>
+                  {/* Hover left-accent bar — Notion signature */}
+                  <span className="qt-row-accent" style={{
+                    position: 'absolute', left: 0, top: 0, bottom: 0,
+                    width: 2, background: C.blueLt,
+                    transform: 'scaleY(0)', transformOrigin: 'center',
+                    transition: 'transform 0.18s ease-out',
+                  }} />
+                  {fmtShortDate(e.date)}
+                </td>
                 <td style={td}>
-                  <span style={{ color: e._firmColor || C.blueLt, marginRight: 6 }}>●</span>
-                  {e._accountLabel || '—'}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: e._firmColor || C.blueLt }} />
+                    <span style={{ color: C.text2 }}>{e._accountLabel || '—'}</span>
+                  </span>
                 </td>
-                <td style={{ ...td, color: C.text2, fontFamily: 'ui-monospace, monospace' }}>{e.instrument || ''}</td>
-                <td style={{ ...td, color: sideColor, fontSize: 11, textTransform: 'uppercase', fontWeight: 600 }}>
-                  {e.side || '—'}
+                <td style={{ ...td, color: C.text, fontFamily: 'ui-monospace, monospace', fontWeight: 600 }}>
+                  {e.instrument || ''}
                 </td>
-                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: C.text3 }}>{e.quantity != null ? e.quantity : ''}</td>
-                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: C.text3 }}>{e.entry_price != null ? Number(e.entry_price) : ''}</td>
-                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: C.text3 }}>{e.exit_price != null ? Number(e.exit_price) : ''}</td>
-                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: e.r_multiple != null ? (e.r_multiple >= 0 ? C.green : C.red) : C.text3 }}>
-                  {e.r_multiple != null ? (e.r_multiple >= 0 ? '+' : '') + Number(e.r_multiple).toFixed(2) + 'R' : ''}
+                <td style={td}>
+                  <SideBadge side={e.side} />
                 </td>
-                <td style={{ ...td, textAlign: 'right', color: pnlColor, fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>
-                  {fmtMoney(pnl)}
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', color: C.text2 }}>
+                  {e.quantity != null ? e.quantity : ''}
+                </td>
+                <td style={{ ...td, color: C.text3, fontFamily: 'ui-monospace, monospace', fontSize: 11.5, whiteSpace: 'nowrap' }}>
+                  {e.entry_price != null && e.exit_price != null
+                    ? <span><span style={{ color: C.text2 }}>{Number(e.entry_price)}</span> <span style={{ color: C.text3 }}>→</span> <span style={{ color: C.text2 }}>{Number(e.exit_price)}</span></span>
+                    : <span style={{ color: C.text3 }}>—</span>}
+                </td>
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 11.5 }}>
+                  {rMult != null ? (
+                    <span style={{
+                      color: rMult >= 0 ? C.green : C.red,
+                      fontWeight: 600,
+                    }}>{rMult >= 0 ? '+' : ''}{rMult.toFixed(2)}R</span>
+                  ) : <span style={{ color: C.text3 }}>—</span>}
+                </td>
+                <td style={{ ...td, textAlign: 'right', minWidth: 140 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                    {/* Inline mini bar — width proportional to |pnl|/maxAbsPnl */}
+                    <div style={{
+                      width: 56, height: 6, background: 'rgba(255,255,255,0.04)',
+                      borderRadius: 3, overflow: 'hidden', position: 'relative',
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        left: pnl >= 0 ? '50%' : `${50 - barWidth / 2}%`,
+                        top: 0, bottom: 0,
+                        width: `${barWidth / 2}%`,
+                        background: pnlColor,
+                        opacity: 0.85,
+                        borderRadius: 2,
+                      }} />
+                      {/* Center divider — separates wins from losses on the same axis */}
+                      <div style={{
+                        position: 'absolute', left: '50%', top: 0, bottom: 0,
+                        width: 1, background: 'rgba(255,255,255,0.08)',
+                      }} />
+                    </div>
+                    <span style={{
+                      color: pnlColor, fontWeight: 700,
+                      fontFamily: 'ui-monospace, monospace',
+                      fontSize: 13, minWidth: 60, textAlign: 'right',
+                    }}>{fmtMoney(pnl)}</span>
+                  </div>
+                </td>
+                <td style={{ ...td, paddingRight: 18 }}>
+                  <TagPills tags={e.tags} max={3} />
                 </td>
               </tr>
             )
           })}
         </tbody>
       </table>
+      <style>{`
+        .qt-table-pro tbody tr:hover { background: rgba(255,255,255,0.025); }
+        .qt-table-pro tbody tr:hover .qt-row-accent { transform: scaleY(1) !important; }
+      `}</style>
     </div>
   )
 }
