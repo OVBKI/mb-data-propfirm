@@ -131,6 +131,7 @@ function buildDays(year, month) {
 
 export default function DashPreview() {
   const [selDay, setSelDay] = useState(ds(15))
+  const [navOpen, setNavOpen] = useState(false)
   const days = buildDays(Y, Mo)
 
   const recent = Object.entries(evtMap).flatMap(([d, evts]) => evts.map(e => ({ ...e, date: d })))
@@ -147,19 +148,27 @@ export default function DashPreview() {
   const barMax = Math.max(...FIRMS.flatMap(f => [f.spent, f.payouts]))
 
   return (
-    <div className="mc">
+    <div className={'mc' + (navOpen ? ' nav-open' : '')}>
       <style>{css}</style>
       <div className="mc-banner">Maquette de redesign (calquée sur ton dashboard) · données fictives · le vrai dashboard n’est pas modifié</div>
 
       <div className="mc-shell">
         <aside className="mc-side">
-          <div className="mc-side-logo"><QLogoIcon size={28} color={C.blueLt} /></div>
+          <div className="mc-side-head">
+            <QLogoIcon size={28} color={C.blueLt} />
+            <span className="mc-side-word">QUANTARA</span>
+            <button className="mc-side-toggle" onClick={() => setNavOpen(o => !o)} aria-label={navOpen ? 'Réduire le menu' : 'Déplier le menu'} title={navOpen ? 'Réduire' : 'Déplier'}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+          </div>
           <nav className="mc-nav">
             {NAVG.map((g, gi) => (
               <div key={g.sec} className="mc-nav-group">
+                <div className="mc-nav-sec">{g.sec}</div>
                 {g.items.map(n => (
                   <button key={n.label} className={'mc-nav-btn' + (n.active ? ' active' : '') + (n.lock ? ' locked' : '')} aria-label={n.label}>
                     {ICON[n.k]}
+                    <span className="mc-nav-label">{n.label}</span>
                     {n.badge ? <span className="mc-nav-badge">{n.badge}</span> : null}
                     {n.lock ? <span className="mc-nav-lock">{LOCK}</span> : null}
                     <span className="mc-nav-tip">{n.label}</span>
@@ -169,9 +178,12 @@ export default function DashPreview() {
               </div>
             ))}
             <div className="mc-nav-sep" />
-            <button className="mc-nav-btn" aria-label="Réglages">{ICON.settings}<span className="mc-nav-tip">Réglages</span></button>
+            <button className="mc-nav-btn" aria-label="Réglages">{ICON.settings}<span className="mc-nav-label">Réglages</span><span className="mc-nav-tip">Réglages</span></button>
           </nav>
-          <div className="mc-avatar">QT</div>
+          <div className="mc-side-foot">
+            <div className="mc-avatar">QT</div>
+            <div className="mc-side-user"><div className="mc-side-name">Alex</div><div className="mc-side-mail">alex@quantara.tech</div></div>
+          </div>
         </aside>
 
         <main className="mc-main">
@@ -368,8 +380,18 @@ const css = `
 .mc-banner{text-align:center;font-size:12px;color:${C.text2};background:rgba(45,111,255,0.08);border-bottom:1px solid ${C.line};padding:8px 16px}
 .glass{background:linear-gradient(165deg,${C.glass2},${C.glass});backdrop-filter:blur(18px);border:1px solid ${C.line};border-radius:14px}
 
-.mc-shell{display:grid;grid-template-columns:72px 1fr}
-.mc-side{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0;border-right:1px solid ${C.line};background:rgba(8,10,15,0.6);backdrop-filter:blur(10px);position:sticky;top:0;height:100vh}
+.mc-shell{display:grid;grid-template-columns:72px 1fr;transition:grid-template-columns .25s ease}
+.mc.nav-open .mc-shell{grid-template-columns:228px 1fr}
+.mc-side{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0;border-right:1px solid ${C.line};background:rgba(8,10,15,0.6);backdrop-filter:blur(10px);position:sticky;top:0;height:100vh;transition:padding .25s ease}
+.mc.nav-open .mc-side{align-items:stretch;padding:18px 12px}
+.mc-side-head{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:0 0 14px;margin-bottom:4px;border-bottom:1px solid ${C.line}}
+.mc.nav-open .mc-side-head{justify-content:flex-start;padding:0 6px 14px}
+.mc-side-word{display:none;font-weight:800;letter-spacing:.14em;font-size:14px;flex:1;white-space:nowrap}
+.mc.nav-open .mc-side-word{display:block}
+.mc-side-toggle{width:28px;height:28px;border-radius:8px;border:1px solid ${C.line2};background:rgba(255,255,255,0.03);color:${C.text2};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .18s}
+.mc-side-toggle:hover{color:${C.text};border-color:${C.blueLt};background:${C.blueSoft}}
+.mc-side-toggle svg{transition:transform .25s ease}
+.mc.nav-open .mc-side-toggle svg{transform:rotate(180deg)}
 .mc-side-logo{margin-bottom:14px}
 .mc-nav{display:flex;flex-direction:column;gap:6px;flex:1}
 .mc-nav-btn{position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:none;background:transparent;color:${C.text3};cursor:pointer;transition:all .18s}
@@ -383,7 +405,27 @@ const css = `
 .mc-nav-btn.locked:hover{background:transparent;color:${C.text3}}
 .mc-nav-badge{position:absolute;top:4px;right:5px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;background:${C.red};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid ${C.bg}}
 .mc-nav-lock{position:absolute;top:6px;right:7px;color:${C.text3};display:flex}
-.mc-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${C.blue},${C.green});display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.mc-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${C.blue},${C.green});display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+/* expanded sidebar */
+.mc-nav-label{display:none;font-size:13px;font-weight:500;white-space:nowrap}
+.mc-nav-sec{display:none;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${C.text3};padding:10px 12px 4px;width:100%}
+.mc.nav-open .mc-nav{align-items:stretch}
+.mc.nav-open .mc-nav-group{align-items:stretch}
+.mc.nav-open .mc-nav-sec{display:block}
+.mc.nav-open .mc-nav-sep{display:none}
+.mc.nav-open .mc-nav-label{display:inline}
+.mc.nav-open .mc-nav-tip{display:none}
+.mc.nav-open .mc-nav-btn{width:100%;height:40px;justify-content:flex-start;gap:11px;padding:0 12px;border-radius:10px;color:${C.text2}}
+.mc.nav-open .mc-nav-btn:hover{color:${C.text}}
+.mc.nav-open .mc-nav-btn.active{color:#fff}
+.mc.nav-open .mc-nav-badge{position:static;margin-left:auto;border:none}
+.mc.nav-open .mc-nav-lock{position:static;margin-left:auto}
+.mc-side-foot{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:auto;padding-top:12px;border-top:1px solid ${C.line}}
+.mc.nav-open .mc-side-foot{justify-content:flex-start;padding:12px 4px 0}
+.mc-side-user{display:none;min-width:0}
+.mc.nav-open .mc-side-user{display:block}
+.mc-side-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-side-mail{font-size:10px;color:${C.text3};font-family:ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .mc-main{padding:26px 30px 50px;max-width:1240px;margin:0 auto;width:100%}
 .mc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:26px}
