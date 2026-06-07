@@ -38,11 +38,32 @@ const ICON = {
   search: I(['m21 21-4.3-4.3'], <circle cx="11" cy="11" r="7" />),
   bell: I(['M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0']),
   plus: I(['M12 5v14', 'M5 12h14']),
+  heart: I(['M12 21s-7-4.3-9.3-8.5C1 9 2.6 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.4 0 5 3.5 3.3 7C19 16.7 12 21 12 21z']),
+  pie: I(['M21 12A9 9 0 1 1 11 3v9z'], <path d="M12 3a9 9 0 0 1 9 9h-9z" />),
+  sync: I(['M3 12a9 9 0 0 1 15-6.7L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-15 6.7L3 16', 'M3 21v-5h5']),
+  plug: I(['M9 2v6', 'M15 2v6', 'M7 8h10v3a5 5 0 0 1-10 0z', 'M12 16v6']),
+  candles: I(['M7 7v3', 'M7 16v2', 'M17 5v3', 'M17 15v3'], <><rect x="5" y="10" width="4" height="6" rx="1" /><rect x="15" y="8" width="4" height="7" rx="1" /></>),
+  heatmap: I([], <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>),
+  rulesCheck: I(['M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2', 'M9 4h6v3H9z', 'M9 14l2 2 4-4']),
+  scale: I(['M12 3v18', 'M5 21h14', 'M4 7l4-4 4 4', 'M2 11a4 4 0 0 0 8 0', 'M14 7l4-4 4 4', 'M14 11a4 4 0 0 0 8 0']),
 }
-const NAV = [
-  { k: 'grid', label: 'Vue d’ensemble', active: true }, { k: 'trades', label: 'Mes trades' },
-  { k: 'journal', label: 'Journal' }, { k: 'calendar', label: 'Calendrier' },
-  { k: 'health', label: 'Health Center' }, { k: 'users', label: 'Communauté' }, { k: 'settings', label: 'Réglages' },
+const LOCK = <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm3 8H9V6a3 3 0 0 1 6 0z" /></svg>
+
+// Real sidebar items (from components/AppSidebar.js), grouped by section.
+const NAVG = [
+  { sec: 'Vue d’ensemble', items: [
+    { k: 'grid', label: 'Vue d’ensemble', active: true }, { k: 'heart', label: 'Health Center' },
+    { k: 'pie', label: 'Analytics' }, { k: 'calendar', label: 'Calendrier' },
+  ] },
+  { sec: 'Mes Trades', items: [
+    { k: 'journal', label: 'Journal manuel' }, { k: 'sync', label: 'Journal sync' },
+    { k: 'plug', label: 'Sync API', lock: true }, { k: 'candles', label: 'Mes trades' },
+    { k: 'heatmap', label: 'Heatmaps' }, { k: 'rulesCheck', label: 'Mes règles' },
+  ] },
+  { sec: 'PropFirms', items: [
+    { k: 'scale', label: 'Comparateur' }, { k: 'bell', label: 'Alertes', badge: 3 },
+  ] },
+  { sec: 'Communauté', items: [{ k: 'users', label: 'Communauté', lock: true }] },
 ]
 
 // ── Mock firms (same anatomy as the real firm cards) ──
@@ -134,7 +155,21 @@ export default function DashPreview() {
         <aside className="mc-side">
           <div className="mc-side-logo"><QLogoIcon size={28} color={C.blueLt} /></div>
           <nav className="mc-nav">
-            {NAV.map(n => <button key={n.k} className={'mc-nav-btn' + (n.active ? ' active' : '')} aria-label={n.label}>{ICON[n.k]}<span className="mc-nav-tip">{n.label}</span></button>)}
+            {NAVG.map((g, gi) => (
+              <div key={g.sec} className="mc-nav-group">
+                {g.items.map(n => (
+                  <button key={n.label} className={'mc-nav-btn' + (n.active ? ' active' : '') + (n.lock ? ' locked' : '')} aria-label={n.label}>
+                    {ICON[n.k]}
+                    {n.badge ? <span className="mc-nav-badge">{n.badge}</span> : null}
+                    {n.lock ? <span className="mc-nav-lock">{LOCK}</span> : null}
+                    <span className="mc-nav-tip">{n.label}</span>
+                  </button>
+                ))}
+                {gi < NAVG.length - 1 && <div className="mc-nav-sep" />}
+              </div>
+            ))}
+            <div className="mc-nav-sep" />
+            <button className="mc-nav-btn" aria-label="Réglages">{ICON.settings}<span className="mc-nav-tip">Réglages</span></button>
           </nav>
           <div className="mc-avatar">QT</div>
         </aside>
@@ -342,6 +377,12 @@ const css = `
 .mc-nav-btn.active{color:#fff;background:linear-gradient(135deg,${C.blue},${C.blueLt});box-shadow:0 6px 18px rgba(45,111,255,0.35)}
 .mc-nav-tip{position:absolute;left:54px;white-space:nowrap;background:#11151f;border:1px solid ${C.line2};color:${C.text};font-size:12px;padding:5px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:5}
 .mc-nav-btn:hover .mc-nav-tip{opacity:1}
+.mc-nav-group{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}
+.mc-nav-sep{width:26px;height:1px;background:rgba(255,255,255,0.08);margin:5px 0}
+.mc-nav-btn.locked{opacity:0.4;cursor:not-allowed}
+.mc-nav-btn.locked:hover{background:transparent;color:${C.text3}}
+.mc-nav-badge{position:absolute;top:4px;right:5px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;background:${C.red};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid ${C.bg}}
+.mc-nav-lock{position:absolute;top:6px;right:7px;color:${C.text3};display:flex}
 .mc-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${C.blue},${C.green});display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
 
 .mc-main{padding:26px 30px 50px;max-width:1240px;margin:0 auto;width:100%}
