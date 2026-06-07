@@ -75,6 +75,18 @@ const CONCEPTS = [
     swatches: ['#a78bfa', '#ec4899', '#0a0820'],
     badge3d: true,
   },
+  {
+    href: '/landing/cosmos',
+    name: 'Cosmos',
+    tag: '3D · scroll-journey · trou noir',
+    desc: 'Voyage spatial piloté au scroll : la caméra traverse étoiles et nébuleuse, les features apparaissent en chemin, fin sur un trou noir + reveal du logo.',
+    bg: 'linear-gradient(135deg,#020817,#0d1f3c)',
+    fg: '#f0f6ff',
+    sub: '#8da2c0',
+    accent: '#3b82f6',
+    swatches: ['#3b82f6', '#60a5fa', '#020817'],
+    badge3d: true,
+  },
 ]
 
 export default function LandingGallery() {
