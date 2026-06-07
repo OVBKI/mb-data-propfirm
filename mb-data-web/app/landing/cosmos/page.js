@@ -46,47 +46,56 @@ export default function CosmosLanding() {
     camera.position.set(0, 0, 0)
     camera.rotation.order = 'YXZ'
 
-    // STARFIELD
-    const starCount = 8000
+    // REAL SKY — ESO Milky Way 360° panorama (public domain, ESO/S. Brunier)
+    // as a camera-locked skybox sphere, so we travel through an actual photo of
+    // the night sky instead of procedural dots.
+    const texLoader = new THREE.TextureLoader()
+    const skyTex = texLoader.load('/space/milkyway.webp')
+    skyTex.colorSpace = THREE.SRGBColorSpace
+    const skybox = new THREE.Mesh(
+      new THREE.SphereGeometry(600, 64, 40),
+      new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, depthWrite: false })
+    )
+    scene.add(skybox)
+
+    // Soft round star sprite (no ugly square points)
+    const starSprite = (() => {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 64
+      const g = cv.getContext('2d')
+      const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+      grd.addColorStop(0, 'rgba(255,255,255,1)')
+      grd.addColorStop(0.25, 'rgba(255,255,255,0.85)')
+      grd.addColorStop(0.5, 'rgba(255,255,255,0.22)')
+      grd.addColorStop(1, 'rgba(255,255,255,0)')
+      g.fillStyle = grd; g.fillRect(0, 0, 64, 64)
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace
+      return tex
+    })()
+
+    // FOREGROUND PARALLAX STARS — give depth + motion as the camera travels
+    const starCount = 1400
     const starGeo = new THREE.BufferGeometry()
     const starPos = new Float32Array(starCount * 3)
     const starColors = new Float32Array(starCount * 3)
     for (let i = 0; i < starCount; i++) {
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos(2 * Math.random() - 1)
-      const r = 20 + Math.random() * 980
+      const r = 60 + Math.random() * 700
       starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta)
       starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
       starPos[i * 3 + 2] = r * Math.cos(phi)
       const t = Math.random()
-      starColors[i * 3] = 0.7 + t * 0.3
-      starColors[i * 3 + 1] = 0.8 + t * 0.2
-      starColors[i * 3 + 2] = 1.0
+      const col = new THREE.Color()
+      if (t < 0.72) col.setHSL(0.6, 0.18, 0.96)      // white
+      else if (t < 0.9) col.setHSL(0.09, 0.55, 0.82) // warm
+      else col.setHSL(0.58, 0.7, 0.82)               // blue
+      starColors[i * 3] = col.r; starColors[i * 3 + 1] = col.g; starColors[i * 3 + 2] = col.b
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3))
     starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3))
-    const starMat = new THREE.PointsMaterial({ size: 0.5, vertexColors: true, sizeAttenuation: true })
+    const starMat = new THREE.PointsMaterial({ map: starSprite, size: 3.0, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true, alphaTest: 0.01 })
     const stars = new THREE.Points(starGeo, starMat)
     scene.add(stars)
-
-    // NEBULA
-    const nebulaCount = 2000
-    const nebGeo = new THREE.BufferGeometry()
-    const nebPos = new Float32Array(nebulaCount * 3)
-    const nebCol = new Float32Array(nebulaCount * 3)
-    for (let i = 0; i < nebulaCount; i++) {
-      nebPos[i * 3] = (Math.random() - 0.5) * 800
-      nebPos[i * 3 + 1] = (Math.random() - 0.5) * 400
-      nebPos[i * 3 + 2] = -200 + Math.random() * 100
-      nebCol[i * 3] = 0.1 + Math.random() * 0.2
-      nebCol[i * 3 + 1] = 0.2 + Math.random() * 0.3
-      nebCol[i * 3 + 2] = 0.5 + Math.random() * 0.5
-    }
-    nebGeo.setAttribute('position', new THREE.BufferAttribute(nebPos, 3))
-    nebGeo.setAttribute('color', new THREE.BufferAttribute(nebCol, 3))
-    const nebMat = new THREE.PointsMaterial({ size: 1.5, vertexColors: true, transparent: true, opacity: 0.4, sizeAttenuation: true })
-    const nebula = new THREE.Points(nebGeo, nebMat)
-    scene.add(nebula)
 
     // FLOATING DATA PLANES (Quantara metrics)
     const dataPlanes = []
@@ -277,9 +286,9 @@ export default function CosmosLanding() {
       currentCamY = lerp(currentCamY, targetCamY, 0.04)
       camera.position.set(currentCamX, currentCamY, currentCamZ)
       camera.lookAt(currentCamX * 0.1, currentCamY * 0.1, currentCamZ - 10)
+      if (skybox) { skybox.position.copy(camera.position); skybox.rotation.y = animTime * 0.004 }
       stars.rotation.y = animTime * 0.005
       stars.rotation.x = animTime * 0.002
-      nebula.rotation.z = animTime * 0.003
       dataPlanes.forEach((p, i) => {
         p.position.y += Math.sin(animTime * 0.5 + i * 1.2) * 0.02
         p.rotation.y = Math.sin(animTime * 0.2 + i) * 0.08
@@ -288,7 +297,7 @@ export default function CosmosLanding() {
       ringPart.rotation.y = animTime * 0.18
       glowRing.rotation.z = -animTime * 0.12
       const bhApproach = clamp01((-currentCamZ - 700) / 200)
-      starMat.size = 0.5 + bhApproach * 3
+      starMat.size = 3.0 + bhApproach * 7
       renderer.render(scene, camera)
     }
     renderer.setAnimationLoop(animate)
@@ -307,6 +316,8 @@ export default function CosmosLanding() {
         }
       })
       planeTextures.forEach((t) => t.dispose())
+      skyTex.dispose()
+      starSprite.dispose()
       renderer.dispose()
     }
   }, [])
