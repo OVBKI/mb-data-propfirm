@@ -39,6 +39,42 @@ const CONCEPTS = [
     accent: '#2438ff',
     swatches: ['#2438ff', '#ff4d1c', '#ece7dd'],
   },
+  {
+    href: '/landing/nebula',
+    name: 'Nebula',
+    tag: '3D · cosmique · Magic « Horizon »',
+    desc: 'Scène 3D temps réel : champ d\'étoiles, nébuleuse animée, montagnes en parallaxe et bloom cinématique en fond.',
+    bg: 'linear-gradient(135deg,#070a18,#1a1040)',
+    fg: '#eef1f6',
+    sub: '#aab2c5',
+    accent: '#4d8fff',
+    swatches: ['#4d8fff', '#a06bff', '#070a18'],
+    badge3d: true,
+  },
+  {
+    href: '/landing/flux',
+    name: 'Flux',
+    tag: '3D · interactif · Magic « Anomalous »',
+    desc: 'Icosaèdre filaire déformé par du bruit, éclairé par une lumière qui suit ta souris. Électrique et vivant.',
+    bg: 'linear-gradient(135deg,#04101a,#06283a)',
+    fg: '#eef1f6',
+    sub: '#aab2c5',
+    accent: '#22d3ee',
+    swatches: ['#22d3ee', '#3b82f6', '#04101a'],
+    badge3d: true,
+  },
+  {
+    href: '/landing/prism',
+    name: 'Prism',
+    tag: '3D · cinématique · Magic « Ethereal »',
+    desc: 'Cristal à facettes avec shader palette-cosinus, grain film, aberration et étalonnage. Rendu premium.',
+    bg: 'linear-gradient(135deg,#0a0820,#2a0f33)',
+    fg: '#eef1f6',
+    sub: '#aab2c5',
+    accent: '#a78bfa',
+    swatches: ['#a78bfa', '#ec4899', '#0a0820'],
+    badge3d: true,
+  },
 ]
 
 export default function LandingGallery() {
@@ -61,7 +97,7 @@ export default function LandingGallery() {
         {CONCEPTS.map((c, i) => (
           <Link key={c.name} href={c.href} className="gl-card" style={{ background: c.bg, color: c.fg }}>
             <div className="gl-card-top">
-              <span className="gl-num">0{i + 1}</span>
+              <span className="gl-num">0{i + 1}{c.badge3d && <em className="gl-3d" style={{ borderColor: c.accent, color: c.accent }}>3D</em>}</span>
               <div className="gl-swatches">{c.swatches.map(s => <i key={s} style={{ background: s }} />)}</div>
             </div>
             <div className="gl-card-mid">
@@ -95,7 +131,8 @@ const galleryCss = `
 .gl-card{display:flex;flex-direction:column;border-radius:22px;padding:28px;min-height:420px;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s}
 .gl-card:hover{transform:translateY(-8px);box-shadow:0 40px 80px -30px rgba(0,0,0,.6)}
 .gl-card-top{display:flex;justify-content:space-between;align-items:center}
-.gl-num{font-size:14px;font-weight:800;letter-spacing:.1em;opacity:.5}
+.gl-num{font-size:14px;font-weight:800;letter-spacing:.1em;opacity:.5;display:flex;align-items:center;gap:10px}
+.gl-3d{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.1em;border:1.5px solid;border-radius:5px;padding:2px 6px;opacity:1}
 .gl-swatches{display:flex;gap:6px}.gl-swatches i{width:18px;height:18px;border-radius:50%;display:block;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
 .gl-card-mid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:30px 0}
 .gl-card-mid h2{font-size:34px;font-weight:900;letter-spacing:-.03em;margin-top:14px}
