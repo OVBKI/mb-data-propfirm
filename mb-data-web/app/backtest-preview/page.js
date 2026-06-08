@@ -1,16 +1,15 @@
 'use client'
-// /backtest-preview — PREVIEW of a new Quantara feature: "Chart Replay / Backtest"
-// (TradingView-style bar replay). Standalone, no Supabase/AppContext deps.
+// /backtest-preview — Quantara feature preview: "Chart Replay / Backtest".
+// Chart powered by TradingView's open-source lightweight-charts (MIT); the
+// replay engine, virtual trades and data feed are ours.
 //
-// - Custom canvas candlestick chart (no extra dependency)
-// - Bar replay: step back / step forward / play-pause / speed / restart / scrub
-// - Virtual trades: Long/Short, size, SL/TP, close; live P&L, entry/SL/TP lines,
-//   trade markers
-// - Deterministic engine: state = pure function of (orders, cursor), so stepping
+// - Candlestick chart (lightweight-charts): pro scales, crosshair, zoom, markers
+// - Real data via /api/market/bars: Binance (crypto, live, no key) + Databento
+//   (CME Globex, behind DATABENTO_API_KEY); synthetic fallback otherwise
+// - Bar replay: step back/forward, play-pause, speed, restart, scrub, ← / → / Space
+// - Deterministic engine: state = pure simulate(bars, orders, cursor) → stepping
 //   BACK cleanly undoes future trades
-// - Synthetic seeded OHLC data (works offline). Stats: balance, net, win rate, maxDD.
-//
-// Keyboard: ← / → step, Space play/pause.
+// - Virtual trades Long/Short + SL/TP (auto-close), markers + price lines on chart
 
 import Link from 'next/link'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
@@ -18,10 +17,9 @@ import QLogoIcon from '../../components/QLogoIcon'
 
 const C = {
   bg: '#080a0f', panel: 'rgba(20,24,34,0.7)', panel2: 'rgba(28,33,47,0.75)',
-  line: 'rgba(255,255,255,0.08)', line2: 'rgba(255,255,255,0.14)',
+  chartBg: '#0c0f16', line: 'rgba(255,255,255,0.08)', line2: 'rgba(255,255,255,0.14)',
   text: '#f0ede8', text2: '#9aa3bd', text3: '#6b748c',
   blue: '#4d8fff', up: '#19c37d', down: '#e8504a', amber: '#f5b651',
-  grid: 'rgba(255,255,255,0.045)',
 }
 const MONO = 'ui-monospace, "SF Mono", "Roboto Mono", monospace'
 
@@ -34,74 +32,47 @@ const INSTR = {
   CL:  { base: 78,    vol: 0.7, mult: 1000, dec: 2, slPts: 0.6, tpPts: 1.2,  provider: 'databento', sym: 'CL', name: 'Crude (NYMEX)' },
 }
 const TFS = ['1m', '5m', '15m', '1h', '4h']
-const START_BAL = 50000
-const NBARS = 480
-const VIEW = 110           // visible candles window
-const START_CURSOR = 90
+const INT_SEC = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400 }
+const START_BAL = 50000, NBARS = 480, VIEW = 110, START_CURSOR = 90
 
 function rngFrom(seed) {
   let s = seed >>> 0
   return () => { s = (s + 0x6D2B79F5) >>> 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
 }
 function genBars(seed, base, vol) {
-  const r = rngFrom(seed); const bars = []; let price = base; let trend = 0
+  const r = rngFrom(seed); const bars = []; let price = base, trend = 0
   for (let i = 0; i < NBARS; i++) {
     trend = trend * 0.95 + (r() - 0.5) * vol * 0.5
-    const o = price
-    const c = Math.max(0.01, o + trend + (r() - 0.5) * vol)
-    const h = Math.max(o, c) + r() * vol * 0.7
-    const l = Math.min(o, c) - r() * vol * 0.7
-    bars.push({ o, h, l, c, v: Math.round(400 + r() * 2200) })
-    price = c
+    const o = price, c = Math.max(0.01, o + trend + (r() - 0.5) * vol)
+    const h = Math.max(o, c) + r() * vol * 0.7, l = Math.min(o, c) - r() * vol * 0.7
+    bars.push({ o, h, l, c, v: Math.round(400 + r() * 2200) }); price = c
   }
   return bars
 }
 
-// Pure simulation: replay bars[0..cursor] applying orders at their bar + SL/TP exits.
 function simulate(bars, orders, cursor, mult) {
-  let pos = null
-  const closed = []
-  let balance = START_BAL
-  const ordersByBar = {}
-  orders.forEach(o => { (ordersByBar[o.bar] = ordersByBar[o.bar] || []).push(o) })
-
-  const close = (exit, bar, reason) => {
-    const dir = pos.side === 'long' ? 1 : -1
-    const pnl = (exit - pos.entry) * dir * pos.size * mult
-    balance += pnl
-    closed.push({ ...pos, exit, exitBar: bar, pnl, reason })
-    pos = null
-  }
-
+  let pos = null; const closed = []; let balance = START_BAL
+  const byBar = {}; orders.forEach(o => { (byBar[o.bar] = byBar[o.bar] || []).push(o) })
+  const close = (exit, bar, reason) => { const dir = pos.side === 'long' ? 1 : -1; const pnl = (exit - pos.entry) * dir * pos.size * mult; balance += pnl; closed.push({ ...pos, exit, exitBar: bar, pnl, reason }); pos = null }
   for (let b = 0; b <= cursor && b < bars.length; b++) {
     const bar = bars[b]
-    ;(ordersByBar[b] || []).forEach(ev => {
-      if (ev.type === 'open' && !pos) {
-        pos = { side: ev.side, size: ev.size, entry: bar.c, sl: ev.sl, tp: ev.tp, entryBar: b }
-      } else if (ev.type === 'close' && pos) {
-        close(bar.c, b, 'manual')
-      }
+    ;(byBar[b] || []).forEach(ev => {
+      if (ev.type === 'open' && !pos) pos = { side: ev.side, size: ev.size, entry: bar.c, sl: ev.sl, tp: ev.tp, entryBar: b }
+      else if (ev.type === 'close' && pos) close(bar.c, b, 'manual')
     })
     if (pos && b > pos.entryBar) {
-      if (pos.side === 'long') {
-        if (pos.sl && bar.l <= pos.sl) close(pos.sl, b, 'sl')
-        else if (pos.tp && bar.h >= pos.tp) close(pos.tp, b, 'tp')
-      } else {
-        if (pos.sl && bar.h >= pos.sl) close(pos.sl, b, 'sl')
-        else if (pos.tp && bar.l <= pos.tp) close(pos.tp, b, 'tp')
-      }
+      if (pos.side === 'long') { if (pos.sl && bar.l <= pos.sl) close(pos.sl, b, 'sl'); else if (pos.tp && bar.h >= pos.tp) close(pos.tp, b, 'tp') }
+      else { if (pos.sl && bar.h >= pos.sl) close(pos.sl, b, 'sl'); else if (pos.tp && bar.l <= pos.tp) close(pos.tp, b, 'tp') }
     }
   }
   const last = bars[Math.min(cursor, bars.length - 1)]
   let uPnl = 0
   if (pos) { const dir = pos.side === 'long' ? 1 : -1; uPnl = (last.c - pos.entry) * dir * pos.size * mult }
-
-  // stats
   const wins = closed.filter(t => t.pnl > 0).length
   const net = balance - START_BAL
   let peak = START_BAL, dd = 0, run = START_BAL
   closed.forEach(t => { run += t.pnl; if (run > peak) peak = run; dd = Math.min(dd, run - peak) })
-  return { pos, closed, balance, uPnl, equity: balance + uPnl, wins, winRate: closed.length ? wins / closed.length * 100 : 0, net, maxDD: dd }
+  return { pos, closed, balance, uPnl, equity: balance + uPnl, winRate: closed.length ? wins / closed.length * 100 : 0, net, maxDD: dd }
 }
 
 const money = (v, d = 0) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })
@@ -115,66 +86,49 @@ export default function BacktestPreview() {
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [size, setSize] = useState(1)
-  const [slPts, setSlPts] = useState(INSTR.ES.slPts)
-  const [tpPts, setTpPts] = useState(INSTR.ES.tpPts)
-  const [hover, setHover] = useState(null) // {x,y}
-
+  const [slPts, setSlPts] = useState(INSTR.BTC.slPts)
+  const [tpPts, setTpPts] = useState(INSTR.BTC.tpPts)
   const [src, setSrc] = useState({ label: 'Chargement…', real: false, loading: true })
+  const [chartReady, setChartReady] = useState(0)
   const cfg = INSTR[instr]
   const [bars, setBars] = useState(() => genBars(1337, INSTR.BTC.base, INSTR.BTC.vol))
   const sim = useMemo(() => simulate(bars, orders, cursor, cfg.mult), [bars, orders, cursor, cfg])
 
-  const wrapRef = useRef(null)
-  const canvasRef = useRef(null)
-  const [dims, setDims] = useState({ w: 900, h: 460 })
+  const containerRef = useRef(null)
+  const chartRef = useRef(null) // { chart, series, lines:[], LineStyle }
 
   // default SL/TP per instrument
   useEffect(() => { setSlPts(cfg.slPts); setTpPts(cfg.tpPts) }, [instr, cfg])
 
-  // fetch real bars (Binance crypto = live; Databento CME = key-gated) with synthetic fallback
+  // fetch real bars (Binance live / Databento CME) with synthetic fallback
   useEffect(() => {
     let abort = false
     const synth = () => genBars((seed + instr.charCodeAt(0) * 17) >>> 0, cfg.base, cfg.vol)
-    const apply = (b, srcObj) => { if (abort) return; setBars(b); setSrc(srcObj); setOrders([]); setCursor(START_CURSOR); setPlaying(false) }
+    const apply = (b, s) => { if (abort) return; setBars(b); setSrc(s); setOrders([]); setCursor(START_CURSOR); setPlaying(false) }
     setSrc(s => ({ ...s, loading: true }))
     fetch(`/api/market/bars?provider=${cfg.provider}&symbol=${cfg.sym}&interval=${tf}&limit=${NBARS}`)
       .then(r => r.json().then(j => ({ ok: r.ok, j })).catch(() => ({ ok: false, j: null })))
       .then(({ ok, j }) => {
-        if (ok && j && j.ok && Array.isArray(j.bars) && j.bars.length > 50) {
-          apply(j.bars.map(b => ({ o: b.o, h: b.h, l: b.l, c: b.c, v: b.v })), { label: 'Réel · ' + j.source, real: true, loading: false })
-        } else {
-          const why = j && j.code === 'NO_KEY' ? 'Simulé · clé CME requise (DATABENTO_API_KEY)' : 'Simulé · données réelles indispo'
-          apply(synth(), { label: why, real: false, loading: false })
-        }
+        if (ok && j && j.ok && Array.isArray(j.bars) && j.bars.length > 50) apply(j.bars.map(b => ({ o: b.o, h: b.h, l: b.l, c: b.c, v: b.v, t: b.t })), { label: 'Réel · ' + j.source, real: true, loading: false })
+        else apply(synth(), { label: j && j.code === 'NO_KEY' ? 'Simulé · clé CME requise (DATABENTO_API_KEY)' : 'Simulé · données réelles indispo', real: false, loading: false })
       })
       .catch(() => apply(synth(), { label: 'Simulé · hors-ligne', real: false, loading: false }))
     return () => { abort = true }
   }, [seed, instr, tf, cfg])
 
-  // responsive canvas size
-  useEffect(() => {
-    if (!wrapRef.current) return
-    const ro = new ResizeObserver(es => { for (const e of es) setDims({ w: Math.floor(e.contentRect.width), h: 460 }) })
-    ro.observe(wrapRef.current)
-    return () => ro.disconnect()
-  }, [])
-
   // play loop
   useEffect(() => {
     if (!playing) return
-    const id = setInterval(() => {
-      setCursor(c => { if (c >= bars.length - 1) { setPlaying(false); return c } return c + 1 })
-    }, 420 / speed)
+    const id = setInterval(() => setCursor(c => { if (c >= bars.length - 1) { setPlaying(false); return c } return c + 1 }), 420 / speed)
     return () => clearInterval(id)
   }, [playing, speed, bars.length])
 
   const stepFwd = useCallback(() => setCursor(c => Math.min(bars.length - 1, c + 1)), [bars.length])
   const stepBack = useCallback(() => setCursor(c => Math.max(20, c - 1)), [])
 
-  // keyboard
   useEffect(() => {
     const onKey = e => {
-      if (e.target.tagName === 'INPUT') return
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return
       if (e.key === 'ArrowRight') { e.preventDefault(); stepFwd() }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); stepBack() }
       else if (e.key === ' ') { e.preventDefault(); setPlaying(p => !p) }
@@ -183,150 +137,94 @@ export default function BacktestPreview() {
     return () => window.removeEventListener('keydown', onKey)
   }, [stepFwd, stepBack])
 
-  // place / close orders (dropping any "future" orders -> new branch on rewind)
   const placeOrder = (side) => {
     if (sim.pos) return
     const entry = bars[cursor].c
     const sl = slPts > 0 ? (side === 'long' ? entry - slPts : entry + slPts) : null
     const tp = tpPts > 0 ? (side === 'long' ? entry + tpPts : entry - tpPts) : null
-    setOrders(o => [...o.filter(x => x.bar < cursor), { bar: cursor, type: 'open', side, size, sl, tp }])
-    setPlaying(false)
+    setOrders(o => [...o.filter(x => x.bar < cursor), { bar: cursor, type: 'open', side, size, sl, tp }]); setPlaying(false)
   }
-  const closeNow = () => {
-    if (!sim.pos) return
-    setOrders(o => [...o.filter(x => x.bar < cursor), { bar: cursor, type: 'close' }])
-  }
+  const closeNow = () => { if (sim.pos) setOrders(o => [...o.filter(x => x.bar < cursor), { bar: cursor, type: 'close' }]) }
 
-  // ── draw chart ──
+  // ── create chart (dynamic import → no SSR) ──
   useEffect(() => {
-    const cv = canvasRef.current; if (!cv) return
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const W = dims.w, H = dims.h
-    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'
-    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    ctx.clearRect(0, 0, W, H)
-    const padR = 64, padB = 22, padT = 10, padL = 8
-    const chartW = W - padR - padL, chartH = H - padB - padT
-
-    const w0 = Math.max(0, cursor - VIEW + 1)
-    const vis = []
-    for (let i = w0; i <= cursor; i++) vis.push(i)
-    let pmin = Infinity, pmax = -Infinity
-    vis.forEach(i => { pmin = Math.min(pmin, bars[i].l); pmax = Math.max(pmax, bars[i].h) })
-    if (sim.pos) { if (sim.pos.sl) { pmin = Math.min(pmin, sim.pos.sl); pmax = Math.max(pmax, sim.pos.sl) } if (sim.pos.tp) { pmin = Math.min(pmin, sim.pos.tp); pmax = Math.max(pmax, sim.pos.tp) } }
-    const pad = (pmax - pmin) * 0.08 || 1; pmin -= pad; pmax += pad
-    const n = vis.length
-    const cw = chartW / VIEW
-    const bw = Math.max(1.5, cw * 0.62)
-    const X = k => padL + (k + 0.5) * cw
-    const Yv = p => padT + (1 - (p - pmin) / (pmax - pmin)) * chartH
-
-    // grid + price axis
-    ctx.font = '10px ' + MONO; ctx.textBaseline = 'middle'
-    const ticks = 6
-    for (let t = 0; t <= ticks; t++) {
-      const p = pmin + (pmax - pmin) * (t / ticks); const y = Yv(p)
-      ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke()
-      ctx.fillStyle = C.text3; ctx.textAlign = 'left'; ctx.fillText(p.toFixed(cfg.dec), padL + chartW + 8, y)
-    }
-
-    // candles
-    vis.forEach((bi, k) => {
-      const b = bars[bi]; const x = X(k); const up = b.c >= b.o
-      const col = up ? C.up : C.down
-      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1
-      ctx.beginPath(); ctx.moveTo(x, Yv(b.h)); ctx.lineTo(x, Yv(b.l)); ctx.stroke()
-      const yo = Yv(b.o), yc = Yv(b.c); const top = Math.min(yo, yc); const hgt = Math.max(1.2, Math.abs(yc - yo))
-      ctx.globalAlpha = up ? 0.95 : 1; ctx.fillRect(x - bw / 2, top, bw, hgt); ctx.globalAlpha = 1
+    let disposed = false, ro = null
+    import('lightweight-charts').then(({ createChart, ColorType, CrosshairMode, LineStyle }) => {
+      if (disposed || !containerRef.current) return
+      const chart = createChart(containerRef.current, {
+        autoSize: true,
+        layout: { background: { type: ColorType.Solid, color: C.chartBg }, textColor: C.text2, fontFamily: MONO, fontSize: 11 },
+        grid: { vertLines: { color: 'rgba(255,255,255,0.035)' }, horzLines: { color: 'rgba(255,255,255,0.045)' } },
+        rightPriceScale: { borderColor: C.line },
+        timeScale: { borderColor: C.line, timeVisible: true, secondsVisible: false, rightOffset: 4 },
+        crosshair: { mode: CrosshairMode.Normal, vertLine: { color: 'rgba(255,255,255,0.25)', labelBackgroundColor: '#11151f' }, horzLine: { color: 'rgba(255,255,255,0.25)', labelBackgroundColor: '#11151f' } },
+      })
+      const series = chart.addCandlestickSeries({ upColor: C.up, downColor: C.down, borderVisible: false, wickUpColor: C.up, wickDownColor: C.down })
+      chartRef.current = { chart, series, lines: [], LineStyle }
+      ro = new ResizeObserver(() => chart.applyOptions({}))
+      ro.observe(containerRef.current)
+      setChartReady(x => x + 1)
     })
+    return () => { disposed = true; if (ro) ro.disconnect(); if (chartRef.current) { chartRef.current.chart.remove(); chartRef.current = null } }
+  }, [])
 
-    // closed trade markers (entry ▲/▼ and exit ✕) within view
+  // ── feed data + markers + price lines on every cursor/data/trade change ──
+  useEffect(() => {
+    const ref = chartRef.current
+    if (!ref || !chartReady) return
+    const { series, LineStyle } = ref
+    const isec = INT_SEC[tf], base = 1704067200 // 2024-01-01
+    const timeAt = i => bars[i] && bars[i].t ? Math.floor(bars[i].t / 1000) : base + i * isec
+    const data = []
+    for (let i = 0; i <= cursor && i < bars.length; i++) { const b = bars[i]; data.push({ time: timeAt(i), open: b.o, high: b.h, low: b.l, close: b.c }) }
+    series.applyOptions({ priceFormat: { type: 'price', precision: cfg.dec, minMove: Math.pow(10, -cfg.dec) } })
+    series.setData(data)
+
+    // markers
+    const mk = []
     sim.closed.forEach(t => {
-      if (t.entryBar >= w0 && t.entryBar <= cursor) {
-        const x = X(t.entryBar - w0), y = Yv(t.entry)
-        ctx.fillStyle = t.side === 'long' ? C.up : C.down
-        ctx.beginPath()
-        if (t.side === 'long') { ctx.moveTo(x, y + 12); ctx.lineTo(x - 5, y + 20); ctx.lineTo(x + 5, y + 20) }
-        else { ctx.moveTo(x, y - 12); ctx.lineTo(x - 5, y - 20); ctx.lineTo(x + 5, y - 20) }
-        ctx.closePath(); ctx.fill()
-      }
-      if (t.exitBar >= w0 && t.exitBar <= cursor) {
-        const x = X(t.exitBar - w0), y = Yv(t.exit)
-        ctx.strokeStyle = t.pnl >= 0 ? C.up : C.down; ctx.lineWidth = 1.6
-        ctx.beginPath(); ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y + 4); ctx.moveTo(x + 4, y - 4); ctx.lineTo(x - 4, y + 4); ctx.stroke()
-      }
+      if (t.entryBar <= cursor) mk.push({ time: timeAt(t.entryBar), position: t.side === 'long' ? 'belowBar' : 'aboveBar', color: t.side === 'long' ? C.up : C.down, shape: t.side === 'long' ? 'arrowUp' : 'arrowDown', text: t.side === 'long' ? 'L' : 'S' })
+      if (t.exitBar <= cursor) mk.push({ time: timeAt(t.exitBar), position: 'aboveBar', color: t.pnl >= 0 ? C.up : C.down, shape: 'circle', text: t.reason.toUpperCase() })
     })
+    mk.sort((a, b) => a.time - b.time)
+    series.setMarkers(mk)
 
-    // open position lines (entry / SL / TP)
+    // price lines (open position)
+    ref.lines.forEach(l => series.removePriceLine(l)); ref.lines = []
     if (sim.pos) {
-      const drawLine = (p, color, label, dash) => {
-        const y = Yv(p); ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.setLineDash(dash || [])
-        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke(); ctx.setLineDash([])
-        ctx.fillStyle = color; ctx.fillRect(padL + chartW, y - 8, padR - 8, 16)
-        ctx.fillStyle = '#04121a'; ctx.textAlign = 'left'; ctx.font = '9.5px ' + MONO
-        ctx.fillText(label, padL + chartW + 4, y)
-      }
-      const ex = sim.pos.entryBar >= w0 ? X(sim.pos.entryBar - w0) : padL
-      drawLine(sim.pos.entry, C.blue, sim.pos.entry.toFixed(cfg.dec), [])
-      if (sim.pos.sl) drawLine(sim.pos.sl, C.down, 'SL', [4, 3])
-      if (sim.pos.tp) drawLine(sim.pos.tp, C.up, 'TP', [4, 3])
-      // entry marker dot
-      ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(ex, Yv(sim.pos.entry), 3.5, 0, 7); ctx.fill()
+      const add = (price, color, title, dashed) => ref.lines.push(series.createPriceLine({ price, color, lineWidth: 1, lineStyle: dashed ? LineStyle.Dashed : LineStyle.Solid, axisLabelVisible: true, title }))
+      add(sim.pos.entry, C.blue, sim.pos.side === 'long' ? 'LONG' : 'SHORT', false)
+      if (sim.pos.sl) add(sim.pos.sl, C.down, 'SL', true)
+      if (sim.pos.tp) add(sim.pos.tp, C.up, 'TP', true)
     }
 
-    // last price line
-    const lp = bars[cursor].c; const ly = Yv(lp)
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1
-    ctx.beginPath(); ctx.moveTo(padL, ly); ctx.lineTo(padL + chartW, ly); ctx.stroke(); ctx.setLineDash([])
-    ctx.fillStyle = bars[cursor].c >= bars[cursor].o ? C.up : C.down; ctx.fillRect(padL + chartW, ly - 8, padR - 8, 16)
-    ctx.fillStyle = '#04121a'; ctx.textAlign = 'left'; ctx.font = 'bold 9.5px ' + MONO; ctx.fillText(lp.toFixed(cfg.dec), padL + chartW + 4, ly)
+    ref.chart.timeScale().setVisibleLogicalRange({ from: Math.max(-1, cursor - VIEW), to: cursor + 3 })
+  }, [chartReady, bars, cursor, sim, tf, cfg])
 
-    // crosshair
-    if (hover) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1
-      ctx.beginPath(); ctx.moveTo(hover.x, padT); ctx.lineTo(hover.x, padT + chartH); ctx.moveTo(padL, hover.y); ctx.lineTo(padL + chartW, hover.y); ctx.stroke(); ctx.setLineDash([])
-      const price = pmin + (1 - (hover.y - padT) / chartH) * (pmax - pmin)
-      ctx.fillStyle = '#11151f'; ctx.fillRect(padL + chartW, hover.y - 8, padR - 8, 16)
-      ctx.fillStyle = C.text; ctx.textAlign = 'left'; ctx.font = '9.5px ' + MONO; ctx.fillText(price.toFixed(cfg.dec), padL + chartW + 4, hover.y)
-    }
-  }, [bars, cursor, sim, dims, hover, cfg])
-
-  const onMove = e => {
-    const rect = canvasRef.current.getBoundingClientRect()
-    setHover({ x: e.clientX - rect.left, y: e.clientY - rect.top })
-  }
-  const progress = cursor / (bars.length - 1)
+  const progress = cursor / Math.max(1, bars.length - 1)
 
   return (
     <div className="bt">
       <style>{css}</style>
-
-      {/* top bar */}
       <header className="bt-top">
         <Link href="/landing" className="bt-brand"><QLogoIcon size={26} color={C.blue} /><span>QUANTARA</span></Link>
         <div className="bt-title">Backtest · <span>Replay graphique</span></div>
-        <div className={'bt-badge' + (src.real ? ' real' : '') + (src.loading ? ' loading' : '')}>
-          <i className="bt-srcdot" />{src.loading ? 'Chargement…' : src.label}
-        </div>
+        <div className={'bt-badge' + (src.real ? ' real' : '') + (src.loading ? ' loading' : '')}><i className="bt-srcdot" />{src.loading ? 'Chargement…' : src.label}</div>
       </header>
 
       <div className="bt-grid">
-        {/* CHART + controls */}
         <div className="bt-main">
           <div className="bt-bar">
             <div className="bt-selects">
-              <select value={instr} onChange={e => setInstr(e.target.value)}>{Object.keys(INSTR).map(k => <option key={k} value={k}>{k}</option>)}</select>
+              <select value={instr} onChange={e => setInstr(e.target.value)} title={cfg.name}>{Object.keys(INSTR).map(k => <option key={k} value={k}>{k}</option>)}</select>
               <select value={tf} onChange={e => setTf(e.target.value)}>{TFS.map(k => <option key={k} value={k}>{k}</option>)}</select>
-              <button className="bt-ghost" onClick={() => setSeed(s => s + 1)}>⟳ Nouveau dataset</button>
+              <button className="bt-ghost" onClick={() => setSeed(s => s + 1)}>⟳ Recharger</button>
             </div>
-            <div className="bt-clock">Bar {cursor + 1} / {bars.length}</div>
+            <div className="bt-clock">{cfg.name} · bar {cursor + 1} / {bars.length}</div>
           </div>
 
-          <div className="bt-chartwrap" ref={wrapRef}>
-            <canvas ref={canvasRef} onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
-          </div>
+          <div className="bt-chartwrap"><div className="bt-chart" ref={containerRef} /></div>
 
-          {/* replay controls */}
           <div className="bt-controls">
             <div className="bt-btns">
               <button className="bt-ctrl" onClick={() => setCursor(20)} title="Début">⏮</button>
@@ -334,27 +232,22 @@ export default function BacktestPreview() {
               <button className="bt-ctrl bt-play" onClick={() => setPlaying(p => !p)} title="Lecture / pause (Espace)">{playing ? '❚❚' : '▶'}</button>
               <button className="bt-ctrl" onClick={stepFwd} title="Pas en avant (→)">▶</button>
               <button className="bt-ctrl" onClick={() => setCursor(bars.length - 1)} title="Fin">⏭</button>
-              <div className="bt-speed">
-                {[1, 2, 4].map(s => <button key={s} className={'bt-spd' + (speed === s ? ' on' : '')} onClick={() => setSpeed(s)}>{s}×</button>)}
-              </div>
+              <div className="bt-speed">{[1, 2, 4].map(s => <button key={s} className={'bt-spd' + (speed === s ? ' on' : '')} onClick={() => setSpeed(s)}>{s}×</button>)}</div>
             </div>
             <input className="bt-scrub" type="range" min={20} max={bars.length - 1} value={cursor} onChange={e => { setPlaying(false); setCursor(+e.target.value) }} style={{ '--p': progress }} />
           </div>
         </div>
 
-        {/* SIDE: ticket + stats + trades */}
         <aside className="bt-side">
-          {/* account */}
           <div className="bt-card bt-acct">
             <div className="bt-acct-row"><span>Balance</span><b className="mono">${sim.balance.toLocaleString('en-US', { maximumFractionDigits: 0 })}</b></div>
             <div className="bt-acct-row"><span>Équité (latent)</span><b className={'mono ' + (sim.uPnl >= 0 ? 'up' : 'down')}>{money(sim.equity - START_BAL)}</b></div>
           </div>
 
-          {/* ticket */}
           <div className="bt-card">
             <div className="bt-card-t">Ordre</div>
             <div className="bt-fields">
-              <label>Taille (contrats)<input type="number" min={1} value={size} onChange={e => setSize(Math.max(1, +e.target.value || 1))} /></label>
+              <label>Taille<input type="number" min={1} value={size} onChange={e => setSize(Math.max(1, +e.target.value || 1))} /></label>
               <label>Stop (pts)<input type="number" min={0} step={cfg.slPts / 10} value={slPts} onChange={e => setSlPts(Math.max(0, +e.target.value || 0))} /></label>
               <label>Target (pts)<input type="number" min={0} step={cfg.tpPts / 10} value={tpPts} onChange={e => setTpPts(Math.max(0, +e.target.value || 0))} /></label>
             </div>
@@ -372,18 +265,11 @@ export default function BacktestPreview() {
             )}
           </div>
 
-          {/* stats */}
           <div className="bt-card">
             <div className="bt-card-t">Performance</div>
-            {[
-              ['Net réalisé', money(sim.net), sim.net >= 0 ? 'up' : 'down'],
-              ['Trades', String(sim.closed.length), ''],
-              ['Win rate', sim.winRate.toFixed(0) + '%', sim.winRate >= 50 ? 'up' : ''],
-              ['Max drawdown', money(sim.maxDD), 'down'],
-            ].map(([l, v, t]) => <div key={l} className="bt-stat"><span>{l}</span><b className={'mono ' + t}>{v}</b></div>)}
+            {[['Net réalisé', money(sim.net), sim.net >= 0 ? 'up' : 'down'], ['Trades', String(sim.closed.length), ''], ['Win rate', sim.winRate.toFixed(0) + '%', sim.winRate >= 50 ? 'up' : ''], ['Max drawdown', money(sim.maxDD), 'down']].map(([l, v, t]) => <div key={l} className="bt-stat"><span>{l}</span><b className={'mono ' + t}>{v}</b></div>)}
           </div>
 
-          {/* trades list */}
           <div className="bt-card bt-trades">
             <div className="bt-card-t">Historique ({sim.closed.length})</div>
             <div className="bt-tlist">
@@ -401,7 +287,7 @@ export default function BacktestPreview() {
         </aside>
       </div>
 
-      <footer className="bt-foot">Maquette · {'<'}canvas{'>'} maison · données simulées (random-walk seedé). Raccourcis : ← / → barre · Espace lecture.</footer>
+      <footer className="bt-foot">Chart : TradingView lightweight-charts · données réelles via API (Binance live · CME/Databento avec clé) · raccourcis ← / → · Espace.</footer>
     </div>
   )
 }
@@ -428,8 +314,8 @@ const css = `
 .bt-ghost{background:${C.panel};color:${C.text2};border:1px solid ${C.line2};border-radius:9px;padding:9px 13px;font-size:12.5px;cursor:pointer;font-family:inherit}
 .bt-ghost:hover{color:${C.text};border-color:${C.blue}}
 .bt-clock{font-family:${MONO};font-size:12px;color:${C.text3}}
-.bt-chartwrap{background:linear-gradient(165deg,${C.panel2},${C.panel});border:1px solid ${C.line};border-radius:14px;overflow:hidden;padding:6px}
-.bt-chartwrap canvas{display:block;cursor:crosshair}
+.bt-chartwrap{background:${C.chartBg};border:1px solid ${C.line};border-radius:14px;overflow:hidden}
+.bt-chart{width:100%;height:460px}
 .bt-controls{margin-top:12px;background:${C.panel};border:1px solid ${C.line};border-radius:12px;padding:12px 14px}
 .bt-btns{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .bt-ctrl{width:40px;height:38px;border-radius:9px;border:1px solid ${C.line2};background:rgba(255,255,255,0.03);color:${C.text};font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
@@ -441,7 +327,6 @@ const css = `
 .bt-scrub{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:99px;background:linear-gradient(90deg,${C.blue} calc(var(--p)*100%),rgba(255,255,255,0.1) calc(var(--p)*100%));outline:none;cursor:pointer}
 .bt-scrub::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid ${C.blue};cursor:pointer}
 .bt-scrub::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid ${C.blue};cursor:pointer}
-
 .bt-side{display:flex;flex-direction:column;gap:12px}
 .bt-card{background:linear-gradient(165deg,${C.panel2},${C.panel});border:1px solid ${C.line};border-radius:14px;padding:16px}
 .bt-card-t{font-size:12px;font-weight:700;color:${C.text3};text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
@@ -475,6 +360,5 @@ const css = `
 .bt-tpnl{font-weight:700;text-align:right}
 .bt-empty{font-size:12px;color:${C.text3};padding:10px 2px;line-height:1.5}
 .bt-foot{text-align:center;padding:22px;font-size:12px;color:${C.text3};border-top:1px solid ${C.line};margin-top:10px}
-
 @media(max-width:980px){.bt-grid{grid-template-columns:1fr}}
 `
