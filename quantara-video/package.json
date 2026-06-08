@@ -1,0 +1,17 @@
+{
+  "name": "quantara-video",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "render": "remotion render src/index.jsx QuantaraPromo out/quantara-promo.mp4 --codec=h264",
+    "studio": "remotion studio"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.474",
+    "@remotion/cli": "^4.0.474",
+    "@remotion/renderer": "^4.0.474",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.474"
+  }
+}
