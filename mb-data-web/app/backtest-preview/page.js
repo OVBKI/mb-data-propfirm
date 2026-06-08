@@ -26,11 +26,12 @@ const C = {
 const MONO = 'ui-monospace, "SF Mono", "Roboto Mono", monospace'
 
 const INSTR = {
-  ES:  { base: 5200,  vol: 13,  mult: 50,   dec: 2, slPts: 10,  tpPts: 20 },
-  NQ:  { base: 18400, vol: 55,  mult: 20,   dec: 2, slPts: 40,  tpPts: 80 },
-  GC:  { base: 2350,  vol: 7,   mult: 100,  dec: 1, slPts: 6,   tpPts: 12 },
-  CL:  { base: 78,    vol: 0.7, mult: 1000, dec: 2, slPts: 0.6, tpPts: 1.2 },
-  BTC: { base: 64000, vol: 650, mult: 1,    dec: 0, slPts: 600, tpPts: 1200 },
+  BTC: { base: 64000, vol: 650, mult: 1,    dec: 1, slPts: 600, tpPts: 1200, provider: 'binance', sym: 'BTCUSDT', name: 'Bitcoin' },
+  ETH: { base: 3200,  vol: 45,  mult: 1,    dec: 1, slPts: 40,  tpPts: 80,   provider: 'binance', sym: 'ETHUSDT', name: 'Ethereum' },
+  ES:  { base: 5200,  vol: 13,  mult: 50,   dec: 2, slPts: 10,  tpPts: 20,   provider: 'databento', sym: 'ES', name: 'S&P 500 (CME)' },
+  NQ:  { base: 18400, vol: 55,  mult: 20,   dec: 2, slPts: 40,  tpPts: 80,   provider: 'databento', sym: 'NQ', name: 'Nasdaq (CME)' },
+  GC:  { base: 2350,  vol: 7,   mult: 100,  dec: 1, slPts: 6,   tpPts: 12,   provider: 'databento', sym: 'GC', name: 'Gold (COMEX)' },
+  CL:  { base: 78,    vol: 0.7, mult: 1000, dec: 2, slPts: 0.6, tpPts: 1.2,  provider: 'databento', sym: 'CL', name: 'Crude (NYMEX)' },
 }
 const TFS = ['1m', '5m', '15m', '1h', '4h']
 const START_BAL = 50000
@@ -107,7 +108,7 @@ const money = (v, d = 0) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toLocaleS
 
 export default function BacktestPreview() {
   const [seed, setSeed] = useState(1337)
-  const [instr, setInstr] = useState('ES')
+  const [instr, setInstr] = useState('BTC')
   const [tf, setTf] = useState('5m')
   const [cursor, setCursor] = useState(START_CURSOR)
   const [orders, setOrders] = useState([])
@@ -118,16 +119,37 @@ export default function BacktestPreview() {
   const [tpPts, setTpPts] = useState(INSTR.ES.tpPts)
   const [hover, setHover] = useState(null) // {x,y}
 
+  const [src, setSrc] = useState({ label: 'Chargement…', real: false, loading: true })
   const cfg = INSTR[instr]
-  const bars = useMemo(() => genBars(seed + instr.charCodeAt(0) * 17, cfg.base, cfg.vol), [seed, instr, cfg])
+  const [bars, setBars] = useState(() => genBars(1337, INSTR.BTC.base, INSTR.BTC.vol))
   const sim = useMemo(() => simulate(bars, orders, cursor, cfg.mult), [bars, orders, cursor, cfg])
 
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
   const [dims, setDims] = useState({ w: 900, h: 460 })
 
-  // reset when instrument/seed changes
-  useEffect(() => { setOrders([]); setCursor(START_CURSOR); setPlaying(false); setSlPts(cfg.slPts); setTpPts(cfg.tpPts) }, [seed, instr, cfg])
+  // default SL/TP per instrument
+  useEffect(() => { setSlPts(cfg.slPts); setTpPts(cfg.tpPts) }, [instr, cfg])
+
+  // fetch real bars (Binance crypto = live; Databento CME = key-gated) with synthetic fallback
+  useEffect(() => {
+    let abort = false
+    const synth = () => genBars((seed + instr.charCodeAt(0) * 17) >>> 0, cfg.base, cfg.vol)
+    const apply = (b, srcObj) => { if (abort) return; setBars(b); setSrc(srcObj); setOrders([]); setCursor(START_CURSOR); setPlaying(false) }
+    setSrc(s => ({ ...s, loading: true }))
+    fetch(`/api/market/bars?provider=${cfg.provider}&symbol=${cfg.sym}&interval=${tf}&limit=${NBARS}`)
+      .then(r => r.json().then(j => ({ ok: r.ok, j })).catch(() => ({ ok: false, j: null })))
+      .then(({ ok, j }) => {
+        if (ok && j && j.ok && Array.isArray(j.bars) && j.bars.length > 50) {
+          apply(j.bars.map(b => ({ o: b.o, h: b.h, l: b.l, c: b.c, v: b.v })), { label: 'Réel · ' + j.source, real: true, loading: false })
+        } else {
+          const why = j && j.code === 'NO_KEY' ? 'Simulé · clé CME requise (DATABENTO_API_KEY)' : 'Simulé · données réelles indispo'
+          apply(synth(), { label: why, real: false, loading: false })
+        }
+      })
+      .catch(() => apply(synth(), { label: 'Simulé · hors-ligne', real: false, loading: false }))
+    return () => { abort = true }
+  }, [seed, instr, tf, cfg])
 
   // responsive canvas size
   useEffect(() => {
@@ -283,7 +305,9 @@ export default function BacktestPreview() {
       <header className="bt-top">
         <Link href="/landing" className="bt-brand"><QLogoIcon size={26} color={C.blue} /><span>QUANTARA</span></Link>
         <div className="bt-title">Backtest · <span>Replay graphique</span></div>
-        <div className="bt-badge">PREVIEW · données simulées</div>
+        <div className={'bt-badge' + (src.real ? ' real' : '') + (src.loading ? ' loading' : '')}>
+          <i className="bt-srcdot" />{src.loading ? 'Chargement…' : src.label}
+        </div>
       </header>
 
       <div className="bt-grid">
@@ -389,7 +413,13 @@ const css = `
 .bt-top{display:flex;align-items:center;gap:18px;padding:14px 24px;border-bottom:1px solid ${C.line}}
 .bt-brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.14em;font-size:13px;color:${C.text};text-decoration:none}
 .bt-title{font-size:15px;font-weight:700}.bt-title span{color:${C.text2};font-weight:500}
-.bt-badge{margin-left:auto;font-size:11px;color:${C.amber};background:rgba(245,182,81,0.12);border:1px solid rgba(245,182,81,0.3);padding:5px 11px;border-radius:99px}
+.bt-badge{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:11px;color:${C.amber};background:rgba(245,182,81,0.12);border:1px solid rgba(245,182,81,0.3);padding:5px 11px;border-radius:99px}
+.bt-badge .bt-srcdot{width:7px;height:7px;border-radius:50%;background:${C.amber}}
+.bt-badge.real{color:${C.up};background:rgba(25,195,125,0.12);border-color:rgba(25,195,125,0.32)}
+.bt-badge.real .bt-srcdot{background:${C.up};box-shadow:0 0 8px ${C.up}}
+.bt-badge.loading{color:${C.text2};background:rgba(255,255,255,0.05);border-color:${C.line2}}
+.bt-badge.loading .bt-srcdot{background:${C.text2};animation:btpulse 1s infinite}
+@keyframes btpulse{0%,100%{opacity:1}50%{opacity:.3}}
 .bt-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;padding:18px 24px;max-width:1320px;margin:0 auto;align-items:start}
 .bt-main{min-width:0}
 .bt-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap}
