@@ -1,32 +1,54 @@
 'use client'
-// components/AppSidebar.js — sidebar partagée entre /app/page.js et /app/journal-sync/view/page.js
-// (et toute future page qui veut le même shell).
+// components/AppSidebar.js — sidebar partagée (shell /app).
 //
-// PROPS :
-//   user              — objet user Supabase auth (pour email + admin check)
-//   profile           — { username, display_name } pour l'affichage carte profil
-//   alertsBadgeCount  — nombre d'alertes actives (badge rouge sur "Alertes")
+// Refonte visuelle "Mission Control" : rail d'icônes repliable ⟷ menu déplié
+// avec labels. Toute la logique métier est préservée (props, routes, i18n,
+// badge alertes, gating admin/communauté, carte profil, drawer mobile,
+// bouton tutoriel, attributs data-tour).
 //
-//   currentPage       — string | undefined — clé interne active (ex: 'dashboard')
-//   currentHref       — string | undefined — pathname actif (ex: '/app/journal-sync')
+// Repli/dépli : géré par un état local persisté en localStorage. Le style
+// "déplié" est la base ; le "replié" (rail d'icônes) n'est appliqué qu'en CSS
+// desktop (min-width:1025px) — ainsi le drawer mobile affiche toujours les
+// labels.
 //
-//   onInternalNav     — (key) => void — callback si la nav interne doit être un button onClick
-//                       (utilisé par /app/page.js pour setPage). Sinon → <Link href="/app/{key}">.
-//   onAfterNav        — () => void — appelé après chaque nav (ex: fermer mobile drawer)
-//
-//   onShowProfile     — () => void — clic sur la carte profil (footer) OU bouton quickEdit
-//   onShowTutorial    — () => void — clic sur "Lancer le tutoriel" (si showLaunchTutorial=true)
-//
-//   showLaunchTutorial — boolean — afficher le bouton tutoriel (généralement true sur /app)
-//   showProfileLink    — boolean — split layout : lien vers /app/profile + bouton quickEdit
-//                        si false → bouton unique qui appelle onShowProfile
-//   isOpenMobile       — boolean — état du drawer mobile (classe CSS .open)
+// PROPS : voir la version précédente — inchangées.
+//   user, profile, alertsBadgeCount, currentPage, currentHref,
+//   onInternalNav, onAfterNav, onShowProfile, onShowTutorial,
+//   showLaunchTutorial, showProfileLink, isOpenMobile
 
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useT } from './LanguageProvider'
 import { isAdmin } from '../lib/admins'
 
 const SECTIONS = ['Vue', 'Trades', 'PropFirm', 'Communaute']
+
+// ── Icônes SVG (Lucide-style) ──
+const mk = (paths, extra) => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {paths.map((d, i) => <path key={i} d={d} />)}{extra}
+  </svg>
+)
+const IC = {
+  dashboard: mk(['M3 3h7v7H3z', 'M14 3h7v7h-7z', 'M14 14h7v7h-7z', 'M3 14h7v7H3z']),
+  health: mk(['M12 21s-7-4.3-9.3-8.5C1 9 2.6 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.4 0 5 3.5 3.3 7C19 16.7 12 21 12 21z']),
+  analytics: mk(['M21 12A9 9 0 1 1 11 3v9z'], <path d="M12 3a9 9 0 0 1 9 9h-9z" />),
+  calendar: mk(['M3 5h18v16H3z', 'M3 9h18', 'M8 3v4', 'M16 3v4']),
+  journalGroup: mk(['M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z', 'M8 7h8', 'M8 11h6']),
+  journal: mk(['M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z', 'M8 7h8', 'M8 11h6']),
+  sync: mk(['M3 12a9 9 0 0 1 15-6.7L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-15 6.7L3 16', 'M3 21v-5h5']),
+  plug: mk(['M9 2v6', 'M15 2v6', 'M7 8h10v3a5 5 0 0 1-10 0z', 'M12 16v6']),
+  trades: mk(['M7 7v3', 'M7 16v2', 'M17 5v3', 'M17 15v3'], <><rect x="5" y="10" width="4" height="6" rx="1" /><rect x="15" y="8" width="4" height="7" rx="1" /></>),
+  heatmaps: mk([], <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>),
+  myrules: mk(['M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2', 'M9 4h6v3H9z', 'M9 14l2 2 4-4']),
+  rules: mk(['M12 3v18', 'M5 21h14', 'M4 7l4-4 4 4', 'M2 11a4 4 0 0 0 8 0', 'M14 7l4-4 4 4', 'M14 11a4 4 0 0 0 8 0']),
+  alerts: mk(['M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0']),
+  groups: mk(['M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1', 'M22 19v-1a4 4 0 0 0-3-3.9'], <><circle cx="9" cy="8" r="4" /><circle cx="17.5" cy="8" r="3" /></>),
+  settings: mk(['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M19.4 15a1.6 1.6 0 0 0 .3 1.8 2 2 0 1 1-2.8 2.8 1.6 1.6 0 0 0-2.7 1.1 2 2 0 0 1-4 0 1.6 1.6 0 0 0-2.7-1.1 2 2 0 1 1-2.8-2.8A1.6 1.6 0 0 0 2.6 13a2 2 0 0 1 0-4 1.6 1.6 0 0 0 1.1-2.7 2 2 0 1 1 2.8-2.8A1.6 1.6 0 0 0 9 3.6a2 2 0 0 1 4 0 1.6 1.6 0 0 0 2.7 1.1 2 2 0 1 1 2.8 2.8A1.6 1.6 0 0 0 20.4 11a2 2 0 0 1 0 4z']),
+  admin: mk(['M12 3l8 3v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z', 'M9.5 12.5l1.8 1.8 3.4-3.6']),
+  tutorial: mk(['M22 10L12 5 2 10l10 5 10-5z', 'M6 12v5c0 1.2 2.7 2.5 6 2.5s6-1.3 6-2.5v-5', 'M22 10v6']),
+}
+const LOCK = <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm3 8H9V6a3 3 0 0 1 6 0z" /></svg>
 
 export default function AppSidebar({
   user,
@@ -43,44 +65,44 @@ export default function AppSidebar({
   isOpenMobile = false,
 }) {
   const t = useT()
-  // Community is admin-gated for now (work in progress). Non-admins see
-  // the entry locked with a 🔒 badge so they know it's coming, but can't
-  // navigate to it.
   const userIsAdmin = isAdmin(user?.email)
 
-  // === Source of truth : définition unique des items de nav ===
+  // Repli/dépli (persisté). Replié par défaut (rail d'icônes).
+  const [collapsed, setCollapsed] = useState(true)
+  useEffect(() => {
+    try { const v = localStorage.getItem('qt_sidebar_collapsed'); if (v !== null) setCollapsed(v === '1') } catch { /* noop */ }
+  }, [])
+  const toggle = () => setCollapsed(c => {
+    const n = !c
+    try { localStorage.setItem('qt_sidebar_collapsed', n ? '1' : '0') } catch { /* noop */ }
+    return n
+  })
+
+  // === Source de vérité : items de nav (icônes + i18n + gating) ===
   const navItems = [
-    // Vue d'ensemble
-    { key: 'dashboard', icon: '◫', label: t('app.sidebar.dashboard'), section: 'Vue' },
-    { key: 'health',    icon: '♡', label: t('app.sidebar.health'),    section: 'Vue' },
-    { key: 'analytics', icon: '◐', label: t('app.sidebar.analytics'), section: 'Vue' },
-    { key: 'calendar',  icon: '◳', label: t('app.sidebar.calendar'),  section: 'Vue' },
-    // Mes Trades — sous-groupe Journal
-    { subHeader: true, icon: '☰', label: t('app.sidebar.journalGroup'), section: 'Trades' },
-    { key: 'journal',            label: t('app.sidebar.journalManuel'), section: 'Trades', indent: true },
-    { href: '/app/journal-sync', label: t('app.sidebar.journalSync'),   section: 'Trades', indent: true },
-    {                            label: t('app.sidebar.syncApi'),       section: 'Trades', indent: true, disabled: true, badgeLabel: '🔒' },
-    // Mes Trades — autres items
-    { key: 'trades',   icon: '⊞', label: t('app.sidebar.trades'),   section: 'Trades' },
-    { key: 'heatmaps', icon: '▦', label: t('app.sidebar.heatmaps'), section: 'Trades' },
-    { key: 'myrules',  icon: '⊡', label: t('app.sidebar.myrules'),  section: 'Trades' },
-    // PropFirms
-    { key: 'rules',  icon: '◊', label: t('app.sidebar.rules'),  section: 'PropFirm' },
-    { key: 'alerts', icon: '◉', label: t('app.sidebar.alerts'), section: 'PropFirm', badge: alertsBadgeCount },
-    // Communauté (Phase 3 réseau social — mai 2026)
-    // Locked for non-admins until the feature is finished. Admins see
-    // the live link and can dogfood it; everyone else sees a disabled
-    // entry with a lock badge.
+    { key: 'dashboard', ic: IC.dashboard, label: t('app.sidebar.dashboard'), section: 'Vue' },
+    { key: 'health', ic: IC.health, label: t('app.sidebar.health'), section: 'Vue' },
+    { key: 'analytics', ic: IC.analytics, label: t('app.sidebar.analytics'), section: 'Vue' },
+    { key: 'calendar', ic: IC.calendar, label: t('app.sidebar.calendar'), section: 'Vue' },
+    { subHeader: true, ic: IC.journalGroup, label: t('app.sidebar.journalGroup'), section: 'Trades' },
+    { key: 'journal', ic: IC.journal, label: t('app.sidebar.journalManuel'), section: 'Trades', indent: true },
+    { href: '/app/journal-sync', ic: IC.sync, label: t('app.sidebar.journalSync'), section: 'Trades', indent: true },
+    { ic: IC.plug, label: t('app.sidebar.syncApi'), section: 'Trades', indent: true, disabled: true, badgeLabel: LOCK },
+    { key: 'trades', ic: IC.trades, label: t('app.sidebar.trades'), section: 'Trades' },
+    { key: 'heatmaps', ic: IC.heatmaps, label: t('app.sidebar.heatmaps'), section: 'Trades' },
+    { key: 'myrules', ic: IC.myrules, label: t('app.sidebar.myrules'), section: 'Trades' },
+    { key: 'rules', ic: IC.rules, label: t('app.sidebar.rules'), section: 'PropFirm' },
+    { key: 'alerts', ic: IC.alerts, label: t('app.sidebar.alerts'), section: 'PropFirm', badge: alertsBadgeCount },
     userIsAdmin
-      ? { href: '/app/groups', icon: '◈', label: t('app.sidebar.groups'), section: 'Communaute' }
-      : { icon: '◈', label: t('app.sidebar.groups'), section: 'Communaute', disabled: true, badgeLabel: '🔒' },
+      ? { href: '/app/groups', ic: IC.groups, label: t('app.sidebar.groups'), section: 'Communaute' }
+      : { ic: IC.groups, label: t('app.sidebar.groups'), section: 'Communaute', disabled: true, badgeLabel: LOCK },
   ]
 
   const SECTION_LABELS = {
-    'Vue':         t('app.sidebar.sectionVue'),
-    'Trades':      t('app.sidebar.sectionTrades'),
-    'PropFirm':    t('app.sidebar.sectionPropFirm'),
-    'Communaute':  t('app.sidebar.sectionCommunaute'),
+    'Vue': t('app.sidebar.sectionVue'),
+    'Trades': t('app.sidebar.sectionTrades'),
+    'PropFirm': t('app.sidebar.sectionPropFirm'),
+    'Communaute': t('app.sidebar.sectionCommunaute'),
   }
 
   function handleInternalClick(key) {
@@ -88,345 +110,211 @@ export default function AppSidebar({
     if (onAfterNav) onAfterNav()
   }
 
-  // Helper : icône + label + badge (utilisé pour les items internes)
-  function renderItemContent(item, isActive) {
+  // Contenu commun d'une ligne (icône + label + badge/lock)
+  function rowInner(item) {
     return (
       <>
-        {item.icon && (
-          <span style={{
-            fontSize: 14,
-            color: isActive ? 'var(--blue-light)' : 'var(--text3)',
-            width: 18, display: 'inline-block', textAlign: 'center', lineHeight: 1,
-          }}>{item.icon}</span>
-        )}
-        {item.label}
-        {item.badge > 0 && (
-          <span style={{
-            marginLeft: 'auto', background: 'var(--red)', color: '#fff',
-            fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
-          }}>{item.badge}</span>
-        )}
+        <span className="qt-ic">{item.ic}</span>
+        <span className="qt-label">{item.label}</span>
+        {item.badge > 0 && <span className="qt-badge">{item.badge}</span>}
+        {item.badgeLabel && <span className="qt-lock">{item.badgeLabel}</span>}
       </>
     )
   }
 
+  function renderItem(item, idx, section) {
+    // Sous-en-tête (groupe Journal) — masqué en mode replié desktop via CSS
+    if (item.subHeader) {
+      return (
+        <div key={`sub-${section}-${idx}`} className="qt-subhdr">
+          <span className="qt-ic">{item.ic}</span>
+          <span className="qt-label">{item.label}</span>
+        </div>
+      )
+    }
+
+    const cls = 'qt-item' + (item.indent ? ' indent' : '') + (item.disabled ? ' disabled' : '')
+
+    if (item.disabled) {
+      return (
+        <div key={`dis-${section}-${idx}`} className={cls} title={item.label} aria-disabled="true">
+          {rowInner(item)}
+        </div>
+      )
+    }
+
+    if (item.href) {
+      const isActive = currentHref === item.href
+      return (
+        <Link key={item.href} href={item.href} onClick={onAfterNav} title={item.label}
+          className={cls + (isActive ? ' active' : '')}>
+          {rowInner(item)}
+        </Link>
+      )
+    }
+
+    const isActive = currentPage === item.key || currentHref === `/app/${item.key}`
+    if (onInternalNav) {
+      return (
+        <button key={item.key} data-tour={`nav-${item.key}`} title={item.label}
+          onClick={() => handleInternalClick(item.key)} className={cls + (isActive ? ' active' : '')}>
+          {rowInner(item)}
+        </button>
+      )
+    }
+    return (
+      <Link key={item.key} href={`/app/${item.key}`} data-tour={`nav-${item.key}`} onClick={onAfterNav}
+        title={item.label} className={cls + (isActive ? ' active' : '')}>
+        {rowInner(item)}
+      </Link>
+    )
+  }
+
+  const settingsActive = currentHref === '/app/settings'
+  const profName = profile?.display_name || (profile?.username ? `@${profile.username}` : t('app.sidebar.definePseudo'))
+  const initials = (profile?.display_name || profile?.username || user?.email || '?').trim().slice(0, 2).toUpperCase()
+
   return (
-    <nav
-      data-tour="sidebar"
-      className={'app-nav' + (isOpenMobile ? ' open' : '')}
-      style={{
-        width: 210, flexShrink: 0,
-        background: 'rgba(13,15,20,0.65)',
-        backdropFilter: 'blur(26px)', WebkitBackdropFilter: 'blur(26px)',
-        borderRight: '1px solid rgba(255,255,255,0.05)',
-        padding: '18px 0',
-        position: 'sticky', top: 52,
-        height: 'calc(100vh - 52px)',
-        overflowY: 'auto',
-      }}
-    >
+    <nav data-tour="sidebar" className={'app-nav qt-side' + (isOpenMobile ? ' open' : '') + (collapsed ? ' qt-collapsed' : '')}>
+      <style>{SIDEBAR_CSS}</style>
+
+      {/* Toggle repli/dépli (caché sur mobile via CSS) */}
+      <button className="qt-toggle" onClick={toggle} aria-label={collapsed ? 'Déplier le menu' : 'Réduire le menu'} title={collapsed ? 'Déplier' : 'Réduire'}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
+
       {SECTIONS.map(section => (
-        <div key={section}>
-          <div className="nav-section-label" style={{
-            padding: '12px 18px 6px',
-            fontSize: 10, fontWeight: 700,
-            color: 'var(--text3)',
-            textTransform: 'uppercase', letterSpacing: '0.14em',
-          }}>{SECTION_LABELS[section]}</div>
-
-          {navItems.filter(i => i.section === section).map((item, idx) => {
-            // === SUB-HEADER (label de groupe non cliquable) ===
-            if (item.subHeader) {
-              return (
-                <div key={`sub-${section}-${idx}`} style={{
-                  padding: '8px 18px 4px',
-                  fontSize: 12, fontWeight: 600, color: 'var(--text2)',
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  letterSpacing: '0.01em',
-                }}>
-                  <span style={{
-                    fontSize: 13, color: 'var(--text3)', width: 18,
-                    textAlign: 'center', lineHeight: 1,
-                  }}>{item.icon}</span>
-                  {item.label}
-                </div>
-              )
-            }
-
-            const padL = item.indent ? 36 : 18
-            const fontS = item.indent ? 12 : 13
-
-            // === DISABLED (feature à venir) ===
-            if (item.disabled) {
-              return (
-                <div key={`dis-${section}-${idx}`} style={{
-                  display: 'flex', alignItems: 'center', gap: 11,
-                  padding: `8px 18px 8px ${padL}px`,
-                  width: '100%',
-                  color: 'var(--text3)', fontSize: fontS, fontWeight: 500,
-                  opacity: 0.5, cursor: 'not-allowed',
-                  borderLeft: '2px solid transparent',
-                  fontFamily: 'inherit',
-                }} title="Bientôt disponible">
-                  {item.icon && (
-                    <span style={{
-                      fontSize: 14, color: 'var(--text3)', width: 18,
-                      display: 'inline-block', textAlign: 'center', lineHeight: 1,
-                    }}>{item.icon}</span>
-                  )}
-                  {item.label}
-                  {item.badgeLabel && (
-                    <span style={{
-                      marginLeft: 'auto', background: 'rgba(255,255,255,0.06)',
-                      color: 'var(--text3)', fontSize: 9, fontWeight: 700,
-                      padding: '2px 7px', borderRadius: 99, letterSpacing: '0.08em',
-                    }}>{item.badgeLabel}</span>
-                  )}
-                </div>
-              )
-            }
-
-            // === EXTERNAL href (autre route Next.js) ===
-            if (item.href) {
-              const isActive = currentHref === item.href
-              return (
-                <Link key={item.href} href={item.href} onClick={onAfterNav} className="qt-nav-item" style={{
-                  display: 'flex', alignItems: 'center', gap: 11,
-                  padding: `9px 18px 9px ${padL}px`,
-                  width: '100%',
-                  background: isActive ? 'rgba(45,111,255,0.12)' : 'transparent',
-                  color: isActive ? 'var(--blue-light)' : 'var(--text2)',
-                  fontSize: fontS, fontWeight: isActive ? 600 : 500,
-                  textDecoration: 'none',
-                  borderLeft: `2px solid ${isActive ? 'var(--blue)' : 'transparent'}`,
-                  transition: 'all 0.15s', fontFamily: 'inherit',
-                }}>
-                  {item.icon && (
-                    <span style={{
-                      fontSize: 14, color: isActive ? 'var(--blue-light)' : 'var(--text3)',
-                      width: 18, display: 'inline-block', textAlign: 'center', lineHeight: 1,
-                    }}>{item.icon}</span>
-                  )}
-                  {item.label}
-                  {item.badgeLabel && (
-                    <span style={{
-                      marginLeft: 'auto', background: 'rgba(45,111,255,0.15)',
-                      color: 'var(--blue-light)', fontSize: 9, fontWeight: 700,
-                      padding: '2px 7px', borderRadius: 99, letterSpacing: '0.08em',
-                    }}>{item.badgeLabel}</span>
-                  )}
-                </Link>
-              )
-            }
-
-            // === INTERNAL key (Link or setPage callback) ===
-            const isActive = currentPage === item.key || currentHref === `/app/${item.key}`
-            const commonStyle = {
-              display: 'flex', alignItems: 'center', gap: 11,
-              padding: `9px 18px 9px ${padL}px`,
-              width: '100%',
-              background: isActive ? 'rgba(45,111,255,0.12)' : 'transparent',
-              color: isActive ? 'var(--blue-light)' : 'var(--text2)',
-              fontSize: fontS, fontWeight: isActive ? 600 : 500,
-              textDecoration: 'none',
-              borderLeft: `2px solid ${isActive ? 'var(--blue)' : 'transparent'}`,
-              transition: 'all 0.15s', fontFamily: 'inherit',
-            }
-
-            // Cas 1 : callback fourni → button onClick (ex: setPage dans /app/page.js)
-            if (onInternalNav) {
-              return (
-                <button
-                  key={item.key}
-                  data-tour={`nav-${item.key}`}
-                  onClick={() => handleInternalClick(item.key)}
-                  className="qt-nav-item"
-                  style={{ ...commonStyle, border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  {renderItemContent(item, isActive)}
-                </button>
-              )
-            }
-
-            // Cas 2 : pas de callback → Link vers /app/{key} (App Router)
-            return (
-              <Link
-                key={item.key}
-                href={`/app/${item.key}`}
-                data-tour={`nav-${item.key}`}
-                onClick={onAfterNav}
-                className="qt-nav-item"
-                style={commonStyle}
-              >
-                {renderItemContent(item, isActive)}
-              </Link>
-            )
-          })}
+        <div key={section} className="qt-sec">
+          <div className="qt-sec-label nav-section-label">{SECTION_LABELS[section]}</div>
+          {navItems.filter(i => i.section === section).map((item, idx) => renderItem(item, idx, section))}
         </div>
       ))}
 
-      {/* === Settings link === */}
-      <div style={{ padding: '8px 12px', marginTop: 12, borderTop: '1px solid var(--border)' }}>
-        <Link
-          href="/app/settings"
-          onClick={onAfterNav}
-          className="qt-nav-item"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 12px', borderRadius: 8,
-            background: currentHref === '/app/settings' ? 'rgba(45,111,255,0.12)' : 'rgba(255,255,255,0.025)',
-            border: `1px solid ${currentHref === '/app/settings' ? 'rgba(45,111,255,0.25)' : 'rgba(255,255,255,0.07)'}`,
-            color: currentHref === '/app/settings' ? 'var(--blue-light)' : 'var(--text2)',
-            fontSize: 12, fontWeight: currentHref === '/app/settings' ? 600 : 500,
-            textDecoration: 'none', fontFamily: 'inherit',
-            transition: 'all 0.15s',
-          }}
-        >
-          <span style={{ fontSize: 14, lineHeight: 1 }}>{'⚙️'}</span>
-          {t('app.sidebar.settings') || 'Réglages'}
-        </Link>
-      </div>
+      <div className="qt-sep" />
 
-      {/* === Admin panel (visible uniquement pour admins) === */}
-      {user && isAdmin(user.email) && (
-        <div style={{ padding: '8px 12px', marginTop: 12, borderTop: '1px solid var(--border)' }}>
-          <a href="/admin" style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 12px', borderRadius: 8,
-            background: 'rgba(232,80,74,0.08)',
-            border: '1px solid rgba(232,80,74,0.25)',
-            color: 'var(--red-text)', fontSize: 12, fontWeight: 600,
-            textDecoration: 'none',
-          }}>
-            {t('app.sidebar.adminPanel')}
-          </a>
-        </div>
+      {/* Réglages */}
+      <Link href="/app/settings" onClick={onAfterNav} title={t('app.sidebar.settings') || 'Réglages'}
+        className={'qt-item' + (settingsActive ? ' active' : '')}>
+        <span className="qt-ic">{IC.settings}</span>
+        <span className="qt-label">{t('app.sidebar.settings') || 'Réglages'}</span>
+      </Link>
+
+      {/* Admin (admins seulement) */}
+      {user && userIsAdmin && (
+        <a href="/admin" title={t('app.sidebar.adminPanel')} className="qt-item qt-admin">
+          <span className="qt-ic">{IC.admin}</span>
+          <span className="qt-label">{t('app.sidebar.adminPanel')}</span>
+        </a>
       )}
 
-      {/* === Bouton "Lancer le tutoriel" (optionnel) === */}
+      {/* Tutoriel */}
       {showLaunchTutorial && onShowTutorial && (
-        <div style={{ padding: '8px 12px', marginTop: 12 }}>
-          <button
-            onClick={onShowTutorial}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 12px', width: '100%',
-              background: 'rgba(45,111,255,0.08)',
-              border: '1px solid rgba(45,111,255,0.22)',
-              borderRadius: 8,
-              color: 'var(--blue-light)', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(45,111,255,0.14)'
-              e.currentTarget.style.borderColor = 'rgba(45,111,255,0.4)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(45,111,255,0.08)'
-              e.currentTarget.style.borderColor = 'rgba(45,111,255,0.22)'
-            }}
-          >
-            <span>🎓</span> {t('app.sidebar.launchTutorial')}
-          </button>
-        </div>
+        <button onClick={onShowTutorial} title={t('app.sidebar.launchTutorial')} className="qt-item qt-tuto">
+          <span className="qt-ic">{IC.tutorial}</span>
+          <span className="qt-label">{t('app.sidebar.launchTutorial')}</span>
+        </button>
       )}
 
-      {/* === Footer : carte profil === */}
-      <div style={{
-        position: 'absolute', bottom: 12, left: 0, right: 0,
-        padding: '0 12px', display: 'flex', gap: 6,
-      }}>
+      {/* Footer profil */}
+      <div className="qt-foot">
         {showProfileLink ? (
-          // Layout split : lien vers /app/profile + bouton quickEdit
           <>
-            <a
-              href="/app/profile"
-              className="qt-profile-btn"
-              style={{
-                flex: 1, padding: '9px 11px',
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 8, cursor: 'pointer',
-                textAlign: 'left', color: 'var(--text)',
-                fontFamily: 'inherit', transition: 'all 0.15s',
-                overflow: 'hidden', textDecoration: 'none', display: 'block',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(45,111,255,0.08)'
-                e.currentTarget.style.borderColor = 'rgba(45,111,255,0.25)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.025)'
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
-              }}
-            >
-              <div style={{
-                fontSize: 12, fontWeight: 600,
-                color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {profile?.display_name || (profile?.username ? `@${profile.username}` : t('app.sidebar.definePseudo'))}
-              </div>
-              <div style={{
-                fontSize: 10, color: 'var(--text3)', marginTop: 2,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-              }}>{user?.email}</div>
+            <a href="/app/profile" className="qt-prof" title={profName}>
+              <span className="qt-avatar">{initials}</span>
+              <span className="qt-prof-info">
+                <span className="qt-prof-name" style={{ color: profile?.username ? 'var(--text)' : 'var(--blue-light)' }}>{profName}</span>
+                <span className="qt-prof-mail">{user?.email}</span>
+              </span>
             </a>
             {onShowProfile && (
-              <button
-                onClick={onShowProfile}
-                title={t('app.sidebar.quickEdit')}
-                style={{
-                  width: 36, padding: '9px 0',
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 8, cursor: 'pointer',
-                  color: 'var(--text2)', fontSize: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'inherit',
-                }}
-              >✎</button>
+              <button onClick={onShowProfile} title={t('app.sidebar.quickEdit')} className="qt-prof-edit">✎</button>
             )}
           </>
         ) : (
-          // Layout simple : 1 carte = onShowProfile
-          <button
-            onClick={onShowProfile}
-            style={{
-              width: '100%', padding: '9px 11px',
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 8, cursor: 'pointer',
-              textAlign: 'left', color: 'var(--text)',
-              fontFamily: 'inherit', transition: 'all 0.15s',
-              overflow: 'hidden',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(45,111,255,0.08)'
-              e.currentTarget.style.borderColor = 'rgba(45,111,255,0.25)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.025)'
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
-            }}
-          >
-            <div style={{
-              fontSize: 12, fontWeight: 600,
-              color: profile?.username ? 'var(--text)' : 'var(--blue-light)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {profile?.display_name || (profile?.username ? `@${profile.username}` : t('app.sidebar.definePseudo'))}
-            </div>
-            <div style={{
-              fontSize: 10, color: 'var(--text3)', marginTop: 2,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-            }}>{user?.email}</div>
+          <button onClick={onShowProfile} className="qt-prof" title={profName} style={{ border: 'none', cursor: 'pointer', background: 'transparent', width: '100%' }}>
+            <span className="qt-avatar">{initials}</span>
+            <span className="qt-prof-info">
+              <span className="qt-prof-name" style={{ color: profile?.username ? 'var(--text)' : 'var(--blue-light)' }}>{profName}</span>
+              <span className="qt-prof-mail">{user?.email}</span>
+            </span>
           </button>
         )}
       </div>
     </nav>
   )
 }
+
+const SIDEBAR_CSS = `
+.app-nav.qt-side{
+  width:216px;flex-shrink:0;
+  background:rgba(13,15,20,0.65);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+  border-right:1px solid rgba(255,255,255,0.05);
+  padding:14px 10px;position:sticky;top:52px;height:calc(100vh - 52px);
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:1px;
+  transition:width .22s ease,padding .22s ease;
+}
+.qt-toggle{align-self:flex-end;width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:6px;transition:all .15s}
+.qt-toggle:hover{color:var(--text);border-color:var(--blue-light);background:rgba(45,111,255,0.1)}
+.qt-toggle svg{transition:transform .22s ease}
+.app-nav.qt-side:not(.qt-collapsed) .qt-toggle svg{transform:rotate(180deg)}
+
+.qt-sec{display:flex;flex-direction:column;gap:1px}
+.qt-sec-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);padding:12px 12px 5px}
+.qt-subhdr{display:flex;align-items:center;gap:11px;padding:7px 12px 4px;font-size:12px;font-weight:600;color:var(--text2)}
+
+.qt-item{position:relative;display:flex;align-items:center;gap:11px;width:100%;height:38px;padding:0 12px;border-radius:10px;color:var(--text2);font-size:13px;font-weight:500;text-decoration:none;font-family:inherit;border:none;background:transparent;cursor:pointer;text-align:left;transition:background .15s,color .15s;white-space:nowrap}
+.qt-item:hover{background:rgba(255,255,255,0.05);color:var(--text)}
+.qt-item.active{background:linear-gradient(135deg,var(--blue),var(--blue-light));color:#fff;box-shadow:0 6px 16px rgba(45,111,255,0.3)}
+.qt-item.disabled{opacity:.45;cursor:not-allowed}
+.qt-item.disabled:hover{background:transparent;color:var(--text2)}
+.qt-item.indent{padding-left:24px}
+.qt-item.qt-admin{color:var(--red-text)}
+.qt-item.qt-admin:hover{background:rgba(232,80,74,0.1)}
+.qt-item.qt-tuto{color:var(--blue-light)}
+.qt-item.qt-tuto:hover{background:rgba(45,111,255,0.1)}
+.qt-ic{width:20px;height:20px;flex-shrink:0;color:var(--text3);display:flex;align-items:center;justify-content:center}
+.qt-item:hover .qt-ic{color:var(--text2)}
+.qt-item.active .qt-ic{color:#fff}
+.qt-item.qt-admin .qt-ic{color:var(--red-text)}
+.qt-item.qt-tuto .qt-ic{color:var(--blue-light)}
+.qt-label{overflow:hidden;text-overflow:ellipsis}
+.qt-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;min-width:18px;text-align:center}
+.qt-lock{margin-left:auto;color:var(--text3);display:flex;align-items:center}
+.qt-sep{height:1px;background:var(--border);margin:8px 6px}
+
+.qt-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.qt-prof{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;text-decoration:none;color:var(--text);transition:background .15s}
+.qt-prof:hover{background:rgba(45,111,255,0.08)}
+.qt-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:.02em}
+.qt-prof-info{min-width:0;display:flex;flex-direction:column}
+.qt-prof-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qt-prof-mail{font-size:10px;color:var(--text3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qt-prof-edit{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);background:rgba(255,255,255,0.025);border-radius:8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.qt-prof-edit:hover{color:var(--text);border-color:var(--blue-light)}
+
+/* === MODE REPLIÉ (rail d'icônes) — desktop uniquement === */
+@media(min-width:1025px){
+  .app-nav.qt-side.qt-collapsed{width:68px;padding:14px 0;align-items:center}
+  .app-nav.qt-side.qt-collapsed .qt-toggle{align-self:center}
+  .app-nav.qt-side.qt-collapsed .qt-sec{align-items:center}
+  .app-nav.qt-side.qt-collapsed .qt-sec-label,
+  .app-nav.qt-side.qt-collapsed .qt-subhdr,
+  .app-nav.qt-side.qt-collapsed .qt-label,
+  .app-nav.qt-side.qt-collapsed .qt-prof-info,
+  .app-nav.qt-side.qt-collapsed .qt-prof-edit{display:none}
+  .app-nav.qt-side.qt-collapsed .qt-item{width:44px;height:44px;justify-content:center;padding:0;margin:1px auto;border-radius:11px}
+  .app-nav.qt-side.qt-collapsed .qt-item.indent{padding:0}
+  .app-nav.qt-side.qt-collapsed .qt-badge{position:absolute;top:4px;right:5px;margin:0;min-width:15px;padding:0 4px;border:2px solid #0d0f14}
+  .app-nav.qt-side.qt-collapsed .qt-lock{position:absolute;top:5px;right:6px;margin:0}
+  .app-nav.qt-side.qt-collapsed .qt-sep{width:26px;margin:6px auto}
+  .app-nav.qt-side.qt-collapsed .qt-foot{justify-content:center;padding-top:12px}
+  .app-nav.qt-side.qt-collapsed .qt-prof{flex:0;justify-content:center;padding:6px}
+}
+
+/* Mobile : drawer — toujours déplié, pas de toggle */
+@media(max-width:1024px){
+  .qt-toggle{display:none}
+  .app-nav.qt-side{padding:14px 12px}
+}
+`
