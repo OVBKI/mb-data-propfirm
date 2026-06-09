@@ -3,18 +3,30 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { verifyAdmin } from '../../../../lib/apiAuth'
 
 export async function GET(req) {
-  // Auth via CRON_SECRET
+  // Mode diagnostic : ?dry=1 → ne renvoie AUCUN email, juste un état + le nombre
+  // de destinataires éligibles. Sert à comprendre pourquoi un récap n'est pas parti.
+  const dry = new URL(req.url).searchParams.get('dry') === '1'
+
+  // Auth : CRON_SECRET (cron Vercel) OU — en mode dry uniquement — un admin connecté.
   const authHeader = req.headers.get('authorization') || ''
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronOk = process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`
+  let adminOk = false
+  if (dry && !cronOk) {
+    const a = await verifyAdmin(req)
+    adminOk = !a.error
+  }
+  if (!cronOk && !adminOk) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  if (!process.env.RESEND_API_KEY) {
+
+  if (!process.env.RESEND_API_KEY && !dry) {
     return Response.json({ error: 'RESEND_API_KEY manquante' }, { status: 500 })
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -68,6 +80,7 @@ export async function GET(req) {
 
   let sent = 0
   const failures = []
+  const dryRecipients = []
 
   for (const user of users) {
     const email = user.email
@@ -83,6 +96,9 @@ export async function GET(req) {
     if (userTrades.length === 0 && userPayouts.length === 0 && userFirms.length === 0 && userAccounts.length === 0) {
       continue
     }
+
+    // Mode diagnostic : on compte seulement, on n'envoie rien
+    if (dry) { dryRecipients.push(email); continue }
 
     const totalPnL = userTrades.reduce((s, t) => s + (Number(t.pnl) || 0), 0)
     const wins = userTrades.filter(t => Number(t.pnl) > 0).length
@@ -145,6 +161,34 @@ export async function GET(req) {
     } catch (err) {
       failures.push({ email, error: err.message })
     }
+  }
+
+  // === Sortie diagnostic (aucun envoi) ===
+  if (dry) {
+    let resendDomain = null
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const dr = await fetch('https://api.resend.com/domains', { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } })
+        if (dr.ok) {
+          const dj = await dr.json()
+          const list = Array.isArray(dj) ? dj : (dj.data || [])
+          const d = list.find(x => (x.name || '').includes('quantara.tech'))
+          resendDomain = d ? d.status : 'not_found'
+        } else { resendDomain = `http_${dr.status}` }
+      } catch { resendDomain = 'error' }
+    }
+    return Response.json({
+      ok: true,
+      dry: true,
+      month: monthLabel,
+      window: { start: startMonthStr, end: endMonthStr },
+      env: { CRON_SECRET: !!process.env.CRON_SECRET, RESEND_API_KEY: !!process.env.RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY },
+      resendDomain,
+      usersTotal: users.length,
+      eligibleRecipients: dryRecipients.length,
+      activityCounts: { trades: trades.length, payouts: payouts.length, newFirms: newFirms.length, newAccounts: newAccounts.length },
+      sample: dryRecipients.slice(0, 5).map(e => e.replace(/^(.{2}).*(@.*)$/, '$1***$2')),
+    })
   }
 
   return Response.json({

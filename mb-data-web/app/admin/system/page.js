@@ -48,6 +48,17 @@ export default function AdminSystemPage() {
   const [loading, setLoading] = useState(true)
   const [clientTime, setClientTime] = useState('')
   const [serverTime, setServerTime] = useState('')
+  const [recapDiag, setRecapDiag] = useState(null)
+
+  async function runRecapDiag() {
+    setRecapDiag('loading')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/cron/monthly-recap?dry=1', { headers: { Authorization: `Bearer ${session?.access_token}` } })
+      const j = await res.json()
+      setRecapDiag(res.ok ? j : { error: j.error || ('HTTP ' + res.status) })
+    } catch (e) { setRecapDiag({ error: e.message }) }
+  }
 
   async function loadHealth() {
     setLoading(true)
@@ -293,6 +304,35 @@ export default function AdminSystemPage() {
           }}>
             <span>🔔 Activité temps réel</span><span style={{ color: C.text3 }}>→</span>
           </a>
+        </div>
+      </div>
+
+      {/* === Diagnostic récap email (dry-run, aucun envoi) === */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 12 }}>📨 Diagnostic récap mensuel (dry-run — aucun email envoyé)</div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+          <button onClick={runRecapDiag} disabled={recapDiag === 'loading'} style={{ padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: C.blue, color: '#fff', border: 'none', cursor: recapDiag === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+            {recapDiag === 'loading' ? '⏳ Analyse…' : '▶ Lancer le diagnostic (mois précédent)'}
+          </button>
+          {recapDiag && recapDiag !== 'loading' && (
+            recapDiag.error ? (
+              <div style={{ marginTop: 12, color: C.red, fontSize: 12, fontFamily: 'monospace' }}>⚠ {recapDiag.error}</div>
+            ) : (
+              <div style={{ marginTop: 14, fontSize: 12, lineHeight: 1.9, fontFamily: 'monospace' }}>
+                <div>Mois analysé : <strong style={{ color: C.text }}>{recapDiag.month}</strong> ({recapDiag.window?.start} → {recapDiag.window?.end})</div>
+                <div>CRON_SECRET : {recapDiag.env?.CRON_SECRET ? <span style={{ color: C.green }}>✓</span> : <span style={{ color: C.red }}>✗</span>} · RESEND_API_KEY : {recapDiag.env?.RESEND_API_KEY ? <span style={{ color: C.green }}>✓</span> : <span style={{ color: C.red }}>✗</span>}</div>
+                <div>Domaine Resend : <strong style={{ color: recapDiag.resendDomain === 'verified' ? C.green : C.amber }}>{String(recapDiag.resendDomain)}</strong></div>
+                <div>Users total : <strong style={{ color: C.text }}>{recapDiag.usersTotal}</strong> · activité du mois — trades {recapDiag.activityCounts?.trades}, payouts {recapDiag.activityCounts?.payouts}, firms {recapDiag.activityCounts?.newFirms}, comptes {recapDiag.activityCounts?.newAccounts}</div>
+                <div style={{ marginTop: 6, fontSize: 14 }}>📬 Destinataires éligibles : <strong style={{ color: recapDiag.eligibleRecipients > 0 ? C.green : C.amber }}>{recapDiag.eligibleRecipients}</strong></div>
+                {recapDiag.sample?.length > 0 && <div style={{ color: C.text3 }}>Échantillon : {recapDiag.sample.join(', ')}</div>}
+                <div style={{ marginTop: 10, padding: '8px 12px', background: C.surface2, borderRadius: 6, color: C.text3, fontFamily: 'inherit', lineHeight: 1.5 }}>
+                  {recapDiag.eligibleRecipients > 0
+                    ? "Des destinataires existaient pour ce mois → si personne n'a reçu l'email, le cron Hobby n'a probablement pas firé ce jour-là (ou échec Resend). Pistes : bouton « Run » sur Vercel pour ce mois, ou passer Vercel Pro."
+                    : "0 destinataire éligible → c'est NORMAL que personne n'ait reçu le récap : aucun user n'avait d'activité (trade / payout / firme / compte créé) sur la période."}
+                </div>
+              </div>
+            )
+          )}
         </div>
       </div>
     </div>
