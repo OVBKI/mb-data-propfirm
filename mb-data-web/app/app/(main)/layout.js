@@ -247,7 +247,8 @@ export default function AppLayout({ children }) {
   async function createFirm() {
     if (!newFirmName.trim()) { showToast('Nom requis'); return }
     const color = FIRM_COLORS[firms.length % FIRM_COLORS.length]
-    const { data } = await supabase.from('firms').insert({ name: newFirmName.trim(), color, user_id: user.id }).select().single()
+    const { data, error } = await supabase.from('firms').insert({ name: newFirmName.trim(), color, user_id: user.id }).select().single()
+    if (error || !data) { showToast('Erreur : ' + (error?.message || 'création impossible')); return }
     setFirmModal(false); setNewFirmName('')
     await loadFirms(); showToast('PropFirm ajoutée ✓')
     setAcctModal({ firmId: data.id })
@@ -293,15 +294,17 @@ export default function AppLayout({ children }) {
         autoReset = true
       }
     }
+    let res
     if (acct) {
-      await supabase.from('accounts').update({ ...basePayload, name: (acctForm.name || '').trim() }).eq('id', acct.id)
+      res = await supabase.from('accounts').update({ ...basePayload, name: (acctForm.name || '').trim() }).eq('id', acct.id)
     } else if (quantity > 1) {
       const names = generateAccountNames(acctForm.name, quantity)
       const payloads = names.map(n => ({ ...basePayload, name: n }))
-      await supabase.from('accounts').insert(payloads)
+      res = await supabase.from('accounts').insert(payloads)
     } else {
-      await supabase.from('accounts').insert({ ...basePayload, name: (acctForm.name || '').trim() })
+      res = await supabase.from('accounts').insert({ ...basePayload, name: (acctForm.name || '').trim() })
     }
+    if (res?.error) { showToast('Erreur : ' + (res.error.message || 'enregistrement impossible')); return }
     setAcctModal(null); await loadFirms()
     showToast(
       quantity > 1
@@ -325,7 +328,8 @@ export default function AppLayout({ children }) {
     const splitPct = acctForSave?.profit_split || suggestProfitSplit(firmForSave?.name, acctForSave?.plan_size) || 90
     const brut = parseFloat(payoutFD.amount) || 0
     const net = +(brut * (splitPct / 100)).toFixed(2)
-    await supabase.from('payouts').insert({ account_id: acctDrawer.acctId, user_id: user.id, date: payoutFD.date, amount: net, note: payoutFD.note })
+    const { error } = await supabase.from('payouts').insert({ account_id: acctDrawer.acctId, user_id: user.id, date: payoutFD.date, amount: net, note: payoutFD.note })
+    if (error) { showToast('Erreur : ' + (error.message || 'ajout impossible')); return }
     setPayoutForm(false); setPayoutFD({ date: '', amount: '', note: '' })
     await loadFirms(); showToast('Payout ajouté ✓')
   }
