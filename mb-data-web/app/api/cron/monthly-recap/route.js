@@ -6,19 +6,22 @@ import { Resend } from 'resend'
 import { verifyAdmin } from '../../../../lib/apiAuth'
 
 export async function GET(req) {
-  // Mode diagnostic : ?dry=1 → ne renvoie AUCUN email, juste un état + le nombre
-  // de destinataires éligibles. Sert à comprendre pourquoi un récap n'est pas parti.
-  const dry = new URL(req.url).searchParams.get('dry') === '1'
+  // Modes diagnostic (aucun envoi de masse) :
+  //   ?dry=1     → ne renvoie AUCUN email, juste un état + le nombre de destinataires éligibles
+  //   ?test=self → envoie UN SEUL email de test à l'admin connecté (vérifie la délivrabilité Resend)
+  const sp = new URL(req.url).searchParams
+  const dry = sp.get('dry') === '1'
+  const test = sp.get('test') === 'self'
 
-  // Auth : CRON_SECRET (cron Vercel) OU — en mode dry uniquement — un admin connecté.
+  // Auth : CRON_SECRET (cron Vercel) OU — en mode dry/test uniquement — un admin connecté.
   const authHeader = req.headers.get('authorization') || ''
   const cronOk = process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`
-  let adminOk = false
-  if (dry && !cronOk) {
+  let adminUser = null
+  if ((dry || test) && !cronOk) {
     const a = await verifyAdmin(req)
-    adminOk = !a.error
+    if (!a.error) adminUser = a.user
   }
-  if (!cronOk && !adminOk) {
+  if (!cronOk && !adminUser) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -27,6 +30,25 @@ export async function GET(req) {
   }
 
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+
+  // === Test délivrabilité : un seul email vers l'admin ===
+  if (test) {
+    const to = adminUser?.email
+    if (!to) return Response.json({ ok: false, test: true, error: 'Réservé à un admin connecté' }, { status: 403 })
+    if (!resend) return Response.json({ ok: false, test: true, error: 'RESEND_API_KEY manquante' }, { status: 500 })
+    try {
+      const r = await resend.emails.send({
+        from: 'Quantara <noreply@quantara.tech>',
+        replyTo: 'admin@quantara.tech',
+        to,
+        subject: '✅ Test Quantara — délivrabilité Resend',
+        html: '<div style="font-family:sans-serif;padding:16px"><h2>Test de délivrabilité</h2><p>Si tu lis ceci, l\'envoi Resend fonctionne (clé valide + domaine OK). Le problème du récap vient donc d\'ailleurs (probablement le cron Vercel Hobby).</p></div>',
+      })
+      return Response.json({ ok: true, test: true, sent: true, id: r?.data?.id || null, to: to.replace(/^(.{2}).*(@.*)$/, '$1***$2') })
+    } catch (err) {
+      return Response.json({ ok: true, test: true, sent: false, error: String(err?.message || err) })
+    }
+  }
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
