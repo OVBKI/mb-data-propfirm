@@ -171,13 +171,34 @@ export async function GET(req) {
       totalSpentMonth,
     })
 
+    // Version texte (multipart) — améliore nettement le placement en boîte de réception
+    const netCash = totalPayoutsAmount - totalSpentMonth
+    const text = [
+      `Ton récap Quantara — ${monthLabel}`,
+      '',
+      `Trades loggés : ${userTrades.length} (${wins} gains / ${losses} pertes, WR ${winRate}%)`,
+      `P&L trading : ${totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(0)} $`,
+      `Dépenses : -${totalSpentMonth.toFixed(0)} $`,
+      `Payouts : +${totalPayoutsAmount.toFixed(0)} $`,
+      `Bilan du mois : ${netCash >= 0 ? '+' : ''}${netCash.toFixed(0)} $`,
+      '',
+      `Voir mon dashboard : https://quantara.tech/app`,
+      '',
+      `— Quantara Technologies LLC, Albuquerque, NM`,
+      `Gérer mes emails : https://quantara.tech/app/settings`,
+    ].join('\n')
+
     try {
       await resend.emails.send({
         from: 'Quantara <noreply@quantara.tech>',
         replyTo: 'admin@quantara.tech',
         to: email,
-        subject: `📊 Ton récap Quantara — ${monthLabel}`,
+        subject: `Ton récap Quantara — ${monthLabel}`,
         html,
+        text,
+        headers: {
+          'List-Unsubscribe': '<mailto:admin@quantara.tech?subject=unsubscribe>, <https://quantara.tech/app/settings>',
+        },
       })
       sent++
     } catch (err) {
