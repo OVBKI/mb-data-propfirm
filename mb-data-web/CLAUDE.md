@@ -615,3 +615,55 @@ preview without env:
 indicators (EMA/VWAP/RSI on lightweight-charts), CSV import of own bars, Polygon.io
 futures provider, or integrate into the real app (`/app/backtest`, sidebar entry
 under "Mes Trades", Supabase persistence of sessions).
+
+## Full audit + email/cron fixes — June 2026 (continued)
+
+### Audit (read-only) — deliverables at repo root
+`AUDIT-2026-06.md` (full findings, 4 domains + marketing, file:line + severity +
+scores) and `AUDIT-ACTION-PLAN.md` (sprint-sequenced plan). Top items:
+- **Sécu CRITIQUE**: `/admin/*` has NO server-side guard (admin check is client-only
+  in `app/admin/layout.js`; `middleware.js` does no auth) — bypassable via RSC/curl.
+- **Sécu CRITIQUE**: `CRON_SECRET` was passed in URL query in `sentry-test` (loggable).
+- High: RLS gaps (`referrals`/`rithmic_credentials` absent from schema; `announcements`
+  policy uses `is_active` but column is `active`), in-memory rate-limit bypassable ×N,
+  `export` uses `select('*')`, `resolve_username_to_email` callable by any `authenticated`.
+- Perf: `contextValue` not memoized (22 pages re-render), `loadFirms` N+1 + full re-fetch
+  after every mutation, layout.js monolith (834 l.), i18n.js ships everywhere.
+- SEO: stale pricing meta (€9/€99 vs real €19/€249), GSC token = placeholder, landing
+  JSON-LD invisible (ssr:false), 66 pages no per-page OG, llms.txt incomplete.
+- A11y: modals no role=dialog/focus-trap/Escape, toast no aria-live, confirm()/prompt(),
+  contrast fails, ~50+ hardcoded FR strings.
+- Marketing: revenue blocked (only Free live; Pro/Elite/Business = waitlist Q3 2026),
+  no real social proof, pricing inconsistent across 3 sources.
+
+### Email / cron investigation — "nobody got the May recap"
+Resend domain `quantara.tech` Verified (~May 14); `CRON_SECRET` + `RESEND_API_KEY`
+present (Prod+Preview, May 15); **6 eligible recipients** for May (NOT a "0 normal").
+Resend `/domains` http_401 = key is **sending-only scope** (benign, confirmed by a
+successful self-test email — key VALID). **Root cause: Vercel Hobby allows ~2 cron jobs
+but vercel.json declared 4 → `monthly-recap` never executed.** (Hobby log retention ~1h
+so June-1 logs were gone.)
+
+### MERGED TO MAIN (commits in order)
+- `d72d0bd` AppSidebar redesign (earlier).
+- `cc7c0c5` monthly-recap `?dry=1` diagnostic + admin/system button (no send).
+- `186ef03` monthly-recap `?test=self` (one test email to admin) + button. dry/test
+  auth = CRON_SECRET OR connected admin (verifyAdmin); real send path unchanged.
+- `f1a1256` **cron consolidation**: 4 crons → single daily dispatcher
+  `app/api/cron/daily/route.js` (`0 8 * * *`, Hobby-safe). Dispatches by date
+  (check-bills+onboarding daily; drawdown-guardian weekdays; monthly-recap on the 1st),
+  calls sub-routes in-process w/ CRON_SECRET in parallel (maxDuration 60); `?dry=1` = plan only.
+- `afa2a4d` recap email **deliverability**: plain-text (multipart) + `List-Unsubscribe`
+  header + de-emoji subject (was landing in spam).
+
+User manually ran the May recap via Vercel "Run" → sent to 6, but it **landed in spam**.
+
+### STILL TODO (deliverability + compliance)
+- **DNS (USER)**: add `_dmarc.quantara.tech` TXT = `v=DMARC1; p=none; rua=mailto:admin@quantara.tech; fo=1`
+  (SPF/DKIM already OK; DMARC missing). New-domain reputation warm-up needed.
+- **One-click unsubscribe** endpoint + `profiles.email_recap_enabled` opt-out (skip
+  unsubscribed, add `List-Unsubscribe-Post: One-Click`) — also fixes audit RGPD item.
+  Offered, awaiting go.
+- Verify Vercel → Crons shows ONLY `/api/cron/daily` after deploy.
+
+`AUDIT-2026-06.md` + `AUDIT-ACTION-PLAN.md` live on the dev branch (repo root).
