@@ -60,6 +60,17 @@ export default function AdminSystemPage() {
     } catch (e) { setRecapDiag({ error: e.message }) }
   }
 
+  const [recapTest, setRecapTest] = useState(null)
+  async function runRecapTest() {
+    setRecapTest('loading')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/cron/monthly-recap?test=self', { headers: { Authorization: `Bearer ${session?.access_token}` } })
+      const j = await res.json()
+      setRecapTest(res.ok ? j : { error: j.error || ('HTTP ' + res.status) })
+    } catch (e) { setRecapTest({ error: e.message }) }
+  }
+
   async function loadHealth() {
     setLoading(true)
     // Counts par table
@@ -311,9 +322,21 @@ export default function AdminSystemPage() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 12 }}>📨 Diagnostic récap mensuel (dry-run — aucun email envoyé)</div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-          <button onClick={runRecapDiag} disabled={recapDiag === 'loading'} style={{ padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: C.blue, color: '#fff', border: 'none', cursor: recapDiag === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
-            {recapDiag === 'loading' ? '⏳ Analyse…' : '▶ Lancer le diagnostic (mois précédent)'}
-          </button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={runRecapDiag} disabled={recapDiag === 'loading'} style={{ padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: C.blue, color: '#fff', border: 'none', cursor: recapDiag === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+              {recapDiag === 'loading' ? '⏳ Analyse…' : '▶ Lancer le diagnostic (mois précédent)'}
+            </button>
+            <button onClick={runRecapTest} disabled={recapTest === 'loading'} style={{ padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: 'transparent', color: C.amber, border: `1px solid ${C.amber}`, cursor: recapTest === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+              {recapTest === 'loading' ? '⏳ Envoi…' : '✉️ Envoyer un test à moi-même'}
+            </button>
+          </div>
+          {recapTest && recapTest !== 'loading' && (
+            <div style={{ marginTop: 12, fontSize: 12, fontFamily: 'monospace' }}>
+              {recapTest.sent
+                ? <span style={{ color: C.green }}>✅ Test envoyé à {recapTest.to} → clé Resend VALIDE. Le récap a donc échoué ailleurs (cron Hobby non firé le 1er juin le plus probable).</span>
+                : <span style={{ color: C.red }}>⚠ Échec envoi : {recapTest.error} → si c&apos;est un 401, la clé Resend est INVALIDE/restreinte → régénère-la et mets à jour RESEND_API_KEY.</span>}
+            </div>
+          )}
           {recapDiag && recapDiag !== 'loading' && (
             recapDiag.error ? (
               <div style={{ marginTop: 12, color: C.red, fontSize: 12, fontFamily: 'monospace' }}>⚠ {recapDiag.error}</div>
