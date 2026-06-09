@@ -561,3 +561,57 @@ RITHMIC_CRON_SECRET=SdV0QfO8egkKrQwpnsu4tgKow91v38NB3p4zjB4GSGw  (unused now, ke
 - **Social login** — Google OAuth + Discord OAuth via Supabase Auth providers
 - **Topstep vs Apex page** — highest-value missing content (2.4k/mo keyword)
 - **LAUNCH_PLAN.md** — detailed 5-phase plan with timelines and go/no-go criteria
+
+## Session — June 2026 (landing/dashboard/backtest exploration)
+
+Branch `claude/sleepy-feynman-g47JT` (dev). Only the **sidebar** was merged to `main`.
+
+### MERGED TO MAIN
+- **AppSidebar redesign** (`components/AppSidebar.js`) — cherry-picked to `main`
+  (main commit `d72d0bd`). Collapsible **icon-rail vs expanded labels** with a
+  toggle (persisted in localStorage key `qt_sidebar_collapsed`, collapsed by
+  default). Lucide-style SVG icons replace the old text glyphs. ALL behavior
+  preserved: props unchanged, routes, i18n labels, alerts badge, admin/community
+  gating, profile card, mobile drawer, tutorial button, `data-tour` hooks.
+  Collapsed style applies only desktop (min-width:1025px) so the <=1024px mobile
+  drawer keeps labels. Injects its own scoped style tag.
+
+### DEV-BRANCH ONLY (experiments / previews, NOT in main, NOT in sidebar nav)
+Standalone, mock data, no Supabase/AppContext deps so they build on the Vercel
+preview without env:
+- **6 landing concepts** under `app/landing/` + gallery `/landing`:
+  aurora / terminal / ledger (CSS) ; nebula / flux / prism (3D via react-three-fiber
+  + three; scenes in `components/landing3d/`, adapted from Magic 21st.dev components).
+  `flux` got a bespoke polish (ui-ux-pro-max + frontend-design).
+- **Dashboard redesign previews** mirroring the REAL dashboard box-for-box: shared
+  `components/dashpreview/DashStructure.js` (CSS-var themed) + 3 skins
+  `/dash-preview/{glass,terminal,light}` + gallery `/dash-preview`.
+- **Remotion promo video** in `quantara-video/` (separate project; `npm run render`
+  -> `out/quantara-promo.mp4`, 30s 1080p; node_modules/out gitignored).
+- **Backtest / chart replay (PAUSED)** at `/backtest-preview`: TradingView
+  lightweight-charts (v4, MIT) + our deterministic replay engine
+  `simulate(bars, orders, cursor)` (stepping back undoes future trades), virtual
+  Long/Short + SL/TP, markers + price lines, stats. Market data route
+  `app/api/market/bars/route.js` (60s cache + IP rate-limit): provider `binance`
+  (public, no key — BTC/ETH live, validated) + `databento` (GLBX.MDP3 = official
+  CME Globex; needs `DATABENTO_API_KEY`; 501 NO_KEY -> synthetic fallback).
+  Reality: CME data is licensed/paid, no free public CME API.
+
+### Env / infra notes
+- Root `.claude/settings.json` PreToolUse hook runs the security_reminder_hook.py
+  with a RELATIVE path -> fails when cwd isn't repo root. Workaround: copied the
+  hook into `mb-data-web/.claude/` (gitignored). The hook also blocks raw
+  HTML-injection tokens (React's dangerouslySet[...]HTML prop and Element.inner[...]HTML)
+  -> the cosmos landing was built as pure JSX instead.
+- Local `next build` here CANNOT fully export (no Supabase env in container ->
+  `supabaseUrl is required` prerender errors on /app, /admin, /compare). ENV-only;
+  Vercel build (with env) succeeds. So `next start` can't run locally (missing
+  prerender-manifest) — verify rendering on the Vercel preview instead.
+- Vercel preview base URL (this branch):
+  `https://mb-data-propfirm-git-claude-sleepy-feynm-2e1c3e-ovbkis-projects.vercel.app`
+- Enable real CME futures in backtest: set `DATABENTO_API_KEY` in Vercel env.
+
+### NEXT when resuming backtest
+indicators (EMA/VWAP/RSI on lightweight-charts), CSV import of own bars, Polygon.io
+futures provider, or integrate into the real app (`/app/backtest`, sidebar entry
+under "Mes Trades", Supabase persistence of sessions).
