@@ -53,6 +53,10 @@ const securityHeaders = [
       // Scripts : Vercel Analytics, Cloudflare Turnstile, et 'unsafe-inline' pour Next inline
       // 'unsafe-eval' only in dev (Next.js HMR needs it); removed in production
       `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://challenges.cloudflare.com https://*.vercel-insights.com https://va.vercel-scripts.com`,
+      // Workers : Sentry Session Replay (et autres libs) instancient un Web Worker
+      // depuis un blob: same-origin. Sans cette directive, le fallback script-src
+      // (sans blob:) bloque le worker → "Creating a worker from 'blob:' violates CSP".
+      "worker-src 'self' blob:",
       // Styles : inline OK (Next + framer + chart.js)
       "style-src 'self' 'unsafe-inline'",
       // Fonts : self + data URIs (icônes embedded)
