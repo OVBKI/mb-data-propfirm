@@ -76,6 +76,12 @@ export default function sitemap() {
       priority: 0.7,
     },
     {
+      url: `${BASE_URL}/docs/extension`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
       url: `${BASE_URL}/integrations`,
       lastModified: now,
       changeFrequency: 'monthly',

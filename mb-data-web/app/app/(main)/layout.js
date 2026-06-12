@@ -554,9 +554,9 @@ export default function AppLayout({ children }) {
           />
           {mobileNavOpen && <div className="nav-backdrop" onClick={() => setMobileNavOpen(false)} />}
 
-          <div style={{ flex: 1, overflow: 'auto' }}>
+          <main id="main-content" tabIndex={-1} style={{ flex: 1, overflow: 'auto' }}>
             {children}
-          </div>
+          </main>
         </div>
 
         {/* ── Firm Modal ── */}
@@ -830,7 +830,7 @@ export default function AppLayout({ children }) {
         )}
 
         {/* ── Toast ── */}
-        {toast && <div className="toast" style={{ position: 'fixed', bottom: '24px', right: '24px', background: 'var(--surface3)', color: 'var(--text)', border: '0.5px solid var(--border2)', padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', zIndex: 999, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>{toast}</div>}
+        {toast && <div className="toast" role="status" aria-live="polite" style={{ position: 'fixed', bottom: '24px', right: '24px', background: 'var(--surface3)', color: 'var(--text)', border: '0.5px solid var(--border2)', padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', zIndex: 999, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>{toast}</div>}
       </div>
     </AppContext.Provider>
   )

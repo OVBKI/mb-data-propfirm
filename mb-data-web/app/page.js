@@ -37,7 +37,7 @@ function LandingFallback() {
           <a href="/demo" style={{ color: '#9098b0', textDecoration: 'none' }}>Demo</a>
         </nav>
       </header>
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: '100px 24px 60px' }}>
+      <main id="main-content" style={{ maxWidth: 720, margin: '0 auto', padding: '100px 24px 60px' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h1 style={{ fontSize: 48, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 24 }}>
             Ton cockpit<br />PropFirm

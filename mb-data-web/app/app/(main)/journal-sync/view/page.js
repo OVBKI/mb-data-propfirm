@@ -92,7 +92,7 @@ export default function JournalSyncPage() {
   }, [user, loadFirms])
 
   function showToast(msg) {
-    if (typeof window !== 'undefined') console.log('[journal-sync]', msg)
+    if (process.env.NODE_ENV !== 'production') console.log('[journal-sync]', msg)
   }
 
   function onReload() {
