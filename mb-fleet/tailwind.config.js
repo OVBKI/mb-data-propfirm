@@ -22,9 +22,12 @@ module.exports = {
         },
         // Cyan Signal — accent temps réel / GPS
         signal: {
+          50: "#ecfeff",
+          100: "#cffafe",
           400: "#22d3ee",
           500: "#06b6d4",
           600: "#0891b2",
+          700: "#0e7490",
         },
         // Sidebar / surfaces foncées
         ink: {

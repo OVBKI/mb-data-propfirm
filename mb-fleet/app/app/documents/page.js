@@ -1,6 +1,6 @@
-import { getAll } from "../../lib/data";
-import { Badge, Table, StatCard, PageHeader } from "../../components/ui";
-import { euros, dateFR, daysUntil, DOC_TYPE, EXPENSE_TYPE } from "../../lib/format";
+import { getAll } from "@/lib/data";
+import { Badge, Table, StatCard, PageHeader } from "@/components/ui";
+import { euros, dateFR, daysUntil, DOC_TYPE, EXPENSE_TYPE } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 

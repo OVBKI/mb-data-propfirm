@@ -1,10 +1,9 @@
 import "./globals.css";
-import Sidebar from "../components/Sidebar";
-import DemoBanner from "../components/DemoBanner";
 
 export const metadata = {
-  title: "Fleetly — Gestion de flotte de transport",
-  description: "Gérez vos camions, traceurs GPS, chauffeurs, entretien, documents et dépenses.",
+  title: "Fleetly — Logiciel de gestion de flotte de transport",
+  description:
+    "Pilotez toute votre société de transport : camions, traceurs GPS en temps réel, chauffeurs, entretien, documents et dépenses. Le tout dans une seule application.",
 };
 
 export default function RootLayout({ children }) {
@@ -18,15 +17,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body>
-        <div className="flex">
-          <Sidebar />
-          <div className="flex-1 min-w-0 min-h-screen flex flex-col">
-            <DemoBanner />
-            <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">{children}</main>
-          </div>
-        </div>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

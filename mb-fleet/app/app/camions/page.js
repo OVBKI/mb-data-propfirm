@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { getAll } from "../../lib/data";
-import { Badge, Table, PageHeader } from "../../components/ui";
-import { km, timeAgo, TRUCK_STATUS } from "../../lib/format";
+import { getAll } from "@/lib/data";
+import { Badge, Table, PageHeader } from "@/components/ui";
+import { km, timeAgo, TRUCK_STATUS } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function CamionsPage() {
           return (
             <tr key={t.id} className="hover:bg-slate-50">
               <td className="td font-medium">
-                <Link href={`/camions/${t.id}`} className="text-brand-600 hover:underline">{t.plate}</Link>
+                <Link href={`/app/camions/${t.id}`} className="text-brand-600 hover:underline">{t.plate}</Link>
               </td>
               <td className="td">{t.brand} {t.model} <span className="text-slate-400">· {t.year}</span></td>
               <td className="td">{km(t.mileage_km)}</td>

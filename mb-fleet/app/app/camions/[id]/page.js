@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAll } from "../../../lib/data";
-import { Badge, Table, EmptyRow } from "../../../components/ui";
+import { getAll } from "@/lib/data";
+import { Badge, Table, EmptyRow } from "@/components/ui";
 import {
   euros, km, dateFR, timeAgo, daysUntil,
   TRUCK_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE,
-} from "../../../lib/format";
+} from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export default async function TruckDetail({ params }) {
 
   return (
     <div>
-      <Link href="/camions" className="text-sm text-brand-600 hover:underline">← Retour aux camions</Link>
+      <Link href="/app/camions" className="text-sm text-brand-600 hover:underline">← Retour aux camions</Link>
 
       <div className="flex items-start justify-between mt-3 mb-6">
         <div>
@@ -53,7 +53,7 @@ export default async function TruckDetail({ params }) {
             <Info label="Vitesse" value={`${tracker.last_speed ?? 0} km/h`} />
             <Info label="Dernier point" value={timeAgo(tracker.last_seen)} />
             <div className="col-span-2 md:col-span-4">
-              <Link href="/carte" className="text-brand-600 hover:underline text-sm">Voir sur la carte en direct →</Link>
+              <Link href="/app/carte" className="text-brand-600 hover:underline text-sm">Voir sur la carte en direct →</Link>
             </div>
           </div>
         ) : <p className="text-slate-400 text-sm">Aucun traceur associé à ce camion.</p>}

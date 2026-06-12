@@ -1,6 +1,6 @@
-import { getAll } from "../../lib/data";
-import { Badge, Table, PageHeader } from "../../components/ui";
-import { dateFR, daysUntil, DRIVER_STATUS } from "../../lib/format";
+import { getAll } from "@/lib/data";
+import { Badge, Table, PageHeader } from "@/components/ui";
+import { dateFR, daysUntil, DRIVER_STATUS } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
