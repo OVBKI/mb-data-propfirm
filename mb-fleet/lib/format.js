@@ -111,3 +111,24 @@ export const MISSION_STATUS = {
   livree: { label: "Livrée", color: "bg-emerald-100 text-emerald-700" },
   annulee: { label: "Annulée", color: "bg-rose-100 text-rose-700" },
 };
+
+export const INVOICE_STATUS = {
+  brouillon: { label: "Brouillon", color: "bg-slate-100 text-slate-600" },
+  envoyee: { label: "Envoyée", color: "bg-blue-100 text-blue-700" },
+  payee: { label: "Payée", color: "bg-emerald-100 text-emerald-700" },
+  en_retard: { label: "En retard", color: "bg-rose-100 text-rose-700" },
+};
+
+// Taux de TVA applicables (France).
+export const VAT_RATES = [
+  { value: 20, label: "20 % (normal)" },
+  { value: 10, label: "10 % (transport)" },
+  { value: 5.5, label: "5,5 %" },
+  { value: 0, label: "0 % (exonéré)" },
+];
+
+// Pourcentage formaté.
+export function percent(n) {
+  if (n == null || isNaN(n)) return "—";
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(n) + " %";
+}

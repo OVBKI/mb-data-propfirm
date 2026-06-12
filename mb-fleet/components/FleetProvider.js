@@ -7,7 +7,7 @@ import { demoData } from "@/lib/demo";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const STORAGE_KEY = "fleetly_data_v1";
-const COLLECTIONS = ["trucks", "drivers", "trackers", "maintenances", "documents", "expenses", "missions"];
+const COLLECTIONS = ["trucks", "drivers", "trackers", "maintenances", "documents", "expenses", "missions", "invoices"];
 
 const FleetContext = createContext(null);
 

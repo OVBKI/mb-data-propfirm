@@ -117,6 +117,22 @@ create table if not exists missions (
   created_at    timestamptz not null default now()
 );
 
+-- ---------- FACTURES (comptabilité) ----------
+create table if not exists invoices (
+  id          uuid primary key default gen_random_uuid(),
+  number      text,               -- ex: "FAC-2026-014"
+  client      text not null,
+  mission_id  uuid references missions(id) on delete set null,
+  date        date not null,      -- date d'émission
+  due_date    date,               -- échéance
+  amount_ht   numeric not null default 0,
+  vat_rate    numeric default 20, -- taux de TVA en %
+  status      text not null default 'brouillon', -- brouillon | envoyee | payee | en_retard
+  paid_date   date,
+  notes       text,
+  created_at  timestamptz not null default now()
+);
+
 create index if not exists idx_trucks_driver on trucks(driver_id);
 create index if not exists idx_trucks_tracker on trucks(tracker_id);
 create index if not exists idx_maint_truck on maintenances(truck_id);
@@ -125,6 +141,8 @@ create index if not exists idx_exp_truck on expenses(truck_id);
 create index if not exists idx_missions_truck on missions(truck_id);
 create index if not exists idx_missions_driver on missions(driver_id);
 create index if not exists idx_missions_status on missions(status);
+create index if not exists idx_invoices_mission on invoices(mission_id);
+create index if not exists idx_invoices_status on invoices(status);
 
 -- ------------------------------------------------------------
 --  RLS — à activer puis adapter selon ton authentification.

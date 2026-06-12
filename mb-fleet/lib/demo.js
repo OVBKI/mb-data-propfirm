@@ -75,6 +75,17 @@ export const missions = [
   { id: "ms9", ref: "M-1036", origin: "Paris", destination: "Lyon", truck_id: "c1", driver_id: "d1", cargo: "Matériel industriel", weight_t: 24, distance_km: 465, price: 1780, pickup_date: dayOffset(-10), delivery_date: dayOffset(-9), status: "livree", notes: "" },
 ];
 
+// Factures clients — facturation des missions, suivi des encaissements et de la TVA.
+// amount_ht = montant hors taxes ; la TVA et le TTC sont calculés à l'affichage.
+export const invoices = [
+  { id: "f1", number: "FAC-2026-014", client: "Industri'Pro SAS", mission_id: "ms9", date: dayOffset(-9), due_date: dayOffset(21), amount_ht: 1780, vat_rate: 10, status: "payee", paid_date: dayOffset(-2) },
+  { id: "f2", number: "FAC-2026-013", client: "ElectroDIS", mission_id: "ms7", date: dayOffset(-8), due_date: dayOffset(22), amount_ht: 2400, vat_rate: 10, status: "payee", paid_date: dayOffset(-1) },
+  { id: "f3", number: "FAC-2026-012", client: "Caves du Sud", mission_id: "ms8", date: dayOffset(-6), due_date: dayOffset(24), amount_ht: 1620, vat_rate: 10, status: "envoyee", paid_date: null },
+  { id: "f4", number: "FAC-2026-011", client: "BTP Sud Matériaux", mission_id: "ms5", date: dayOffset(-2), due_date: dayOffset(28), amount_ht: 890, vat_rate: 10, status: "envoyee", paid_date: null },
+  { id: "f5", number: "FAC-2026-010", client: "AutoParts Distribution", mission_id: "ms6", date: dayOffset(-40), due_date: dayOffset(-10), amount_ht: 1280, vat_rate: 10, status: "en_retard", paid_date: null },
+  { id: "f6", number: "FAC-2026-015", client: "FreshFood Logistique", mission_id: "ms1", date: dayOffset(-1), due_date: dayOffset(29), amount_ht: 1450, vat_rate: 10, status: "brouillon", paid_date: null },
+];
+
 function nowMinus(minutes) {
   return new Date(Date.now() - minutes * 60 * 1000).toISOString();
 }
@@ -84,4 +95,4 @@ function dayOffset(days) {
   return new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
 }
 
-export const demoData = { drivers, trackers, trucks, maintenances, documents, expenses, missions };
+export const demoData = { drivers, trackers, trucks, maintenances, documents, expenses, missions, invoices };

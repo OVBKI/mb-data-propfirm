@@ -14,6 +14,7 @@ const nav = [
   { href: "/app/eco", label: "Éco-conduite", icon: "✦" },
   { href: "/app/entretien", label: "Entretien", icon: "⚙" },
   { href: "/app/couts", label: "Coûts & CO₂", icon: "€" },
+  { href: "/app/comptabilite", label: "Comptabilité", icon: "∑" },
   { href: "/app/documents", label: "Documents & dépenses", icon: "❒" },
 ];
 

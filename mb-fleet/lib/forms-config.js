@@ -1,6 +1,6 @@
 // Configuration des champs de formulaire par entité.
 // Les fonctions reçoivent les listes nécessaires pour construire les menus déroulants.
-import { TRUCK_STATUS, DRIVER_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE, MISSION_STATUS } from "@/lib/format";
+import { TRUCK_STATUS, DRIVER_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE, MISSION_STATUS, INVOICE_STATUS, VAT_RATES } from "@/lib/format";
 
 const opts = (obj) => Object.entries(obj).map(([value, v]) => ({ value, label: v.label || v }));
 const truckOpts = (trucks) => trucks.map((t) => ({ value: t.id, label: `${t.plate} — ${t.brand} ${t.model}` }));
@@ -93,6 +93,24 @@ export function missionFields(trucks, drivers) {
     { name: "weight_t", label: "Poids (t)", type: "number", step: "0.1", half: true },
     { name: "distance_km", label: "Distance (km)", type: "number", half: true },
     { name: "price", label: "Prix / CA (€)", type: "number", step: "0.01", half: true },
+    { name: "notes", label: "Notes", type: "textarea" },
+  ];
+}
+
+export function invoiceFields(missions = []) {
+  const missionOpts = missions
+    .filter((m) => m.status !== "annulee")
+    .map((m) => ({ value: m.id, label: `${m.ref || "Mission"} — ${m.origin} → ${m.destination}` }));
+  return [
+    { name: "number", label: "N° de facture", placeholder: "FAC-2026-016", half: true },
+    { name: "client", label: "Client", required: true, placeholder: "Nom du client", half: true },
+    { name: "mission_id", label: "Mission liée", type: "select", options: missionOpts, half: true },
+    { name: "status", label: "Statut", type: "select", options: opts(INVOICE_STATUS), half: true },
+    { name: "date", label: "Date d'émission", type: "date", required: true, half: true },
+    { name: "due_date", label: "Échéance", type: "date", half: true },
+    { name: "amount_ht", label: "Montant HT (€)", type: "number", step: "0.01", required: true, half: true },
+    { name: "vat_rate", label: "TVA", type: "select", options: VAT_RATES.map((r) => ({ value: r.value, label: r.label })), half: true },
+    { name: "paid_date", label: "Date de paiement", type: "date", half: true },
     { name: "notes", label: "Notes", type: "textarea" },
   ];
 }
