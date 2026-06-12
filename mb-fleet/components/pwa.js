@@ -3,12 +3,26 @@
 import { useEffect, useState } from "react";
 
 // Enregistre le service worker (à monter une fois dans le layout racine).
+// IMPORTANT : on n'active le SW QU'EN PRODUCTION. En développement (npm run dev),
+// le cache du SW entre en conflit avec le rechargement à chaud (HMR) de Next et
+// provoque des erreurs / une page figée sur une ancienne version. En dev, on
+// désinscrit donc tout SW existant et on vide les caches pour repartir propre.
 export function RegisterSW() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
-    // En dev, Next ne sert pas /sw.js de façon fiable — on l'active surtout en prod,
-    // mais l'enregistrement est sans danger dans les deux cas.
+
+    if (process.env.NODE_ENV !== "production") {
+      // Nettoyage : retire un SW laissé par une session `npm start` précédente.
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister());
+      }).catch(() => {});
+      if (window.caches?.keys) {
+        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
+      }
+      return;
+    }
+
     const onLoad = () => {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     };
