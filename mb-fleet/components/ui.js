@@ -55,6 +55,12 @@ export function Table({ columns, children }) {
   );
 }
 
+export function Loading() {
+  return (
+    <div className="py-20 text-center text-slate-400 text-sm">Chargement…</div>
+  );
+}
+
 export function EmptyRow({ colSpan, text }) {
   return (
     <tr>

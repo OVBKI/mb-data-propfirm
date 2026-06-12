@@ -1,6 +1,7 @@
+"use client";
 import Link from "next/link";
-import { getAll } from "@/lib/data";
-import { StatCard, Badge, Table, EmptyRow, PageHeader } from "@/components/ui";
+import { useFleet } from "@/components/FleetProvider";
+import { StatCard, Badge, Table, EmptyRow, PageHeader, Loading } from "@/components/ui";
 import { Donut, ProgressBars } from "@/components/charts";
 import {
   TruckIcon, RouteIcon, WrenchIcon, EuroIcon, FileIcon, BellIcon, ArrowRightIcon,
@@ -8,8 +9,6 @@ import {
 import {
   euros, dateFR, daysUntil, km, TRUCK_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE,
 } from "@/lib/format";
-
-export const dynamic = "force-dynamic";
 
 const STATUS_COLORS = {
   disponible: "#10b981",
@@ -25,14 +24,16 @@ const EXPENSE_COLORS = {
   autre: "#94a3b8",
 };
 
-export default async function Dashboard() {
-  const { trucks, drivers, maintenances, documents, expenses } = await getAll();
+export default function Dashboard() {
+  const { ready, data } = useFleet();
+  if (!ready) return <Loading />;
+
+  const { trucks, drivers, maintenances, documents, expenses } = data;
 
   const enRoute = trucks.filter((t) => t.status === "en_route").length;
   const dispo = trucks.filter((t) => t.status === "disponible").length;
   const maint = trucks.filter((t) => t.status === "maintenance" || t.status === "hors_service").length;
 
-  // Dépenses du mois en cours
   const now = new Date();
   const monthExpenses = expenses
     .filter((e) => {
@@ -41,21 +42,18 @@ export default async function Dashboard() {
     })
     .reduce((s, e) => s + Number(e.amount || 0), 0);
 
-  // Répartition de la flotte (donut)
   const fleetDist = Object.entries(TRUCK_STATUS).map(([key, meta]) => ({
     label: meta.label,
     value: trucks.filter((t) => t.status === key).length,
     color: STATUS_COLORS[key],
   })).filter((d) => d.value > 0);
 
-  // Dépenses par type (barres de progression)
   const byType = {};
   for (const e of expenses) byType[e.type] = (byType[e.type] || 0) + Number(e.amount || 0);
   const expenseDist = Object.entries(byType)
     .map(([type, value]) => ({ label: EXPENSE_TYPE[type] || type, value, color: EXPENSE_COLORS[type] || "#94a3b8" }))
     .sort((a, b) => b.value - a.value);
 
-  // Alertes
   const docAlerts = documents
     .map((d) => ({ ...d, days: daysUntil(d.expiry_date) }))
     .filter((d) => d.days != null && d.days <= 45)
@@ -73,59 +71,37 @@ export default async function Dashboard() {
     <div>
       <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de votre société de transport" />
 
-      {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="Camions" value={trucks.length} sub={`${dispo} disponibles`} accent="text-brand-600"
-          icon={<TruckIcon size={18} />} iconBg="bg-brand-50 text-brand-600"
-        />
-        <StatCard
-          label="En route" value={enRoute} sub="actuellement" accent="text-signal-600"
-          icon={<RouteIcon size={18} />} iconBg="bg-signal-50 text-signal-600"
-        />
-        <StatCard
-          label="Maintenance" value={maint} sub="à surveiller" accent="text-amber-600"
-          icon={<WrenchIcon size={18} />} iconBg="bg-amber-50 text-amber-600"
-        />
-        <StatCard
-          label="Dépenses du mois" value={euros(monthExpenses)} sub="tous postes" accent="text-ink-900"
-          icon={<EuroIcon size={18} />} iconBg="bg-slate-100 text-slate-600"
-        />
+        <StatCard label="Camions" value={trucks.length} sub={`${dispo} disponibles`} accent="text-brand-600" icon={<TruckIcon size={18} />} iconBg="bg-brand-50 text-brand-600" />
+        <StatCard label="En route" value={enRoute} sub="actuellement" accent="text-signal-600" icon={<RouteIcon size={18} />} iconBg="bg-signal-50 text-signal-600" />
+        <StatCard label="Maintenance" value={maint} sub="à surveiller" accent="text-amber-600" icon={<WrenchIcon size={18} />} iconBg="bg-amber-50 text-amber-600" />
+        <StatCard label="Dépenses du mois" value={euros(monthExpenses)} sub="tous postes" accent="text-ink-900" icon={<EuroIcon size={18} />} iconBg="bg-slate-100 text-slate-600" />
       </div>
 
-      {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="card p-5 lg:col-span-1">
           <h2 className="font-semibold text-ink-900 mb-4">Répartition de la flotte</h2>
-          <Donut data={fleetDist} centerValue={trucks.length} centerLabel="camions" />
+          {fleetDist.length > 0 ? <Donut data={fleetDist} centerValue={trucks.length} centerLabel="camions" /> : <p className="text-slate-400 text-sm">Aucun camion.</p>}
         </div>
         <div className="card p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-ink-900">Dépenses par poste</h2>
-            <Link href="/app/documents" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
-              Détails <ArrowRightIcon size={14} />
-            </Link>
+            <Link href="/app/documents" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">Détails <ArrowRightIcon size={14} /></Link>
           </div>
-          <ProgressBars data={expenseDist} format={euros} />
+          {expenseDist.length > 0 ? <ProgressBars data={expenseDist} format={euros} /> : <p className="text-slate-400 text-sm">Aucune dépense enregistrée.</p>}
         </div>
       </div>
 
-      {/* Alertes */}
       <div className="flex items-center gap-2 mb-3">
         <BellIcon size={18} className="text-amber-500" />
         <h2 className="font-semibold text-ink-900">Alertes</h2>
         {alertsCount > 0 && <Badge label={`${alertsCount} à traiter`} color="bg-amber-100 text-amber-700" />}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Documents */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
-              <FileIcon size={16} /> Documents à renouveler
-            </span>
-            <Link href="/app/documents" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
-              Tout voir <ArrowRightIcon size={14} />
-            </Link>
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500"><FileIcon size={16} /> Documents à renouveler</span>
+            <Link href="/app/documents" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">Tout voir <ArrowRightIcon size={14} /></Link>
           </div>
           <Table columns={["Camion", "Document", "Expire le", "Délai"]}>
             {docAlerts.length === 0 && <EmptyRow colSpan={4} text="Aucune échéance proche" />}
@@ -135,25 +111,17 @@ export default async function Dashboard() {
                 <td className="td">{DOC_TYPE[d.type] || d.type}</td>
                 <td className="td">{dateFR(d.expiry_date)}</td>
                 <td className="td">
-                  <Badge
-                    label={d.days < 0 ? `${-d.days} j de retard` : `${d.days} j`}
-                    color={d.days < 0 ? "bg-rose-100 text-rose-700" : d.days <= 15 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}
-                  />
+                  <Badge label={d.days < 0 ? `${-d.days} j de retard` : `${d.days} j`} color={d.days < 0 ? "bg-rose-100 text-rose-700" : d.days <= 15 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"} />
                 </td>
               </tr>
             ))}
           </Table>
         </div>
 
-        {/* Entretien */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
-              <WrenchIcon size={16} /> Entretiens à planifier
-            </span>
-            <Link href="/app/entretien" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
-              Tout voir <ArrowRightIcon size={14} />
-            </Link>
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500"><WrenchIcon size={16} /> Entretiens à planifier</span>
+            <Link href="/app/entretien" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">Tout voir <ArrowRightIcon size={14} /></Link>
           </div>
           <Table columns={["Camion", "Type", "Échéance", "Statut"]}>
             {maintAlerts.length === 0 && <EmptyRow colSpan={4} text="Rien à planifier" />}
@@ -163,10 +131,7 @@ export default async function Dashboard() {
                 <td className="td">{MAINT_TYPE[m.type] || m.type}</td>
                 <td className="td">{dateFR(m.next_due_date)}</td>
                 <td className="td">
-                  <Badge
-                    label={m.status === "en_retard" ? "En retard" : "À prévoir"}
-                    color={m.status === "en_retard" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}
-                  />
+                  <Badge label={m.status === "en_retard" ? "En retard" : "À prévoir"} color={m.status === "en_retard" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"} />
                 </td>
               </tr>
             ))}
@@ -174,12 +139,9 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      {/* Flotte */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-ink-900">Ma flotte</h2>
-        <Link href="/app/camions" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
-          Gérer <ArrowRightIcon size={14} />
-        </Link>
+        <Link href="/app/camions" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">Gérer <ArrowRightIcon size={14} /></Link>
       </div>
       <Table columns={["Immatriculation", "Véhicule", "Kilométrage", "Chauffeur", "Statut"]}>
         {trucks.map((t) => {

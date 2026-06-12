@@ -1,9 +1,8 @@
+"use client";
 import dynamicImport from "next/dynamic";
-import { getAll } from "@/lib/data";
-import { PageHeader } from "@/components/ui";
+import { useFleet } from "@/components/FleetProvider";
+import { PageHeader, Loading } from "@/components/ui";
 import { timeAgo } from "@/lib/format";
-
-export const dynamic = "force-dynamic";
 
 // La carte ne peut être rendue que côté client (Leaflet).
 const FleetMap = dynamicImport(() => import("@/components/FleetMap"), {
@@ -11,9 +10,11 @@ const FleetMap = dynamicImport(() => import("@/components/FleetMap"), {
   loading: () => <div className="h-full flex items-center justify-center text-slate-400">Chargement de la carte…</div>,
 });
 
-export default async function CartePage() {
-  const { trucks, trackers } = await getAll();
+export default function CartePage() {
+  const { ready, data } = useFleet();
+  if (!ready) return <Loading />;
 
+  const { trucks, trackers } = data;
   const online = trucks.filter((t) => {
     const tr = trackers.find((x) => x.id === t.tracker_id);
     return tr && tr.status === "actif";

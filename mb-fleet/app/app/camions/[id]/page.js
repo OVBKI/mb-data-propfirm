@@ -1,18 +1,29 @@
+"use client";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getAll } from "@/lib/data";
-import { Badge, Table, EmptyRow } from "@/components/ui";
+import { useParams } from "next/navigation";
+import { useFleet } from "@/components/FleetProvider";
+import { Badge, Table, EmptyRow, Loading } from "@/components/ui";
 import {
   euros, km, dateFR, timeAgo, daysUntil,
   TRUCK_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE,
 } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+export default function TruckDetail() {
+  const params = useParams();
+  const { ready, data } = useFleet();
+  if (!ready) return <Loading />;
 
-export default async function TruckDetail({ params }) {
-  const { trucks, drivers, trackers, maintenances, documents, expenses } = await getAll();
+  const { trucks, drivers, trackers, maintenances, documents, expenses } = data;
   const truck = trucks.find((t) => t.id === params.id);
-  if (!truck) return notFound();
+
+  if (!truck) {
+    return (
+      <div>
+        <Link href="/app/camions" className="text-sm text-brand-600 hover:underline">← Retour aux camions</Link>
+        <p className="mt-6 text-slate-500">Camion introuvable.</p>
+      </div>
+    );
+  }
 
   const driver = drivers.find((d) => d.id === truck.driver_id);
   const tracker = trackers.find((t) => t.id === truck.tracker_id);
@@ -35,7 +46,6 @@ export default async function TruckDetail({ params }) {
         <Badge label={st.label} color={st.color} />
       </div>
 
-      {/* Infos principales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Info label="Kilométrage" value={km(truck.mileage_km)} />
         <Info label="Carburant" value={truck.fuel_type} />
@@ -43,7 +53,6 @@ export default async function TruckDetail({ params }) {
         <Info label="Chauffeur" value={driver ? `${driver.first_name} ${driver.last_name}` : "Non affecté"} />
       </div>
 
-      {/* Traceur */}
       <div className="card p-5 mb-6">
         <h2 className="font-semibold text-slate-800 mb-3">Traceur GPS</h2>
         {tracker ? (
@@ -59,7 +68,6 @@ export default async function TruckDetail({ params }) {
         ) : <p className="text-slate-400 text-sm">Aucun traceur associé à ce camion.</p>}
       </div>
 
-      {/* Entretien */}
       <SectionTitle title="Entretien & révisions" />
       <Table columns={["Type", "Date", "Km", "Coût", "Prochaine échéance", "Statut"]}>
         {truckMaint.length === 0 && <EmptyRow colSpan={6} text="Aucun entretien enregistré" />}
@@ -78,7 +86,6 @@ export default async function TruckDetail({ params }) {
         })}
       </Table>
 
-      {/* Documents */}
       <SectionTitle title="Documents" className="mt-6" />
       <Table columns={["Type", "N°", "Émetteur", "Expire le", "Délai"]}>
         {truckDocs.length === 0 && <EmptyRow colSpan={5} text="Aucun document" />}
@@ -92,10 +99,7 @@ export default async function TruckDetail({ params }) {
               <td className="td">{dateFR(d.expiry_date)}</td>
               <td className="td">
                 {days == null ? "—" : (
-                  <Badge
-                    label={days < 0 ? `${-days} j de retard` : `${days} j`}
-                    color={days < 0 ? "bg-rose-100 text-rose-700" : days <= 30 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}
-                  />
+                  <Badge label={days < 0 ? `${-days} j de retard` : `${days} j`} color={days < 0 ? "bg-rose-100 text-rose-700" : days <= 30 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"} />
                 )}
               </td>
             </tr>
@@ -103,7 +107,6 @@ export default async function TruckDetail({ params }) {
         })}
       </Table>
 
-      {/* Dépenses */}
       <SectionTitle title={`Dépenses · total ${euros(totalExp)}`} className="mt-6" />
       <Table columns={["Date", "Type", "Litres", "Montant"]}>
         {truckExp.length === 0 && <EmptyRow colSpan={4} text="Aucune dépense" />}

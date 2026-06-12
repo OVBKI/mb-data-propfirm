@@ -1,20 +1,37 @@
-import { getAll } from "@/lib/data";
-import { Badge, Table, StatCard, PageHeader } from "@/components/ui";
+"use client";
+import { useState } from "react";
+import { useFleet } from "@/components/FleetProvider";
+import { Badge, Table, StatCard, PageHeader, Loading } from "@/components/ui";
+import { FormModal, AddButton, ConfirmDelete, RowActions } from "@/components/forms";
+import { documentFields, expenseFields } from "@/lib/forms-config";
 import { euros, dateFR, daysUntil, DOC_TYPE, EXPENSE_TYPE } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+export default function DocumentsPage() {
+  const { ready, data, add, update, remove } = useFleet();
+  const [editDoc, setEditDoc] = useState(null);
+  const [editExp, setEditExp] = useState(null);
+  const [del, setDel] = useState(null); // { coll, id, label }
 
-export default async function DocumentsPage() {
-  const { documents, expenses, trucks } = await getAll();
+  if (!ready) return <Loading />;
+
+  const { documents, expenses, trucks, drivers } = data;
   const truckById = Object.fromEntries(trucks.map((t) => [t.id, t]));
 
   const docs = [...documents].sort((a, b) => (daysUntil(a.expiry_date) ?? 9999) - (daysUntil(b.expiry_date) ?? 9999));
   const exp = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Synthèse dépenses par type
   const byType = {};
   for (const e of expenses) byType[e.type] = (byType[e.type] || 0) + Number(e.amount || 0);
   const totalExp = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+  function submitDoc(v) {
+    if (editDoc === "new") add("documents", v); else update("documents", editDoc.id, v);
+    setEditDoc(null);
+  }
+  function submitExp(v) {
+    if (editExp === "new") add("expenses", v); else update("expenses", editExp.id, v);
+    setEditExp(null);
+  }
 
   return (
     <div>
@@ -27,12 +44,15 @@ export default async function DocumentsPage() {
         <StatCard label="Réparations" value={euros(byType.reparation || 0)} />
       </div>
 
-      <h2 className="font-semibold text-slate-800 mb-3">Documents</h2>
-      <Table columns={["Camion", "Type", "N°", "Émetteur", "Expire le", "Coût", "Délai"]}>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-semibold text-ink-900">Documents</h2>
+        <AddButton onClick={() => setEditDoc("new")}>Ajouter un document</AddButton>
+      </div>
+      <Table columns={["Camion", "Type", "N°", "Émetteur", "Expire le", "Coût", "Délai", ""]}>
         {docs.map((d) => {
           const days = daysUntil(d.expiry_date);
           return (
-            <tr key={d.id} className="hover:bg-slate-50">
+            <tr key={d.id} className="hover:bg-slate-50 transition-colors">
               <td className="td font-medium">{truckById[d.truck_id]?.plate || "—"}</td>
               <td className="td">{DOC_TYPE[d.type] || d.type}</td>
               <td className="td">{d.number || "—"}</td>
@@ -47,23 +67,54 @@ export default async function DocumentsPage() {
                   />
                 )}
               </td>
+              <td className="td"><RowActions onEdit={() => setEditDoc(d)} onDelete={() => setDel({ coll: "documents", id: d.id, label: "ce document" })} /></td>
             </tr>
           );
         })}
       </Table>
 
-      <h2 className="font-semibold text-slate-800 mb-3 mt-6">Dépenses récentes</h2>
-      <Table columns={["Date", "Camion", "Type", "Litres", "Montant"]}>
+      <div className="flex items-center justify-between mb-3 mt-6">
+        <h2 className="font-semibold text-ink-900">Dépenses récentes</h2>
+        <AddButton onClick={() => setEditExp("new")}>Ajouter une dépense</AddButton>
+      </div>
+      <Table columns={["Date", "Camion", "Type", "Litres", "Montant", ""]}>
         {exp.map((e) => (
-          <tr key={e.id} className="hover:bg-slate-50">
+          <tr key={e.id} className="hover:bg-slate-50 transition-colors">
             <td className="td">{dateFR(e.date)}</td>
             <td className="td font-medium">{truckById[e.truck_id]?.plate || "—"}</td>
             <td className="td">{EXPENSE_TYPE[e.type] || e.type}</td>
             <td className="td">{e.liters ? `${e.liters} L` : "—"}</td>
             <td className="td font-medium">{euros(e.amount)}</td>
+            <td className="td"><RowActions onEdit={() => setEditExp(e)} onDelete={() => setDel({ coll: "expenses", id: e.id, label: "cette dépense" })} /></td>
           </tr>
         ))}
       </Table>
+
+      {editDoc && (
+        <FormModal
+          title={editDoc === "new" ? "Ajouter un document" : "Modifier le document"}
+          fields={documentFields(trucks)}
+          initial={editDoc === "new" ? {} : editDoc}
+          onSubmit={submitDoc}
+          onClose={() => setEditDoc(null)}
+        />
+      )}
+      {editExp && (
+        <FormModal
+          title={editExp === "new" ? "Ajouter une dépense" : "Modifier la dépense"}
+          fields={expenseFields(trucks, drivers)}
+          initial={editExp === "new" ? {} : editExp}
+          onSubmit={submitExp}
+          onClose={() => setEditExp(null)}
+        />
+      )}
+      {del && (
+        <ConfirmDelete
+          label={del.label}
+          onConfirm={() => { remove(del.coll, del.id); setDel(null); }}
+          onClose={() => setDel(null)}
+        />
+      )}
     </div>
   );
 }
