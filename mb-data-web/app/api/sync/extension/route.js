@@ -32,7 +32,11 @@ const FIRM_SLUG_TO_CANONICAL = {
   'tradeday':              'TradeDay',
 }
 
+// PAUSED (juin 2026) — extension Quantara Sync en pause. Réactiver : passer à false.
+const SYNC_PAUSED = true
+
 export async function POST(request) {
+  if (SYNC_PAUSED) return Response.json({ error: 'Extension sync paused', code: 'SYNC_PAUSED' }, { status: 503 })
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 

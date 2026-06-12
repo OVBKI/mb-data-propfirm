@@ -7,7 +7,8 @@ export const metadata = {
   title: 'Extension Quantara Sync — Installation',
   description: "Installe l'extension navigateur Quantara Sync pour synchroniser automatiquement tes trades depuis n'importe quel dashboard PropFirm (Lucid, TopstepX, Apex, MFFU, Tradeify…).",
   alternates: { canonical: 'https://quantara.tech/docs/extension' },
-  robots: { index: true, follow: true },
+  // PAUSED (juin 2026) — extension Quantara Sync en pause : ne pas indexer/promouvoir.
+  robots: { index: false, follow: false },
 }
 
 const C = {
