@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="truckBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00b4d8" />
+      <stop offset="60%" stop-color="#0077b6" />
+      <stop offset="100%" stop-color="#03045e" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#4facfe" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g transform="translate(50, 40)">
+    <path d="M40,240 L40,110 Q40,80 70,75 L210,50 Q240,45 250,70 L265,110 L280,240 Z" fill="url(#truckBody)" />
+    <path d="M60,115 L190,95 Q220,90 225,110 L235,150 L60,150 Z" fill="#e0f7fa" opacity="0.8" />
+    <path d="M232,110 L250,110 L255,150 L238,150 Z" fill="#b2ebf2" opacity="0.6" />
+    <path d="M50,170 L250,170 L240,240 L60,240 Z" fill="#002855" />
+    <polygon points="50,180 75,182 70,195 48,190" fill="#90e0ef" />
+    <polygon points="250,180 225,182 230,195 252,190" fill="#90e0ef" />
+
+    <g transform="translate(100, 140)">
+      <circle cx="50" cy="50" r="45" fill="#ffffff" />
+      <path d="M50,10 A40,40 0 1,1 85,35 L95,30 A50,50 0 1,0 50,100 A50,50 0 0,0 90,65 L78,60 A38,38 0 0,1 50,90 A40,40 0 0,1 50,10 Z" fill="url(#cyanGrad)" />
+      <polygon points="85,22 105,32 90,50" fill="#00b4d8" />
+      <path d="M30,90 L42,40 L52,40 L45,90 Z" fill="url(#cyanGrad)" />
+      <path d="M49,90 L56,62 L64,62 L61,90 Z" fill="url(#cyanGrad)" />
+      <path d="M43,40 L80,40 L78,50 L45,50 Z" fill="url(#cyanGrad)" />
+      <path d="M47,58 L70,58 L68,66 L49,66 Z" fill="url(#cyanGrad)" />
+    </g>
+
+    <ellipse cx="60" cy="250" rx="35" ry="12" fill="#102a43" />
+    <ellipse cx="240" cy="250" rx="35" ry="12" fill="#102a43" />
+    <ellipse cx="150" cy="255" rx="160" ry="8" fill="#e2e8f0" />
+  </g>
+</svg>

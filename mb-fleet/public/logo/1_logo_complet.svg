@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 650" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#4facfe" />
+    </linearGradient>
+    <linearGradient id="darkTealGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0052d4" />
+      <stop offset="50%" stop-color="#4364f7" />
+      <stop offset="100%" stop-color="#6fb1fc" />
+    </linearGradient>
+    <linearGradient id="truckBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00b4d8" />
+      <stop offset="60%" stop-color="#0077b6" />
+      <stop offset="100%" stop-color="#03045e" />
+    </linearGradient>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#ffffff"/>
+
+  <g transform="translate(250, 40)">
+    <path d="M40,240 L40,110 Q40,80 70,75 L210,50 Q240,45 250,70 L265,110 L280,240 Z" fill="url(#truckBody)" />
+    <path d="M60,115 L190,95 Q220,90 225,110 L235,150 L60,150 Z" fill="#e0f7fa" opacity="0.8" />
+    <path d="M232,110 L250,110 L255,150 L238,150 Z" fill="#b2ebf2" opacity="0.6" />
+    <path d="M50,170 L250,170 L240,240 L60,240 Z" fill="#002855" />
+    <polygon points="50,180 75,182 70,195 48,190" fill="#90e0ef" />
+    <polygon points="250,180 225,182 230,195 252,190" fill="#90e0ef" />
+
+    <g transform="translate(100, 140)">
+      <circle cx="50" cy="50" r="45" fill="#ffffff" />
+      <path d="M50,10 A40,40 0 1,1 85,35 L95,30 A50,50 0 1,0 50,100 A50,50 0 0,0 90,65 L78,60 A38,38 0 0,1 50,90 A40,40 0 0,1 50,10 Z" fill="url(#cyanGrad)" />
+      <polygon points="85,22 105,32 90,50" fill="#00b4d8" />
+      <path d="M30,90 L42,40 L52,40 L45,90 Z" fill="url(#cyanGrad)" />
+      <path d="M49,90 L56,62 L64,62 L61,90 Z" fill="url(#cyanGrad)" />
+      <path d="M43,40 L80,40 L78,50 L45,50 Z" fill="url(#cyanGrad)" />
+      <path d="M47,58 L70,58 L68,66 L49,66 Z" fill="url(#cyanGrad)" />
+    </g>
+
+    <ellipse cx="60" cy="250" rx="35" ry="12" fill="#102a43" />
+    <ellipse cx="240" cy="250" rx="35" ry="12" fill="#102a43" />
+    <ellipse cx="150" cy="255" rx="160" ry="8" fill="#e2e8f0" />
+  </g>
+
+  <g transform="translate(100, 380)">
+    <path d="M10,85 L80,85 M40,60 L75,60 M20,110 L90,110" stroke="#00b4d8" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 10" />
+    <circle cx="80" cy="85" r="5" fill="#00b4d8" />
+    <circle cx="75" cy="60" r="5" fill="#00b4d8" />
+    <circle cx="90" cy="110" r="5" fill="#00b4d8" />
+
+    <path d="M520,85 L590,85 M525,60 L565,60 M510,110 L580,110" stroke="#00b4d8" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 10" />
+    <circle cx="520" cy="85" r="5" fill="#00b4d8" />
+    <circle cx="525" cy="60" r="5" fill="#00b4d8" />
+    <circle cx="510" cy="110" r="5" fill="#00b4d8" />
+
+    <path d="M120,40 L190,40 L190,60 L145,60 L145,85 L180,85 L180,105 L145,105 L145,150 L120,150 Z" fill="url(#darkTealGrad)" />
+    <circle cx="190" cy="50" r="4" fill="#90e0ef" />
+    <path d="M205,40 L230,40 L230,130 L275,130 L275,150 L205,150 Z" fill="url(#darkTealGrad)" />
+    <path d="M290,40 L355,40 L355,60 L315,60 L315,85 L350,85 L350,105 L315,105 L315,130 L355,130 L355,150 L290,150 Z" fill="url(#darkTealGrad)" />
+    <path d="M370,40 L435,40 L435,60 L395,60 L395,85 L430,85 L430,105 L395,105 L395,130 L435,130 L435,150 L370,150 Z" fill="url(#darkTealGrad)" />
+    <path d="M445,40 L515,40 L515,60 L495,60 L495,150 L465,150 L465,60 L445,60 Z" fill="url(#darkTealGrad)" />
+    <path d="M525,40 L550,40 L550,130 L595,130 L595,150 L525,150 Z" fill="url(#darkTealGrad)" />
+    <path d="M605,40 L635,40 L655,95 L675,40 L705,40 L670,110 L670,150 L640,150 L640,110 Z" fill="url(#darkTealGrad)" />
+
+    <circle cx="355" cy="50" r="4" fill="#90e0ef" />
+    <circle cx="435" cy="50" r="4" fill="#90e0ef" />
+    <circle cx="480" cy="100" r="4" fill="#90e0ef" />
+  </g>
+</svg>

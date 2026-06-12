@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250" width="100%" height="100%">
+  <defs>
+    <linearGradient id="darkTealGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0052d4" />
+      <stop offset="50%" stop-color="#4364f7" />
+      <stop offset="100%" stop-color="#6fb1fc" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g transform="translate(100, 40)">
+    <path d="M10,85 L80,85 M40,60 L75,60 M20,110 L90,110" stroke="#00b4d8" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 10" />
+    <circle cx="80" cy="85" r="5" fill="#00b4d8" />
+    <circle cx="75" cy="60" r="5" fill="#00b4d8" />
+    <circle cx="90" cy="110" r="5" fill="#00b4d8" />
+
+    <path d="M520,85 L590,85 M525,60 L565,60 M510,110 L580,110" stroke="#00b4d8" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 10" />
+    <circle cx="520" cy="85" r="5" fill="#00b4d8" />
+    <circle cx="525" cy="60" r="5" fill="#00b4d8" />
+    <circle cx="510" cy="110" r="5" fill="#00b4d8" />
+
+    <path d="M120,40 L190,40 L190,60 L145,60 L145,85 L180,85 L180,105 L145,105 L145,150 L120,150 Z" fill="url(#darkTealGrad)" />
+    <circle cx="190" cy="50" r="4" fill="#90e0ef" />
+    <path d="M205,40 L230,40 L230,130 L275,130 L275,150 L205,150 Z" fill="url(#darkTealGrad)" />
+    <path d="M290,40 L355,40 L355,60 L315,60 L315,85 L350,85 L350,105 L315,105 L315,130 L355,130 L355,150 L290,150 Z" fill="url(#darkTealGrad)" />
+    <circle cx="355" cy="50" r="4" fill="#90e0ef" />
+    <path d="M370,40 L435,40 L435,60 L395,60 L395,85 L430,85 L430,105 L395,105 L395,130 L435,130 L435,150 L370,150 Z" fill="url(#darkTealGrad)" />
+    <circle cx="435" cy="50" r="4" fill="#90e0ef" />
+    <path d="M445,40 L515,40 L515,60 L495,60 L495,150 L465,150 L465,60 L445,60 Z" fill="url(#darkTealGrad)" />
+    <circle cx="480" cy="100" r="4" fill="#90e0ef" />
+    <path d="M525,40 L550,40 L550,130 L595,130 L595,150 L525,150 Z" fill="url(#darkTealGrad)" />
+    <path d="M605,40 L635,40 L655,95 L675,40 L705,40 L670,110 L670,150 L640,150 L640,110 Z" fill="url(#darkTealGrad)" />
+  </g>
+</svg>
