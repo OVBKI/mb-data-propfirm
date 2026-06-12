@@ -2,11 +2,18 @@
 // Elles permettent de naviguer dans toute l'application sans base de données.
 
 export const drivers = [
-  { id: "d1", first_name: "Karim", last_name: "Benali", phone: "06 12 34 56 78", license_cats: "C, CE", license_number: "B-558214", license_expiry: "2027-04-12", status: "en_service", hired_at: "2021-03-01" },
-  { id: "d2", first_name: "Youssef", last_name: "El Amrani", phone: "06 22 11 09 44", license_cats: "C, CE", license_number: "B-114902", license_expiry: "2026-08-30", status: "en_service", hired_at: "2019-09-15" },
-  { id: "d3", first_name: "Sophie", last_name: "Marchand", phone: "07 88 45 12 03", license_cats: "C", license_number: "A-902173", license_expiry: "2026-07-05", status: "disponible", hired_at: "2022-06-20" },
-  { id: "d4", first_name: "Mehdi", last_name: "Tahiri", phone: "06 70 33 21 88", license_cats: "C, CE", license_number: "B-330145", license_expiry: "2025-09-01", status: "conge", hired_at: "2020-01-10" },
-  { id: "d5", first_name: "Lucas", last_name: "Petit", phone: "07 41 25 67 90", license_cats: "C", license_number: "A-771430", license_expiry: "2028-02-18", status: "disponible", hired_at: "2023-11-02" },
+  // drive_today_min / drive_week_min : temps de conduite (min). last_weekly_rest / card_download_date : dates (RSE).
+  // eco_score (0-100) + compteurs d'événements d'éco-conduite par semaine.
+  { id: "d1", first_name: "Karim", last_name: "Benali", phone: "06 12 34 56 78", license_cats: "C, CE", license_number: "B-558214", license_expiry: "2027-04-12", status: "en_service", hired_at: "2021-03-01",
+    drive_today_min: 495, drive_week_min: 3120, last_weekly_rest: dayOffset(-5), card_download_date: dayOffset(-25), eco_score: 92, harsh_braking: 2, speeding: 1, idling_pct: 8 },
+  { id: "d2", first_name: "Youssef", last_name: "El Amrani", phone: "06 22 11 09 44", license_cats: "C, CE", license_number: "B-114902", license_expiry: "2026-08-30", status: "en_service", hired_at: "2019-09-15",
+    drive_today_min: 585, drive_week_min: 3300, last_weekly_rest: dayOffset(-6), card_download_date: dayOffset(-30), eco_score: 76, harsh_braking: 6, speeding: 4, idling_pct: 14 },
+  { id: "d3", first_name: "Sophie", last_name: "Marchand", phone: "07 88 45 12 03", license_cats: "C", license_number: "A-902173", license_expiry: "2026-07-05", status: "disponible", hired_at: "2022-06-20",
+    drive_today_min: 240, drive_week_min: 2100, last_weekly_rest: dayOffset(-3), card_download_date: dayOffset(-10), eco_score: 88, harsh_braking: 3, speeding: 1, idling_pct: 9 },
+  { id: "d4", first_name: "Mehdi", last_name: "Tahiri", phone: "06 70 33 21 88", license_cats: "C, CE", license_number: "B-330145", license_expiry: "2025-09-01", status: "conge", hired_at: "2020-01-10",
+    drive_today_min: 0, drive_week_min: 0, last_weekly_rest: dayOffset(-1), card_download_date: dayOffset(-20), eco_score: 85, harsh_braking: 2, speeding: 2, idling_pct: 7 },
+  { id: "d5", first_name: "Lucas", last_name: "Petit", phone: "07 41 25 67 90", license_cats: "C", license_number: "A-771430", license_expiry: "2028-02-18", status: "disponible", hired_at: "2023-11-02",
+    drive_today_min: 320, drive_week_min: 2640, last_weekly_rest: dayOffset(-4), card_download_date: dayOffset(-26), eco_score: 71, harsh_braking: 7, speeding: 5, idling_pct: 18 },
 ];
 
 export const trackers = [
@@ -18,11 +25,12 @@ export const trackers = [
 ];
 
 export const trucks = [
-  { id: "c1", plate: "FR-128-AB", brand: "Renault", model: "T High 520", year: 2021, mileage_km: 312450, fuel_type: "diesel", capacity_t: 26, status: "maintenance", driver_id: "d1", tracker_id: "t1" },
-  { id: "c2", plate: "FR-942-CD", brand: "Volvo", model: "FH 500", year: 2022, mileage_km: 198300, fuel_type: "diesel", capacity_t: 26, status: "en_route", driver_id: "d2", tracker_id: "t2" },
-  { id: "c3", plate: "FR-377-EF", brand: "Mercedes", model: "Actros 1845", year: 2020, mileage_km: 421900, fuel_type: "diesel", capacity_t: 24, status: "en_route", driver_id: "d3", tracker_id: "t3" },
-  { id: "c4", plate: "FR-560-GH", brand: "Scania", model: "R 450", year: 2023, mileage_km: 76200, fuel_type: "diesel", capacity_t: 27, status: "disponible", driver_id: null, tracker_id: "t4" },
-  { id: "c5", plate: "FR-815-IJ", brand: "DAF", model: "XF 480", year: 2019, mileage_km: 534100, fuel_type: "diesel", capacity_t: 26, status: "hors_service", driver_id: null, tracker_id: "t5" },
+  // tacho_download_date : dernier téléchargement du chronotachygraphe (échéance légale tous les 90 j).
+  { id: "c1", plate: "FR-128-AB", brand: "Renault", model: "T High 520", year: 2021, mileage_km: 312450, fuel_type: "diesel", capacity_t: 26, status: "maintenance", driver_id: "d1", tracker_id: "t1", tacho_download_date: dayOffset(-85) },
+  { id: "c2", plate: "FR-942-CD", brand: "Volvo", model: "FH 500", year: 2022, mileage_km: 198300, fuel_type: "diesel", capacity_t: 26, status: "en_route", driver_id: "d2", tracker_id: "t2", tacho_download_date: dayOffset(-92) },
+  { id: "c3", plate: "FR-377-EF", brand: "Mercedes", model: "Actros 1845", year: 2020, mileage_km: 421900, fuel_type: "diesel", capacity_t: 24, status: "en_route", driver_id: "d3", tracker_id: "t3", tacho_download_date: dayOffset(-40) },
+  { id: "c4", plate: "FR-560-GH", brand: "Scania", model: "R 450", year: 2023, mileage_km: 76200, fuel_type: "diesel", capacity_t: 27, status: "disponible", driver_id: null, tracker_id: "t4", tacho_download_date: dayOffset(-10) },
+  { id: "c5", plate: "FR-815-IJ", brand: "DAF", model: "XF 480", year: 2019, mileage_km: 534100, fuel_type: "diesel", capacity_t: 26, status: "hors_service", driver_id: null, tracker_id: "t5", tacho_download_date: dayOffset(-200) },
 ];
 
 export const maintenances = [
@@ -62,6 +70,9 @@ export const missions = [
   { id: "ms4", ref: "M-1044", origin: "Marseille", destination: "Nice", truck_id: "c4", driver_id: "d5", cargo: "Produits frais", weight_t: 14, distance_km: 200, price: 760, pickup_date: dayOffset(3), delivery_date: dayOffset(3), status: "planifiee", notes: "Température dirigée 4°C" },
   { id: "ms5", ref: "M-1040", origin: "Toulouse", destination: "Montpellier", truck_id: "c1", driver_id: "d1", cargo: "Matériaux BTP", weight_t: 22, distance_km: 240, price: 890, pickup_date: dayOffset(-2), delivery_date: dayOffset(-2), status: "livree", notes: "" },
   { id: "ms6", ref: "M-1039", origin: "Rennes", destination: "Paris", truck_id: "c2", driver_id: "d2", cargo: "Pièces automobiles", weight_t: 16, distance_km: 350, price: 1280, pickup_date: dayOffset(-5), delivery_date: dayOffset(-4), status: "livree", notes: "" },
+  { id: "ms7", ref: "M-1038", origin: "Lille", destination: "Marseille", truck_id: "c3", driver_id: "d3", cargo: "Électroménager", weight_t: 21, distance_km: 1000, price: 2400, pickup_date: dayOffset(-9), delivery_date: dayOffset(-8), status: "livree", notes: "" },
+  { id: "ms8", ref: "M-1037", origin: "Bordeaux", destination: "Lyon", truck_id: "c2", driver_id: "d2", cargo: "Vins & spiritueux", weight_t: 19, distance_km: 550, price: 1620, pickup_date: dayOffset(-7), delivery_date: dayOffset(-6), status: "livree", notes: "" },
+  { id: "ms9", ref: "M-1036", origin: "Paris", destination: "Lyon", truck_id: "c1", driver_id: "d1", cargo: "Matériel industriel", weight_t: 24, distance_km: 465, price: 1780, pickup_date: dayOffset(-10), delivery_date: dayOffset(-9), status: "livree", notes: "" },
 ];
 
 function nowMinus(minutes) {

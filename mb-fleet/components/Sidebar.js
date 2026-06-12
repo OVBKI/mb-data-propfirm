@@ -10,7 +10,10 @@ const nav = [
   { href: "/app/missions", label: "Missions & fret", icon: "⇆" },
   { href: "/app/camions", label: "Camions & traceurs", icon: "▤" },
   { href: "/app/chauffeurs", label: "Chauffeurs", icon: "☻" },
+  { href: "/app/conformite", label: "Conformité RSE", icon: "⚖" },
+  { href: "/app/eco", label: "Éco-conduite", icon: "✦" },
   { href: "/app/entretien", label: "Entretien", icon: "⚙" },
+  { href: "/app/couts", label: "Coûts & CO₂", icon: "€" },
   { href: "/app/documents", label: "Documents & dépenses", icon: "❒" },
 ];
 

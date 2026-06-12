@@ -33,6 +33,34 @@ export function daysUntil(d) {
   return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
 }
 
+// Durée en minutes → "8h15".
+export function hoursFromMin(min) {
+  if (min == null || isNaN(min)) return "—";
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return `${h}h${m.toString().padStart(2, "0")}`;
+}
+
+// Masse CO₂ → "2,4 t" ou "640 kg".
+export function co2(kg) {
+  if (kg == null || isNaN(kg)) return "—";
+  if (kg >= 1000) return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(kg / 1000) + " t";
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(kg) + " kg";
+}
+
+// Facteurs d'émission (kg CO₂ par litre de carburant) — base ADEME.
+export const CO2_PER_LITER = { diesel: 2.64, essence: 2.31, gpl: 1.51, electrique: 0 };
+
+// Seuils réglementaires (RSE / règlement CE 561-2006), en minutes / jours.
+export const RSE = {
+  DRIVE_DAY_MAX: 540,        // 9 h par jour
+  DRIVE_DAY_EXT: 600,        // 10 h (autorisé 2×/semaine)
+  DRIVE_WEEK_MAX: 3360,      // 56 h par semaine
+  CARD_DOWNLOAD_DAYS: 28,    // téléchargement carte conducteur
+  TACHO_DOWNLOAD_DAYS: 90,   // téléchargement chronotachygraphe véhicule
+  WEEKLY_REST_DAYS: 6,       // repos hebdo au plus tard après 6×24 h
+};
+
 export const TRUCK_STATUS = {
   disponible: { label: "Disponible", color: "bg-emerald-100 text-emerald-700" },
   en_route: { label: "En route", color: "bg-blue-100 text-blue-700" },
