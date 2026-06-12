@@ -20,6 +20,15 @@ create table if not exists drivers (
   status          text not null default 'disponible', -- disponible | en_service | conge | indisponible
   hired_at        date,
   notes           text,
+  -- Conformité RSE (temps de conduite / repos) + éco-conduite.
+  drive_today_min   int default 0,
+  drive_week_min    int default 0,
+  last_weekly_rest  date,
+  card_download_date date,
+  eco_score         int default 0,
+  harsh_braking     int default 0,
+  speeding          int default 0,
+  idling_pct        numeric default 0,
   created_at      timestamptz not null default now()
 );
 
@@ -51,6 +60,7 @@ create table if not exists trucks (
   driver_id   uuid references drivers(id) on delete set null,
   tracker_id  uuid references trackers(id) on delete set null,
   notes       text,
+  tacho_download_date date,   -- dernier téléchargement du chronotachygraphe
   created_at  timestamptz not null default now()
 );
 
