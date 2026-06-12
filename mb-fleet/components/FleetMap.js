@@ -6,10 +6,11 @@ import { timeAgo } from "../lib/format";
 
 // Icône personnalisée (évite le problème des images Leaflet manquantes)
 function truckIcon(moving) {
-  const color = moving ? "#2563eb" : "#64748b";
+  const color = moving ? "#2f6bf0" : "#64748b";
+  const svg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1"/><path d="M14 9h4l3 3v5a1 1 0 0 1-1 1h-1"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>`;
   return L.divIcon({
     className: "",
-    html: `<div style="background:${color};width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35);border:2px solid #fff;font-size:15px;">🚚</div>`,
+    html: `<div style="background:${color};width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35);border:2px solid #fff;">${svg}</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15],
   });

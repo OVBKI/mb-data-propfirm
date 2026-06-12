@@ -1,11 +1,29 @@
 import Link from "next/link";
 import { getAll } from "@/lib/data";
 import { StatCard, Badge, Table, EmptyRow, PageHeader } from "@/components/ui";
+import { Donut, ProgressBars } from "@/components/charts";
 import {
-  euros, dateFR, daysUntil, TRUCK_STATUS, MAINT_TYPE, DOC_TYPE,
+  TruckIcon, RouteIcon, WrenchIcon, EuroIcon, FileIcon, BellIcon, ArrowRightIcon,
+} from "@/components/icons";
+import {
+  euros, dateFR, daysUntil, km, TRUCK_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE,
 } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+const STATUS_COLORS = {
+  disponible: "#10b981",
+  en_route: "#2f6bf0",
+  maintenance: "#f59e0b",
+  hors_service: "#f43f5e",
+};
+const EXPENSE_COLORS = {
+  carburant: "#2f6bf0",
+  peage: "#06b6d4",
+  reparation: "#f59e0b",
+  amende: "#f43f5e",
+  autre: "#94a3b8",
+};
 
 export default async function Dashboard() {
   const { trucks, drivers, maintenances, documents, expenses } = await getAll();
@@ -23,7 +41,21 @@ export default async function Dashboard() {
     })
     .reduce((s, e) => s + Number(e.amount || 0), 0);
 
-  // Alertes : documents qui expirent < 30j + entretiens à prévoir / en retard
+  // Répartition de la flotte (donut)
+  const fleetDist = Object.entries(TRUCK_STATUS).map(([key, meta]) => ({
+    label: meta.label,
+    value: trucks.filter((t) => t.status === key).length,
+    color: STATUS_COLORS[key],
+  })).filter((d) => d.value > 0);
+
+  // Dépenses par type (barres de progression)
+  const byType = {};
+  for (const e of expenses) byType[e.type] = (byType[e.type] || 0) + Number(e.amount || 0);
+  const expenseDist = Object.entries(byType)
+    .map(([type, value]) => ({ label: EXPENSE_TYPE[type] || type, value, color: EXPENSE_COLORS[type] || "#94a3b8" }))
+    .sort((a, b) => b.value - a.value);
+
+  // Alertes
   const docAlerts = documents
     .map((d) => ({ ...d, days: daysUntil(d.expiry_date) }))
     .filter((d) => d.days != null && d.days <= 45)
@@ -34,33 +66,71 @@ export default async function Dashboard() {
     .map((m) => ({ ...m, days: daysUntil(m.next_due_date) }))
     .sort((a, b) => (a.days ?? 999) - (b.days ?? 999));
 
+  const alertsCount = docAlerts.length + maintAlerts.length;
   const truckById = Object.fromEntries(trucks.map((t) => [t.id, t]));
 
   return (
     <div>
-      <PageHeader
-        title="Tableau de bord"
-        subtitle="Vue d'ensemble de votre société de transport"
-      />
+      <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de votre société de transport" />
 
+      {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Camions" value={trucks.length} sub={`${dispo} disponibles`} accent="text-brand-600" />
-        <StatCard label="En route" value={enRoute} sub="actuellement" accent="text-blue-600" />
-        <StatCard label="En maintenance" value={maint} sub="à surveiller" accent="text-amber-600" />
-        <StatCard label="Dépenses du mois" value={euros(monthExpenses)} sub="tous postes" />
+        <StatCard
+          label="Camions" value={trucks.length} sub={`${dispo} disponibles`} accent="text-brand-600"
+          icon={<TruckIcon size={18} />} iconBg="bg-brand-50 text-brand-600"
+        />
+        <StatCard
+          label="En route" value={enRoute} sub="actuellement" accent="text-signal-600"
+          icon={<RouteIcon size={18} />} iconBg="bg-signal-50 text-signal-600"
+        />
+        <StatCard
+          label="Maintenance" value={maint} sub="à surveiller" accent="text-amber-600"
+          icon={<WrenchIcon size={18} />} iconBg="bg-amber-50 text-amber-600"
+        />
+        <StatCard
+          label="Dépenses du mois" value={euros(monthExpenses)} sub="tous postes" accent="text-ink-900"
+          icon={<EuroIcon size={18} />} iconBg="bg-slate-100 text-slate-600"
+        />
       </div>
 
+      {/* Graphiques */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="card p-5 lg:col-span-1">
+          <h2 className="font-semibold text-ink-900 mb-4">Répartition de la flotte</h2>
+          <Donut data={fleetDist} centerValue={trucks.length} centerLabel="camions" />
+        </div>
+        <div className="card p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-ink-900">Dépenses par poste</h2>
+            <Link href="/app/documents" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
+              Détails <ArrowRightIcon size={14} />
+            </Link>
+          </div>
+          <ProgressBars data={expenseDist} format={euros} />
+        </div>
+      </div>
+
+      {/* Alertes */}
+      <div className="flex items-center gap-2 mb-3">
+        <BellIcon size={18} className="text-amber-500" />
+        <h2 className="font-semibold text-ink-900">Alertes</h2>
+        {alertsCount > 0 && <Badge label={`${alertsCount} à traiter`} color="bg-amber-100 text-amber-700" />}
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Alertes documents */}
+        {/* Documents */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-slate-800">Documents à renouveler</h2>
-            <Link href="/app/documents" className="text-sm text-brand-600 hover:underline">Tout voir →</Link>
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
+              <FileIcon size={16} /> Documents à renouveler
+            </span>
+            <Link href="/app/documents" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
+              Tout voir <ArrowRightIcon size={14} />
+            </Link>
           </div>
           <Table columns={["Camion", "Document", "Expire le", "Délai"]}>
-            {docAlerts.length === 0 && <EmptyRow colSpan={4} text="Aucune échéance proche 👍" />}
+            {docAlerts.length === 0 && <EmptyRow colSpan={4} text="Aucune échéance proche" />}
             {docAlerts.map((d) => (
-              <tr key={d.id}>
+              <tr key={d.id} className="hover:bg-slate-50 transition-colors">
                 <td className="td font-medium">{truckById[d.truck_id]?.plate || "—"}</td>
                 <td className="td">{DOC_TYPE[d.type] || d.type}</td>
                 <td className="td">{dateFR(d.expiry_date)}</td>
@@ -75,16 +145,20 @@ export default async function Dashboard() {
           </Table>
         </div>
 
-        {/* Alertes entretien */}
+        {/* Entretien */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-slate-800">Entretiens à planifier</h2>
-            <Link href="/app/entretien" className="text-sm text-brand-600 hover:underline">Tout voir →</Link>
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
+              <WrenchIcon size={16} /> Entretiens à planifier
+            </span>
+            <Link href="/app/entretien" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
+              Tout voir <ArrowRightIcon size={14} />
+            </Link>
           </div>
           <Table columns={["Camion", "Type", "Échéance", "Statut"]}>
-            {maintAlerts.length === 0 && <EmptyRow colSpan={4} text="Rien à planifier 👍" />}
+            {maintAlerts.length === 0 && <EmptyRow colSpan={4} text="Rien à planifier" />}
             {maintAlerts.map((m) => (
-              <tr key={m.id}>
+              <tr key={m.id} className="hover:bg-slate-50 transition-colors">
                 <td className="td font-medium">{truckById[m.truck_id]?.plate || "—"}</td>
                 <td className="td">{MAINT_TYPE[m.type] || m.type}</td>
                 <td className="td">{dateFR(m.next_due_date)}</td>
@@ -102,20 +176,22 @@ export default async function Dashboard() {
 
       {/* Flotte */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-slate-800">Ma flotte</h2>
-        <Link href="/app/camions" className="text-sm text-brand-600 hover:underline">Gérer →</Link>
+        <h2 className="font-semibold text-ink-900">Ma flotte</h2>
+        <Link href="/app/camions" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">
+          Gérer <ArrowRightIcon size={14} />
+        </Link>
       </div>
       <Table columns={["Immatriculation", "Véhicule", "Kilométrage", "Chauffeur", "Statut"]}>
         {trucks.map((t) => {
           const driver = drivers.find((d) => d.id === t.driver_id);
           const st = TRUCK_STATUS[t.status] || { label: t.status, color: "" };
           return (
-            <tr key={t.id} className="hover:bg-slate-50">
+            <tr key={t.id} className="hover:bg-slate-50 transition-colors">
               <td className="td font-medium">
-                <Link href={`/app/camions/${t.id}`} className="text-brand-600 hover:underline">{t.plate}</Link>
+                <Link href={`/app/camions/${t.id}`} className="text-brand-600 hover:text-brand-700 hover:underline">{t.plate}</Link>
               </td>
               <td className="td">{t.brand} {t.model}</td>
-              <td className="td">{new Intl.NumberFormat("fr-FR").format(t.mileage_km)} km</td>
+              <td className="td">{km(t.mileage_km)}</td>
               <td className="td">{driver ? `${driver.first_name} ${driver.last_name}` : "—"}</td>
               <td className="td"><Badge label={st.label} color={st.color} /></td>
             </tr>

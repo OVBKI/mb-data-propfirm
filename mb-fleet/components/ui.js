@@ -4,12 +4,22 @@ export function Badge({ label, color }) {
   return <span className={`badge ${color || "bg-slate-100 text-slate-600"}`}>{label}</span>;
 }
 
-export function StatCard({ label, value, sub, accent }) {
+export function StatCard({ label, value, sub, accent, icon, iconBg = "bg-brand-50 text-brand-600", trend }) {
   return (
     <div className="card p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${accent || "text-slate-800"}`}>{value}</p>
-      {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
+      <div className="flex items-start justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
+        {icon && <span className={`grid place-items-center w-9 h-9 rounded-xl ${iconBg}`}>{icon}</span>}
+      </div>
+      <p className={`mt-3 text-3xl font-display font-bold ${accent || "text-ink-900"}`}>{value}</p>
+      <div className="mt-1 flex items-center gap-2">
+        {trend && (
+          <span className={`badge ${trend.dir === "down" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+            {trend.label}
+          </span>
+        )}
+        {sub && <p className="text-sm text-slate-500">{sub}</p>}
+      </div>
     </div>
   );
 }

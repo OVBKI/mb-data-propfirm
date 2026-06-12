@@ -45,7 +45,7 @@ export default async function CamionsPage() {
       </Table>
 
       <p className="text-sm text-slate-400 mt-4">
-        💡 Cliquez sur une immatriculation pour voir la fiche complète du camion (entretien, documents, dépenses, position).
+        Cliquez sur une immatriculation pour voir la fiche complète du camion (entretien, documents, dépenses, position).
       </p>
     </div>
   );

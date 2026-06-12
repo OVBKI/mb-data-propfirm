@@ -1,13 +1,16 @@
 import Link from "next/link";
 import Logo, { LogoMark } from "@/components/Logo";
+import {
+  TruckIcon, MapPinIcon, UsersIcon, WrenchIcon, FileIcon, BellIcon,
+} from "@/components/icons";
 
 const FEATURES = [
-  { icon: "🚚", title: "Camions & traceurs GPS", text: "Une fiche par véhicule : immatriculation, kilométrage, état, et le traceur GPS associé. Toute votre flotte en un coup d'œil." },
-  { icon: "📍", title: "Carte en temps réel", text: "Suivez la position de chaque camion en direct, leur vitesse et leur statut. Compatible avec les traceurs Teltonika, Traccar et autres." },
-  { icon: "👤", title: "Chauffeurs", text: "Gérez vos chauffeurs, leurs permis et leurs échéances. Soyez alerté avant qu'un permis n'expire." },
-  { icon: "⚙️", title: "Entretien & révisions", text: "Vidanges, contrôles techniques, pneus, freins… Planifiez tout et ne ratez plus jamais une échéance." },
-  { icon: "📄", title: "Documents & dépenses", text: "Assurances, cartes grises, carburant, péages : centralisez vos documents et suivez vos coûts en temps réel." },
-  { icon: "🔔", title: "Alertes intelligentes", text: "Documents qui expirent, entretiens en retard, dépenses anormales : Fleetly vous prévient avant que ça ne coûte cher." },
+  { Icon: TruckIcon, title: "Camions & traceurs GPS", text: "Une fiche par véhicule : immatriculation, kilométrage, état, et le traceur GPS associé. Toute votre flotte en un coup d'œil." },
+  { Icon: MapPinIcon, title: "Carte en temps réel", text: "Suivez la position de chaque camion en direct, leur vitesse et leur statut. Compatible avec les traceurs Teltonika, Traccar et autres." },
+  { Icon: UsersIcon, title: "Chauffeurs", text: "Gérez vos chauffeurs, leurs permis et leurs échéances. Soyez alerté avant qu'un permis n'expire." },
+  { Icon: WrenchIcon, title: "Entretien & révisions", text: "Vidanges, contrôles techniques, pneus, freins… Planifiez tout et ne ratez plus jamais une échéance." },
+  { Icon: FileIcon, title: "Documents & dépenses", text: "Assurances, cartes grises, carburant, péages : centralisez vos documents et suivez vos coûts en temps réel." },
+  { Icon: BellIcon, title: "Alertes intelligentes", text: "Documents qui expirent, entretiens en retard, dépenses anormales : Fleetly vous prévient avant que ça ne coûte cher." },
 ];
 
 const STEPS = [
@@ -91,7 +94,9 @@ export default function Landing() {
         <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {FEATURES.map((f) => (
             <div key={f.title} className="rounded-2xl border border-slate-200/80 p-6 hover:border-brand-300 hover:shadow-card transition-all">
-              <div className="w-11 h-11 rounded-xl bg-brand-50 grid place-items-center text-xl">{f.icon}</div>
+              <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-600 grid place-items-center">
+                <f.Icon size={22} />
+              </div>
               <h3 className="mt-4 font-display font-semibold text-lg text-ink-900">{f.title}</h3>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">{f.text}</p>
             </div>
