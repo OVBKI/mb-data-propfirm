@@ -15,12 +15,14 @@ export default function Sidebar() {
   const pathname = usePathname();
   return (
     <aside className="w-64 shrink-0 bg-ink-900 text-slate-300 min-h-screen flex flex-col">
-      <div className="px-6 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <span className="text-brand-500 text-2xl leading-none">▮</span>
-          <span className="text-white font-bold text-lg tracking-tight">Fleetly</span>
+      <div className="px-5 py-5 border-b border-white/10">
+        <div className="flex items-center gap-2.5">
+          <span className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-signal-500 text-white text-lg font-display font-bold shadow-lg shadow-brand-500/30">F</span>
+          <div>
+            <span className="block text-white font-display font-bold text-lg leading-none tracking-tight">Fleetly</span>
+            <span className="block text-[11px] text-slate-400 mt-0.5">Fleet management</span>
+          </div>
         </div>
-        <p className="text-xs text-slate-500 mt-1">Fleet management</p>
       </div>
       <nav className="flex-1 p-3 space-y-1">
         {nav.map((item) => {
