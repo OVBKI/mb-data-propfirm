@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo, { LogoMark } from "@/components/Logo";
+import { InstallButton } from "@/components/pwa";
 import {
   TruckIcon, MapPinIcon, UsersIcon, WrenchIcon, FileIcon, BellIcon,
 } from "@/components/icons";
@@ -61,11 +62,14 @@ export default function Landing() {
               <Link href="/app" className="inline-flex items-center rounded-xl bg-brand-500 text-white font-semibold px-6 py-3 hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/25">
                 Voir la démo gratuite
               </Link>
+              <InstallButton className="inline-flex items-center gap-2 rounded-xl border border-slate-200 text-ink-800 font-semibold px-6 py-3 hover:border-brand-300 hover:text-brand-600 transition-colors">
+                Installer l'app
+              </InstallButton>
               <a href="#tarifs" className="inline-flex items-center rounded-xl border border-slate-200 text-ink-800 font-semibold px-6 py-3 hover:border-brand-300 hover:text-brand-600 transition-colors">
                 Voir les tarifs
               </a>
             </div>
-            <p className="mt-4 text-sm text-slate-400">Sans engagement · Mise en route en quelques minutes</p>
+            <p className="mt-4 text-sm text-slate-400">Web, iOS, Android &amp; Windows · Sans engagement · Prêt en quelques minutes</p>
           </div>
 
           {/* Mock dashboard */}

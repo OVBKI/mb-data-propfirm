@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/Logo";
+import { InstallButton } from "@/components/pwa";
 
 const nav = [
   { href: "/app", label: "Tableau de bord", icon: "▣", exact: true },
@@ -42,8 +43,11 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 text-xs text-slate-500 border-t border-white/10">
-        © {new Date().getFullYear()} Fleetly
+      <div className="p-3 border-t border-white/10">
+        <InstallButton className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 text-white transition-colors">
+          Installer l'app
+        </InstallButton>
+        <p className="px-1 pt-3 text-xs text-slate-500">© {new Date().getFullYear()} Fleetly</p>
       </div>
     </aside>
   );
