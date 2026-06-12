@@ -452,13 +452,13 @@ create table if not exists announcements (
   link_label text,
   starts_at timestamptz,
   ends_at timestamptz,
-  is_active boolean default true,
+  active boolean default true,  -- colonne réelle en prod (le code admin lit/écrit `active`)
   created_at timestamptz default now()
 );
 
 alter table announcements enable row level security;
 create policy "Anyone can read active announcements" on announcements
-  for select using (is_active = true);
+  for select using (active = true);
 
 -- FOLLOWS — réseau social (profils publics)
 create table if not exists follows (
