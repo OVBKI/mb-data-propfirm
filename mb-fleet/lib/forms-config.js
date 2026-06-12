@@ -1,6 +1,6 @@
 // Configuration des champs de formulaire par entité.
 // Les fonctions reçoivent les listes nécessaires pour construire les menus déroulants.
-import { TRUCK_STATUS, DRIVER_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE, MISSION_STATUS, INVOICE_STATUS, VAT_RATES } from "@/lib/format";
+import { TRUCK_STATUS, DRIVER_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE, MISSION_STATUS, INVOICE_STATUS, VAT_RATES, APPOINTMENT_TYPE, APPOINTMENT_STATUS } from "@/lib/format";
 
 const opts = (obj) => Object.entries(obj).map(([value, v]) => ({ value, label: v.label || v }));
 const truckOpts = (trucks) => trucks.map((t) => ({ value: t.id, label: `${t.plate} — ${t.brand} ${t.model}` }));
@@ -111,6 +111,20 @@ export function invoiceFields(missions = []) {
     { name: "amount_ht", label: "Montant HT (€)", type: "number", step: "0.01", required: true, half: true },
     { name: "vat_rate", label: "TVA", type: "select", options: VAT_RATES.map((r) => ({ value: r.value, label: r.label })), half: true },
     { name: "paid_date", label: "Date de paiement", type: "date", half: true },
+    { name: "notes", label: "Notes", type: "textarea" },
+  ];
+}
+
+export function appointmentFields(drivers, trucks) {
+  return [
+    { name: "title", label: "Intitulé", required: true, placeholder: "Contrôle technique", half: true },
+    { name: "type", label: "Type", type: "select", options: opts(APPOINTMENT_TYPE), half: true },
+    { name: "date", label: "Date", type: "date", required: true, half: true },
+    { name: "time", label: "Heure", type: "time", half: true },
+    { name: "driver_id", label: "Chauffeur", type: "select", options: driverOpts(drivers), half: true },
+    { name: "truck_id", label: "Camion", type: "select", options: truckOpts(trucks), half: true },
+    { name: "location", label: "Lieu", placeholder: "Adresse / garage", half: true },
+    { name: "status", label: "Statut", type: "select", options: opts(APPOINTMENT_STATUS), half: true },
     { name: "notes", label: "Notes", type: "textarea" },
   ];
 }

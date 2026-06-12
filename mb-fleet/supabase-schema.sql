@@ -133,6 +133,21 @@ create table if not exists invoices (
   created_at  timestamptz not null default now()
 );
 
+-- ---------- RENDEZ-VOUS & PLANNING ----------
+create table if not exists appointments (
+  id          uuid primary key default gen_random_uuid(),
+  title       text not null,
+  type        text not null default 'rendez_vous', -- rendez_vous | controle_technique | entretien | chargement | livraison | reunion | formation | visite_medicale | autre
+  date        date not null,
+  time        text,               -- "09:00"
+  driver_id   uuid references drivers(id) on delete set null,
+  truck_id    uuid references trucks(id) on delete set null,
+  location    text,
+  status      text not null default 'a_faire', -- a_faire | fait | annule
+  notes       text,
+  created_at  timestamptz not null default now()
+);
+
 create index if not exists idx_trucks_driver on trucks(driver_id);
 create index if not exists idx_trucks_tracker on trucks(tracker_id);
 create index if not exists idx_maint_truck on maintenances(truck_id);
@@ -143,6 +158,8 @@ create index if not exists idx_missions_driver on missions(driver_id);
 create index if not exists idx_missions_status on missions(status);
 create index if not exists idx_invoices_mission on invoices(mission_id);
 create index if not exists idx_invoices_status on invoices(status);
+create index if not exists idx_appts_driver on appointments(driver_id);
+create index if not exists idx_appts_date on appointments(date);
 
 -- ------------------------------------------------------------
 --  RLS — à activer puis adapter selon ton authentification.

@@ -75,6 +75,18 @@ export const missions = [
   { id: "ms9", ref: "M-1036", origin: "Paris", destination: "Lyon", truck_id: "c1", driver_id: "d1", cargo: "Matériel industriel", weight_t: 24, distance_km: 465, price: 1780, pickup_date: dayOffset(-10), delivery_date: dayOffset(-9), status: "livree", notes: "" },
 ];
 
+// Rendez-vous & tâches planifiées — alimentent le calendrier et le planning chauffeurs.
+export const appointments = [
+  { id: "rdv1", title: "Contrôle technique", type: "controle_technique", date: dayOffset(0), time: "09:00", driver_id: "d3", truck_id: "c3", location: "DEKRA Lyon Est", status: "a_faire", notes: "" },
+  { id: "rdv2", title: "Chargement Rungis", type: "chargement", date: dayOffset(1), time: "06:00", driver_id: "d2", truck_id: "c2", location: "MIN de Rungis", status: "a_faire", notes: "22 palettes" },
+  { id: "rdv3", title: "Vidange + freins", type: "entretien", date: dayOffset(1), time: "14:00", driver_id: "d1", truck_id: "c1", location: "Garage Central", status: "a_faire", notes: "" },
+  { id: "rdv4", title: "Réunion exploitation", type: "reunion", date: dayOffset(2), time: "10:00", driver_id: null, truck_id: null, location: "Bureau", status: "a_faire", notes: "Point hebdo" },
+  { id: "rdv5", title: "Formation éco-conduite", type: "formation", date: dayOffset(3), time: "09:00", driver_id: "d5", truck_id: null, location: "Centre AFT", status: "a_faire", notes: "" },
+  { id: "rdv6", title: "Visite médicale", type: "visite_medicale", date: dayOffset(4), time: "11:00", driver_id: "d2", truck_id: null, location: "Médecine du travail", status: "a_faire", notes: "" },
+  { id: "rdv7", title: "RDV client", type: "rendez_vous", date: dayOffset(5), time: "15:00", driver_id: "d3", truck_id: null, location: "Lyon Part-Dieu", status: "a_faire", notes: "" },
+  { id: "rdv8", title: "Contrôle technique", type: "controle_technique", date: dayOffset(7), time: "08:30", driver_id: "d2", truck_id: "c2", location: "DEKRA", status: "a_faire", notes: "" },
+];
+
 // Factures clients — facturation des missions, suivi des encaissements et de la TVA.
 // amount_ht = montant hors taxes ; la TVA et le TTC sont calculés à l'affichage.
 export const invoices = [
@@ -95,4 +107,4 @@ function dayOffset(days) {
   return new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
 }
 
-export const demoData = { drivers, trackers, trucks, maintenances, documents, expenses, missions, invoices };
+export const demoData = { drivers, trackers, trucks, maintenances, documents, expenses, missions, invoices, appointments };

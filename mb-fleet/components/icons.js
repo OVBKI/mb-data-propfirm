@@ -122,6 +122,28 @@ export const ArrowRightIcon = (p) => (
   </Svg>
 );
 
+export const CalendarIcon = (p) => (
+  <Svg {...p}>
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <path d="M16 2v4M8 2v4M3 10h18" />
+  </Svg>
+);
+
+export const ClockIcon = (p) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Svg>
+);
+
+export const ChevronLeftIcon = (p) => (
+  <Svg {...p}><path d="M15 18l-6-6 6-6" /></Svg>
+);
+
+export const ChevronRightIcon = (p) => (
+  <Svg {...p}><path d="M9 18l6-6-6-6" /></Svg>
+);
+
 export const PackageIcon = (p) => (
   <Svg {...p}>
     <path d="M16.5 9.4 7.5 4.2" />

@@ -112,6 +112,24 @@ export const MISSION_STATUS = {
   annulee: { label: "Annulée", color: "bg-rose-100 text-rose-700" },
 };
 
+export const APPOINTMENT_TYPE = {
+  rendez_vous: { label: "Rendez-vous", color: "bg-blue-100 text-blue-700", dot: "#3b82f6" },
+  controle_technique: { label: "Contrôle technique", color: "bg-amber-100 text-amber-700", dot: "#f59e0b" },
+  entretien: { label: "Entretien garage", color: "bg-violet-100 text-violet-700", dot: "#8b5cf6" },
+  chargement: { label: "Chargement", color: "bg-cyan-100 text-cyan-700", dot: "#06b6d4" },
+  livraison: { label: "Livraison", color: "bg-emerald-100 text-emerald-700", dot: "#10b981" },
+  reunion: { label: "Réunion", color: "bg-slate-100 text-slate-600", dot: "#64748b" },
+  formation: { label: "Formation", color: "bg-indigo-100 text-indigo-700", dot: "#6366f1" },
+  visite_medicale: { label: "Visite médicale", color: "bg-rose-100 text-rose-700", dot: "#f43f5e" },
+  autre: { label: "Autre", color: "bg-slate-100 text-slate-600", dot: "#94a3b8" },
+};
+
+export const APPOINTMENT_STATUS = {
+  a_faire: { label: "À faire", color: "bg-amber-100 text-amber-700" },
+  fait: { label: "Fait", color: "bg-emerald-100 text-emerald-700" },
+  annule: { label: "Annulé", color: "bg-rose-100 text-rose-700" },
+};
+
 export const INVOICE_STATUS = {
   brouillon: { label: "Brouillon", color: "bg-slate-100 text-slate-600" },
   envoyee: { label: "Envoyée", color: "bg-blue-100 text-blue-700" },
