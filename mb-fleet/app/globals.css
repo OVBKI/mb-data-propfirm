@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-800 antialiased;
+}
+
+.card {
+  @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+}
+
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.th {
+  @apply text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-4 py-3;
+}
+
+.td {
+  @apply px-4 py-3 text-sm text-slate-700 border-t border-slate-100;
+}
+
+/* La carte Leaflet doit avoir une hauteur explicite */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 0.75rem;
+  z-index: 0;
+}

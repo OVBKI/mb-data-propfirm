@@ -1,0 +1,27 @@
+{
+  "name": "mb-fleet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gestion de flotte et de société de transport — camions, traceurs GPS, chauffeurs, entretien, documents et dépenses.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "leaflet": "^1.9.4",
+    "next": "^14.2.33",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.33",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13"
+  }
+}
