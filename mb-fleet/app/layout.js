@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar";
 import DemoBanner from "../components/DemoBanner";
 
 export const metadata = {
-  title: "MB Fleet — Gestion de flotte de transport",
+  title: "Fleetly — Gestion de flotte de transport",
   description: "Gérez vos camions, traceurs GPS, chauffeurs, entretien, documents et dépenses.",
 };
 

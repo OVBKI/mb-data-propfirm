@@ -18,9 +18,9 @@ export default function Sidebar() {
       <div className="px-6 py-5 border-b border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-brand-500 text-2xl leading-none">▮</span>
-          <span className="text-white font-bold text-lg tracking-tight">MB&nbsp;Fleet</span>
+          <span className="text-white font-bold text-lg tracking-tight">Fleetly</span>
         </div>
-        <p className="text-xs text-slate-500 mt-1">Gestion de transport</p>
+        <p className="text-xs text-slate-500 mt-1">Fleet management</p>
       </div>
       <nav className="flex-1 p-3 space-y-1">
         {nav.map((item) => {
@@ -40,7 +40,7 @@ export default function Sidebar() {
         })}
       </nav>
       <div className="p-4 text-xs text-slate-500 border-t border-white/10">
-        © {new Date().getFullYear()} MB Fleet
+        © {new Date().getFullYear()} Fleetly
       </div>
     </aside>
   );

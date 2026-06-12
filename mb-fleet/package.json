@@ -1,5 +1,5 @@
 {
-  "name": "mb-fleet",
+  "name": "fleetly",
   "version": "0.1.0",
   "private": true,
   "description": "Gestion de flotte et de société de transport — camions, traceurs GPS, chauffeurs, entretien, documents et dépenses.",

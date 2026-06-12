@@ -1,4 +1,4 @@
-# MB Fleet — Gestion de flotte de transport 🚚
+# Fleetly — Gestion de flotte de transport 🚚
 
 Application web pour gérer une société de transport : **camions, traceurs GPS, chauffeurs, entretien, documents et dépenses**.
 

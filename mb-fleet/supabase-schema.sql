@@ -1,5 +1,5 @@
 -- ============================================================
---  MB-FLEET — Schéma de base de données (PostgreSQL / Supabase)
+--  FLEETLY — Schéma de base de données (PostgreSQL / Supabase)
 --  Gestion de flotte de transport : camions, traceurs GPS,
 --  chauffeurs, entretien, documents et dépenses.
 --  À exécuter dans Supabase → SQL Editor.
