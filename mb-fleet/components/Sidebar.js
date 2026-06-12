@@ -7,6 +7,7 @@ import { InstallButton } from "@/components/pwa";
 const nav = [
   { href: "/app", label: "Tableau de bord", icon: "▣", exact: true },
   { href: "/app/carte", label: "Carte en direct", icon: "◉" },
+  { href: "/app/missions", label: "Missions & fret", icon: "⇆" },
   { href: "/app/camions", label: "Camions & traceurs", icon: "▤" },
   { href: "/app/chauffeurs", label: "Chauffeurs", icon: "☻" },
   { href: "/app/entretien", label: "Entretien", icon: "⚙" },

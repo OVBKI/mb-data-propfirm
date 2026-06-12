@@ -1,6 +1,6 @@
 // Configuration des champs de formulaire par entité.
 // Les fonctions reçoivent les listes nécessaires pour construire les menus déroulants.
-import { TRUCK_STATUS, DRIVER_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE } from "@/lib/format";
+import { TRUCK_STATUS, DRIVER_STATUS, MAINT_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE, MISSION_STATUS } from "@/lib/format";
 
 const opts = (obj) => Object.entries(obj).map(([value, v]) => ({ value, label: v.label || v }));
 const truckOpts = (trucks) => trucks.map((t) => ({ value: t.id, label: `${t.plate} — ${t.brand} ${t.model}` }));
@@ -75,6 +75,24 @@ export function documentFields(trucks) {
     { name: "issue_date", label: "Date d'émission", type: "date", half: true },
     { name: "expiry_date", label: "Date d'expiration", type: "date", half: true },
     { name: "cost", label: "Coût (€)", type: "number", step: "0.01", half: true },
+    { name: "notes", label: "Notes", type: "textarea" },
+  ];
+}
+
+export function missionFields(trucks, drivers) {
+  return [
+    { name: "ref", label: "Référence", placeholder: "M-1045", half: true },
+    { name: "status", label: "Statut", type: "select", options: opts(MISSION_STATUS), half: true },
+    { name: "origin", label: "Départ", required: true, placeholder: "Lyon", half: true },
+    { name: "destination", label: "Arrivée", required: true, placeholder: "Marseille", half: true },
+    { name: "truck_id", label: "Camion", type: "select", options: truckOpts(trucks), half: true },
+    { name: "driver_id", label: "Chauffeur", type: "select", options: driverOpts(drivers), half: true },
+    { name: "pickup_date", label: "Date d'enlèvement", type: "date", half: true },
+    { name: "delivery_date", label: "Date de livraison", type: "date", half: true },
+    { name: "cargo", label: "Chargement", placeholder: "22 palettes alimentaires", half: true },
+    { name: "weight_t", label: "Poids (t)", type: "number", step: "0.1", half: true },
+    { name: "distance_km", label: "Distance (km)", type: "number", half: true },
+    { name: "price", label: "Prix / CA (€)", type: "number", step: "0.01", half: true },
     { name: "notes", label: "Notes", type: "textarea" },
   ];
 }

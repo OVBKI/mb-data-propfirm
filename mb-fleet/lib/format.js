@@ -76,3 +76,10 @@ export const EXPENSE_TYPE = {
   amende: "Amende",
   autre: "Autre",
 };
+
+export const MISSION_STATUS = {
+  planifiee: { label: "Planifiée", color: "bg-slate-100 text-slate-600" },
+  en_cours: { label: "En cours", color: "bg-blue-100 text-blue-700" },
+  livree: { label: "Livrée", color: "bg-emerald-100 text-emerald-700" },
+  annulee: { label: "Annulée", color: "bg-rose-100 text-rose-700" },
+};

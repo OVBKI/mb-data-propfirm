@@ -54,8 +54,23 @@ export const expenses = [
   { id: "e7", truck_id: "c1", driver_id: "d1", type: "carburant", date: "2026-06-01", amount: 405.9, liters: 246 },
 ];
 
+// Missions / tournées de fret — affecte camion + chauffeur + chargement à un trajet.
+export const missions = [
+  { id: "ms1", ref: "M-1042", origin: "Lyon", destination: "Marseille", truck_id: "c2", driver_id: "d2", cargo: "Palettes alimentaires", weight_t: 18, distance_km: 315, price: 1450, pickup_date: dayOffset(0), delivery_date: dayOffset(0), status: "en_cours", notes: "Livraison avant 14h00" },
+  { id: "ms2", ref: "M-1041", origin: "Paris", destination: "Lille", truck_id: "c3", driver_id: "d3", cargo: "Matériel électronique", weight_t: 12, distance_km: 225, price: 980, pickup_date: dayOffset(0), delivery_date: dayOffset(1), status: "en_cours", notes: "" },
+  { id: "ms3", ref: "M-1043", origin: "Nantes", destination: "Bordeaux", truck_id: "c4", driver_id: "d5", cargo: "Mobilier", weight_t: 9, distance_km: 345, price: 1120, pickup_date: dayOffset(1), delivery_date: dayOffset(2), status: "planifiee", notes: "Hayon requis" },
+  { id: "ms4", ref: "M-1044", origin: "Marseille", destination: "Nice", truck_id: "c4", driver_id: "d5", cargo: "Produits frais", weight_t: 14, distance_km: 200, price: 760, pickup_date: dayOffset(3), delivery_date: dayOffset(3), status: "planifiee", notes: "Température dirigée 4°C" },
+  { id: "ms5", ref: "M-1040", origin: "Toulouse", destination: "Montpellier", truck_id: "c1", driver_id: "d1", cargo: "Matériaux BTP", weight_t: 22, distance_km: 240, price: 890, pickup_date: dayOffset(-2), delivery_date: dayOffset(-2), status: "livree", notes: "" },
+  { id: "ms6", ref: "M-1039", origin: "Rennes", destination: "Paris", truck_id: "c2", driver_id: "d2", cargo: "Pièces automobiles", weight_t: 16, distance_km: 350, price: 1280, pickup_date: dayOffset(-5), delivery_date: dayOffset(-4), status: "livree", notes: "" },
+];
+
 function nowMinus(minutes) {
   return new Date(Date.now() - minutes * 60 * 1000).toISOString();
 }
 
-export const demoData = { drivers, trackers, trucks, maintenances, documents, expenses };
+// Date à +/- n jours, au format YYYY-MM-DD (pour les champs date).
+function dayOffset(days) {
+  return new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+}
+
+export const demoData = { drivers, trackers, trucks, maintenances, documents, expenses, missions };

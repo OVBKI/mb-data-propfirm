@@ -4,10 +4,10 @@ import { useFleet } from "@/components/FleetProvider";
 import { StatCard, Badge, Table, EmptyRow, PageHeader, Loading } from "@/components/ui";
 import { Donut, ProgressBars } from "@/components/charts";
 import {
-  TruckIcon, RouteIcon, WrenchIcon, EuroIcon, FileIcon, BellIcon, ArrowRightIcon,
+  TruckIcon, RouteIcon, WrenchIcon, EuroIcon, FileIcon, BellIcon, ArrowRightIcon, PackageIcon,
 } from "@/components/icons";
 import {
-  euros, dateFR, daysUntil, km, TRUCK_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE,
+  euros, dateFR, daysUntil, km, TRUCK_STATUS, MAINT_TYPE, DOC_TYPE, EXPENSE_TYPE, MISSION_STATUS,
 } from "@/lib/format";
 
 const STATUS_COLORS = {
@@ -28,7 +28,7 @@ export default function Dashboard() {
   const { ready, data } = useFleet();
   if (!ready) return <Loading />;
 
-  const { trucks, drivers, maintenances, documents, expenses } = data;
+  const { trucks, drivers, maintenances, documents, expenses, missions = [] } = data;
 
   const enRoute = trucks.filter((t) => t.status === "en_route").length;
   const dispo = trucks.filter((t) => t.status === "disponible").length;
@@ -66,6 +66,12 @@ export default function Dashboard() {
 
   const alertsCount = docAlerts.length + maintAlerts.length;
   const truckById = Object.fromEntries(trucks.map((t) => [t.id, t]));
+  const driverById = Object.fromEntries(drivers.map((d) => [d.id, d]));
+
+  const activeMissions = missions
+    .filter((m) => m.status === "en_cours" || m.status === "planifiee")
+    .sort((a, b) => (a.status === "en_cours" ? -1 : 1) - (b.status === "en_cours" ? -1 : 1) || new Date(a.delivery_date) - new Date(b.delivery_date))
+    .slice(0, 5);
 
   return (
     <div>
@@ -137,6 +143,35 @@ export default function Dashboard() {
             ))}
           </Table>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <span className="inline-flex items-center gap-2 font-semibold text-ink-900"><PackageIcon size={18} className="text-brand-600" /> Missions en cours</span>
+        <Link href="/app/missions" className="text-sm text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 transition-colors">Tout voir <ArrowRightIcon size={14} /></Link>
+      </div>
+      <div className="mb-6">
+        <Table columns={["Réf.", "Trajet", "Camion", "Chauffeur", "Livraison", "CA", "Statut"]}>
+          {activeMissions.length === 0 && <EmptyRow colSpan={7} text="Aucune mission en cours" />}
+          {activeMissions.map((m) => {
+            const st = MISSION_STATUS[m.status] || { label: m.status, color: "" };
+            const driver = driverById[m.driver_id];
+            return (
+              <tr key={m.id} className="hover:bg-slate-50 transition-colors">
+                <td className="td font-medium text-slate-700">{m.ref || "—"}</td>
+                <td className="td">
+                  <Link href="/app/missions" className="inline-flex items-center gap-1.5 font-medium text-slate-800 hover:text-brand-600">
+                    {m.origin} <ArrowRightIcon size={13} className="text-slate-400" /> {m.destination}
+                  </Link>
+                </td>
+                <td className="td">{truckById[m.truck_id]?.plate || "—"}</td>
+                <td className="td">{driver ? `${driver.first_name} ${driver.last_name}` : "—"}</td>
+                <td className="td">{dateFR(m.delivery_date)}</td>
+                <td className="td font-medium">{m.price ? euros(m.price) : "—"}</td>
+                <td className="td"><Badge label={st.label} color={st.color} /></td>
+              </tr>
+            );
+          })}
+        </Table>
       </div>
 
       <div className="flex items-center justify-between mb-3">

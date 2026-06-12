@@ -98,11 +98,33 @@ create table if not exists expenses (
   created_at  timestamptz not null default now()
 );
 
+-- ---------- MISSIONS & FRET ----------
+create table if not exists missions (
+  id            uuid primary key default gen_random_uuid(),
+  ref           text,               -- référence interne, ex: "M-1042"
+  origin        text not null,      -- ville de départ
+  destination   text not null,      -- ville d'arrivée
+  truck_id      uuid references trucks(id) on delete set null,
+  driver_id     uuid references drivers(id) on delete set null,
+  cargo         text,               -- description du chargement
+  weight_t      numeric,            -- poids en tonnes
+  distance_km   int,
+  price         numeric default 0,  -- chiffre d'affaires de la mission
+  pickup_date   date,
+  delivery_date date,
+  status        text not null default 'planifiee', -- planifiee | en_cours | livree | annulee
+  notes         text,
+  created_at    timestamptz not null default now()
+);
+
 create index if not exists idx_trucks_driver on trucks(driver_id);
 create index if not exists idx_trucks_tracker on trucks(tracker_id);
 create index if not exists idx_maint_truck on maintenances(truck_id);
 create index if not exists idx_docs_truck on documents(truck_id);
 create index if not exists idx_exp_truck on expenses(truck_id);
+create index if not exists idx_missions_truck on missions(truck_id);
+create index if not exists idx_missions_driver on missions(driver_id);
+create index if not exists idx_missions_status on missions(status);
 
 -- ------------------------------------------------------------
 --  RLS — à activer puis adapter selon ton authentification.
