@@ -1,41 +1,40 @@
-// /landing/clickfunded — Concept #7 (v3), reproduction fidèle du style ClickFunded
-// (vu via la vidéo envoyée) : fond NOIR, accent ORANGE/AMBRE, layout centré
-// minimaliste, pill countdown, titre bicolore, 3 stats encadrées de lauriers,
-// checklist + capture email, rangée sociale, accents d'angle. Adapté Quantara.
+// /landing/clickfunded — Concept #7 (v5), style ClickFunded (noir + ambre, centré).
+// Fond animé : étoiles filantes le long de courbes chaotiques (la ligne n'apparaît
+// que sur le passage du glow), particules scintillantes, halo qui respire, accents
+// d'angle. Vrai logo Quantara (QLogoIcon, teinté ambre). Glow respirant sur textes clés.
 //
-// Standalone, server component, CSS-only. Fonts self-hosted via next/font (CSP-ok).
+// Standalone, server component, CSS/SVG only. Fonts self-hosted (next/font, CSP-ok).
 // Preview dev uniquement, jamais mergé sur main.
 
 import { Sora, Manrope } from 'next/font/google'
+import QLogoIcon from '../../../components/QLogoIcon'
 
 const display = Sora({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display', display: 'swap' })
 const body = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-body', display: 'swap' })
 
 const C = {
-  bg: '#050505',
-  text: '#f6f4ef',
-  text2: '#9b958a',
-  text3: '#6a655d',
-  amber: '#ef9a3a',
-  amberLt: '#f7bd66',
-  amberDk: '#d97f24',
-  green: '#37c98a',
-  line: 'rgba(245,180,90,0.22)',
-  lineN: 'rgba(255,255,255,0.10)',
+  bg: '#050505', text: '#f6f4ef', text2: '#9b958a', text3: '#6a655d',
+  amber: '#ef9a3a', amberLt: '#f7bd66', green: '#37c98a',
+  line: 'rgba(245,180,90,0.22)', lineN: 'rgba(255,255,255,0.10)',
 }
 const GOLD = 'linear-gradient(180deg, #f9c877 0%, #ef9a3a 55%, #d97f24 100%)'
 
-// Particules de fond (positions déterministes, scintillement décalé)
+// Courbes chaotiques (viewBox 1440x900) parcourues par des étoiles filantes
+const LINES = [
+  'M-60 240 C 280 90, 520 380, 780 250 C 1000 140, 1220 360, 1520 230',
+  'M-60 640 C 220 760, 500 520, 760 660 C 1010 790, 1240 560, 1520 700',
+  'M260 -60 C 380 240, 240 470, 520 600 C 700 700, 760 920, 900 1000',
+  'M1240 -60 C 1080 240, 1220 470, 940 600 C 760 700, 700 900, 560 1000',
+  'M-60 440 C 320 360, 600 560, 900 440 C 1160 340, 1320 520, 1520 440',
+  'M120 980 C 340 740, 240 520, 540 420 C 820 330, 980 160, 1180 -40',
+]
+
+// Particules scintillantes (positions déterministes)
 const PARTS = Array.from({ length: 46 }, (_, i) => ({
-  x: (i * 97 + 13) % 100,
-  y: (i * 53 + 7) % 100,
-  s: 1 + (i % 3) * 0.7,
-  dur: 4 + (i % 5),
-  delay: ((i * 7) % 11) * 0.5,
-  gold: i % 3 === 0,
+  x: (i * 97 + 13) % 100, y: (i * 53 + 7) % 100, s: 1 + (i % 3) * 0.7,
+  dur: 4 + (i % 5), delay: ((i * 7) % 11) * 0.5, gold: i % 3 === 0,
 }))
 
-// ── Laurier (branche), miroir pour le côté droit ──
 function Laurel({ flip = false }) {
   return (
     <svg width="24" height="56" viewBox="0 0 24 56" aria-hidden style={{ transform: flip ? 'scaleX(-1)' : 'none' }}>
@@ -52,7 +51,7 @@ function Stat({ big, small, gold }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
       <Laurel />
       <div style={{ textAlign: 'center', minWidth: 96, padding: '0 2px' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: gold ? 17 : 22, lineHeight: 1.05, color: gold ? C.amberLt : C.text, letterSpacing: '-0.01em' }}>{big}</div>
+        <div className={gold ? 'cf-textglow' : undefined} style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: gold ? 17 : 22, lineHeight: 1.05, color: gold ? C.amberLt : C.text, letterSpacing: '-0.01em' }}>{big}</div>
         <div style={{ fontSize: 10.5, color: C.text2, marginTop: 5, lineHeight: 1.3 }}>{small}</div>
       </div>
       <Laurel flip />
@@ -64,7 +63,7 @@ const Dot = ({ c }) => <span style={{ width: 8, height: 8, borderRadius: 99, bac
 
 function SocialIcon({ d }) {
   return (
-    <a href="#" aria-label="social" style={{ color: C.text2, display: 'inline-flex', transition: 'color .15s' }} className="cf-soc">
+    <a href="#" aria-label="social" className="cf-soc" style={{ color: C.text2, display: 'inline-flex', transition: 'color .15s' }}>
       <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d={d} /></svg>
     </a>
   )
@@ -86,20 +85,21 @@ export default function ClickfundedLanding() {
         .cf-bl{bottom:18px;left:18px;border-bottom:1px solid;border-left:1px solid;border-bottom-left-radius:4px}
         .cf-br{bottom:18px;right:18px;border-bottom:1px solid;border-right:1px solid;border-bottom-right-radius:4px}
 
-        .cf-beam{position:absolute;left:50%;top:50%;width:2px;height:200vh;
-          background:linear-gradient(to bottom, transparent, rgba(247,189,102,.10) 35%, rgba(247,189,102,.14) 50%, rgba(247,189,102,.10) 65%, transparent);
-          filter:blur(1px);transform-origin:center;animation:cfBeam 14s ease-in-out infinite}
-        .cf-beam-a{transform:translate(-50%,-50%) rotate(32deg)}
-        .cf-beam-b{transform:translate(-50%,-50%) rotate(-32deg);animation-delay:-7s;animation-duration:18s}
-        .cf-beam-c{transform:translate(-50%,-50%) rotate(0deg);opacity:.5;animation-duration:11s}
+        /* Étoiles filantes : segment glow qui parcourt une courbe ; le reste reste invisible */
+        .cf-trails{position:absolute;inset:0;width:100%;height:100%}
+        .cf-trail{fill:none;stroke-linecap:round;stroke-dasharray:15 205;stroke-dashoffset:220;animation:cfTrail var(--dur,9s) linear infinite}
+        .cf-trail-glow{stroke:rgba(247,189,102,.55);stroke-width:3.4;filter:url(#cfSoft)}
+        .cf-trail-core{stroke:#ffe9c2;stroke-width:1.3;stroke-dasharray:9 211}
         .cf-parts{position:absolute;inset:0}
         .cf-part{position:absolute;border-radius:50%;animation:cfTwinkle var(--d,5s) ease-in-out infinite}
 
         @keyframes cfBreathe{0%,100%{opacity:.65}50%{opacity:1}}
-        @keyframes cfBeam{0%,100%{opacity:.35}50%{opacity:1}}
+        @keyframes cfTrail{from{stroke-dashoffset:220}to{stroke-dashoffset:0}}
         @keyframes cfTwinkle{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:.85;transform:scale(1.15)}}
         @keyframes cfRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+        @keyframes cfTextGlow{0%,100%{text-shadow:0 0 16px rgba(247,189,102,.22)}50%{text-shadow:0 0 34px rgba(247,189,102,.6)}}
         .cf-rise{animation:cfRise .8s cubic-bezier(.2,.7,.2,1) both}
+        .cf-textglow{animation:cfTextGlow 3.6s ease-in-out infinite}
 
         .cf-pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:${C.amberLt};
           border:1px solid ${C.line};border-radius:99px;padding:7px 15px;background:rgba(239,154,58,.06);
@@ -113,7 +113,7 @@ export default function ClickfundedLanding() {
         .cf-join:hover{transform:translateY(-1px);box-shadow:0 12px 34px rgba(239,154,58,.5), inset 0 1px 0 rgba(255,255,255,.45)}
         .cf-soc:hover{color:${C.amberLt}}
         h1,h2{font-family:var(--font-display)}
-        @media(prefers-reduced-motion:reduce){.cf-glow-top,.cf-glow-low,.cf-rise,.cf-beam,.cf-part{animation:none !important}}
+        @media(prefers-reduced-motion:reduce){.cf-glow-top,.cf-glow-low,.cf-rise,.cf-trail,.cf-part,.cf-textglow{animation:none !important}}
         @media(max-width:760px){
           .cf-h1{font-size:42px !important}
           .cf-stats{flex-direction:column !important;gap:18px !important}
@@ -125,9 +125,20 @@ export default function ClickfundedLanding() {
       <div className="cf-bg" aria-hidden>
         <div className="cf-glow cf-glow-top" />
         <div className="cf-glow cf-glow-low" />
-        <div className="cf-beam cf-beam-a" />
-        <div className="cf-beam cf-beam-b" />
-        <div className="cf-beam cf-beam-c" />
+        <svg className="cf-trails" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <filter id="cfSoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2" /></filter>
+          </defs>
+          {LINES.map((d, i) => {
+            const dur = `${8 + i}s`, delay = `${-(i * 2.3 + 1)}s`
+            return (
+              <g key={i}>
+                <path d={d} pathLength="100" className="cf-trail cf-trail-glow" style={{ '--dur': dur, animationDelay: delay }} />
+                <path d={d} pathLength="100" className="cf-trail cf-trail-core" style={{ '--dur': dur, animationDelay: delay }} />
+              </g>
+            )
+          })}
+        </svg>
         <div className="cf-parts">
           {PARTS.map((p, i) => (
             <span key={i} className="cf-part" style={{
@@ -147,13 +158,11 @@ export default function ClickfundedLanding() {
 
       {/* CONTENU */}
       <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Logo centré en haut */}
-        <div style={{ padding: '26px 0 0', textAlign: 'center' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 22, height: 22, borderRadius: 6, background: GOLD, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(239,154,58,.4)' }}>
-              <span style={{ color: '#1b1206', fontWeight: 800, fontSize: 13, fontFamily: 'var(--font-display)' }}>Q</span>
-            </span>
-            <span style={{ fontWeight: 700, letterSpacing: '0.06em', fontSize: 14 }}>Quantara</span>
+        {/* Logo Quantara centré en haut */}
+        <div style={{ padding: '24px 0 0', textAlign: 'center' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+            <QLogoIcon size={26} color="#f7bd66" />
+            <span style={{ fontWeight: 700, letterSpacing: '0.06em', fontSize: 15 }}>Quantara</span>
           </span>
         </div>
 
@@ -167,7 +176,7 @@ export default function ClickfundedLanding() {
           <div className="cf-badge cf-rise" style={{ animationDelay: '.1s', marginTop: 18 }}>Le cockpit des traders PropFirm</div>
 
           <h1 className="cf-h1 cf-rise" style={{ animationDelay: '.16s', fontSize: 64, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.02, margin: '22px 0 30px' }}>
-            <span style={{ background: GOLD, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Financé.</span>{' '}
+            <span className="cf-textglow" style={{ background: GOLD, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Financé.</span>{' '}
             <span style={{ color: C.text }}>En un coup d&apos;œil.</span>
           </h1>
 
