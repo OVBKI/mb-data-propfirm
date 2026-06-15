@@ -19,21 +19,8 @@ const C = {
 }
 const GOLD = 'linear-gradient(180deg, #f9c877 0%, #ef9a3a 55%, #d97f24 100%)'
 
-// Courbes chaotiques (viewBox 1440x900) parcourues par des étoiles filantes
-const LINES = [
-  'M-60 240 C 280 90, 520 380, 780 250 C 1000 140, 1220 360, 1520 230',
-  'M-60 640 C 220 760, 500 520, 760 660 C 1010 790, 1240 560, 1520 700',
-  'M260 -60 C 380 240, 240 470, 520 600 C 700 700, 760 920, 900 1000',
-  'M1240 -60 C 1080 240, 1220 470, 940 600 C 760 700, 700 900, 560 1000',
-  'M-60 440 C 320 360, 600 560, 900 440 C 1160 340, 1320 520, 1520 440',
-  'M120 980 C 340 740, 240 520, 540 420 C 820 330, 980 160, 1180 -40',
-]
-
-// Particules scintillantes (positions déterministes)
-const PARTS = Array.from({ length: 46 }, (_, i) => ({
-  x: (i * 97 + 13) % 100, y: (i * 53 + 7) % 100, s: 1 + (i % 3) * 0.7,
-  dur: 4 + (i % 5), delay: ((i * 7) % 11) * 0.5, gold: i % 3 === 0,
-}))
+// Le fond animé (étoiles filantes + particules + halos) est désormais une VIDÉO
+// rendue par Remotion → public/landing/clickfunded-bg.mp4 (voir quantara-video/).
 
 function Laurel({ flip = false }) {
   return (
@@ -73,7 +60,7 @@ export default function ClickfundedLanding() {
   return (
     <div className={`${display.variable} ${body.variable}`} style={{ background: C.bg, color: C.text, minHeight: '100vh', fontFamily: 'var(--font-body)', overflowX: 'hidden', position: 'relative' }}>
       <style>{`
-        .cf-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+        .cf-video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;background:#050505;pointer-events:none}
         .cf-glow{position:absolute;border-radius:50%;filter:blur(120px)}
         .cf-glow-top{width:760px;height:520px;left:50%;top:-220px;transform:translateX(-50%);background:radial-gradient(ellipse at center, rgba(239,154,58,.18), transparent 70%);animation:cfBreathe 8s ease-in-out infinite}
         .cf-glow-low{width:620px;height:420px;left:50%;top:46%;transform:translateX(-50%);background:radial-gradient(ellipse at center, rgba(239,154,58,.08), transparent 70%);animation:cfBreathe 11s ease-in-out infinite reverse}
@@ -121,35 +108,10 @@ export default function ClickfundedLanding() {
         }
       `}</style>
 
-      {/* FOND ANIMÉ */}
-      <div className="cf-bg" aria-hidden>
-        <div className="cf-glow cf-glow-top" />
-        <div className="cf-glow cf-glow-low" />
-        <svg className="cf-trails" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <filter id="cfSoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2" /></filter>
-          </defs>
-          {LINES.map((d, i) => {
-            const dur = `${8 + i}s`, delay = `${-(i * 2.3 + 1)}s`
-            return (
-              <g key={i}>
-                <path d={d} pathLength="100" className="cf-trail cf-trail-glow" style={{ '--dur': dur, animationDelay: delay }} />
-                <path d={d} pathLength="100" className="cf-trail cf-trail-core" style={{ '--dur': dur, animationDelay: delay }} />
-              </g>
-            )
-          })}
-        </svg>
-        <div className="cf-parts">
-          {PARTS.map((p, i) => (
-            <span key={i} className="cf-part" style={{
-              left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s,
-              background: p.gold ? 'rgba(247,189,102,0.9)' : 'rgba(255,255,255,0.75)',
-              boxShadow: p.gold ? '0 0 6px rgba(247,189,102,0.7)' : '0 0 5px rgba(255,255,255,0.5)',
-              '--d': `${p.dur}s`, animationDelay: `${p.delay}s`,
-            }} />
-          ))}
-        </div>
-      </div>
+      {/* FOND ANIMÉ — vidéo générée par Remotion (boucle parfaite) */}
+      <video className="cf-video" autoPlay muted loop playsInline preload="auto" aria-hidden>
+        <source src="/landing/clickfunded-bg.mp4" type="video/mp4" />
+      </video>
       <div className="cf-grain" aria-hidden />
       <div className="cf-corner cf-tl" aria-hidden />
       <div className="cf-corner cf-tr" aria-hidden />
