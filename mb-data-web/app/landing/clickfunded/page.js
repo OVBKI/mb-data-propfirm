@@ -1,240 +1,177 @@
-// /landing/clickfunded — Concept landing #7 (v2), style ClickFunded premium :
-// fond animé multi-couches (faisceaux coniques en rotation, halos dérivants,
-// grille mouvante masquée, spotlight pulsé, grain), typo distinctive.
+// /landing/clickfunded — Concept #7 (v3), reproduction fidèle du style ClickFunded
+// (vu via la vidéo envoyée) : fond NOIR, accent ORANGE/AMBRE, layout centré
+// minimaliste, pill countdown, titre bicolore, 3 stats encadrées de lauriers,
+// checklist + capture email, rangée sociale, accents d'angle. Adapté Quantara.
 //
-// Standalone : aucune dép Supabase/AppContext. Server component, animations
-// CSS-only (pas de JS client, pas d'injection HTML brute).
-// Fonts via next/font (self-hosted -> compatible CSP Quantara).
+// Standalone, server component, CSS-only. Fonts self-hosted via next/font (CSP-ok).
 // Preview dev uniquement, jamais mergé sur main.
 
-import { Bricolage_Grotesque, Manrope } from 'next/font/google'
+import { Sora, Manrope } from 'next/font/google'
 
-const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display', display: 'swap' })
+const display = Sora({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display', display: 'swap' })
 const body = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-body', display: 'swap' })
 
 const C = {
-  bg: '#06070b',
-  panel: 'rgba(255,255,255,0.035)',
-  panel2: 'rgba(255,255,255,0.06)',
-  border: 'rgba(255,255,255,0.09)',
-  border2: 'rgba(255,255,255,0.16)',
-  text: '#f5f6f9',
-  text2: '#a7afc2',
-  text3: '#666f84',
-  blue: '#3b6dff',
-  violet: '#8b5cf6',
-  cyan: '#22d3ee',
-  green: '#27d39a',
+  bg: '#050505',
+  text: '#f6f4ef',
+  text2: '#9b958a',
+  text3: '#6a655d',
+  amber: '#ef9a3a',
+  amberLt: '#f7bd66',
+  amberDk: '#d97f24',
+  green: '#37c98a',
+  line: 'rgba(245,180,90,0.22)',
+  lineN: 'rgba(255,255,255,0.10)',
 }
-const GRAD = `linear-gradient(110deg, ${C.cyan}, ${C.blue} 45%, ${C.violet})`
-const GRAIN = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"
+const GOLD = 'linear-gradient(180deg, #f9c877 0%, #ef9a3a 55%, #d97f24 100%)'
 
-function QMark({ size = 30 }) {
+// ── Laurier (branche), miroir pour le côté droit ──
+function Laurel({ flip = false }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
-      <span style={{ width: size, height: size, borderRadius: 9, background: GRAD, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 22px rgba(59,109,255,0.45)', flexShrink: 0 }}>
-        <span style={{ color: '#fff', fontWeight: 800, fontSize: size * 0.56, letterSpacing: '-0.04em', fontFamily: 'var(--font-display)' }}>Q</span>
-      </span>
-      <span style={{ fontWeight: 700, letterSpacing: '0.14em', fontSize: 13.5, color: C.text }}>QUANTARA</span>
-    </span>
+    <svg width="24" height="56" viewBox="0 0 24 56" aria-hidden style={{ transform: flip ? 'scaleX(-1)' : 'none' }}>
+      <path d="M18 4 C 8 16, 6 36, 13 52" fill="none" stroke="rgba(247,189,102,0.6)" strokeWidth="1.4" strokeLinecap="round" />
+      {[[16, 10, -38], [13.5, 18, -30], [11.5, 27, -20], [11, 36, -8], [12, 45, 6]].map(([x, y, r], i) => (
+        <ellipse key={i} cx={x} cy={y} rx="5.5" ry="2.3" transform={`rotate(${r} ${x} ${y})`} fill="rgba(247,189,102,0.5)" />
+      ))}
+    </svg>
   )
 }
 
-const STEPS = [
-  { n: '01', t: 'Ajoute tes PropFirms', d: '11 firmes pré-configurées (Topstep, Apex, Lucid, MFFU…) avec leurs règles auto-remplies.' },
-  { n: '02', t: 'Importe tes trades', d: 'Un CSV Rithmic R|Trader Pro, ou saisie manuelle dans le journal intégré.' },
-  { n: '03', t: 'Pilote drawdown & payouts', d: 'Trailing drawdown, consistency et payouts calculés en live sur tous tes comptes.' },
-]
-const FEATURES = [
-  { t: 'Multi-PropFirm', d: 'Tous tes comptes, toutes tes firmes, un seul dashboard. Net consolidé, dépenses, ROI par firme.', big: true },
-  { t: 'Trailing drawdown auto', d: 'EOD, Intraday ou Static — selon les règles propres à chaque firme.' },
-  { t: 'Consistency Monitor', d: 'Ton meilleur jour vs total, audité avant chaque payout.' },
-  { t: 'Calendrier PnL', d: 'Heatmap mensuelle de tes gains/pertes, jour par jour.' },
-  { t: 'Payouts & ROI', d: 'Retraits par firme, split appliqué, net réellement encaissé.' },
-  { t: 'Calendrier éco', d: 'Anticipe la volatilité (FR/EN/ES) avant chaque session.' },
-]
-const STATS = [
-  { v: '11', l: 'PropFirms supportées' },
-  { v: '0 €', l: 'pendant la beta' },
-  { v: '3', l: 'types de drawdown auto' },
-]
+function Stat({ big, small, gold }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <Laurel />
+      <div style={{ textAlign: 'center', minWidth: 96, padding: '0 2px' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: gold ? 17 : 22, lineHeight: 1.05, color: gold ? C.amberLt : C.text, letterSpacing: '-0.01em' }}>{big}</div>
+        <div style={{ fontSize: 10.5, color: C.text2, marginTop: 5, lineHeight: 1.3 }}>{small}</div>
+      </div>
+      <Laurel flip />
+    </div>
+  )
+}
+
+const Dot = ({ c }) => <span style={{ width: 8, height: 8, borderRadius: 99, background: c, flexShrink: 0, boxShadow: `0 0 8px ${c}` }} />
+
+function SocialIcon({ d }) {
+  return (
+    <a href="#" aria-label="social" style={{ color: C.text2, display: 'inline-flex', transition: 'color .15s' }} className="cf-soc">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d={d} /></svg>
+    </a>
+  )
+}
 
 export default function ClickfundedLanding() {
   return (
     <div className={`${display.variable} ${body.variable}`} style={{ background: C.bg, color: C.text, minHeight: '100vh', fontFamily: 'var(--font-body)', overflowX: 'hidden', position: 'relative' }}>
       <style>{`
         .cf-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-        .cf-beams{position:absolute;top:-40%;left:50%;width:140vmax;height:140vmax;transform:translateX(-50%);
-          background:conic-gradient(from 0deg,
-            transparent 0 8deg, rgba(59,109,255,.16) 9deg 11deg, transparent 12deg 26deg,
-            rgba(139,92,246,.13) 27deg 29deg, transparent 30deg 52deg,
-            rgba(34,211,238,.11) 53deg 55deg, transparent 56deg 96deg,
-            rgba(59,109,255,.12) 97deg 99deg, transparent 100deg 150deg,
-            rgba(139,92,246,.10) 151deg 153deg, transparent 154deg 360deg);
-          -webkit-mask:radial-gradient(circle at 50% 38%, #000 0, rgba(0,0,0,.5) 38%, transparent 62%);
-          mask:radial-gradient(circle at 50% 38%, #000 0, rgba(0,0,0,.5) 38%, transparent 62%);
-          animation:cfSpin 48s linear infinite;opacity:.9}
-        .cf-grid{position:absolute;inset:0;
-          background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
-          background-size:56px 56px;
-          -webkit-mask:radial-gradient(circle at 50% 30%, #000, transparent 72%);
-          mask:radial-gradient(circle at 50% 30%, #000, transparent 72%);
-          animation:cfDrift 20s linear infinite}
-        .cf-orb{position:absolute;border-radius:50%;filter:blur(80px);will-change:transform}
-        .cf-o1{width:480px;height:480px;background:rgba(59,109,255,.42);top:-120px;left:8%;animation:cfFloat 16s ease-in-out infinite}
-        .cf-o2{width:420px;height:420px;background:rgba(139,92,246,.38);top:120px;right:4%;animation:cfFloat 21s ease-in-out infinite reverse}
-        .cf-o3{width:380px;height:380px;background:rgba(34,211,238,.22);top:520px;left:42%;animation:cfFloat 26s ease-in-out infinite}
-        .cf-spot{position:absolute;top:-10%;left:50%;width:900px;height:520px;transform:translateX(-50%);
-          background:radial-gradient(ellipse at center, rgba(120,150,255,.20), transparent 70%);animation:cfPulse 9s ease-in-out infinite}
-        .cf-grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;background-image:${GRAIN};background-size:180px 180px}
-        .cf-vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%, transparent 40%, rgba(0,0,0,.55) 100%)}
+        .cf-glow{position:absolute;border-radius:50%;filter:blur(120px)}
+        .cf-glow-top{width:760px;height:520px;left:50%;top:-220px;transform:translateX(-50%);background:radial-gradient(ellipse at center, rgba(239,154,58,.18), transparent 70%);animation:cfBreathe 8s ease-in-out infinite}
+        .cf-glow-low{width:620px;height:420px;left:50%;top:46%;transform:translateX(-50%);background:radial-gradient(ellipse at center, rgba(239,154,58,.08), transparent 70%);animation:cfBreathe 11s ease-in-out infinite reverse}
+        .cf-grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+          background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px}
+        .cf-corner{position:fixed;width:120px;height:120px;z-index:1;pointer-events:none;border-color:${C.line};opacity:.7}
+        .cf-tl{top:18px;left:18px;border-top:1px solid;border-left:1px solid;border-top-left-radius:4px}
+        .cf-tr{top:18px;right:18px;border-top:1px solid;border-right:1px solid;border-top-right-radius:4px}
+        .cf-bl{bottom:18px;left:18px;border-bottom:1px solid;border-left:1px solid;border-bottom-left-radius:4px}
+        .cf-br{bottom:18px;right:18px;border-bottom:1px solid;border-right:1px solid;border-bottom-right-radius:4px}
 
-        @keyframes cfSpin{to{transform:translateX(-50%) rotate(360deg)}}
-        @keyframes cfDrift{to{background-position:56px 56px}}
-        @keyframes cfFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(26px,-32px)}}
-        @keyframes cfPulse{0%,100%{opacity:.5}50%{opacity:1}}
-        @keyframes cfRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+        @keyframes cfBreathe{0%,100%{opacity:.65}50%{opacity:1}}
+        @keyframes cfRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+        .cf-rise{animation:cfRise .8s cubic-bezier(.2,.7,.2,1) both}
 
-        .cf-rise{animation:cfRise .85s cubic-bezier(.2,.7,.2,1) both}
-        .cf-cta{background:${GRAD};color:#0a0c12;font-weight:700;border:none;border-radius:13px;padding:16px 30px;font-size:15px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 12px 38px rgba(59,109,255,.45), inset 0 1px 0 rgba(255,255,255,.4);transition:transform .18s ease,box-shadow .18s ease}
-        .cf-cta:hover{transform:translateY(-2px);box-shadow:0 18px 50px rgba(59,109,255,.6), inset 0 1px 0 rgba(255,255,255,.4)}
-        .cf-ghost{color:${C.text};font-weight:600;border:1px solid ${C.border2};border-radius:13px;padding:16px 26px;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.02);transition:background .18s ease,border-color .18s ease}
-        .cf-ghost:hover{background:${C.panel2};border-color:${C.text3}}
-        .cf-card{background:${C.panel};border:1px solid ${C.border};border-radius:18px;padding:26px;backdrop-filter:blur(6px);transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease}
-        .cf-card:hover{transform:translateY(-4px);border-color:rgba(139,92,246,.5);background:${C.panel2};box-shadow:0 18px 50px rgba(0,0,0,.4)}
-        .cf-link{color:${C.text2};text-decoration:none;font-size:14px;transition:color .15s}
-        .cf-link:hover{color:${C.text}}
-        .cf-grad-text{background:${GRAD};-webkit-background-clip:text;background-clip:text;color:transparent}
-        h1,h2,h3{font-family:var(--font-display)}
-        @media(prefers-reduced-motion:reduce){.cf-beams,.cf-grid,.cf-orb,.cf-spot,.cf-rise{animation:none !important}}
-        @media(max-width:860px){
-          .cf-h1{font-size:48px !important}
-          .cf-navlinks{display:none !important}
-          .cf-stats,.cf-steps,.cf-feat{grid-template-columns:1fr !important}
-          .cf-feat-big{grid-column:auto !important}
+        .cf-pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:${C.amberLt};
+          border:1px solid ${C.line};border-radius:99px;padding:7px 15px;background:rgba(239,154,58,.06);
+          box-shadow:0 0 22px rgba(239,154,58,.14), inset 0 0 12px rgba(239,154,58,.05)}
+        .cf-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+          color:${C.text2};border:1px solid ${C.lineN};border-radius:99px;padding:6px 16px;background:rgba(255,255,255,.02)}
+        .cf-input{background:rgba(255,255,255,.04);border:1px solid ${C.lineN};border-radius:11px;padding:13px 15px;color:${C.text};font-size:14px;font-family:inherit;width:100%;outline:none;transition:border-color .15s}
+        .cf-input:focus{border-color:${C.amber}}
+        .cf-input::placeholder{color:${C.text3}}
+        .cf-join{background:${GOLD};color:#1b1206;font-weight:700;border:none;border-radius:11px;padding:13px 22px;font-size:14px;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;box-shadow:0 8px 26px rgba(239,154,58,.35), inset 0 1px 0 rgba(255,255,255,.45);transition:transform .16s ease, box-shadow .16s ease}
+        .cf-join:hover{transform:translateY(-1px);box-shadow:0 12px 34px rgba(239,154,58,.5), inset 0 1px 0 rgba(255,255,255,.45)}
+        .cf-soc:hover{color:${C.amberLt}}
+        h1,h2{font-family:var(--font-display)}
+        @media(prefers-reduced-motion:reduce){.cf-glow-top,.cf-glow-low,.cf-rise{animation:none !important}}
+        @media(max-width:760px){
+          .cf-h1{font-size:42px !important}
+          .cf-stats{flex-direction:column !important;gap:18px !important}
+          .cf-bottom{grid-template-columns:1fr !important;gap:30px !important}
         }
       `}</style>
 
-      {/* ── FOND ANIMÉ (couches) ── */}
+      {/* FOND */}
       <div className="cf-bg" aria-hidden>
-        <div className="cf-spot" />
-        <div className="cf-beams" />
-        <div className="cf-grid" />
-        <div className="cf-orb cf-o1" />
-        <div className="cf-orb cf-o2" />
-        <div className="cf-orb cf-o3" />
+        <div className="cf-glow cf-glow-top" />
+        <div className="cf-glow cf-glow-low" />
       </div>
       <div className="cf-grain" aria-hidden />
-      <div className="cf-vignette" aria-hidden />
+      <div className="cf-corner cf-tl" aria-hidden />
+      <div className="cf-corner cf-tr" aria-hidden />
+      <div className="cf-corner cf-bl" aria-hidden />
+      <div className="cf-corner cf-br" aria-hidden />
 
-      {/* ── CONTENU ── */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        {/* NAV */}
-        <header style={{ position: 'sticky', top: 0, zIndex: 20, backdropFilter: 'blur(16px)', background: 'rgba(6,7,11,0.6)', borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '15px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <QMark />
-            <nav className="cf-navlinks" style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-              <a className="cf-link" href="#how">Comment ça marche</a>
-              <a className="cf-link" href="#features">Fonctions</a>
-              <a className="cf-link" href="/compare">Comparateur</a>
-              <a className="cf-link" href="/pricing">Tarifs</a>
-            </nav>
-            <a className="cf-cta" href="/auth?mode=signup" style={{ padding: '10px 18px', fontSize: 13.5, boxShadow: 'none' }}>Commencer</a>
-          </div>
-        </header>
-
-        {/* HERO */}
-        <section style={{ textAlign: 'center', padding: '120px 24px 96px', maxWidth: 940, margin: '0 auto' }}>
-          <span className="cf-rise" style={{ animationDelay: '.05s', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.text2, border: `1px solid ${C.border2}`, borderRadius: 99, padding: '7px 16px', background: 'rgba(255,255,255,.03)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, background: C.green, boxShadow: `0 0 12px ${C.green}` }} />
-            Beta publique · 100% gratuit
+      {/* CONTENU */}
+      <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Logo centré en haut */}
+        <div style={{ padding: '26px 0 0', textAlign: 'center' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 22, height: 22, borderRadius: 6, background: GOLD, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(239,154,58,.4)' }}>
+              <span style={{ color: '#1b1206', fontWeight: 800, fontSize: 13, fontFamily: 'var(--font-display)' }}>Q</span>
+            </span>
+            <span style={{ fontWeight: 700, letterSpacing: '0.06em', fontSize: 14 }}>Quantara</span>
           </span>
-          <h1 className="cf-h1 cf-rise" style={{ animationDelay: '.13s', fontSize: 82, lineHeight: 0.98, fontWeight: 800, letterSpacing: '-0.04em', margin: '26px 0 22px' }}>
-            Sois financé.<br /><span className="cf-grad-text">Reste financé.</span>
+        </div>
+
+        {/* HERO centré */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 24px 60px', maxWidth: 760, margin: '0 auto', width: '100%' }}>
+          <div className="cf-pill cf-rise" style={{ animationDelay: '.05s' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" /></svg>
+            Offre early · −50% à vie
+          </div>
+
+          <div className="cf-badge cf-rise" style={{ animationDelay: '.1s', marginTop: 18 }}>Le cockpit des traders PropFirm</div>
+
+          <h1 className="cf-h1 cf-rise" style={{ animationDelay: '.16s', fontSize: 64, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.02, margin: '22px 0 30px' }}>
+            <span style={{ background: GOLD, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Financé.</span>{' '}
+            <span style={{ color: C.text }}>En un coup d&apos;œil.</span>
           </h1>
-          <p className="cf-rise" style={{ animationDelay: '.22s', fontSize: 19, lineHeight: 1.6, color: C.text2, maxWidth: 600, margin: '0 auto 38px' }}>
-            Quantara suit ton <strong style={{ color: C.text }}>drawdown</strong>, ta <strong style={{ color: C.text }}>consistency</strong> et tes <strong style={{ color: C.text }}>payouts</strong> sur toutes tes PropFirms — pour passer tes évals et garder tes comptes financés.
-          </p>
-          <div className="cf-rise" style={{ animationDelay: '.3s', display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a className="cf-cta" href="/auth?mode=signup">Commencer gratuitement →</a>
-            <a className="cf-ghost" href="/demo">Voir la démo</a>
-          </div>
-          <div className="cf-rise" style={{ animationDelay: '.4s', marginTop: 22, fontSize: 13, color: C.text3 }}>Sans carte bancaire · Tes données restent privées</div>
-        </section>
 
-        {/* STATS */}
-        <section style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px 96px' }}>
-          <div className="cf-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, border: `1px solid ${C.border}`, borderRadius: 22, padding: '42px 24px', background: C.panel, backdropFilter: 'blur(6px)' }}>
-            {STATS.map((s, i) => (
-              <div key={i} style={{ textAlign: 'center' }}>
-                <div className="cf-grad-text" style={{ fontSize: 50, fontWeight: 800, letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>{s.v}</div>
-                <div style={{ fontSize: 14, color: C.text2, marginTop: 4 }}>{s.l}</div>
+          {/* 3 stats + lauriers */}
+          <div className="cf-stats cf-rise" style={{ animationDelay: '.24s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 26, marginBottom: 40 }}>
+            <Stat big="11" small={<>PropFirms<br />supportées</>} />
+            <Stat big="0 €" small={<>pendant<br />la beta</>} />
+            <Stat gold big={<>Multi-firmes.</>} small={<>Un seul dashboard.</>} />
+          </div>
+
+          {/* Bas : checklist + capture email */}
+          <div className="cf-bottom" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center', width: '100%', maxWidth: 620, textAlign: 'left', marginTop: 6 }}>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[['Suivi drawdown automatique', C.amber], ['Consistency & payouts en temps réel', C.amber], ['Gratuit pendant toute la beta', C.green]].map(([t, c], i) => (
+                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: C.text2 }}>
+                  <Dot c={c} /> {t}
+                </li>
+              ))}
+            </ul>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: C.text }}>Rejoins la beta gratuite</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input className="cf-input" placeholder="email@exemple.com" aria-label="email" />
+                <a className="cf-join" href="/auth?mode=signup">Commencer</a>
               </div>
-            ))}
+            </div>
           </div>
-        </section>
 
-        {/* HOW */}
-        <section id="how" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
-          <SectionTitle eyebrow="Comment ça marche" title="Financé en 3 étapes" />
-          <div className="cf-steps" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, marginTop: 44 }}>
-            {STEPS.map((s, i) => (
-              <div key={i} className="cf-card">
-                <div className="cf-grad-text" style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.1em', fontFamily: 'var(--font-display)' }}>{s.n}</div>
-                <h3 style={{ fontSize: 20, fontWeight: 700, margin: '12px 0 8px', letterSpacing: '-0.01em' }}>{s.t}</h3>
-                <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, margin: 0 }}>{s.d}</p>
-              </div>
-            ))}
+          {/* Social */}
+          <div className="cf-rise" style={{ animationDelay: '.34s', marginTop: 48, display: 'flex', alignItems: 'center', gap: 14, color: C.text3 }}>
+            <span style={{ fontSize: 12 }}>Suivez-nous</span>
+            <SocialIcon d="M20.3 4.4A19 19 0 0 0 15.7 3l-.2.5a17 17 0 0 1 4 1.3 13 13 0 0 0-11 0 17 17 0 0 1 4-1.3L12.3 3a19 19 0 0 0-4.6 1.4C4.3 9.5 3.4 14.5 3.8 19.4a19 19 0 0 0 5.8 2.9l.6-1a12 12 0 0 1-2-1l.5-.4a13 13 0 0 0 11 0l.5.4a12 12 0 0 1-2 1l.6 1a19 19 0 0 0 5.8-2.9c.5-5.7-.8-10.6-3.9-15zM9.5 16c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm5 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z" />
+            <SocialIcon d="M18.2 2H21l-6.6 7.6L22 22h-6l-4.7-6.2L5.9 22H3l7-8L2 2h6.2l4.3 5.7L18.2 2zm-1 18h1.6L7.8 3.7H6.1L17.2 20z" />
+            <SocialIcon d="M12 2.2c3.2 0 3.6 0 4.9.07 3.3.15 4.8 1.7 5 5 .06 1.3.07 1.6.07 4.8s0 3.5-.07 4.8c-.15 3.3-1.7 4.8-5 5-1.3.06-1.6.07-4.9.07s-3.6 0-4.9-.07c-3.3-.15-4.8-1.7-5-5C2.04 15.5 2 15.2 2 12s0-3.5.07-4.8c.15-3.3 1.7-4.8 5-5C8.4 2.2 8.8 2.2 12 2.2zm0 3.2A6.6 6.6 0 1 0 12 18.6 6.6 6.6 0 0 0 12 5.4zm0 10.9A4.3 4.3 0 1 1 12 7.7a4.3 4.3 0 0 1 0 8.6zm6.8-11.2a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+            <SocialIcon d="M23 7.5a3 3 0 0 0-2.1-2.1C19 4.8 12 4.8 12 4.8s-7 0-8.9.6A3 3 0 0 0 1 7.5 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.5a3 3 0 0 0 2.1 2.1c1.9.6 8.9.6 8.9.6s7 0 8.9-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 23.5 12 31 31 0 0 0 23 7.5zM9.8 15.3V8.7l5.7 3.3-5.7 3.3z" />
           </div>
-        </section>
-
-        {/* FEATURES */}
-        <section id="features" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
-          <SectionTitle eyebrow="Tout pour rester financé" title="Le cockpit du trader PropFirm" />
-          <div className="cf-feat" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, marginTop: 44 }}>
-            {FEATURES.map((f, i) => (
-              <div key={i} className={`cf-card${f.big ? ' cf-feat-big' : ''}`} style={f.big ? { gridColumn: 'span 2', background: `linear-gradient(135deg, rgba(59,109,255,0.12), ${C.panel})`, borderColor: 'rgba(59,109,255,0.32)' } : undefined}>
-                <h3 style={{ fontSize: f.big ? 26 : 18, fontWeight: 700, margin: 0, marginBottom: 8, letterSpacing: '-0.01em' }}>{f.t}</h3>
-                <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, margin: 0, maxWidth: f.big ? 430 : 'none' }}>{f.d}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* OFFER */}
-        <section style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px 110px' }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 26, border: `1px solid ${C.border2}`, padding: '60px 32px', textAlign: 'center', background: `radial-gradient(120% 150% at 50% 0%, rgba(139,92,246,0.22), ${C.panel} 62%)` }}>
-            <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px' }}>Gratuit pendant la beta.</h2>
-            <p style={{ fontSize: 17, color: C.text2, maxWidth: 520, margin: '0 auto 30px', lineHeight: 1.6 }}>
-              Les premiers inscrits gardent <strong style={{ color: C.text }}>-50% à vie</strong> quand Pro sortira. Aucune carte requise aujourd&apos;hui.
-            </p>
-            <a className="cf-cta" href="/auth?mode=signup">Réclamer mon accès early →</a>
-          </div>
-        </section>
-
-        {/* FOOTER */}
-        <footer style={{ borderTop: `1px solid ${C.border}`, padding: '40px 24px', maxWidth: 1180, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 18 }}>
-            <QMark size={26} />
-            <nav style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
-              <a className="cf-link" href="/compare">Comparateur</a>
-              <a className="cf-link" href="/pricing">Tarifs</a>
-              <a className="cf-link" href="/docs">Docs</a>
-              <a className="cf-link" href="/demo">Démo</a>
-            </nav>
-          </div>
-          <div style={{ marginTop: 22, fontSize: 12, color: C.text3 }}>© {new Date().getFullYear()} Quantara Technologies LLC — Albuquerque, NM. Concept de design (preview).</div>
-        </footer>
+        </div>
       </div>
-    </div>
-  )
-}
-
-function SectionTitle({ eyebrow, title }) {
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.violet, marginBottom: 12 }}>{eyebrow}</div>
-      <h2 style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>{title}</h2>
     </div>
   )
 }
