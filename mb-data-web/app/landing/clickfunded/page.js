@@ -25,6 +25,16 @@ const C = {
 }
 const GOLD = 'linear-gradient(180deg, #f9c877 0%, #ef9a3a 55%, #d97f24 100%)'
 
+// Particules de fond (positions déterministes, scintillement décalé)
+const PARTS = Array.from({ length: 46 }, (_, i) => ({
+  x: (i * 97 + 13) % 100,
+  y: (i * 53 + 7) % 100,
+  s: 1 + (i % 3) * 0.7,
+  dur: 4 + (i % 5),
+  delay: ((i * 7) % 11) * 0.5,
+  gold: i % 3 === 0,
+}))
+
 // ── Laurier (branche), miroir pour le côté droit ──
 function Laurel({ flip = false }) {
   return (
@@ -76,7 +86,18 @@ export default function ClickfundedLanding() {
         .cf-bl{bottom:18px;left:18px;border-bottom:1px solid;border-left:1px solid;border-bottom-left-radius:4px}
         .cf-br{bottom:18px;right:18px;border-bottom:1px solid;border-right:1px solid;border-bottom-right-radius:4px}
 
+        .cf-beam{position:absolute;left:50%;top:50%;width:2px;height:200vh;
+          background:linear-gradient(to bottom, transparent, rgba(247,189,102,.10) 35%, rgba(247,189,102,.14) 50%, rgba(247,189,102,.10) 65%, transparent);
+          filter:blur(1px);transform-origin:center;animation:cfBeam 14s ease-in-out infinite}
+        .cf-beam-a{transform:translate(-50%,-50%) rotate(32deg)}
+        .cf-beam-b{transform:translate(-50%,-50%) rotate(-32deg);animation-delay:-7s;animation-duration:18s}
+        .cf-beam-c{transform:translate(-50%,-50%) rotate(0deg);opacity:.5;animation-duration:11s}
+        .cf-parts{position:absolute;inset:0}
+        .cf-part{position:absolute;border-radius:50%;animation:cfTwinkle var(--d,5s) ease-in-out infinite}
+
         @keyframes cfBreathe{0%,100%{opacity:.65}50%{opacity:1}}
+        @keyframes cfBeam{0%,100%{opacity:.35}50%{opacity:1}}
+        @keyframes cfTwinkle{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:.85;transform:scale(1.15)}}
         @keyframes cfRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         .cf-rise{animation:cfRise .8s cubic-bezier(.2,.7,.2,1) both}
 
@@ -92,7 +113,7 @@ export default function ClickfundedLanding() {
         .cf-join:hover{transform:translateY(-1px);box-shadow:0 12px 34px rgba(239,154,58,.5), inset 0 1px 0 rgba(255,255,255,.45)}
         .cf-soc:hover{color:${C.amberLt}}
         h1,h2{font-family:var(--font-display)}
-        @media(prefers-reduced-motion:reduce){.cf-glow-top,.cf-glow-low,.cf-rise{animation:none !important}}
+        @media(prefers-reduced-motion:reduce){.cf-glow-top,.cf-glow-low,.cf-rise,.cf-beam,.cf-part{animation:none !important}}
         @media(max-width:760px){
           .cf-h1{font-size:42px !important}
           .cf-stats{flex-direction:column !important;gap:18px !important}
@@ -100,10 +121,23 @@ export default function ClickfundedLanding() {
         }
       `}</style>
 
-      {/* FOND */}
+      {/* FOND ANIMÉ */}
       <div className="cf-bg" aria-hidden>
         <div className="cf-glow cf-glow-top" />
         <div className="cf-glow cf-glow-low" />
+        <div className="cf-beam cf-beam-a" />
+        <div className="cf-beam cf-beam-b" />
+        <div className="cf-beam cf-beam-c" />
+        <div className="cf-parts">
+          {PARTS.map((p, i) => (
+            <span key={i} className="cf-part" style={{
+              left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s,
+              background: p.gold ? 'rgba(247,189,102,0.9)' : 'rgba(255,255,255,0.75)',
+              boxShadow: p.gold ? '0 0 6px rgba(247,189,102,0.7)' : '0 0 5px rgba(255,255,255,0.5)',
+              '--d': `${p.dur}s`, animationDelay: `${p.delay}s`,
+            }} />
+          ))}
+        </div>
       </div>
       <div className="cf-grain" aria-hidden />
       <div className="cf-corner cf-tl" aria-hidden />
