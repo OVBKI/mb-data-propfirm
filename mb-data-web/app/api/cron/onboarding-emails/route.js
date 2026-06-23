@@ -65,14 +65,17 @@ export async function GET(request) {
     for (const schedule of SCHEDULE) {
       if (daysSinceSignup !== schedule.day) continue
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profErr } = await supabase
         .from('profiles')
         .select('username, onboarding_emails_sent')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
+
+      // Erreur DB réelle → on saute (ne pas traiter comme "0 envoyé" et spammer).
+      if (profErr) { console.error(`Onboarding profile read failed for ${user.id}:`, profErr.message); continue }
 
       const alreadySent = profile?.onboarding_emails_sent || 0
-      if (alreadySent > schedule.step) continue
+      if (alreadySent >= schedule.step + 1) continue
 
       try {
         await resend.emails.send({
@@ -82,10 +85,12 @@ export async function GET(request) {
           html: emailBody(schedule.step, profile?.username),
         })
 
-        await supabase
+        // upsert (et non update) : si la ligne profil n'existe pas encore, on la crée,
+        // sinon le compteur ne persisterait jamais → renvois en boucle.
+        const { error: upErr } = await supabase
           .from('profiles')
-          .update({ onboarding_emails_sent: schedule.step + 1 })
-          .eq('user_id', user.id)
+          .upsert({ user_id: user.id, onboarding_emails_sent: schedule.step + 1 }, { onConflict: 'user_id' })
+        if (upErr) console.error(`Onboarding counter upsert failed for ${user.id}:`, upErr.message)
 
         sent++
       } catch (e) {

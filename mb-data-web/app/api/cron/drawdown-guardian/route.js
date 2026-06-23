@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import webpush from 'web-push'
+import { planSizeNum, maxDrawdown } from '../../../../lib/constants'
 
 const THRESHOLD = 0.70
 
@@ -22,20 +23,25 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  const { data: accounts } = await supabase
+  const { data: accounts, error: accountsError } = await supabase
     .from('accounts')
     .select('id, firm_id, plan_size, status, balance, dd_floor, dd_type, user_id:firms(user_id, name)')
-    .in('status', ['Challenge', 'Financé'])
+    .in('status', ['Challenge', 'Financé', 'Funded'])
 
+  if (accountsError) return Response.json({ error: 'DB error', detail: accountsError.message }, { status: 500 })
   if (!accounts?.length) return Response.json({ sent: 0, checked: 0 })
 
   const alerts = []
 
   for (const acct of accounts) {
     if (!acct.balance || !acct.dd_floor) continue
+    const firmName = acct.user_id?.name
+    // % du BUFFER de drawdown restant : room / drawdown max autorisé (pas la balance courante).
     const room = acct.balance - acct.dd_floor
-    const initialBalance = acct.balance
-    const roomPct = initialBalance > 0 ? room / initialBalance : 1
+    const maxDD = maxDrawdown(firmName, acct.plan_size) || 0
+    const startBal = planSizeNum(acct.plan_size) || 0
+    const denom = maxDD > 0 ? maxDD : startBal
+    const roomPct = denom > 0 ? room / denom : 1
 
     if (roomPct <= THRESHOLD && roomPct > 0) {
       alerts.push({

@@ -30,14 +30,27 @@ export async function DELETE(request) {
     'profiles',
   ]
 
+  const failures = []
   for (const table of tables) {
     const col = (table === 'follows') ? 'follower_id' : 'user_id'
     const { error } = await admin.from(table).delete().eq(col, userId)
-    if (error) console.error(`[delete-account] ${table}:`, error.message)
+    if (error) { console.error(`[delete-account] ${table}:`, error.message); failures.push(table) }
   }
 
   if (tables.includes('follows')) {
-    await admin.from('follows').delete().eq('following_id', userId)
+    const { error } = await admin.from('follows').delete().eq('following_id', userId)
+    if (error) { console.error('[delete-account] follows(following_id):', error.message); failures.push('follows') }
+  }
+
+  // Best-effort cleanup of secondary tables (also covered by FK cascade on auth.users).
+  await admin.from('group_members').delete().eq('user_id', userId).then(() => {}, () => {})
+
+  // RGPD: ne PAS supprimer l'utilisateur auth si une table PII a échoué — on laisse
+  // le compte pour que la suppression soit ré-essayable, au lieu d'orpheliner les données.
+  if (failures.length) {
+    return Response.json({
+      error: `Suppression incomplète (${failures.join(', ')}). Réessaie ou contacte le support.`,
+    }, { status: 500 })
   }
 
   const { error: authError } = await admin.auth.admin.deleteUser(userId)

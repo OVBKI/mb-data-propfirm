@@ -646,7 +646,7 @@ function TagPills({ tags, max = 2 }) {
 // Helper: side badge (LONG/SHORT) as a Notion-style pill.
 function SideBadge({ side }) {
   if (!side) return <span style={{ color: C.text3, fontSize: 11 }}>—</span>
-  const isLong = side === 'long'
+  const isLong = String(side).toLowerCase() === 'long'
   const color = isLong ? C.green : C.red
   const bg = isLong ? 'rgba(29,184,122,0.15)' : 'rgba(232,80,74,0.15)'
   return (
@@ -673,8 +673,9 @@ function TradeCompactView({ entries, onEdit, C, card }) {
       {entries.map((e, idx) => {
         const pnl = Number(e.pnl) || 0
         const pnlColor = pnl > 0 ? C.green : pnl < 0 ? C.red : C.text2
-        const sideAccent = e.side === 'long' ? C.green : e.side === 'short' ? C.red : C.text3
-        const rMult = e.r_multiple != null ? Number(e.r_multiple) : null
+        const sideNorm = String(e.side || '').toLowerCase()
+        const sideAccent = sideNorm === 'long' ? C.green : sideNorm === 'short' ? C.red : C.text3
+        const rMult = computeRMultiple({ entry: e.entry_price, exit: e.exit_price, stop: e.stop_loss, side: e.side, pnl: e.pnl })
         return (
           <div
             key={e.id}
@@ -882,7 +883,7 @@ function TradeTableView({ entries, onEdit, C, card }) {
             const pnl = Number(e.pnl) || 0
             const pnlColor = pnl > 0 ? C.green : pnl < 0 ? C.red : C.text2
             const barWidth = Math.min(100, (Math.abs(pnl) / maxAbsPnl) * 100)
-            const rMult = e.r_multiple != null ? Number(e.r_multiple) : null
+            const rMult = computeRMultiple({ entry: e.entry_price, exit: e.exit_price, stop: e.stop_loss, side: e.side, pnl: e.pnl })
             return (
               <tr
                 key={e.id}
