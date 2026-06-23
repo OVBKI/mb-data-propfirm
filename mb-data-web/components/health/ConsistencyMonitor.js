@@ -99,9 +99,9 @@ export default function ConsistencyMonitor({ firms, statsByAccount, loading }) {
       {fundedAccounts.map((a) => {
         const acctStats = statsByAccount?.[a.id]
         const threshold = CONSISTENCY_THRESHOLDS[a.firmName] || 0.4
-        // Use totalPnl (net) as denominator — same convention as Journal Sync page
-        const ratio = (acctStats?.totalPnl > 0 && acctStats?.bestDayAmount > 0)
-          ? acctStats.bestDayAmount / acctStats.totalPnl
+        // Dénominateur = somme des JOURS GAGNANTS (règle Topstep/Apex), pas le net total.
+        const ratio = (acctStats?.winningDaysProfit > 0 && acctStats?.bestDayAmount > 0)
+          ? acctStats.bestDayAmount / acctStats.winningDaysProfit
           : null
         const color = ratioColor(ratio, threshold)
         const label = ratioLabel(ratio, threshold)

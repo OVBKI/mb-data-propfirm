@@ -67,6 +67,9 @@ function computeStatsByAccount(trades, accountsById) {
       if (p > bestDayAmount) { bestDayAmount = p; bestDayDate = d }
     }
 
+    // Somme des jours GAGNANTS (dénominateur consistency, règle Topstep/Apex).
+    const winningDaysProfit = days.reduce((s, [_, p]) => s + (p > 0 ? p : 0), 0)
+
     stats[acctId] = {
       balance: cum,
       peakBalance: peak,
@@ -75,6 +78,7 @@ function computeStatsByAccount(trades, accountsById) {
       bestDayDate,
       daysCount: days.length,
       winningDaysCount: days.filter(([_, p]) => p > 0).length,
+      winningDaysProfit,
     }
   }
 
@@ -90,6 +94,7 @@ function computeStatsByAccount(trades, accountsById) {
       bestDayDate: '',
       daysCount: 0,
       winningDaysCount: 0,
+      winningDaysProfit: 0,
     }
   }
   return stats
