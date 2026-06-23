@@ -26,6 +26,7 @@ export function generateMetadata({ params }) {
       description: guide.description,
       url: canonical,
       type: 'article',
+      images: ['/og-image.webp'],
     },
     twitter: {
       card: 'summary_large_image',
