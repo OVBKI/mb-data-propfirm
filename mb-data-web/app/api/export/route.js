@@ -39,10 +39,15 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') || 'all'
 
-  const { data: firms } = await admin.from('firms').select('*').eq('user_id', userId).order('created_at')
-  const { data: accounts } = await admin.from('accounts').select('*').eq('user_id', userId).order('buy_date')
-  const { data: payouts } = await admin.from('payouts').select('*').eq('user_id', userId).order('date')
-  const { data: journal } = await admin.from('journal_entries').select('*').eq('user_id', userId).order('date', { ascending: false })
+  // Colonnes explicites (pas de select('*')) : on ne charge que ce que le CSV émet.
+  const { data: firms } = await admin.from('firms').select('id, name').eq('user_id', userId).order('created_at')
+  const { data: accounts } = await admin.from('accounts')
+    .select('id, firm_id, name, plan_size, status, currency, spent, dd_type, buy_date, activation_date, payout_target, min_trading_days, profit_split, payment_mode')
+    .eq('user_id', userId).order('buy_date')
+  const { data: payouts } = await admin.from('payouts').select('account_id, date, amount, note').eq('user_id', userId).order('date')
+  const { data: journal } = await admin.from('journal_entries')
+    .select('account_id, date, symbol, pnl, content, notes')
+    .eq('user_id', userId).order('date', { ascending: false })
 
   const firmMap = {}
   for (const f of firms || []) firmMap[f.id] = f.name

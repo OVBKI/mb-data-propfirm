@@ -873,6 +873,14 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
           payload.liquidated_at = acc.triggerTime
           payload.status = 'Échoué'
           report.liquidated++
+        } else {
+          // Compte SAIN dans le nouveau CSV : si on l'avait précédemment marqué liquidé,
+          // on réinitialise (sinon il reste "Échoué" à vie et disparaît du Health).
+          const prev = existingAccounts.find(a => a.id === targetId)
+          if (prev?.liquidated_at || prev?.status === 'Échoué') {
+            payload.liquidated_at = null
+            payload.status = acc.type === 'FUNDED' ? 'Financé' : 'Challenge'
+          }
         }
 
         if (!dryRun) {
