@@ -5,6 +5,7 @@
 
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
+import JsonLd, { SOFTWARE_SCHEMA, FAQ_SCHEMA } from '../components/JsonLd'
 
 // Page-specific metadata — overrides layout.js defaults for the landing route.
 // Layout already provides OG images, twitter cards, robots, icons, etc.
@@ -101,8 +102,14 @@ function LandingFallback() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<LandingFallback />}>
-      <LandingPage />
-    </Suspense>
+    <>
+      {/* JSON-LD rendu côté SERVEUR (le landing client est ssr:false → invisible aux
+          crawlers). Organization + WebSite sont déjà émis dans layout.js. */}
+      <JsonLd data={SOFTWARE_SCHEMA} />
+      <JsonLd data={FAQ_SCHEMA} />
+      <Suspense fallback={<LandingFallback />}>
+        <LandingPage />
+      </Suspense>
+    </>
   )
 }

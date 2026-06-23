@@ -19,7 +19,6 @@ import AnimatedStats from './AnimatedStats'
 import SocialProof from './SocialProof'
 import Tilted3DFrame from './Tilted3DFrame'
 // SEO — JSON-LD Schema.org pour rich results Google + citations AI search
-import JsonLd, { LANDING_SCHEMAS } from '../JsonLd'
 
 // Heavy below-fold components — lazy loaded to reduce initial bundle
 const AnalyticsMockup = dynamic(() => import('./AnalyticsMockup'), { ssr: false, loading: () => <div style={{ height: 400 }} /> })
@@ -140,11 +139,8 @@ export default function LandingPage() {
       overflowX: 'hidden',
       position: 'relative',
     }}>
-      {/* JSON-LD Schema.org : Organization + WebSite + SoftwareApplication + FAQPage.
-          Critique pour rich results Google + citations par AI search (ChatGPT/Claude/Perplexity). */}
-      {LANDING_SCHEMAS.map((schema, i) => (
-        <JsonLd key={i} data={schema} />
-      ))}
+      {/* JSON-LD : désormais rendu côté SERVEUR (app/page.js + layout.js) pour être
+          visible des crawlers — ce composant client est ssr:false. */}
 
       {/* Polish layers — invisible mais cassent le côté "AI-default" */}
       <SmoothScrollProvider />

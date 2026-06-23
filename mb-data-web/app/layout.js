@@ -92,11 +92,9 @@ export const metadata = {
     images: ['/og-image.webp'],
   },
 
-  // Verification (à compléter après setup GSC/Bing)
-  verification: {
-    google: 'REPLACE_WITH_YOUR_GSC_VERIFICATION_CODE',
-    // bing: 'TOKEN_BING_ICI',
-  },
+  // Verification : aucun token tant qu'on n'a pas le vrai (un placeholder émet
+  // un <meta google-site-verification> bidon site-wide). Ajouter le vrai code GSC ici.
+  // verification: { google: 'TOKEN_REEL', bing: 'TOKEN_BING' },
 
   // Icons explicites — WebP (compatible navigateurs modernes, ÷6 plus léger)
   icons: {
