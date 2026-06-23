@@ -151,7 +151,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
     }
 
     // Side
-    if (sideFilter !== 'all') arr = arr.filter(e => e.side === sideFilter)
+    if (sideFilter !== 'all') arr = arr.filter(e => String(e.side).toLowerCase() === sideFilter.toLowerCase())
 
     // Résultat win/loss/be
     if (resultFilter === 'win') arr = arr.filter(e => Number(e.pnl) > 0)
