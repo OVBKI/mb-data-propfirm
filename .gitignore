@@ -5,3 +5,7 @@
 # Editor / OS junk
 .DS_Store
 Thumbs.db
+
+# Experimental Remotion project for the landing background video (~513 MB with
+# node_modules). Not part of the deployed app; kept locally only.
+quantara-video/
