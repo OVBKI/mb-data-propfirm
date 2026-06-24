@@ -395,25 +395,34 @@ Full architecture documented but NOT yet coded. When ready, build in this order:
 - [ ] Chrome Extension for Rithmic
 - [ ] Target: MRR $500/mo
 
-## Still-open audit issues (not yet fixed)
+## Still-open audit issues
 
-### i18n gaps (P5)
-- contact/page.js — hardcoded FR
-- not-found.js, error.js, auth/callback — hardcoded FR
-- layout.js drawers/modals — 50+ hardcoded FR strings
-- Tutorial.js — 8 steps hardcoded FR
-- ComparisonPage + vs pages — hardcoded EN
-- DemoClient sidebar/status labels — partially hardcoded EN
-- DrawdownSimulator status/type labels — hardcoded EN
+### i18n gaps (P5) — mostly RESOLVED (June 2026)
+- [x] contact/page.js, not-found.js, error.js — FR/EN (server wrapper + Client child using useT)
+- [x] layout.js drawers/modals/toasts/alerts + 22 motivation messages — FR/EN
+- [x] Tutorial.js (steps + chrome) — FR/EN
+- [x] ComparisonPage chrome — FR/EN (prop-driven marketing copy stays in the calling pages)
+- [x] DemoClient sidebar/status labels + locale-aware calendar — FR/EN
+- [x] DrawdownSimulator status/type labels — FR/EN (eod/intraday logic literals kept)
+- [ ] auth/callback — still FR-only (deferred: auth-critical recovery/reset flow, translate with care)
 
-### Security (P6)
-- Middleware admin check is bypassable (only checks referer/auth header existence)
-- Add role="dialog" + focus trapping + Escape key to modals/drawers
+### Security (P6) — RESOLVED
+- [x] Middleware admin "bypass": the spoofable referer/auth-header check was already removed
+  (commit f297496); the real boundary is per-route verifyAdmin() (genuine Supabase JWT
+  validation + isAdmin + service-role) plus RLS — investigation confirmed LOW severity
+  (at most an inert page shell, no data exfiltration). Optional future hardening: validate
+  the session in middleware via `jose` — but the app uses a localStorage storage adapter, so
+  a naive cookie check risks locking out admins. Not worth it currently.
+- [x] role="dialog" + aria-modal + focus trapping + Escape — shipped via the reusable
+  components/useDialog.js hook on the 6 layout overlays and the 4 component modals
+  (ProfileModal, TradeEntryModal, CertificatesModal, OnboardingModal).
 
 ### Architecture (remaining)
 - N+1 billing updates in loadFirms (Supabase RPC needed)
 - Sentry integration (DSN exists, needs wiring)
-- Split layout.js monolith (810 lines) into composable pieces
+- Split layout.js monolith into composable pieces
+- AppContext value is now memoized + trimmed to the consumed set (commit 3db1891), so routed
+  pages no longer re-render on the layout's transient modal/drawer/form/toast state
 
 ## Programmatic SEO Opportunity
 
