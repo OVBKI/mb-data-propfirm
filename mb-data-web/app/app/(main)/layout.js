@@ -3,7 +3,7 @@
 // Handles: auth, firms/accounts/payouts loading, sidebar, topbar, modals/drawers, toast.
 // Children (route pages) consume shared state via AppContext.
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 import AuthPage from '../../../components/AuthPage'
@@ -178,7 +178,7 @@ export default function AppLayout({ children }) {
     } catch { setRateInfo(t('app.toasts.ratesOffline')) }
   }
 
-  async function loadFirms() {
+  const loadFirms = useCallback(async () => {
     if (!user) return
 
     // ── Billing check (needs flat accounts list to update individually) ──
@@ -226,9 +226,10 @@ export default function AppLayout({ children }) {
       const { count: tc } = await supabase.from('journal_entries').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
       setTradesCount(tc || 0)
     } catch {}
-  }
+  }, [user])
 
-  function showToast(msg) { setToast(msg); setTimeout(() => setToast(''), 2200) }
+  const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }, [])
+  const navigateTo = useCallback((page) => router.push(`/app/${page}`), [router])
   async function signOut() { await supabase.auth.signOut(); setUser(null); setFirms([]) }
 
   async function createFirm() {
@@ -385,23 +386,23 @@ export default function AppLayout({ children }) {
   }
 
   // ── Computed values ──
-  function totalPayoutsEUR(acct) { return (acct.payouts || []).reduce((s, p) => s + toEUR(p.amount, acct.currency, rates), 0) }
-  function totalSpentForAccount(acct) {
+  const totalPayoutsEUR = useCallback((acct) => { return (acct.payouts || []).reduce((s, p) => s + toEUR(p.amount, acct.currency, rates), 0) }, [rates])
+  const totalSpentForAccount = useCallback((acct) => {
     const months = acct.months_count || 1
     const recurring = (parseFloat(acct.spent) || 0) * months
     return toEUR(recurring, acct.currency, rates) + toEUR(acct.activation_fee || 0, acct.currency, rates)
-  }
-  function firmTotalSpent(firm) { return (firm.accounts || []).reduce((s, a) => s + totalSpentForAccount(a), 0) }
-  function firmTotalPayouts(firm) { return (firm.accounts || []).reduce((s, a) => s + totalPayoutsEUR(a), 0) }
-  function allAccounts() { return firms.flatMap(f => (f.accounts || []).map(a => ({ ...a, firmName: f.name, firmColor: f.color }))) }
-  function fmtMoney(eurVal, dec = 2) {
+  }, [rates])
+  const firmTotalSpent = useCallback((firm) => { return (firm.accounts || []).reduce((s, a) => s + totalSpentForAccount(a), 0) }, [totalSpentForAccount])
+  const firmTotalPayouts = useCallback((firm) => { return (firm.accounts || []).reduce((s, a) => s + totalPayoutsEUR(a), 0) }, [totalPayoutsEUR])
+  const allAccounts = useCallback(() => { return firms.flatMap(f => (f.accounts || []).map(a => ({ ...a, firmName: f.name, firmColor: f.color }))) }, [firms])
+  const fmtMoney = useCallback((eurVal, dec = 2) => {
     if (currency === 'eur') return fmtE(eurVal, dec)
     return (eurVal / rates.USD).toFixed(dec) + ' $'
-  }
-  function fmtMoneyNet(eurVal, dec = 2) {
+  }, [currency, rates])
+  const fmtMoneyNet = useCallback((eurVal, dec = 2) => {
     if (currency === 'eur') return fmtENet(eurVal, dec)
     return (eurVal >= 0 ? '+' : '') + (eurVal / rates.USD).toFixed(dec) + ' $'
-  }
+  }, [currency, rates])
 
   function exportCSV() {
     const rows = [[t('app.csv.firm'), t('app.csv.buyDate'), t('app.csv.currency'), t('app.csv.spent'), t('app.csv.activationFee'), t('app.csv.payoutDate'), t('app.csv.amountEur'), t('app.csv.status'), t('app.csv.notes')]]
@@ -418,6 +419,78 @@ export default function AppLayout({ children }) {
     a.click(); showToast(t('app.toasts.csvExported'))
   }
 
+  const accts = useMemo(() => allAccounts(), [allAccounts])
+  const totalSpentEUR = useMemo(() => accts.reduce((s, a) => s + totalSpentForAccount(a), 0), [accts, totalSpentForAccount])
+  const totalPayoutsEUR2 = useMemo(() => accts.reduce((s, a) => s + totalPayoutsEUR(a), 0), [accts, totalPayoutsEUR])
+  const totalNet = useMemo(() => totalPayoutsEUR2 - totalSpentEUR, [totalPayoutsEUR2, totalSpentEUR])
+  const totalPayoutCount = useMemo(() => accts.reduce((s, a) => s + (a.payouts || []).length, 0), [accts])
+
+  // Alerts (for badge + alerts page)
+  const { alerts, upcomingBills } = useMemo(() => {
+    const alerts = []
+    const upcomingBills = []
+    firms.forEach(f => {
+      ;(f.accounts || []).forEach(a => {
+        const tp = totalPayoutsEUR(a), sp = totalSpentForAccount(a)
+        if (a.status === 'Financé' && (a.payouts || []).length === 0) alerts.push({ icon: '💰', title: `${t('app.alerts.payoutAvailablePrefix')} ${f.name}`, sub: t('app.alerts.payoutAvailableSub'), type: 'success' })
+        if (a.status === 'Challenge') {
+          const days = Math.floor((new Date() - new Date(a.buy_date + 'T00:00:00')) / 86400000)
+          if (days > 30) alerts.push({ icon: '⏰', title: `${t('app.alerts.challengeSincePrefix')} ${days} ${t('app.alerts.challengeDaysSuffix')} ${f.name}`, sub: t('app.alerts.challengeSub'), type: 'warn' })
+          if (a.payment_mode === 'monthly' && a.buy_date) {
+            const buyD = new Date(a.buy_date + 'T00:00:00Z')
+            const nextB = new Date(buyD); nextB.setUTCDate(buyD.getUTCDate() + (a.months_count || 1) * 30); nextB.setUTCHours(0, 0, 0, 0)
+            const todayMid = new Date(); todayMid.setUTCHours(0, 0, 0, 0)
+            const dLeft = Math.round((nextB - todayMid) / 86400000)
+            const acctName = a.name || `${t('app.prompts.accountDefaultNamePrefix')} ${a.buy_date}`
+            const sym = a.currency === 'EUR' ? '€' : a.currency === 'GBP' ? '£' : '$'
+            const dStr = nextB.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+            const cost = Number(a.spent) || 0
+            if (dLeft === 0) {
+              alerts.push({ icon: '🚨', title: `${t('app.alerts.billTodayPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billTodaySubPrefix')} ${cost} ${sym} ${t('app.alerts.billTodaySubSuffix')}`, type: 'warn' })
+            } else if (dLeft > 0 && dLeft <= 2) {
+              alerts.push({ icon: '📅', title: `${t('app.alerts.billSoonPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billSoonSubPrefix')} ${dLeft === 1 ? t('app.alerts.tomorrow') : `${t('app.alerts.inDaysPrefix')} ${dLeft} ${t('app.alerts.inDaysSuffix')}`} (${dStr}) · ${cost} ${sym}`, type: 'warn' })
+            }
+            if (dLeft >= 0 && dLeft <= 30) {
+              upcomingBills.push({ date: nextB, dateStr: dStr, daysLeft: dLeft, firm: f.name, firmColor: f.color, account: acctName, cost, sym })
+            }
+          }
+        }
+        if (tp > sp * 2) alerts.push({ icon: '🏆', title: `${t('app.alerts.excellentRoiPrefix')} ${f.name}`, sub: `${(tp / sp).toFixed(1)}x ${t('app.alerts.excellentRoiSubSuffix')}`, type: 'success' })
+      })
+    })
+    upcomingBills.sort((a, b) => a.date - b.date)
+    if (!alerts.length && firms.length) alerts.push({ icon: '✅', title: t('app.alerts.allClearTitle'), sub: t('app.alerts.allClearSub'), type: 'ok' })
+    return { alerts, upcomingBills }
+  }, [firms, totalPayoutsEUR, totalSpentForAccount, t])
+
+  const alertsBadgeCount = useMemo(() => alerts.filter(a => a.type !== 'ok').length, [alerts])
+
+  // ── Context value ──
+  const contextValue = useMemo(() => ({
+    user, firms, rates, profile, showToast, reload: loadFirms, getFirmLogo,
+    currency, setCurrencyMode, searchQ, setSearchQ, rateInfo,
+    navigateTo,
+    // Helpers
+    toEUR, fmtE, fmtENet, fmtMoney, fmtMoneyNet,
+    totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
+    // Computed
+    accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
+    alerts, upcomingBills,
+    // Styles
+    S,
+    // Modal / drawer setters (consumed by pages)
+    setFirmModal, setNewFirmName, setFirmDrawer, setCertsFirm, setShowOnboarding,
+    // Constants re-exported for convenience
+    MONTHS_FR, STATUS_COLORS, accountLabel,
+  }), [
+    user, firms, rates, profile, showToast, loadFirms,
+    currency, searchQ, rateInfo, navigateTo,
+    fmtMoney, fmtMoneyNet,
+    totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
+    accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
+    alerts, upcomingBills,
+  ])
+
   // ── Guards ──
   if (loading) return <Skeleton.AppShell />
   if (!user) return <AuthPage onAuth={u => setUser(u)} />
@@ -425,85 +498,6 @@ export default function AppLayout({ children }) {
   const currentFirm = firms.find(f => f.id === firmDrawer)
   const currentAcct = acctDrawer ? firms.find(f => f.id === acctDrawer.firmId)?.accounts?.find(a => a.id === acctDrawer.acctId) : null
   const currentAcctFirm = acctDrawer ? firms.find(f => f.id === acctDrawer.firmId) : null
-
-  const accts = allAccounts()
-  const totalSpentEUR = accts.reduce((s, a) => s + totalSpentForAccount(a), 0)
-  const totalPayoutsEUR2 = accts.reduce((s, a) => s + totalPayoutsEUR(a), 0)
-  const totalNet = totalPayoutsEUR2 - totalSpentEUR
-  const totalPayoutCount = accts.reduce((s, a) => s + (a.payouts || []).length, 0)
-
-  // Alerts (for badge + alerts page)
-  const alerts = []
-  const upcomingBills = []
-  firms.forEach(f => {
-    ;(f.accounts || []).forEach(a => {
-      const tp = totalPayoutsEUR(a), sp = totalSpentForAccount(a)
-      if (a.status === 'Financé' && (a.payouts || []).length === 0) alerts.push({ icon: '💰', title: `${t('app.alerts.payoutAvailablePrefix')} ${f.name}`, sub: t('app.alerts.payoutAvailableSub'), type: 'success' })
-      if (a.status === 'Challenge') {
-        const days = Math.floor((new Date() - new Date(a.buy_date + 'T00:00:00')) / 86400000)
-        if (days > 30) alerts.push({ icon: '⏰', title: `${t('app.alerts.challengeSincePrefix')} ${days} ${t('app.alerts.challengeDaysSuffix')} ${f.name}`, sub: t('app.alerts.challengeSub'), type: 'warn' })
-        if (a.payment_mode === 'monthly' && a.buy_date) {
-          const buyD = new Date(a.buy_date + 'T00:00:00Z')
-          const nextB = new Date(buyD); nextB.setUTCDate(buyD.getUTCDate() + (a.months_count || 1) * 30); nextB.setUTCHours(0, 0, 0, 0)
-          const todayMid = new Date(); todayMid.setUTCHours(0, 0, 0, 0)
-          const dLeft = Math.round((nextB - todayMid) / 86400000)
-          const acctName = a.name || `${t('app.prompts.accountDefaultNamePrefix')} ${a.buy_date}`
-          const sym = a.currency === 'EUR' ? '€' : a.currency === 'GBP' ? '£' : '$'
-          const dStr = nextB.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-          const cost = Number(a.spent) || 0
-          if (dLeft === 0) {
-            alerts.push({ icon: '🚨', title: `${t('app.alerts.billTodayPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billTodaySubPrefix')} ${cost} ${sym} ${t('app.alerts.billTodaySubSuffix')}`, type: 'warn' })
-          } else if (dLeft > 0 && dLeft <= 2) {
-            alerts.push({ icon: '📅', title: `${t('app.alerts.billSoonPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billSoonSubPrefix')} ${dLeft === 1 ? t('app.alerts.tomorrow') : `${t('app.alerts.inDaysPrefix')} ${dLeft} ${t('app.alerts.inDaysSuffix')}`} (${dStr}) · ${cost} ${sym}`, type: 'warn' })
-          }
-          if (dLeft >= 0 && dLeft <= 30) {
-            upcomingBills.push({ date: nextB, dateStr: dStr, daysLeft: dLeft, firm: f.name, firmColor: f.color, account: acctName, cost, sym })
-          }
-        }
-      }
-      if (tp > sp * 2) alerts.push({ icon: '🏆', title: `${t('app.alerts.excellentRoiPrefix')} ${f.name}`, sub: `${(tp / sp).toFixed(1)}x ${t('app.alerts.excellentRoiSubSuffix')}`, type: 'success' })
-    })
-  })
-  upcomingBills.sort((a, b) => a.date - b.date)
-  if (!alerts.length && firms.length) alerts.push({ icon: '✅', title: t('app.alerts.allClearTitle'), sub: t('app.alerts.allClearSub'), type: 'ok' })
-
-  const alertsBadgeCount = alerts.filter(a => a.type !== 'ok').length
-
-  // ── Context value ──
-  const contextValue = {
-    user, firms, rates, profile, toast, showToast, reload: loadFirms, getFirmLogo,
-    currency, setCurrencyMode, searchQ, setSearchQ, rateInfo,
-    // Helpers
-    toEUR, fmtE, fmtENet, fmtMoney, fmtMoneyNet,
-    totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts, allAccounts,
-    // Computed
-    accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
-    alerts, upcomingBills, alertsBadgeCount,
-    // Styles
-    S, cardS,
-    // Modals / drawers
-    firmModal, setFirmModal, acctModal, setAcctModal,
-    firmDrawer, setFirmDrawer, acctDrawer, setAcctDrawer,
-    certsFirm, setCertsFirm,
-    payoutForm, setPayoutForm, payoutFD, setPayoutFD,
-    newFirmName, setNewFirmName, acctForm, setAcctForm,
-    promoteModal, setPromoteModal, promoteForm, setPromoteForm,
-    failModal, setFailModal,
-    // CRUD
-    createFirm, deleteFirm, renameFirm, renameAccount,
-    saveAccount, deleteAccount, savePayout, deletePayout,
-    openPromoteModal, savePromote, openFailModal, confirmFail,
-    exportCSV,
-    // Tutorial / onboarding
-    tradesCount, showTutorial, setShowTutorial,
-    // Navigation helper (for pages that need to navigate programmatically)
-    navigateTo: (page) => router.push(`/app/${page}`),
-    // Constants re-exported for convenience
-    MONTHS_FR, MONTHS_FULL, STATUS_COLORS, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS,
-    plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays,
-    defaultChallengePrice, defaultMinDailyProfit, suggestProfitSplit,
-    generateAccountNames,
-  }
 
   return (
     <AppContext.Provider value={contextValue}>
