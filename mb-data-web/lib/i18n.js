@@ -1211,6 +1211,37 @@ const FR = {
     },
   },
 
+  // === Pages 404 / erreur ===
+  errorPages: {
+    metaNotFound: 'Page introuvable — 404',
+    notFoundTitle: 'Page introuvable',
+    notFoundBody: "Cette page n'existe pas, ou elle a été déplacée. Retourne à l'accueil ou ouvre ton tableau de bord pour continuer.",
+    backHome: "Retour à l'accueil",
+    openDashboard: 'Ouvrir mon dashboard',
+    popularPages: 'Pages populaires',
+    linkPricing: 'Tarifs',
+    linkIntegrations: 'Intégrations',
+    linkDocs: 'Documentation',
+    linkSecurity: 'Sécurité',
+    errorTitle: 'Une erreur est survenue',
+    errorBodyPre: "Désolé pour la gêne. Tu peux retenter ou revenir à l'accueil. Si le problème persiste, contacte-nous à ",
+    errorBodyPost: '.',
+    retry: 'Réessayer',
+  },
+
+  // === Contact ===
+  contactPage: {
+    back: "← Retour à l'accueil",
+    title: 'Contactez-nous',
+    subtitle: "Une question, un bug, une suggestion ? On est là pour t'aider.",
+    emailLabel: 'Email',
+    emailNote: 'Réponse sous 24-48h en moyenne.',
+    socialLabel: 'Réseaux sociaux',
+    companyLabel: 'Entreprise',
+    privacy: 'Politique de confidentialité',
+    cgu: 'CGU',
+  },
+
   // === Language switcher ===
   switcher: {
     fr: 'Français',
@@ -2371,6 +2402,35 @@ const EN = {
       title: '⚠️ Disclaimer:',
       body: "Quantara is a journaling and analytics tool. It does not provide financial or investment advice. Trading futures involves substantial risk and is not suitable for all investors. Past performance does not guarantee future results.",
     },
+  },
+
+  errorPages: {
+    metaNotFound: 'Page not found — 404',
+    notFoundTitle: 'Page not found',
+    notFoundBody: "This page doesn't exist, or it has been moved. Head back home or open your dashboard to continue.",
+    backHome: 'Back to home',
+    openDashboard: 'Open my dashboard',
+    popularPages: 'Popular pages',
+    linkPricing: 'Pricing',
+    linkIntegrations: 'Integrations',
+    linkDocs: 'Documentation',
+    linkSecurity: 'Security',
+    errorTitle: 'Something went wrong',
+    errorBodyPre: 'Sorry for the inconvenience. You can retry or go back home. If the problem persists, contact us at ',
+    errorBodyPost: '.',
+    retry: 'Retry',
+  },
+
+  contactPage: {
+    back: '← Back to home',
+    title: 'Contact us',
+    subtitle: "A question, a bug, a suggestion? We're here to help.",
+    emailLabel: 'Email',
+    emailNote: 'Average response time 24-48h.',
+    socialLabel: 'Social media',
+    companyLabel: 'Company',
+    privacy: 'Privacy policy',
+    cgu: 'Terms',
   },
 
   switcher: {

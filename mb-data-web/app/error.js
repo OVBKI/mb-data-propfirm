@@ -9,8 +9,10 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { useT } from '../components/LanguageProvider'
 
 export default function GlobalErrorBoundary({ error, reset }) {
+  const t = useT()
   useEffect(() => {
     // Log côté client — en attendant Sentry, au moins on a la trace en DevTools console
     // En prod, ce log ne fuite rien d'identifiable (juste le message + digest hash)
@@ -36,18 +38,17 @@ export default function GlobalErrorBoundary({ error, reset }) {
           fontSize: 28, fontWeight: 700, margin: 0,
           letterSpacing: '-0.02em', marginBottom: 12,
         }}>
-          Une erreur est survenue
+          {t('errorPages.errorTitle')}
         </h1>
 
         <p style={{
           fontSize: 15, color: '#9098b0', lineHeight: 1.6,
           marginTop: 0, marginBottom: 28,
         }}>
-          Désolé pour la gêne. Tu peux retenter ou revenir à l'accueil.
-          Si le problème persiste, contacte-nous à{' '}
+          {t('errorPages.errorBodyPre')}
           <a href="mailto:support@quantara.tech" style={{
             color: '#4d8fff', textDecoration: 'none',
-          }}>support@quantara.tech</a>.
+          }}>support@quantara.tech</a>{t('errorPages.errorBodyPost')}
         </p>
 
         {/* Détail debug — seulement en dev, jamais en prod */}
@@ -76,7 +77,7 @@ export default function GlobalErrorBoundary({ error, reset }) {
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            Réessayer
+            {t('errorPages.retry')}
           </button>
           <Link href="/" style={{
             padding: '12px 22px',
@@ -86,7 +87,7 @@ export default function GlobalErrorBoundary({ error, reset }) {
             textDecoration: 'none',
             display: 'inline-flex', alignItems: 'center',
           }}>
-            Retour à l'accueil
+            {t('errorPages.backHome')}
           </Link>
         </div>
       </div>
