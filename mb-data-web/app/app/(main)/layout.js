@@ -188,7 +188,7 @@ export default function AppLayout({ children }) {
       const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000)
       await Promise.all(
         ad
-          .filter(a => a.status === 'Challenge' && a.payment_mode === 'monthly' && a.buy_date)
+          .filter(a => a.market !== 'cfd' && a.status === 'Challenge' && a.payment_mode === 'monthly' && a.buy_date)
           .map(async a => {
             const lastCheck = a.last_bill_check_at ? new Date(a.last_bill_check_at) : null
             if (lastCheck && lastCheck > fiveMinAgo) return
@@ -212,7 +212,11 @@ export default function AppLayout({ children }) {
       .order('created_at', { ascending: true })
     if (!fd) return
 
-    setFirms(fd.map((f, i) => ({
+    // Exclude CFD firms from the shared futures context (CFD has its own /app/cfd tab).
+    // null/undefined market === futures, so we only drop explicit 'cfd' rows.
+    const fd2 = fd.filter(f => f.market !== 'cfd')
+
+    setFirms(fd2.map((f, i) => ({
       ...f,
       color: f.color || FIRM_COLORS[i % FIRM_COLORS.length],
       accounts: (f.accounts || [])

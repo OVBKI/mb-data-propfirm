@@ -43,6 +43,7 @@ const IC = {
   myrules: mk(['M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2', 'M9 4h6v3H9z', 'M9 14l2 2 4-4']),
   rules: mk(['M12 3v18', 'M5 21h14', 'M4 7l4-4 4 4', 'M2 11a4 4 0 0 0 8 0', 'M14 7l4-4 4 4', 'M14 11a4 4 0 0 0 8 0']),
   alerts: mk(['M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0']),
+  cfd: mk(['M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'], <circle cx="12" cy="12" r="10" />),
   groups: mk(['M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1', 'M22 19v-1a4 4 0 0 0-3-3.9'], <><circle cx="9" cy="8" r="4" /><circle cx="17.5" cy="8" r="3" /></>),
   settings: mk(['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M19.4 15a1.6 1.6 0 0 0 .3 1.8 2 2 0 1 1-2.8 2.8 1.6 1.6 0 0 0-2.7 1.1 2 2 0 0 1-4 0 1.6 1.6 0 0 0-2.7-1.1 2 2 0 1 1-2.8-2.8A1.6 1.6 0 0 0 2.6 13a2 2 0 0 1 0-4 1.6 1.6 0 0 0 1.1-2.7 2 2 0 1 1 2.8-2.8A1.6 1.6 0 0 0 9 3.6a2 2 0 0 1 4 0 1.6 1.6 0 0 0 2.7 1.1 2 2 0 1 1 2.8 2.8A1.6 1.6 0 0 0 20.4 11a2 2 0 0 1 0 4z']),
   admin: mk(['M12 3l8 3v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z', 'M9.5 12.5l1.8 1.8 3.4-3.6']),
@@ -92,6 +93,7 @@ export default function AppSidebar({
     { key: 'heatmaps', ic: IC.heatmaps, label: t('app.sidebar.heatmaps'), section: 'Trades' },
     { key: 'myrules', ic: IC.myrules, label: t('app.sidebar.myrules'), section: 'Trades' },
     { key: 'rules', ic: IC.rules, label: t('app.sidebar.rules'), section: 'PropFirm' },
+    { key: 'cfd', ic: IC.cfd, label: t('app.sidebar.cfd'), section: 'PropFirm' },
     { key: 'alerts', ic: IC.alerts, label: t('app.sidebar.alerts'), section: 'PropFirm', badge: alertsBadgeCount },
     userIsAdmin
       ? { href: '/app/groups', ic: IC.groups, label: t('app.sidebar.groups'), section: 'Communaute' }
