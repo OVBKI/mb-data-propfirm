@@ -116,7 +116,7 @@ function combineDateAndTime(date, time) {
 
 // Parse une string-nombre avec guillemets et signes négatifs
 // Gère les séparateurs US (1,234.56) ET EU (1.234,56 / 1234,56).
-function parseNum(s) {
+export function parseNum(s) {
   if (s === null || s === undefined) return 0
   let str = String(s).replace(/["\s$€£]/g, '').trim()
   if (!str) return 0
