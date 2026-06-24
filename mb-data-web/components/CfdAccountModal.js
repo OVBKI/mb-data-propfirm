@@ -50,6 +50,17 @@ function cleanCurrency(raw) {
   return m ? m[0] : 'USD'
 }
 
+// Format a $ account size as a plan label: 50000 → "50K", 2500 → "2.5K", 500000 → "500K".
+function fmtSize(n) {
+  const v = Number(n)
+  if (!isFinite(v)) return String(n)
+  if (v >= 1000) {
+    const k = v / 1000
+    return `${Number.isInteger(k) ? k : k.toFixed(1)}K`
+  }
+  return String(v)
+}
+
 // Build the prefilled (editable) form defaults from a firm's flagship model.
 function buildDefaults(catalog) {
   const fl = catalog?.flagship
@@ -224,10 +235,11 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
 
           <div>
             <label style={S.label}>{t('app.cfd.accountSize')} ({form.currency})</label>
-            <input list="cfd-sizes" type="number" value={form.account_size} onChange={set('account_size')} style={S.input} />
-            <datalist id="cfd-sizes">
-              {(flagship?.accountSizes || []).map(s => <option key={s} value={s} />)}
-            </datalist>
+            <select value={form.account_size} onChange={set('account_size')} style={S.input}>
+              {(flagship?.accountSizes || []).map(s => (
+                <option key={s} value={s}>{fmtSize(s)}</option>
+              ))}
+            </select>
           </div>
 
           <div>
