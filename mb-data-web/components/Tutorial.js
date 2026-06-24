@@ -21,6 +21,7 @@
 // Persistance : localStorage 'quantara_tutorial_done'
 
 import { useState, useEffect, useRef } from 'react'
+import { useT } from './LanguageProvider'
 
 const C = {
   surface: '#141720',
@@ -39,40 +40,36 @@ const C = {
 
 const TOUR_DONE_KEY = 'quantara_tutorial_done'
 
+// Données structurelles des étapes. Les textes affichés (title/desc/cta/badge/
+// actionHint) sont résolus via t() à partir de `tutorial.steps.<tkey>`.
 const STEPS = [
   // ============================ INTRO ============================
   {
     id: 'welcome',
+    tkey: 'welcome',
     type: 'modal',
     icon: '🎯',
-    title: 'Tutoriel interactif Quantara',
-    desc: "Je vais te guider pas à pas. Tu vas RÉELLEMENT créer ta firme, ajouter un compte, logger un trade, faire passer ton compte en Financé et enregistrer un payout. Au total ~5 min.",
-    cta: "C'est parti !",
   },
   // ============================ SIDEBAR ============================
   {
     id: 'sidebar',
+    tkey: 'sidebar',
     type: 'spot',
     target: '[data-tour="sidebar"]',
     page: 'dashboard',
     placement: 'right',
     icon: '🧭',
-    title: 'Navigation principale',
-    desc: "À gauche se trouvent toutes les sections : Tableau de bord, Journal de trading, Analytics, Calendrier économique, Règles des firmes…",
   },
   // ============================ ACTION 1 : ADD FIRM ============================
   {
     id: 'add-firm',
+    tkey: 'addFirm',
     type: 'spot',
     target: '[data-tour="add-firm-btn"]',
     page: 'dashboard',
     placement: 'bottom',
     mode: 'action',
     icon: '🏢',
-    badge: 'Étape 1/5',
-    title: 'Ajoute ta 1ère PropFirm',
-    desc: "👆 Clique sur ce bouton. Tape ou choisis une firme dans les suggestions (ex : Topstep) puis valide.",
-    actionHint: "En attente que tu crées une firme…",
     waitFor: (s, i) => s.firmsCount > i.firmsCount,
   },
   // ============================ ACTION 2 : ADD ACCOUNT ============================
@@ -80,99 +77,81 @@ const STEPS = [
   // → on enchaîne directement sur la création du compte
   {
     id: 'add-account',
+    tkey: 'addAccount',
     type: 'modal',
     mode: 'action',
     icon: '📂',
-    badge: 'Étape 2/5',
-    title: 'Configure ton 1er compte',
-    desc: "Quantara t'a ouvert automatiquement le formulaire \"Nouveau compte\". Les règles (drawdown, profit split, payout target, prix du challenge) sont déjà pré-remplies selon ta firme. Garde le statut \"Challenge\" et clique sur \"Enregistrer\".",
-    actionHint: "En attente que tu crées le compte…",
     waitFor: (s, i) => s.accountsCount > i.accountsCount,
   },
   // ============================ ACTION 4 : GO TO JOURNAL ============================
   {
     id: 'goto-journal',
+    tkey: 'gotoJournal',
     type: 'spot',
     target: '[data-tour="nav-journal"]',
     page: 'dashboard',
     placement: 'right',
     mode: 'action',
     icon: '📔',
-    title: 'Direction le Journal',
-    desc: "👆 Clique sur \"Journal trading\" dans la sidebar pour logger ton premier trade.",
-    actionHint: "En attente que tu cliques sur Journal trading…",
     waitFor: (s) => s.page === 'journal',
   },
   // ============================ ACTION 5 : ADD TRADE ============================
   {
     id: 'add-trade',
+    tkey: 'addTrade',
     type: 'modal',
     mode: 'action',
     icon: '📝',
-    badge: 'Étape 3/5',
-    title: 'Logge ton 1er trade',
-    desc: "Si tu as plusieurs comptes, sélectionne celui que tu viens de créer en haut. Puis clique sur \"+ Ajouter trade\". Entre une date, un PnL (ex : +250 pour un gain, -120 pour une perte), un instrument optionnel, et valide.",
-    actionHint: "En attente que tu ajoutes un trade…",
     waitFor: (s, i) => s.tradesCount > i.tradesCount,
   },
   // ============================ INFO : EQUITY CURVE ============================
   {
     id: 'equity-info',
+    tkey: 'equityInfo',
     type: 'modal',
     icon: '📈',
-    title: "Ta courbe d'equity est née",
-    desc: "Bravo ! Ta courbe de balance et la ligne de drawdown apparaissent maintenant en temps réel. Plus tu logges de trades, plus le graph se précise. Le DD est calculé selon le type de ta firme (Static / EOD / Trailing intraday).",
   },
   // ============================ ACTION 6 : BACK TO DASHBOARD ============================
   {
     id: 'back-dashboard',
+    tkey: 'backDashboard',
     type: 'spot',
     target: '[data-tour="nav-dashboard"]',
     page: 'journal',
     placement: 'right',
     mode: 'action',
     icon: '⬅️',
-    title: 'Retour au tableau de bord',
-    desc: "👆 Clique sur \"Tableau de bord\" pour gérer le statut de ton compte (passage Challenge → Financé).",
-    actionHint: "En attente que tu reviennes au dashboard…",
     waitFor: (s) => s.page === 'dashboard',
   },
   // ============================ ACTION 7 : PROMOTE TO FINANCÉ ============================
   {
     id: 'promote-financed',
+    tkey: 'promoteFinanced',
     type: 'modal',
     mode: 'action',
     icon: '🚀',
-    badge: 'Étape 4/5',
-    title: 'Passe ton compte en Financé',
-    desc: "Ouvre ta firme → clique sur ton compte → bouton vert \"🚀 J'ai passé le challenge — Passer en Financé\" en haut du drawer → remplis les règles funded (payout target, jours min, profit split…) → valide. Le journal se réinitialise automatiquement et les mensualités s'arrêtent.",
-    actionHint: "En attente que ton compte passe en Financé…",
     waitFor: (s, i) => s.financedCount > i.financedCount,
   },
   // ============================ ACTION 8 : ADD PAYOUT ============================
   {
     id: 'add-payout',
+    tkey: 'addPayout',
     type: 'modal',
     mode: 'action',
     icon: '💰',
-    badge: 'Étape 5/5',
-    title: 'Enregistre ton 1er payout',
-    desc: "Toujours dans le panneau du compte (maintenant en Financé), clique sur \"+ Ajouter payout\". Entre le montant BRUT demandé (ex : 2000). Quantara calcule le NET reçu (brut × profit split) et déduit le BRUT du compte.",
-    actionHint: "En attente que tu enregistres un payout…",
     waitFor: (s, i) => s.payoutsCount > i.payoutsCount,
   },
   // ============================ DONE ============================
   {
     id: 'done',
+    tkey: 'done',
     type: 'modal',
     icon: '🎉',
-    title: "Bravo ! Tu maîtrises Quantara",
-    desc: "Tu as créé une firme, ajouté un compte, loggé un trade, fait passer ton compte en Financé et enregistré un payout. Tu connais maintenant les bases. Tu peux relancer ce tutoriel à tout moment via le bouton « 🎓 Lancer le tutoriel » en bas du menu de gauche. Bon trading !",
-    cta: 'Terminer',
   },
 ]
 
 export default function Tutorial({ onClose, onPageChange, state }) {
+  const t = useT()
   const [idx, setIdx] = useState(0)
   const [rect, setRect] = useState(null)
   const [ready, setReady] = useState(false)
@@ -180,6 +159,16 @@ export default function Tutorial({ onClose, onPageChange, state }) {
   const initialStateRef = useRef(null)
   const advanceTimerRef = useRef(null)
   const step = STEPS[idx]
+
+  // Textes affichés résolus via la dict i18n (tutorial.steps.<tkey>.*)
+  const stepTitle = t(`tutorial.steps.${step.tkey}.title`)
+  const stepDesc = t(`tutorial.steps.${step.tkey}.desc`)
+  const stepBadgeRaw = t(`tutorial.steps.${step.tkey}.badge`)
+  const stepBadge = stepBadgeRaw === `tutorial.steps.${step.tkey}.badge` ? null : stepBadgeRaw
+  const stepCtaRaw = t(`tutorial.steps.${step.tkey}.cta`)
+  const stepCta = stepCtaRaw === `tutorial.steps.${step.tkey}.cta` ? null : stepCtaRaw
+  const stepActionHintRaw = t(`tutorial.steps.${step.tkey}.actionHint`)
+  const stepActionHint = stepActionHintRaw === `tutorial.steps.${step.tkey}.actionHint` ? null : stepActionHintRaw
 
   // Snapshot l'état initial au changement d'étape
   useEffect(() => {
@@ -387,13 +376,13 @@ export default function Tutorial({ onClose, onPageChange, state }) {
           marginBottom: 14,
         }}>
           <span style={{ display:'flex', gap:6, alignItems:'center' }}>
-            <span>Étape {idx + 1} / {STEPS.length}</span>
-            {step.badge && (
+            <span>{t('tutorial.stepPrefix')} {idx + 1} / {STEPS.length}</span>
+            {stepBadge && (
               <span style={{
                 padding:'2px 8px', borderRadius: 99,
                 background:'rgba(45,111,255,0.16)', color: C.blueLight,
                 fontSize: 9, fontWeight: 700,
-              }}>{step.badge}</span>
+              }}>{stepBadge}</span>
             )}
           </span>
           <button
@@ -405,7 +394,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
             }}
             onMouseEnter={e => e.currentTarget.style.color = C.text}
             onMouseLeave={e => e.currentTarget.style.color = C.text3}
-          >Passer le tutoriel</button>
+          >{t('tutorial.skip')}</button>
         </div>
 
         {/* Titre */}
@@ -414,14 +403,14 @@ export default function Tutorial({ onClose, onPageChange, state }) {
           <h3 style={{
             fontSize: 17, fontWeight: 700, color: C.text,
             lineHeight: 1.3, margin: 0,
-          }}>{step.title}</h3>
+          }}>{stepTitle}</h3>
         </div>
 
         {/* Description */}
         <p style={{
           fontSize: 13, color: C.text2, lineHeight: 1.65,
           marginBottom: 18,
-        }}>{step.desc}</p>
+        }}>{stepDesc}</p>
 
         {/* Bandeau "Action attendue" pour les étapes interactives */}
         {isAction && (
@@ -440,7 +429,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
               fontSize: 14,
               animation: actionValidated ? 'none' : 'qtBlink 1.4s ease-in-out infinite',
             }}>{actionValidated ? '✓' : '⏳'}</span>
-            <span>{actionValidated ? 'Action validée ! Étape suivante…' : (step.actionHint || 'En attente de ton action…')}</span>
+            <span>{actionValidated ? t('tutorial.actionValidated') : (stepActionHint || t('tutorial.actionWaiting'))}</span>
           </div>
         )}
 
@@ -472,14 +461,14 @@ export default function Tutorial({ onClose, onPageChange, state }) {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = C.surface2; e.currentTarget.style.color = C.text }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.text2 }}
-              >← Retour</button>
+              >{t('tutorial.back')}</button>
             )}
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
             {isAction && !actionValidated && (
               <button
                 onClick={next}
-                title="Passer cette étape (si tu l'as déjà fait)"
+                title={t('tutorial.skipStepTitle')}
                 style={{
                   background: 'transparent', border: 'none', color: C.text3,
                   fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
@@ -487,7 +476,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
                 }}
                 onMouseEnter={e => e.currentTarget.style.color = C.text2}
                 onMouseLeave={e => e.currentTarget.style.color = C.text3}
-              >Sauter l'étape →</button>
+              >{t('tutorial.skipStep')}</button>
             )}
             {!isAction && (
               <button
@@ -504,7 +493,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.5) inset, 0 8px 20px rgba(0,0,0,0.3)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(45,111,255,0.4)' }}
               >
-                {isLast ? (step.cta || 'Terminer') : (step.cta || 'Suivant')}
+                {isLast ? (stepCta || t('tutorial.finishDefault')) : (stepCta || t('tutorial.next'))}
                 {!isLast && <span style={{ fontSize: 14 }}>→</span>}
               </button>
             )}
