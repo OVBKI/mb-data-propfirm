@@ -70,7 +70,7 @@ export default function DrawdownSimulatorClient() {
   }
 
   const roomColor = sim.roomPct > 3 ? C.green : sim.roomPct > 1.5 ? C.amber : C.red
-  const statusText = sim.roomPct > 3 ? 'Safe' : sim.roomPct > 1.5 ? 'Caution' : 'Danger'
+  const statusText = sim.roomPct > 3 ? t('simulator.statusSafe') : sim.roomPct > 1.5 ? t('simulator.statusCaution') : t('simulator.statusDanger')
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
@@ -78,7 +78,7 @@ export default function DrawdownSimulatorClient() {
       <main style={{ flex: 1, padding: '60px 24px 80px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>
-            FREE TOOL
+            {t('simulator.freeTool')}
           </div>
           <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em', margin: 0, marginBottom: 12 }}>
             {t('tools.ddSim.title')}
@@ -128,7 +128,7 @@ export default function DrawdownSimulatorClient() {
                         color: ddType === type ? '#fff' : C.text2,
                         border: 'none', fontFamily: 'inherit',
                       }}>
-                        {type === 'eod' ? 'End-of-Day (EOD)' : 'Intraday'}
+                        {type === 'eod' ? t('simulator.typeEod') : t('simulator.typeIntraday')}
                       </button>
                     ))}
                   </div>
@@ -179,11 +179,11 @@ export default function DrawdownSimulatorClient() {
               <div style={{ position: 'relative', height: 180, background: C.surface2, borderRadius: 8, overflow: 'hidden', padding: '8px 16px' }}>
                 {/* Balance line */}
                 <div style={{ position: 'absolute', left: 16, right: 16, bottom: `${((currentBalance - sim.actualFloor) / (sim.peakBalance - sim.actualFloor + 1000)) * 100}%`, borderTop: `2px solid ${C.green}`, fontSize: 10, color: C.green, textAlign: 'right' }}>
-                  Balance: ${currentBalance.toLocaleString()}
+                  {t('simulator.balanceLabel')}: ${currentBalance.toLocaleString()}
                 </div>
                 {/* DD floor line */}
                 <div style={{ position: 'absolute', left: 16, right: 16, bottom: '10%', borderTop: `2px dashed ${C.red}`, fontSize: 10, color: C.red, textAlign: 'right' }}>
-                  DD Floor: ${sim.actualFloor.toLocaleString()} {sim.isLocked ? '🔒' : '↑'}
+                  {t('simulator.ddFloorLabel')}: ${sim.actualFloor.toLocaleString()} {sim.isLocked ? '🔒' : '↑'}
                 </div>
                 {/* Fill zone */}
                 <div style={{
@@ -201,9 +201,9 @@ export default function DrawdownSimulatorClient() {
               <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>{t('tools.ddSim.detailsTitle')}</h2>
               {[
                 [t('tools.ddSim.initialFloor'), `$${sim.initialFloor.toLocaleString()}`],
-                [t('tools.ddSim.currentFloor'), `$${sim.actualFloor.toLocaleString()}`, sim.isLocked ? '🔒 Locked' : '↑ Trailing'],
+                [t('tools.ddSim.currentFloor'), `$${sim.actualFloor.toLocaleString()}`, sim.isLocked ? t('simulator.badgeLocked') : t('simulator.badgeTrailing')],
                 [t('tools.ddSim.maxLossLabel'), `$${sim.maxLossToday.toLocaleString()}`, null, sim.room < 1000 ? C.red : null],
-                [t('tools.ddSim.ddTypeResult'), ddType === 'eod' ? 'End-of-Day' : 'Intraday'],
+                [t('tools.ddSim.ddTypeResult'), ddType === 'eod' ? t('simulator.ddTypeEodValue') : t('simulator.ddTypeIntradayValue')],
               ].map(([label, value, badge, color], i) => (
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',

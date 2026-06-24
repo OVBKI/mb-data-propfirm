@@ -1576,6 +1576,29 @@ const FR = {
     },
   },
 
+  // === Drawdown simulator (remaining status/type/chrome labels) ===
+  simulator: {
+    freeTool: 'OUTIL GRATUIT',
+    typeEod: 'Fin de journée (EOD)',
+    typeIntraday: 'Intraday',
+    statusSafe: 'Sûr',
+    statusCaution: 'Prudence',
+    statusDanger: 'Danger',
+    balanceLabel: 'Balance',
+    ddFloorLabel: 'Floor DD',
+    badgeLocked: '🔒 Verrouillé',
+    badgeTrailing: '↑ Trailing',
+    ddTypeEodValue: 'Fin de journée',
+    ddTypeIntradayValue: 'Intraday',
+  },
+
+  // === Comparison page (static chrome) ===
+  comparison: {
+    eyebrow: 'COMPARATIF',
+    featureColumn: 'Fonctionnalité',
+    verdictHeading: 'Verdict',
+  },
+
   // === Language switcher ===
   switcher: {
     fr: 'Français',
@@ -3099,6 +3122,27 @@ const EN = {
         cta: 'Finish',
       },
     },
+  },
+
+  simulator: {
+    freeTool: 'FREE TOOL',
+    typeEod: 'End-of-Day (EOD)',
+    typeIntraday: 'Intraday',
+    statusSafe: 'Safe',
+    statusCaution: 'Caution',
+    statusDanger: 'Danger',
+    balanceLabel: 'Balance',
+    ddFloorLabel: 'DD Floor',
+    badgeLocked: '🔒 Locked',
+    badgeTrailing: '↑ Trailing',
+    ddTypeEodValue: 'End-of-Day',
+    ddTypeIntradayValue: 'Intraday',
+  },
+
+  comparison: {
+    eyebrow: 'COMPARISON',
+    featureColumn: 'Feature',
+    verdictHeading: 'Verdict',
   },
 
   switcher: {

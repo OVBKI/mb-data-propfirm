@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import PageHeader from './PageHeader'
 import Footer from './Footer'
+import { useT } from './LanguageProvider'
 
 const C = {
   bg: '#0d0f14',
@@ -18,13 +19,14 @@ const C = {
 }
 
 export default function ComparisonPage({ title, subtitle, quantaraName, competitorName, rows, verdict, ctaText, ctaButton }) {
+  const t = useT()
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader />
       <main style={{ flex: 1, padding: '60px 24px 80px', maxWidth: 860, margin: '0 auto', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <div style={{ fontSize: 11, color: C.blueLight, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>
-            COMPARISON
+            {t('comparison.eyebrow')}
           </div>
           <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em', margin: 0, marginBottom: 12 }}>
             {title}
@@ -45,7 +47,7 @@ export default function ComparisonPage({ title, subtitle, quantaraName, competit
             borderBottom: `1px solid ${C.border}`,
             background: 'rgba(255,255,255,0.02)',
           }}>
-            <div style={{ padding: '14px 18px', fontSize: 12, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Feature</div>
+            <div style={{ padding: '14px 18px', fontSize: 12, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('comparison.featureColumn')}</div>
             <div style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: C.blueLight, textAlign: 'center' }}>{quantaraName}</div>
             <div style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: C.text2, textAlign: 'center' }}>{competitorName}</div>
           </div>
@@ -72,7 +74,7 @@ export default function ComparisonPage({ title, subtitle, quantaraName, competit
           padding: '24px', background: `${C.blue}08`, border: `1px solid ${C.blue}20`,
           borderRadius: 14, marginBottom: 32,
         }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 12 }}>Verdict</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 12 }}>{t('comparison.verdictHeading')}</h2>
           <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0 }}>{verdict}</p>
         </div>
 
