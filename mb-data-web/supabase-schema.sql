@@ -68,6 +68,31 @@ alter table accounts add column if not exists custom_drawdown    numeric(12,2);
 -- Index pour le lookup rithmic_account_id → account
 create index if not exists accounts_rithmic_account_id_idx on accounts(rithmic_account_id) where rithmic_account_id is not null;
 
+-- ============================================================================
+-- CFD / FOREX VERTICAL — colonnes pour l'onglet CFD (séparé des futures)
+-- ============================================================================
+-- `market` discrimine futures vs cfd. NULL/'futures' = compte futures historique
+-- (les vues futures filtrent `market != 'cfd'`, l'onglet CFD filtre `market = 'cfd'`).
+-- Les colonnes cfd_* ne sont renseignées que pour les comptes CFD ; les règles sont
+-- pré-remplies depuis lib/cfdConstants.js à la création puis éditables.
+alter table firms    add column if not exists market            text default 'futures';
+alter table accounts add column if not exists market            text default 'futures';
+alter table accounts add column if not exists cfd_model         text;          -- ex: '2-Step', 'Instant'
+alter table accounts add column if not exists account_size      numeric(12,2); -- taille du compte CFD en $
+alter table accounts add column if not exists cfd_step          int;           -- phase courante (0 = financé/instant, 1..n)
+alter table accounts add column if not exists profit_target_pct numeric(5,2);  -- % cible de la phase
+alter table accounts add column if not exists daily_loss_pct    numeric(5,2);
+alter table accounts add column if not exists daily_loss_basis  text;          -- balance | equity | higher-of-balance-equity | balance+intraday-profit
+alter table accounts add column if not exists max_loss_pct      numeric(5,2);
+alter table accounts add column if not exists max_loss_basis    text;          -- static | trailing-relative | eod-trailing
+alter table accounts add column if not exists profit_split      int;
+alter table accounts add column if not exists platform          text;
+alter table accounts add column if not exists leverage_forex    int;
+
+-- Index pour filtrer rapidement les comptes/firmes par marché
+create index if not exists accounts_market_idx on accounts(market);
+create index if not exists firms_market_idx on firms(market);
+
 -- PAYOUTS table
 create table if not exists payouts (
   id uuid default gen_random_uuid() primary key,
