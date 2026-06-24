@@ -1,0 +1,44 @@
+name: CI (mb-data-web)
+
+# Lint + unit tests for the Next.js app. Runs on pushes/PRs that touch mb-data-web.
+# Note: we intentionally do NOT run `next build` here — it prerenders pages that
+# require Supabase env vars at module load (NEXT_PUBLIC_SUPABASE_URL etc.), which
+# are not available in CI. Build/deploy is handled by Vercel with its own env.
+#
+# Security: this workflow uses only static run: commands and no ${{ github.event.* }}
+# expressions, so there is no untrusted-input / command-injection surface.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mb-data-web/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'mb-data-web/**'
+      - '.github/workflows/ci.yml'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mb-data-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mb-data-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
