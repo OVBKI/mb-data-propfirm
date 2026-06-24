@@ -26,10 +26,15 @@ export function useDialog({ open, onClose }) {
       ? node.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')
       : []
 
-    // focus first focusable, else the container itself
-    const first = focusables()[0]
-    if (first) first.focus()
-    else if (node) node.focus()
+    // If an element inside the dialog already holds focus (e.g. an input with
+    // autoFocus that React focused during commit, before this effect ran), respect
+    // it. Otherwise focus the first focusable, else the container itself.
+    const active = (typeof document !== 'undefined') ? document.activeElement : null
+    if (!(node && active && node.contains(active))) {
+      const first = focusables()[0]
+      if (first) first.focus()
+      else if (node) node.focus()
+    }
 
     function onKeyDown(e) {
       if (e.key === 'Escape') {

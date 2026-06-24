@@ -28,6 +28,7 @@ import { accountLabel } from '../lib/constants'
 import { computeRMultiple, computeRiskReward, formatR, formatRR } from '../lib/tradeMath'
 import TagSelector from './TagSelector'
 import { useT } from './LanguageProvider'
+import { useDialog } from './useDialog'
 
 // Styles cosmic dark (cohérents avec JournalPage)
 const card = { background:'var(--surface)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }
@@ -99,6 +100,7 @@ export default function TradeEntryModal({
   showToast,
 }) {
   const t = useT()
+  const dialogRef = useDialog({ open, onClose })
   const [form, setForm] = useState(EMPTY_FORM)
   const [uploadingScreen, setUploadingScreen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -206,6 +208,11 @@ export default function TradeEntryModal({
       }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        aria-label={entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
         className="modal qt-modal-content"
         onClick={e => e.stopPropagation()}
         style={{ ...card, padding: '28px', width: '560px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}

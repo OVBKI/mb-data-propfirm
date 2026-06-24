@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { uploadFile, deleteFile } from '../lib/uploadFile'
 import Skeleton from './Skeleton'
+import { useDialog } from './useDialog'
 
 const TYPES = [
   { k: 'challenge_passed', l: '🏆 Challenge réussi', color: '#fac775' },
@@ -34,6 +35,7 @@ const inputStyle = {
 }
 
 export default function CertificatesModal({ firm, user, onClose, showToast, getFirmLogo }){
+  const dialogRef = useDialog({ open: true, onClose })
   const [certs, setCerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -129,7 +131,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
       position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)',
       zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px',
     }}>
-      <div onClick={e=>e.stopPropagation()} style={{
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={`🎓 Diplômes — ${firm.name}`} onClick={e=>e.stopPropagation()} style={{
         background:'var(--surface)', borderRadius:'var(--radius-lg)',
         border:'1px solid var(--border2)',
         width:'100%', maxWidth:'900px', maxHeight:'90vh',

@@ -10,10 +10,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Skeleton from './Skeleton'
+import { useDialog } from './useDialog'
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
 
 export default function ProfileModal({ user, onClose, onUpdated }) {
+  const dialogRef = useDialog({ open: true, onClose })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -157,6 +159,11 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
       }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        aria-label="Identité publique"
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 460,

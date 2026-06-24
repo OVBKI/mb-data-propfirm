@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { getFirmLogo } from '../lib/firmLogos'
 import { useT } from './LanguageProvider'
+import { useDialog } from './useDialog'
 import {
   defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice,
   defaultMinDailyProfit, defaultDdType,
@@ -87,6 +88,7 @@ function generateDemoTrades() {
 
 export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTutorial, showToast }) {
   const t = useT()
+  const dialogRef = useDialog({ open: true, onClose: onComplete })
   // Step du wizard : 'welcome' | 'profile' | 'choose' | 'demo-loading' | 'done'
   const [step, setStep] = useState('welcome')
   const [creating, setCreating] = useState(false)
@@ -216,7 +218,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20,
     }}>
-      <div style={{
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t('app.onboarding.welcomeTitle')} style={{
         width: '100%', maxWidth: 720,
         background: C.surface, borderRadius: 16,
         border: `1px solid ${C.border2}`,
