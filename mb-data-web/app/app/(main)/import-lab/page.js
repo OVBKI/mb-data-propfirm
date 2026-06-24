@@ -41,43 +41,57 @@ function generateAccountName(rithmicId) {
 //   3. name = derniers 11 chars du rithmicId (ex: "OYD5-PRO007" — convention old PnL importer)
 //   4. name contient le suffix type+num (ex: "PRO 007", "PRO-7", "PRO_7", etc.)
 // Retourne { account, strategy } ou null.
-function findMatchingExistingAccount(rithmicId, existingAccounts) {
+function findMatchingExistingAccount(rithmicId, existingAccounts, firmId) {
   if (!rithmicId || !existingAccounts?.length) return null
 
-  // 1. Match exact via rithmic_account_id
-  const byId = existingAccounts.find(ea => ea.rithmic_account_id === rithmicId)
-  if (byId) return { account: byId, strategy: 'rithmic_id' }
+  // Scope candidates to the selected firm. The firm picker is mandatory before a
+  // CSV can be dropped, so firmId is reliably set. Matching across ALL firms let a
+  // generic name (e.g. "PRO 7", "EVAL 17") hijack an unrelated account belonging to
+  // another firm, overwriting its status / rithmic_account_id on re-import.
+  const candidates = firmId
+    ? existingAccounts.filter(ea => ea.firm_id === firmId)
+    : existingAccounts
+  if (!candidates.length) return null
 
   const norm = (s) => String(s || '').trim().toLowerCase()
+
+  // When a strategy matches more than one candidate we cannot disambiguate safely,
+  // so we bail out (return null) and let the row fall through to create / manual map
+  // instead of silently picking the first .find() hit.
+
+  // 1. Match exact via rithmic_account_id
+  const byId = candidates.filter(ea => ea.rithmic_account_id === rithmicId)
+  if (byId.length === 1) return { account: byId[0], strategy: 'rithmic_id' }
+  if (byId.length > 1) return null
 
   // 2. Match par nom auto-généré ("PRO 7", "EVAL 17")
   const generated = norm(generateAccountName(rithmicId))
   if (generated) {
-    const byGen = existingAccounts.find(ea => norm(ea.name) === generated)
-    if (byGen) return { account: byGen, strategy: 'generated_name' }
+    const byGen = candidates.filter(ea => norm(ea.name) === generated)
+    if (byGen.length === 1) return { account: byGen[0], strategy: 'generated_name' }
+    if (byGen.length > 1) return null
   }
 
   // 3. Match par derniers 11 chars (legacy old PnL importer)
   const last11 = norm(rithmicId.slice(-11))
   if (last11) {
-    const byLegacy = existingAccounts.find(ea => norm(ea.name) === last11)
-    if (byLegacy) return { account: byLegacy, strategy: 'legacy_name' }
+    const byLegacy = candidates.filter(ea => norm(ea.name) === last11)
+    if (byLegacy.length === 1) return { account: byLegacy[0], strategy: 'legacy_name' }
+    if (byLegacy.length > 1) return null
   }
 
-  // 4. Match approximatif sur le suffix type+num (PRO007, PRO 7, PRO-7…)
+  // 4. Match exact sur le suffix type+num (PRO007 → "pro 7"). Égalité stricte sur le
+  //    nom normalisé — on n'utilise plus `includes`, qui faisait matcher PRO007 sur
+  //    "PRO 17" / "PRO 70" (le numéro étant une sous-chaîne).
   const sufMatch = rithmicId.match(/-(TEST|PRO)(\d+)$/i)
   if (sufMatch) {
     const [, type, num] = sufMatch
     const cleanNum = parseInt(num, 10)
     const targetType = type.toUpperCase() === 'TEST' ? 'eval' : 'pro'
-    // Cherche un nom contenant le type ET le numéro
-    const byFuzzy = existingAccounts.find(ea => {
-      const n = norm(ea.name)
-      if (!n.includes(targetType)) return false
-      // Vérifie que le numéro apparaît (avec ou sans 0 leading)
-      return n.includes(String(cleanNum)) || n.includes(num.toLowerCase())
-    })
-    if (byFuzzy) return { account: byFuzzy, strategy: 'fuzzy_name' }
+    const target = `${targetType} ${cleanNum}`
+    const byType = candidates.filter(ea => norm(ea.name) === target)
+    if (byType.length === 1) return { account: byType[0], strategy: 'fuzzy_name' }
+    if (byType.length > 1) return null
   }
 
   return null
@@ -292,8 +306,8 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
         setParseError('')
         const initialMapping = {}
         for (const acc of result.accounts) {
-          // Auto-map via plusieurs stratégies (rithmic_id, nom, suffix…)
-          const match = findMatchingExistingAccount(acc.rithmicId, existingAccounts)
+          // Auto-map via plusieurs stratégies (rithmic_id, nom, suffix…) — borné à la firme sélectionnée
+          const match = findMatchingExistingAccount(acc.rithmicId, existingAccounts, selectedFirmId)
           if (match) {
             initialMapping[acc.rithmicId] = {
               mode: 'existing',
@@ -690,7 +704,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
         //   - L'user peut basculer manuellement vers 'skip' pour ne rien faire
         const initialMapping = {}
         for (const acc of result.accounts) {
-          const match = findMatchingExistingAccount(acc.rithmicId, existingAccounts)
+          const match = findMatchingExistingAccount(acc.rithmicId, existingAccounts, selectedFirmId)
           if (match) {
             initialMapping[acc.rithmicId] = {
               mode: 'existing',
