@@ -274,6 +274,7 @@ const FR = {
     header: {
       docs: 'Docs',
       integrations: 'PropFirms',
+      cfd: 'PropFirms CFD',
       compare: 'Comparateur',
       security: 'Sécurité',
       pricing: 'Tarifs',
@@ -1876,6 +1877,7 @@ const EN = {
     header: {
       docs: 'Docs',
       integrations: 'PropFirms',
+      cfd: 'CFD PropFirms',
       compare: 'Compare',
       security: 'Security',
       pricing: 'Pricing',

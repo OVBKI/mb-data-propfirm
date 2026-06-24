@@ -27,6 +27,7 @@ export default function PageHeader({ active }) {
   const NAV_LINKS = [
     { href: '/compare',      label: t('pages.header.compare'),      key: 'compare' },
     { href: '/integrations', label: t('pages.header.integrations'), key: 'integrations' },
+    { href: '/cfd',          label: t('pages.header.cfd'),          key: 'cfd' },
     { href: '/security',     label: t('pages.header.security'),     key: 'security' },
     { href: '/docs',         label: t('pages.header.docs'),         key: 'docs' },
     { href: '/#features',    label: t('pages.header.features'),     key: 'features' },
