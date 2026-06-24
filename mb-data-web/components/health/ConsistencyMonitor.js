@@ -143,7 +143,7 @@ export default function ConsistencyMonitor({ firms, statsByAccount, loading }) {
             {ratio != null ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.text3, marginBottom: 6 }}>
-                  <span>Best day ÷ profit total</span>
+                  <span>Best day ÷ jours gagnants</span>
                   <span style={{ color, fontWeight: 700 }}>{(ratio * 100).toFixed(1)}%</span>
                 </div>
                 <div style={{ height: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 4, overflow: 'hidden', marginBottom: 12, position: 'relative' }}>
@@ -173,9 +173,9 @@ export default function ConsistencyMonitor({ firms, statsByAccount, loading }) {
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: C.text3, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Total profit</div>
+                    <div style={{ color: C.text3, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Jours gagnants</div>
                     <div style={{ color: C.text, fontWeight: 600 }}>
-                      ${Math.round(acctStats.totalPnl).toLocaleString('en-US')}
+                      ${Math.round(acctStats.winningDaysProfit || 0).toLocaleString('en-US')}
                     </div>
                   </div>
                 </div>

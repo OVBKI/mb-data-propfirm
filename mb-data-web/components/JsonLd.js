@@ -157,10 +157,5 @@ export const FAQ_SCHEMA = {
   ],
 }
 
-// Schema combiné — usage principal sur la landing
-export const LANDING_SCHEMAS = [
-  ORGANIZATION_SCHEMA,
-  WEBSITE_SCHEMA,
-  SOFTWARE_SCHEMA,
-  FAQ_SCHEMA,
-]
+// (LANDING_SCHEMAS retiré — les schémas landing sont rendus en SSR via app/page.js
+//  (Software+FAQ) et app/layout.js (Organization+WebSite).)
