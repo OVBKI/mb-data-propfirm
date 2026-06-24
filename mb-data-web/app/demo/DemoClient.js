@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
-import { useT } from '../../components/LanguageProvider'
+import { useT, useLanguage } from '../../components/LanguageProvider'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import { getFirmLogo } from '../../lib/firmLogos'
@@ -65,11 +65,25 @@ const TOTAL_PAYOUTS = DEMO_FIRMS.reduce((s, f) => s + f.totalPayouts, 0)
 const TOTAL_NET = TOTAL_PAYOUTS - TOTAL_SPENT
 const TOTAL_PAYOUT_COUNT = 4
 
-const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
-const DAYS_HEADER = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
+// Maps a status data literal (used in logic/comparisons) to its translated display label.
+function statusLabel(t, status, plural = false) {
+  if (status === 'Challenge') return plural ? t('demo.statusChallengePlural') : t('demo.statusChallenge')
+  if (status === 'Financé') return plural ? t('demo.statusFundedPlural') : t('demo.statusFunded')
+  if (status === 'Échoué') return plural ? t('demo.statusFailedPlural') : t('demo.statusFailed')
+  return status
+}
 
 export default function DemoClient() {
   const t = useT()
+  const { locale } = useLanguage()
+  const dateLocale = locale === 'en' ? 'en-US' : 'fr-FR'
+  const monthNames = Array.from({ length: 12 }).map((_, m) =>
+    new Date(2000, m, 1).toLocaleDateString(dateLocale, { month: 'long' })
+  )
+  const daysHeader = [
+    t('app.dashboard.dayMon'), t('app.dashboard.dayTue'), t('app.dashboard.dayWed'),
+    t('app.dashboard.dayThu'), t('app.dashboard.dayFri'), t('app.dashboard.daySat'), t('app.dashboard.daySun'),
+  ]
   const [dismissed, setDismissed] = useState(false)
   const [searchQ, setSearchQ] = useState('')
   const now = new Date()
@@ -91,7 +105,7 @@ export default function DemoClient() {
         <div style={{ padding: '10px 24px', background: 'linear-gradient(90deg, rgba(45,111,255,0.95), rgba(77,143,255,0.95))', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{t('demo.banner')}</span>
           <Link href="/auth?mode=signup" style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, background: '#fff', color: '#2d6fff', textDecoration: 'none' }}>{t('demo.signupCta')}</Link>
-          <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 16, padding: 4 }} aria-label="Close">×</button>
+          <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 16, padding: 4 }} aria-label={t('demo.close')}>×</button>
         </div>
       )}
 
@@ -148,15 +162,15 @@ export default function DemoClient() {
                 <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'var(--blue)', color: '#fff', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>USD</button>
                 <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text2)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>EUR</button>
               </div>
-              <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="🔍 Rechercher..." style={{ maxWidth: 180, width: '100%', padding: '8px 12px', fontSize: 13, background: 'var(--surface, #141720)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'inherit', outline: 'none' }} />
-              <button style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'default', opacity: 0.5 }}>+ Ajouter PropFirm</button>
+              <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ maxWidth: 180, width: '100%', padding: '8px 12px', fontSize: 13, background: 'var(--surface, #141720)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'inherit', outline: 'none' }} />
+              <button style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'default', opacity: 0.5 }}>{t('app.dashboard.btnAddPropfirm')}</button>
             </div>
           </div>
 
           {/* Stats 5 cards */}
           <div className="stats-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 28 }}>
             {[
-              { label: t('app.dashboard.statPropfirms'), value: `${DEMO_FIRMS.length} · ${TOTAL_ACCTS} comptes`, small: true },
+              { label: t('app.dashboard.statPropfirms'), value: `${DEMO_FIRMS.length} · ${TOTAL_ACCTS} ${t('app.dashboard.accountsLabel')}`, small: true },
               { label: t('app.dashboard.statTotalSpent'), value: `${TOTAL_SPENT.toLocaleString()}.00 $`, color: 'var(--red)' },
               { label: t('app.dashboard.statTotalPayouts'), value: `${TOTAL_PAYOUTS.toLocaleString()}.00 $`, color: 'var(--green)' },
               { label: t('app.dashboard.statNetResult'), value: `${TOTAL_NET >= 0 ? '+' : ''}${TOTAL_NET.toLocaleString()}.00 $`, color: TOTAL_NET >= 0 ? 'var(--green)' : 'var(--red)' },
@@ -194,7 +208,7 @@ export default function DemoClient() {
                       {getFirmLogo(firm.name, firm.color, 36)}
                       <div>
                         <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.005em' }}>{firm.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{al.length} compte{al.length > 1 ? 's' : ''} · {payoutCount} payout{payoutCount > 1 ? 's' : ''}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{al.length} {al.length > 1 ? t('app.dashboard.accountsLabel') : t('demo.account')} · {payoutCount} {payoutCount > 1 ? t('app.dashboard.payoutsLabel') : t('demo.payout')}</div>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -221,20 +235,20 @@ export default function DemoClient() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_COLORS[a.status]?.text }} />
                         <span style={{ fontSize: 12, color: 'var(--text2)' }}>{a.name}</span>
-                        <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 4, background: STATUS_COLORS[a.status]?.bg, color: STATUS_COLORS[a.status]?.text, fontWeight: 600 }}>{a.status}</span>
+                        <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 4, background: STATUS_COLORS[a.status]?.bg, color: STATUS_COLORS[a.status]?.text, fontWeight: 600 }}>{statusLabel(t, a.status)}</span>
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 600, color: a.pnl >= 0 ? 'var(--green)' : 'var(--red)' }}>{a.pnl >= 0 ? '+' : ''}{a.pnl} $</span>
                     </div>
                   ))}
                   {al.filter(a => a.status !== 'Échoué').length > 3 && (
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>+{al.filter(a => a.status !== 'Échoué').length - 3} autres...</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>+{al.filter(a => a.status !== 'Échoué').length - 3} {t('demo.others')}</div>
                   )}
 
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
-                    {challengeCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--amber-bg, rgba(250,199,117,0.12))', color: 'var(--amber-text, #fac775)', fontWeight: 600, letterSpacing: '0.3px' }}>{challengeCount} Challenge{challengeCount > 1 ? 's' : ''}</span>}
-                    {fundedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--green-bg, rgba(29,184,122,0.12))', color: 'var(--green-text, #1db87a)', fontWeight: 600, letterSpacing: '0.3px' }}>{fundedCount} Financé{fundedCount > 1 ? 's' : ''}</span>}
-                    {firm.failedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--red-bg, rgba(232,80,74,0.12))', color: 'var(--red-text, #e8504a)', fontWeight: 600, letterSpacing: '0.3px' }}>{firm.failedCount} Échoué{firm.failedCount > 1 ? 's' : ''}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 11, padding: '3px 9px', borderRadius: 99, background: 'rgba(45,111,255,0.10)', border: '1px solid rgba(45,111,255,0.30)', color: 'var(--blue-light, #4d8fff)', fontWeight: 600, cursor: 'pointer' }}>🎓 Diplômes</span>
+                    {challengeCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--amber-bg, rgba(250,199,117,0.12))', color: 'var(--amber-text, #fac775)', fontWeight: 600, letterSpacing: '0.3px' }}>{challengeCount} {statusLabel(t, 'Challenge', challengeCount > 1)}</span>}
+                    {fundedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--green-bg, rgba(29,184,122,0.12))', color: 'var(--green-text, #1db87a)', fontWeight: 600, letterSpacing: '0.3px' }}>{fundedCount} {statusLabel(t, 'Financé', fundedCount > 1)}</span>}
+                    {firm.failedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--red-bg, rgba(232,80,74,0.12))', color: 'var(--red-text, #e8504a)', fontWeight: 600, letterSpacing: '0.3px' }}>{firm.failedCount} {statusLabel(t, 'Échoué', firm.failedCount > 1)}</span>}
+                    <span style={{ marginLeft: 'auto', fontSize: 11, padding: '3px 9px', borderRadius: 99, background: 'rgba(45,111,255,0.10)', border: '1px solid rgba(45,111,255,0.30)', color: 'var(--blue-light, #4d8fff)', fontWeight: 600, cursor: 'pointer' }}>{t('app.dashboard.diplomas')}</span>
                   </div>
                 </div>
               )
@@ -242,7 +256,7 @@ export default function DemoClient() {
           </div>
 
           {/* ── CALENDRIER DES TRANSACTIONS (réplique exacte) ── */}
-          <DemoCalendar calMonth={calMonth} calYear={calYear} sdow={sdow} dim={dim} todayDate={todayDate} t={t} />
+          <DemoCalendar calMonth={calMonth} calYear={calYear} sdow={sdow} dim={dim} todayDate={todayDate} t={t} monthNames={monthNames} daysHeader={daysHeader} dateLocale={dateLocale} />
 
           {/* CTA */}
           <div style={{ padding: 32, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, textAlign: 'center', boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
@@ -268,7 +282,7 @@ export default function DemoClient() {
   )
 }
 
-function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
+function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t, monthNames, daysHeader, dateLocale }) {
   const [selDay, setSelDay] = useState(null)
 
   const DEMO_EVENTS = {
@@ -299,9 +313,9 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
         <div style={{ fontSize: 15, fontWeight: 600 }}>{t('app.dashboard.calendarTitle')}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button style={{ padding: '6px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'default', fontSize: 14 }}>‹</button>
-          <span style={{ fontWeight: 600, minWidth: 140, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
+          <span style={{ fontWeight: 600, minWidth: 140, textAlign: 'center' }}>{monthNames[calMonth]} {calYear}</span>
           <button style={{ padding: '6px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'default', fontSize: 14 }}>›</button>
-          <button style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'default', fontSize: 12 }}>Aujourd&apos;hui</button>
+          <button style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'default', fontSize: 12 }}>{t('app.dashboard.todayBtn')}</button>
         </div>
       </div>
 
@@ -324,7 +338,7 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
         {/* Calendar */}
         <div style={{ ...card, overflow: 'hidden' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', background: 'var(--surface2, #1c2030)', borderBottom: '0.5px solid var(--border)' }}>
-            {DAYS_HEADER.map(d => <div key={d} style={{ padding: '12px 0', textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d}</div>)}
+            {daysHeader.map((d, di) => <div key={di} style={{ padding: '12px 0', textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d}</div>)}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
             {Array.from({ length: sdow }).map((_, i) => (
@@ -361,7 +375,7 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
           {/* Selected day */}
           <div style={{ ...card, padding: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
-              {selDay ? new Date(selDay + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Sélectionnez un jour'}
+              {selDay ? new Date(selDay + 'T00:00:00').toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' }) : t('app.dashboard.selectDay')}
             </div>
             {selDay ? (DEMO_EVENTS[selDay] || []).length > 0 ? (DEMO_EVENTS[selDay] || []).map((e, i) => (
               <div key={i} style={{ padding: '10px 12px', background: 'var(--surface2, #1c2030)', borderRadius: 8, marginBottom: 8 }}>
@@ -371,18 +385,18 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
                 </div>
                 <div style={{ fontSize: 12, color: e.type === 'buy' ? 'var(--red)' : 'var(--green)', fontWeight: 600 }}>{e.type === 'buy' ? '-' : '+'}{e.amount.toFixed(2)} $</div>
               </div>
-            )) : <div style={{ color: 'var(--text3)', fontSize: 12 }}>Aucune transaction.</div> : <div style={{ color: 'var(--text3)', fontSize: 12 }}>Cliquez sur un jour.</div>}
+            )) : <div style={{ color: 'var(--text3)', fontSize: 12 }}>{t('app.dashboard.noTransaction')}</div> : <div style={{ color: 'var(--text3)', fontSize: 12 }}>{t('app.dashboard.clickDay')}</div>}
           </div>
 
           {/* Transactions récentes */}
           <div style={{ ...card, padding: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Transactions récentes</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>{t('app.dashboard.recentTx')}</div>
             {recentTx.map((e, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, padding: '7px 0', borderBottom: '0.5px solid var(--border)' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: e.type === 'buy' ? 'var(--red)' : 'var(--green)', marginTop: 4, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 500 }}>{e.firm}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text3)' }}>{e.date} · {e.type === 'buy' ? 'Achat' : 'Payout'}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)' }}>{e.date} · {e.type === 'buy' ? t('app.dashboard.eventBuy') : t('app.dashboard.eventPayout')}</div>
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: e.type === 'buy' ? 'var(--red)' : 'var(--green)' }}>{e.type === 'buy' ? '-' : '+'}{e.amount.toFixed(2)} $</div>
               </div>
@@ -394,10 +408,10 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
       {/* 3 cards bottom: Stats + Par firme */}
       <div className="dash-sidebar-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginTop: 24 }}>
         <div style={{ ...card, padding: 18 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 10 }}>Par firme ($)</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 10 }}>{t('demo.byFirmUsd')}</div>
           <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#e8504a' }} />Dépensé</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#1db87a' }} />Payouts</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#e8504a' }} />{t('app.dashboard.legendSpent')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#1db87a' }} />{t('app.dashboard.legendPayouts')}</div>
           </div>
           {DEMO_FIRMS.map(f => (
             <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -411,13 +425,13 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
         </div>
 
         <div style={{ ...card, padding: 18 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 }}>Statistiques</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 }}>{t('app.dashboard.stats')}</div>
           {[
-            ['Taux de réussite', '11%', 'var(--text)'],
-            ['Meilleur payout', '2 713 $', 'var(--green)'],
-            ['Coût moyen challenge', '195 $', 'var(--text)'],
-            ['ROI global', '+88.4%', 'var(--green)'],
-            ['Comptes actifs', '8', 'var(--text)'],
+            [t('app.dashboard.successRate'), '11%', 'var(--text)'],
+            [t('app.dashboard.bestPayout'), '2 713 $', 'var(--green)'],
+            [t('app.dashboard.avgChallengeCost'), '195 $', 'var(--text)'],
+            [t('app.dashboard.globalRoi'), '+88.4%', 'var(--green)'],
+            [t('app.dashboard.activeAccounts'), '8', 'var(--text)'],
           ].map(([label, value, color], i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid var(--border)' }}>
               <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}</span>
@@ -427,7 +441,7 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
         </div>
 
         <div style={{ ...card, padding: 18 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 }}>Par firme</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 }}>{t('app.dashboard.byFirm')}</div>
           {DEMO_FIRMS.slice().sort((a, b) => (b.totalPayouts - b.spent) - (a.totalPayouts - a.spent)).map(f => {
             const net = f.totalPayouts - f.spent
             return (
@@ -436,7 +450,7 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t }) {
                   {getFirmLogo(f.name, f.color, 22)}
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 600 }}>{f.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{f.accounts.length} compte{f.accounts.length > 1 ? 's' : ''}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{f.accounts.length} {f.accounts.length > 1 ? t('app.dashboard.accountsLabel') : t('demo.account')}</div>
                   </div>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: net >= 0 ? 'var(--green)' : 'var(--red)' }}>{net >= 0 ? '+' : ''}{net} $</div>
