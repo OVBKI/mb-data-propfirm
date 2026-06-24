@@ -1,4 +1,5 @@
 import { detectFirm } from './firmDetection'
+import { parseNum } from './parseNum'
 
 // Parser pour Rithmic R|Trader Pro "Trader Dashboard" export CSV.
 // Format : 1 ligne header + 1 ligne par compte (pas de structure imbriquée).
@@ -57,26 +58,6 @@ function parseCSVLine(line) {
 }
 
 // Gère les séparateurs US (1,234.56) ET EU (1.234,56 / 1234,56).
-export function parseNum(s) {
-  if (s === null || s === undefined) return 0
-  let str = String(s).replace(/["\s$€£]/g, '').trim()
-  if (!str) return 0
-  const hasDot = str.includes('.')
-  const hasComma = str.includes(',')
-  if (hasDot && hasComma) {
-    str = (str.lastIndexOf(',') > str.lastIndexOf('.'))
-      ? str.replace(/\./g, '').replace(',', '.')
-      : str.replace(/,/g, '')
-  } else if (hasComma) {
-    const parts = str.split(',')
-    str = (parts.length === 2 && parts[1].length !== 3)
-      ? parts[0] + '.' + parts[1]
-      : str.replace(/,/g, '')
-  }
-  const n = parseFloat(str)
-  return isFinite(n) ? n : 0
-}
-
 function round(n, dec) {
   const k = Math.pow(10, dec)
   return Math.round(n * k) / k

@@ -29,6 +29,7 @@
 // Supporte Lucid, Apex (PA-/APEX-), TPT, Topstep (PRO/TSP/EFA/COMBINE), Bulenox,
 // Tradeify, MFFU, FFN, FuturesElites, Phidias + fallback générique.
 import { isAccountId as isFirmAccountId, detectFirm } from './firmDetection'
+import { parseNum } from './parseNum'
 
 // Header de la table summary (commence par "Account")
 const SUMMARY_HEADER_FIRST_CELL = 'Account'
@@ -116,26 +117,6 @@ function combineDateAndTime(date, time) {
 
 // Parse une string-nombre avec guillemets et signes négatifs
 // Gère les séparateurs US (1,234.56) ET EU (1.234,56 / 1234,56).
-export function parseNum(s) {
-  if (s === null || s === undefined) return 0
-  let str = String(s).replace(/["\s$€£]/g, '').trim()
-  if (!str) return 0
-  const hasDot = str.includes('.')
-  const hasComma = str.includes(',')
-  if (hasDot && hasComma) {
-    str = (str.lastIndexOf(',') > str.lastIndexOf('.'))
-      ? str.replace(/\./g, '').replace(',', '.')
-      : str.replace(/,/g, '')
-  } else if (hasComma) {
-    const parts = str.split(',')
-    str = (parts.length === 2 && parts[1].length !== 3)
-      ? parts[0] + '.' + parts[1]
-      : str.replace(/,/g, '')
-  }
-  const n = parseFloat(str)
-  return isFinite(n) ? n : 0
-}
-
 // Détecte le type de compte à partir de l'ID Rithmic
 function detectAccountType(rithmicId) {
   if (rithmicId.includes('-TEST')) return 'EVAL'

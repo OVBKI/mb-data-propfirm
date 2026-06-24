@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { parseNum } from './rithmic-pnl'
+import { parseNum } from './parseNum'
 
-// parseNum must read both US (1,234.56) and EU (1.234,56) decimal conventions
-// without inflating values — regression guard for the "1234,56 -> 123456 x100" bug.
+// Shared Rithmic numeric parser (used by both rithmic-pnl and rithmic-dashboard).
+// Must read US (1,234.56) and EU (1.234,56 / 1234,56) decimals without inflating
+// values — regression guard for the "1234,56 -> 123456 x100" bug.
 describe('parseNum', () => {
   it('parses plain US decimals', () => {
     expect(parseNum('1234.56')).toBe(1234.56)
@@ -28,7 +29,7 @@ describe('parseNum', () => {
   })
   it('strips currency symbols and whitespace', () => {
     expect(parseNum('$1,234.56')).toBe(1234.56)
-    expect(parseNum('1234,56 EUR'.replace(' EUR', ''))).toBe(1234.56)
+    expect(parseNum('1 234,56 EUR'.replace(' EUR', ''))).toBe(1234.56)
   })
   it('returns 0 for empty / null / undefined / non-numeric', () => {
     expect(parseNum('')).toBe(0)
