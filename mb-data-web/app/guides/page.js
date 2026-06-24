@@ -18,6 +18,7 @@ export const metadata = {
       'Trailing drawdown, consistency rule, payout methods : tous les guides éducatifs pour traders PropFirm futures.',
     url: 'https://quantara.tech/guides',
     type: 'website',
+    images: ['/og-image.webp'],
   },
   twitter: {
     card: 'summary_large_image',

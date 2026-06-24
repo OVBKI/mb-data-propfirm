@@ -19,6 +19,7 @@ export const metadata = {
       'Topstep, Apex, Bulenox, Lucid, Tradeify, TPT, MFFU, Phidias, FFN, FuturesELites, Alpha Futures — règles 2026 vérifiées.',
     url: 'https://quantara.tech/firms',
     type: 'website',
+    images: ['/og-image.webp'],
   },
   twitter: {
     card: 'summary_large_image',

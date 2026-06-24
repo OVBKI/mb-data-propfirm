@@ -17,6 +17,7 @@ export const metadata = {
     description: 'Everything you need to know about Quantara: getting started, PropFirm setup, trading journal, drawdown tracking, payouts, and frequently asked questions.',
     url: 'https://quantara.tech/docs',
     type: 'website',
+    images: ['/og-image.webp'],
   },
   twitter: {
     card: 'summary_large_image',

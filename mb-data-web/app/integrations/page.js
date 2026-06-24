@@ -14,6 +14,7 @@ export const metadata = {
     description: '11 PropFirms futures supportées : Topstep, Apex, Lucid, Bulenox, Tradeify, MFFU, Phidias, FFN, FuturesElite, TPT, Alpha Futures. Import CSV Rithmic actif. API broker en développement.',
     url: 'https://quantara.tech/integrations',
     type: 'website',
+    images: ['/og-image.webp'],
   },
   twitter: {
     card: 'summary_large_image',

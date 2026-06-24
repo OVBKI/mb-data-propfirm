@@ -16,6 +16,7 @@ export const metadata = {
     description: 'Comment Quantara protège tes données : RLS Postgres, hébergement EU, captcha Turnstile, JWT Supabase, zéro accès broker.',
     url: 'https://quantara.tech/security',
     type: 'website',
+    images: ['/og-image.webp'],
   },
   twitter: {
     card: 'summary_large_image',

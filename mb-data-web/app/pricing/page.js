@@ -14,6 +14,7 @@ export const metadata = {
     description: 'Free during public beta. Pro at €19/mo for auto-sync and advanced analytics — beta users lock in 50% off for life. The PropFirm trading journal that fits your budget.',
     url: 'https://quantara.tech/pricing',
     type: 'website',
+    images: ['/og-image.webp'],
   },
   twitter: {
     card: 'summary_large_image',

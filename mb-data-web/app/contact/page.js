@@ -13,6 +13,7 @@ export const metadata = {
     description: 'Contactez l\'équipe Quantara pour toute question ou suggestion.',
     url: 'https://quantara.tech/contact',
     type: 'website',
+    images: ['/og-image.webp'],
   },
   twitter: {
     card: 'summary_large_image',

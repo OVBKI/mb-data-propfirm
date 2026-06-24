@@ -3,12 +3,18 @@
 // À updater à chaque nouvelle page indexable ajoutée.
 
 import { getAllFirmSlugs, getAllFirmPairs } from '../lib/firmSlugs'
-import { getAllGuideSlugs } from '../lib/guides'
+import { getAllGuideSlugs, GUIDES } from '../lib/guides'
 
 const BASE_URL = 'https://quantara.tech'
 
+// Date de dernière vérification du contenu (firmes/guides/légal « vérifié mai 2026 »).
+// On l'utilise comme lastModified stable plutôt que `new Date()` au build : sinon chaque
+// redéploiement fait bouger toutes les dates sans réelle modif de contenu, ce que Google
+// interprète comme du bruit et qui dilue le signal de fraîcheur des pages réellement mises à jour.
+const CONTENT_DATE = new Date('2026-05-01T00:00:00Z')
+
 export default function sitemap() {
-  const now = new Date()
+  const now = CONTENT_DATE
 
   // Programmatic SEO : 1 index /firms + 11 pages /firms/[slug] générées depuis PROPFIRM_RULES
   const firmPages = [
@@ -44,7 +50,7 @@ export default function sitemap() {
     },
     ...getAllGuideSlugs().map((slug) => ({
       url: `${BASE_URL}/guides/${slug}`,
-      lastModified: now,
+      lastModified: GUIDES[slug]?.updatedDate ? new Date(GUIDES[slug].updatedDate) : CONTENT_DATE,
       changeFrequency: 'monthly',
       priority: 0.8,
     })),
