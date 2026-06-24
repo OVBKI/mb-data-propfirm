@@ -10,6 +10,8 @@ import { planSizeNum, maxDrawdown } from '../../../../lib/constants'
 import DrawdownHealthCard from '../../../../components/health/DrawdownHealthCard'
 import ConsistencyMonitor from '../../../../components/health/ConsistencyMonitor'
 import PayoutPipeline from '../../../../components/health/PayoutPipeline'
+import CfdDrawdownCard from '../../../../components/health/CfdDrawdownCard'
+import { useT } from '../../../../components/LanguageProvider'
 
 const C = {
   text: 'var(--text)',
@@ -123,7 +125,8 @@ function computeDdFloor(account, firmName, peakBalance) {
 }
 
 export default function HealthPage() {
-  const { firms, user } = useApp()
+  const { firms, user, marketMode, reload, showToast } = useApp()
+  const t = useT()
   const [trades, setTrades] = useState([])
   const [tradesLoading, setTradesLoading] = useState(true)
   const [tradesError, setTradesError] = useState(null)
@@ -169,6 +172,19 @@ export default function HealthPage() {
     return map
   }, [monitoredAccounts])
 
+  // CFD accounts: flatten firms → accounts, attach firmName. In CFD mode the AppContext
+  // already scopes `firms` to market='cfd', so this is just a flatten (gauges use stored
+  // balance, not trades — no trades-stats computation required for the CFD branch).
+  const cfdAccounts = useMemo(() => {
+    const list = []
+    for (const f of (firms || [])) {
+      for (const acc of (f.accounts || [])) {
+        list.push({ ...acc, firmName: f.name })
+      }
+    }
+    return list
+  }, [firms])
+
   // Compute per-account stats from trades
   const statsByAccount = useMemo(() => computeStatsByAccount(trades, accountsById), [trades, accountsById])
 
@@ -213,6 +229,48 @@ export default function HealthPage() {
     return { safe, caution, danger, noData, total: enrichedAccounts.length }
   }, [enrichedAccounts])
 
+  // ── CFD branch ────────────────────────────────────────────────────────────
+  // Render the CFD "Santé" view instead of the 3 futures components. The futures
+  // trades-stats memos above still run (hooks must stay unconditional) but their
+  // output is not used here.
+  if (marketMode === 'cfd') {
+    return (
+      <div style={{ padding: '24px 28px 60px', maxWidth: 1280, width: '100%', boxSizing: 'border-box' }}>
+        <header style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, marginBottom: 6, color: C.text }}>
+            Health Center
+          </h1>
+          <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.5, margin: 0 }}>
+            {t('app.cfdHealth.sectionSubtitle')}
+          </p>
+        </header>
+
+        <Section title={t('app.cfdHealth.sectionTitle')} subtitle={t('app.cfdHealth.sectionSubtitle')}>
+          {cfdAccounts.length === 0 ? (
+            <EmptyState text={t('app.cfdHealth.empty')} />
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: 12,
+            }}>
+              {cfdAccounts.map((acc) => (
+                <CfdDrawdownCard
+                  key={acc.id}
+                  account={acc}
+                  firmName={acc.firmName}
+                  onSaved={reload}
+                  showToast={showToast}
+                />
+              ))}
+            </div>
+          )}
+        </Section>
+      </div>
+    )
+  }
+
+  // ── Futures branch (unchanged) ──────────────────────────────────────────────
   return (
     <div style={{ padding: '24px 28px 60px', maxWidth: 1280, width: '100%', boxSizing: 'border-box' }}>
       {/* Page header */}
