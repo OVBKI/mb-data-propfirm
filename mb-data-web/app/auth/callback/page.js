@@ -11,6 +11,7 @@ import { useEffect, useState, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import QLogoIcon from '../../../components/QLogoIcon'
+import { useT } from '../../../components/LanguageProvider'
 
 // Détecte le type d'auth event depuis l'URL hash AU CHARGEMENT
 // (avant que Supabase parse et nettoie le hash). Synchrone.
@@ -43,6 +44,7 @@ const C = {
 }
 
 function CallbackInner() {
+  const t = useT()
   // Détection initiale SYNCHRONE du type (avant que Supabase nettoie le hash)
   // Si type=recovery on démarre direct en mode recovery, sans flash de "loading"
   const initialType = typeof window !== 'undefined' ? detectInitialType() : null
@@ -97,12 +99,12 @@ function CallbackInner() {
       // Erreurs explicites dans l'URL
       if (errorCode === 'otp_expired' || /expired/i.test(errorDesc || '')) {
         setStatus('expired')
-        setErrorMsg('Le lien a expiré (validité 24h).')
+        setErrorMsg(t('authCallback.errLinkExpired'))
         return
       }
       if (errorCode) {
         setStatus('error')
-        setErrorMsg(errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, ' ')) : 'Une erreur est survenue.')
+        setErrorMsg(errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, ' ')) : t('authCallback.errGeneric'))
         return
       }
 
@@ -157,7 +159,7 @@ function CallbackInner() {
 
       // Pas de session, pas d'erreur → lien déjà utilisé
       setStatus('error')
-      setErrorMsg('Aucune session active. Le lien a peut-être déjà été utilisé.')
+      setErrorMsg(t('authCallback.errNoSession'))
     }
 
     // Écoute PASSWORD_RECOVERY (Supabase fire cet event quand l'URL est un recovery link)
@@ -175,6 +177,7 @@ function CallbackInner() {
       mounted = false
       subscription?.subscription?.unsubscribe?.()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Soumission du nouveau mot de passe
@@ -182,11 +185,11 @@ function CallbackInner() {
     e.preventDefault()
     setErrorMsg('')
     if (newPassword.length < 8) {
-      setErrorMsg('Le mot de passe doit faire au moins 8 caractères.')
+      setErrorMsg(t('authCallback.errPasswordTooShort'))
       return
     }
     if (newPassword !== confirmPassword) {
-      setErrorMsg('Les 2 mots de passe ne correspondent pas.')
+      setErrorMsg(t('authCallback.errPasswordMismatch'))
       return
     }
     setUpdating(true)
@@ -202,20 +205,20 @@ function CallbackInner() {
 
   async function resendConfirmation() {
     if (!email) {
-      const ans = window.prompt('Saisis ton email pour recevoir un nouveau lien :')
+      const ans = window.prompt(t('authCallback.promptEmail'))
       if (!ans) return
       setEmail(ans)
       setResending(true)
       const { error } = await supabase.auth.resend({ type: 'signup', email: ans })
       setResending(false)
-      if (error) alert('Erreur : ' + error.message)
+      if (error) alert(t('authCallback.errorPrefix') + error.message)
       else setResendOk(true)
       return
     }
     setResending(true)
     const { error } = await supabase.auth.resend({ type: 'signup', email })
     setResending(false)
-    if (error) alert('Erreur : ' + error.message)
+    if (error) alert(t('authCallback.errorPrefix') + error.message)
     else setResendOk(true)
   }
 
@@ -260,8 +263,8 @@ function CallbackInner() {
         {status === 'loading' && (
           <>
             <div style={{ fontSize: 36, marginBottom: 16 }}>⏳</div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Vérification en cours...</h1>
-            <p style={{ fontSize: 13, color: C.text2 }}>Quelques secondes...</p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>{t('authCallback.loadingTitle')}</h1>
+            <p style={{ fontSize: 13, color: C.text2 }}>{t('authCallback.loadingSub')}</p>
           </>
         )}
 
@@ -274,12 +277,12 @@ function CallbackInner() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>✓</div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>Compte activé !</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>{t('authCallback.successTitle')}</h1>
             <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, marginBottom: 24 }}>
-              Bienvenue sur Quantara{email ? ` (${email})` : ''}.<br />
-              Tu vas être redirigé vers ton tableau de bord dans 3 secondes...
+              {t('authCallback.successWelcome')}{email ? ` (${email})` : ''}.<br />
+              {t('authCallback.successRedirect')}
             </p>
-            <Link href="/app" style={primaryBtn}>Accéder maintenant →</Link>
+            <Link href="/app" style={primaryBtn}>{t('authCallback.accessNow')}</Link>
           </>
         )}
 
@@ -292,13 +295,13 @@ function CallbackInner() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>🔐</div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Nouveau mot de passe</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>{t('authCallback.recoveryTitle')}</h1>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 22 }}>
-              Choisis un nouveau mot de passe pour <strong style={{ color: C.text }}>{email}</strong>.
+              {t('authCallback.recoveryIntro')} <strong style={{ color: C.text }}>{email}</strong>.
             </p>
             <form onSubmit={submitNewPassword} style={{ textAlign: 'left' }}>
               <div style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>Nouveau mot de passe</label>
+                <label style={labelStyle}>{t('authCallback.newPasswordLabel')}</label>
                 <input
                   type="password" autoComplete="new-password"
                   value={newPassword} onChange={e => setNewPassword(e.target.value)}
@@ -307,7 +310,7 @@ function CallbackInner() {
                 />
               </div>
               <div style={{ marginBottom: 18 }}>
-                <label style={labelStyle}>Confirmer le mot de passe</label>
+                <label style={labelStyle}>{t('authCallback.confirmPasswordLabel')}</label>
                 <input
                   type="password" autoComplete="new-password"
                   value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
@@ -315,7 +318,7 @@ function CallbackInner() {
                   style={inputStyle}
                 />
                 <div style={{ fontSize: 10, color: C.text3, marginTop: 6 }}>
-                  Minimum 8 caractères. Mélange lettres, chiffres, symboles pour plus de sécurité.
+                  {t('authCallback.passwordHint')}
                 </div>
               </div>
               {errorMsg && (
@@ -329,7 +332,7 @@ function CallbackInner() {
                 ...primaryBtn, width: '100%', padding: '14px 28px',
                 opacity: updating ? 0.6 : 1, cursor: updating ? 'wait' : 'pointer',
               }}>
-                {updating ? '⏳ Mise à jour...' : '🔐 Mettre à jour mon mot de passe'}
+                {updating ? t('authCallback.updating') : t('authCallback.updatePassword')}
               </button>
             </form>
           </>
@@ -344,11 +347,11 @@ function CallbackInner() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>✓</div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>Mot de passe modifié !</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>{t('authCallback.pwSuccessTitle')}</h1>
             <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, marginBottom: 20 }}>
-              Tu vas être redirigé vers ton tableau de bord dans 2 secondes...
+              {t('authCallback.pwSuccessRedirect')}
             </p>
-            <Link href="/app" style={primaryBtn}>Accéder maintenant →</Link>
+            <Link href="/app" style={primaryBtn}>{t('authCallback.accessNow')}</Link>
           </>
         )}
 
@@ -361,23 +364,23 @@ function CallbackInner() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>⌛</div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Lien expiré</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>{t('authCallback.expiredTitle')}</h1>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 18 }}>
-              {errorMsg} Tu peux demander un nouveau lien.
+              {errorMsg} {t('authCallback.expiredCanResend')}
             </p>
             {resendOk ? (
               <div style={{
                 padding: '12px 16px', background: 'rgba(29,184,122,0.10)',
                 border: `1px solid ${C.green}`, borderRadius: 8,
                 fontSize: 13, color: C.green, marginBottom: 16,
-              }}>✓ Email renvoyé !</div>
+              }}>{t('authCallback.emailResent')}</div>
             ) : (
               <button onClick={resendConfirmation} disabled={resending} style={{ ...primaryBtn, marginBottom: 16 }}>
-                {resending ? '⏳ Envoi...' : '📧 Renvoyer le lien'}
+                {resending ? t('authCallback.sending') : t('authCallback.resendLink')}
               </button>
             )}
             <div>
-              <Link href="/app" style={{ fontSize: 12, color: C.text3, textDecoration: 'none' }}>← Retour à la connexion</Link>
+              <Link href="/app" style={{ fontSize: 12, color: C.text3, textDecoration: 'none' }}>{t('authCallback.backToLogin')}</Link>
             </div>
           </>
         )}
@@ -391,20 +394,20 @@ function CallbackInner() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>✕</div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Lien invalide</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>{t('authCallback.errorTitle')}</h1>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 18 }}>
               {errorMsg}
             </p>
             <div style={{ marginTop: 8 }}>
               <Link href="/app" style={{ fontSize: 12, color: C.blueLight, textDecoration: 'none' }}>
-                Retour à la page de connexion →
+                {t('authCallback.backToLoginPage')}
               </Link>
             </div>
           </>
         )}
 
         <div style={{ marginTop: 28, fontSize: 11, color: C.text3 }}>
-          Besoin d'aide ? <a href="mailto:support@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none' }}>support@quantara.tech</a>
+          {t('authCallback.needHelp')} <a href="mailto:support@quantara.tech" style={{ color: C.blueLight, textDecoration: 'none' }}>support@quantara.tech</a>
         </div>
       </div>
     </div>
