@@ -54,7 +54,15 @@ export default function DashboardPage() {
     setFirmModal, setNewFirmName, setFirmDrawer, setCertsFirm,
     setShowOnboarding,
     getFirmLogo, STATUS_COLORS, accountLabel, MONTHS_FR,
+    marketMode, openCfdAdd,
   } = useApp()
+
+  // Mode-gated add-PropFirm trigger: in CFD mode open the reusable CFD account
+  // modal; in futures mode keep the existing add-firm flow exactly as before.
+  function handleAddPropfirm() {
+    if (marketMode === 'cfd') { openCfdAdd(); return }
+    setFirmModal(true); setNewFirmName('')
+  }
 
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
@@ -126,7 +134,7 @@ export default function DashboardPage() {
             {['native', 'eur'].map(c => <button key={c} onClick={() => setCurrencyMode(c)} style={{ padding: '7px 14px', fontSize: '12px', border: 'none', background: currency === c ? 'var(--blue)' : 'transparent', color: currency === c ? '#fff' : 'var(--text2)', cursor: 'pointer', fontWeight: '600', letterSpacing: '0.05em' }}>{c === 'native' ? 'USD' : 'EUR'}</button>)}
           </div>
           <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: '180px', width: '100%', minWidth: 0 }} />
-          <button data-tour="add-firm-btn" onClick={() => { setFirmModal(true); setNewFirmName('') }} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
+          <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
         </div>
       </div>
 
@@ -194,7 +202,7 @@ export default function DashboardPage() {
               {t('app.dashboard.noPropfirmBody')}
             </p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => { setFirmModal(true); setNewFirmName('') }} style={S.btnPrimary}>{t('app.dashboard.btnAddFirstPropfirm')}</button>
+              <button onClick={handleAddPropfirm} style={S.btnPrimary}>{t('app.dashboard.btnAddFirstPropfirm')}</button>
               <button onClick={() => { localStorage.removeItem('quantara_onboarding_dismissed'); setShowOnboarding(true) }} style={S.btnGhost}>{t('app.dashboard.btnDemoData')}</button>
             </div>
           </div>

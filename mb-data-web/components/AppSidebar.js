@@ -20,6 +20,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useT } from './LanguageProvider'
 import { isAdmin } from '../lib/admins'
+import { useApp } from '../app/app/(main)/AppContext'
 
 const SECTIONS = ['Vue', 'Trades', 'PropFirm', 'Communaute']
 
@@ -67,6 +68,8 @@ export default function AppSidebar({
 }) {
   const t = useT()
   const userIsAdmin = isAdmin(user?.email)
+  const { marketMode, setMarketMode } = useApp()
+  const isCfd = marketMode === 'cfd'
 
   // Repli/dépli (persisté). Replié par défaut (rail d'icônes).
   const [collapsed, setCollapsed] = useState(true)
@@ -87,13 +90,15 @@ export default function AppSidebar({
     { key: 'calendar', ic: IC.calendar, label: t('app.sidebar.calendar'), section: 'Vue' },
     { subHeader: true, ic: IC.journalGroup, label: t('app.sidebar.journalGroup'), section: 'Trades' },
     { key: 'journal', ic: IC.journal, label: t('app.sidebar.journalManuel'), section: 'Trades', indent: true },
-    { href: '/app/journal-sync', ic: IC.sync, label: t('app.sidebar.journalSync'), section: 'Trades', indent: true },
-    { ic: IC.plug, label: t('app.sidebar.syncApi'), section: 'Trades', indent: true, disabled: true, badgeLabel: LOCK },
+    // Journal Sync (Rithmic) + Sync API are futures-only — hidden in CFD mode.
+    ...(isCfd ? [] : [
+      { href: '/app/journal-sync', ic: IC.sync, label: t('app.sidebar.journalSync'), section: 'Trades', indent: true },
+      { ic: IC.plug, label: t('app.sidebar.syncApi'), section: 'Trades', indent: true, disabled: true, badgeLabel: LOCK },
+    ]),
     { key: 'trades', ic: IC.trades, label: t('app.sidebar.trades'), section: 'Trades' },
     { key: 'heatmaps', ic: IC.heatmaps, label: t('app.sidebar.heatmaps'), section: 'Trades' },
     { key: 'myrules', ic: IC.myrules, label: t('app.sidebar.myrules'), section: 'Trades' },
     { key: 'rules', ic: IC.rules, label: t('app.sidebar.rules'), section: 'PropFirm' },
-    { key: 'cfd', ic: IC.cfd, label: t('app.sidebar.cfd'), section: 'PropFirm' },
     { key: 'alerts', ic: IC.alerts, label: t('app.sidebar.alerts'), section: 'PropFirm', badge: alertsBadgeCount },
     userIsAdmin
       ? { href: '/app/groups', ic: IC.groups, label: t('app.sidebar.groups'), section: 'Communaute' }
@@ -185,6 +190,24 @@ export default function AppSidebar({
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
       </button>
 
+      {/* Bascule marché Futures ⇄ CFD — re-contexte toute l'app */}
+      <div className="qt-market" role="group" aria-label="Marché">
+        <button
+          type="button"
+          className={'qt-market-seg' + (!isCfd ? ' active' : '')}
+          aria-pressed={!isCfd}
+          onClick={() => setMarketMode('futures')}
+          title="Futures"
+        >Futures</button>
+        <button
+          type="button"
+          className={'qt-market-seg' + (isCfd ? ' active' : '')}
+          aria-pressed={isCfd}
+          onClick={() => setMarketMode('cfd')}
+          title="CFD"
+        >CFD</button>
+      </div>
+
       {SECTIONS.map(section => (
         <div key={section} className="qt-sec">
           <div className="qt-sec-label nav-section-label">{SECTION_LABELS[section]}</div>
@@ -261,6 +284,12 @@ const SIDEBAR_CSS = `
 .qt-toggle svg{transition:transform .22s ease}
 .app-nav.qt-side:not(.qt-collapsed) .qt-toggle svg{transform:rotate(180deg)}
 
+/* Bascule marché Futures ⇄ CFD */
+.qt-market{display:flex;gap:3px;padding:3px;margin:2px 0 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:10px}
+.qt-market-seg{flex:1;min-width:0;height:30px;padding:0 8px;border:none;background:transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.01em;border-radius:7px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
+.qt-market-seg:hover{color:var(--text)}
+.qt-market-seg.active{background:linear-gradient(135deg,var(--blue),var(--blue-light));color:#fff;box-shadow:0 4px 12px rgba(45,111,255,0.3)}
+
 .qt-sec{display:flex;flex-direction:column;gap:1px}
 .qt-sec-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);padding:12px 12px 5px}
 .qt-subhdr{display:flex;align-items:center;gap:11px;padding:7px 12px 4px;font-size:12px;font-weight:600;color:var(--text2)}
@@ -305,6 +334,8 @@ const SIDEBAR_CSS = `
   .app-nav.qt-side.qt-collapsed .qt-label,
   .app-nav.qt-side.qt-collapsed .qt-prof-info,
   .app-nav.qt-side.qt-collapsed .qt-prof-edit{display:none}
+  .app-nav.qt-side.qt-collapsed .qt-market{flex-direction:column;width:48px;gap:2px;padding:2px;margin:2px auto 10px}
+  .app-nav.qt-side.qt-collapsed .qt-market-seg{height:24px;padding:0 4px;font-size:10px}
   .app-nav.qt-side.qt-collapsed .qt-item{width:44px;height:44px;justify-content:center;padding:0;margin:1px auto;border-radius:11px}
   .app-nav.qt-side.qt-collapsed .qt-item.indent{padding:0}
   .app-nav.qt-side.qt-collapsed .qt-badge{position:absolute;top:4px;right:5px;margin:0;min-width:15px;padding:0 4px;border:2px solid #0d0f14}

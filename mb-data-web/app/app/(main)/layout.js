@@ -18,6 +18,7 @@ import AnnouncementBanner from '../../../components/AnnouncementBanner'
 import Tutorial from '../../../components/Tutorial'
 import SpaceBackground from '../../../components/dashboard/SpaceBackground'
 import ProfileModal from '../../../components/ProfileModal'
+import CfdAccountModal from '../../../components/CfdAccountModal'
 import { FIRM_LOGOS, getFirmLogo } from '../../../lib/firmLogos'
 import { useT } from '../../../components/LanguageProvider'
 import { useDialog } from '../../../components/useDialog'
@@ -111,6 +112,30 @@ export default function AppLayout({ children }) {
   const [promoteForm, setPromoteForm] = useState({ activationDate: '', activationFee: '', payoutTarget: '', minTradingDays: '', minDailyProfit: '', profitSplit: '90', newName: '' })
   const [failModal, setFailModal] = useState(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  // ── Market mode toggle (Futures ⇄ CFD) ──
+  // Re-contexts the whole app: loadFirms scopes `firms` to the selected market.
+  // Persisted in localStorage; default 'futures'. Only 'futures'|'cfd' are valid.
+  const [marketMode, setMarketModeState] = useState('futures')
+  const [cfdAddOpen, setCfdAddOpen] = useState(false)
+
+  // Read persisted marketMode on mount (SSR-guarded).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const v = localStorage.getItem('quantara.marketMode')
+      if (v === 'futures' || v === 'cfd') setMarketModeState(v)
+    } catch { /* noop */ }
+  }, [])
+
+  // Persist on change + expose a guarded setter (only valid values).
+  const setMarketMode = useCallback((mode) => {
+    const next = mode === 'cfd' ? 'cfd' : 'futures'
+    setMarketModeState(next)
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('quantara.marketMode', next) } catch { /* noop */ }
+    }
+  }, [])
+  const openCfdAdd = useCallback(() => setCfdAddOpen(true), [])
 
   // ── Accessible dialog behavior (role/aria + Escape + focus trap + focus restore) ──
   // Hooks must be called unconditionally, before any early return. The drawer
@@ -137,6 +162,18 @@ export default function AppLayout({ children }) {
   }, [])
 
   useEffect(() => { if (user) { loadFirms(); fetchRates(); loadProfile() } }, [user])
+
+  // Reload firms when the market mode changes (after the initial mount). loadFirms
+  // is market-aware via its dependency on marketMode; clearing firms first avoids
+  // briefly showing stale other-market firms before the refetch lands.
+  const didMountMarket = useRef(false)
+  useEffect(() => {
+    if (!didMountMarket.current) { didMountMarket.current = true; return }
+    if (!user) return
+    setFirms([])
+    loadFirms()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marketMode])
 
   useEffect(() => {
     if (!user || loading) return
@@ -212,9 +249,12 @@ export default function AppLayout({ children }) {
       .order('created_at', { ascending: true })
     if (!fd) return
 
-    // Exclude CFD firms from the shared futures context (CFD has its own /app/cfd tab).
-    // null/undefined market === futures, so we only drop explicit 'cfd' rows.
-    const fd2 = fd.filter(f => f.market !== 'cfd')
+    // Scope the shared `firms` context to the active market mode. In futures mode
+    // we keep null/undefined-market rows (legacy rows = futures); in CFD mode we
+    // keep only explicit market='cfd' rows. Every existing view reads `firms`, so
+    // this single filter re-contexts the whole app between the two markets.
+    const wanted = marketMode === 'cfd' ? 'cfd' : 'futures'
+    const fd2 = fd.filter(f => (f.market || 'futures') === wanted)
 
     setFirms(fd2.map((f, i) => ({
       ...f,
@@ -230,7 +270,7 @@ export default function AppLayout({ children }) {
       const { count: tc } = await supabase.from('journal_entries').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
       setTradesCount(tc || 0)
     } catch {}
-  }, [user])
+  }, [user, marketMode])
 
   const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }, [])
   const navigateTo = useCallback((page) => router.push(`/app/${page}`), [router])
@@ -474,6 +514,8 @@ export default function AppLayout({ children }) {
     user, firms, rates, profile, showToast, reload: loadFirms, getFirmLogo,
     currency, setCurrencyMode, searchQ, setSearchQ, rateInfo,
     navigateTo,
+    // Market mode (Futures ⇄ CFD)
+    marketMode, setMarketMode, openCfdAdd,
     // Helpers
     toEUR, fmtE, fmtENet, fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
@@ -489,6 +531,7 @@ export default function AppLayout({ children }) {
   }), [
     user, firms, rates, profile, showToast, loadFirms,
     currency, searchQ, rateInfo, navigateTo,
+    marketMode, setMarketMode, openCfdAdd,
     fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
     accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
@@ -787,6 +830,15 @@ export default function AppLayout({ children }) {
             onUpdated={loadProfile}
           />
         )}
+
+        {/* ── CFD Account Modal (market mode = cfd) ── */}
+        <CfdAccountModal
+          open={cfdAddOpen}
+          onClose={() => setCfdAddOpen(false)}
+          onSaved={loadFirms}
+          user={user}
+          showToast={showToast}
+        />
 
         {/* ── Onboarding Modal ── */}
         {showOnboarding && user && (
