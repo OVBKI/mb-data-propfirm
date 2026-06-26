@@ -10,8 +10,53 @@ Helper legend:
 - `profitTarget()` → `$` profit target (parses the "Objectif/Profit Target" key)
 - `defaultMinDailyProfit()` → `$` min daily profit (parses a "Profit min …" key)
 
-Cells: **CHALLENGE** = drawdown · dailyDrawdown · objectif · consistance.
-**FINANCÉ** = drawdown · dailyDrawdown · buffer · jourMin · minDailyProfit · consistance.
+Cells: **CHALLENGE** = ddType · drawdown · dailyDrawdown · objectif · consistance.
+**FINANCÉ** = buffer · jourMin · minDailyProfit · consistance.
+
+> **`ddType` (per-model DD classification)** — a CURATED short literal,
+> one of `Static` / `EOD` / `Trailing` (or a combo like `EOD / Trailing`,
+> `EOD / Static`), or `null` → `—`. Unlike the numeric cells it is **not**
+> resolved live, but it is **derived from the real drawdown rule text** in
+> `PROPFIRM_RULES` and from `FIRM_META[firm].ddType` (lib/firmSlugs.js). Per-model
+> where the rules make the distinction explicit (e.g. Bulenox Option1 trailing vs
+> Option2 EOD; Lucid Direct static; MFFU Rapid trailing / Pro EOD / Flex+Builder
+> static; Phidias Static vs Fundamental EOD), otherwise the firm-level type.
+>
+> **FINANCÉ no longer shows `drawdown` / `dailyDrawdown`** (dropped per user
+> request — those values are already represented on the CHALLENGE side and via
+> `ddType`). FINANCÉ now = buffer · jourMin · minDailyProfit · consistance.
+> Column counts: PropFirm(1) + CHALLENGE(5) + FINANCÉ(4) = **10**.
+
+### ddType assigned per firm/model
+| Firm | Model | ddType | Basis |
+|---|---|---|---|
+| Topstep | Combine → XFA | EOD | MLL "EOD seulement (PAS intraday)" |
+| Apex Trader Funding | Apex (EOD) | EOD | mapped model = EOD variant (intraday also offered) |
+| Bulenox | Option 1 (No Scaling) | Trailing | "Option 1 real-time" |
+| Bulenox | Option 2 (EOD) | EOD | "Option 2 EOD close 16h CT" |
+| Lucid Trading | LucidPro | EOD | "EOD trailing (recalcule 16h45 EST close)" |
+| Lucid Trading | LucidFlex | EOD | shares Lucid EOD trailing max |
+| Lucid Trading | LucidDirect | Static | the "Static" leg of FIRM_META "Trailing OU Static" |
+| Tradeify | Select Daily/Flex/Growth/Lightning | EOD | "Drawdown … (EOD)" keys + FIRM_META "EOD uniquement" |
+| Take Profit Trader | Test → PRO → PRO+ | EOD / Trailing | Test EOD → PRO funded INTRADAY |
+| My Funded Futures | Rapid | Trailing | "Drawdown Rapid (intraday)" 4% trailing |
+| My Funded Futures | Pro | EOD | "Drawdown Core/Pro (EOD)" |
+| My Funded Futures | Flex | Static | "EOD STATIC · ne trail jamais" |
+| My Funded Futures | Builder | Static | "fixed buffer, no trail" |
+| Phidias Propfirm | Static / E2L | Static | "$500 STATIQUE PUR · ne trail jamais" |
+| Phidias Propfirm | Fundamental / Swing | EOD | "Drawdown Fundamental/Swing (EOD)" |
+| Funded Futures Network | Standard | EOD / Static | eval EOD → funded "Drawdown post-Exhibition" STATIC |
+| Funded Futures Network | Express | EOD / Static | idem Standard |
+| FuturesELites | Starter / Pro | EOD | "$2,000 EOD (Starter/Pro)" |
+| FuturesELites | Instant Funded | Trailing | "5% current balance (trailing dynamique)" |
+| Alpha Futures | Premium / Zero / Advanced | EOD | MLL "EOD trailing, lock starting balance" |
+
+> **Uncertain / judgment calls:** Apex (model labelled EOD though firm FIRM_META
+> says "Trailing intraday" — firm offers both, mapped model is the EOD one);
+> Lucid Pro/Flex (FIRM_META says "Trailing intraday OU Static" but the rule text
+> is explicitly *EOD* trailing — classified EOD, with Direct = Static);
+> FFN (firm-level FIRM_META = "Trailing drawdown" but per-stage the eval key is
+> EOD and funded becomes STATIC → labelled "EOD / Static").
 
 > Note on funded `jourMin`: `defaultMinTradingDays()` was deliberately **NOT**
 > used — it reads the firm's *eval* "Jours de trading min" key and returns

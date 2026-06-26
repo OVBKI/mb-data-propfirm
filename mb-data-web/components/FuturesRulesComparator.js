@@ -36,7 +36,7 @@ const C = {
 }
 
 // === Normalisation d'une cellule =========================================
-// kind ∈ 'money' | 'pct' | 'days' | 'buffer'
+// kind ∈ 'money' | 'pct' | 'days' | 'buffer' | 'type'
 // Retourne TOUJOURS { text, title } — title = valeur brute complète (tooltip).
 function cleanCell(value, kind) {
   // null / undefined / '' → '—' pour tous les kinds
@@ -47,6 +47,11 @@ function cleanCell(value, kind) {
 
   const rawTitle = String(value)
   const raw = rawTitle.trim()
+
+  // 'type' (ddType) : classification courte déjà normalisée → passe-through.
+  if (kind === 'type') {
+    return { text: raw, title: rawTitle }
+  }
 
   const trunc = (s, n = 18) =>
     s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s
@@ -120,22 +125,23 @@ function fmtMoney(num) {
 }
 
 // Colonnes : libellé + kind appliqué.
+// 'type' = nouveau champ ddType (classification courte, pas une valeur monnaie).
 const CHALLENGE_COLS = [
+  { key: 'ddType', label: 'Type', kind: 'type' },
   { key: 'drawdown', label: 'Drawdown', kind: 'money' },
   { key: 'dailyDrawdown', label: 'Drawdown journalier', kind: 'money' },
   { key: 'objectif', label: 'Objectif', kind: 'money' },
   { key: 'consistance', label: 'Consistance', kind: 'pct' },
 ]
+// FINANCÉ a perdu Drawdown + Drawdown journalier (demande user).
 const FUNDED_COLS = [
-  { key: 'drawdown', label: 'Drawdown', kind: 'money' },
-  { key: 'dailyDrawdown', label: 'Drawdown journalier', kind: 'money' },
   { key: 'buffer', label: 'Buffer', kind: 'buffer' },
   { key: 'jourMin', label: 'Jour min', kind: 'days' },
   { key: 'minDailyProfit', label: 'Combien pour valider 1 jour', kind: 'money' },
   { key: 'consistance', label: 'Consistance', kind: 'pct' },
 ]
 
-const TOTAL_COLS = 1 + CHALLENGE_COLS.length + FUNDED_COLS.length
+const TOTAL_COLS = 1 + CHALLENGE_COLS.length + FUNDED_COLS.length // 1 + 5 + 4 = 10
 
 export default function FuturesRulesComparator() {
   const firms = useMemo(() => getFirmsWithComparison(), [])
@@ -150,6 +156,10 @@ export default function FuturesRulesComparator() {
   const [plan, setPlan] = useState(() =>
     planOptions.includes('50k') ? '50k' : planOptions[0] || '50k'
   )
+
+  // Sélection du modèle affiché par firme (firmes multi-modèles). Clé = nom de
+  // firme, valeur = index du modèle. Défaut = index 0 (1er modèle) si absent.
+  const [modelByFirm, setModelByFirm] = useState({})
 
   // '50k' → '50K'
   const fmtPlan = p => String(p).toUpperCase()
@@ -217,10 +227,11 @@ export default function FuturesRulesComparator() {
         background: C.surface,
       }}>
         <table style={{
-          borderCollapse: 'collapse', width: '100%', minWidth: 1080,
+          borderCollapse: 'collapse', width: '100%', minWidth: 760,
+          tableLayout: 'auto',
           fontSize: 12.5, color: C.text,
         }}>
-          {/* En-tête groupé : PROPFIRM | CHALLENGE (4) | FINANCÉ (6) */}
+          {/* En-tête groupé : PROPFIRM | CHALLENGE (5) | FINANCÉ (4) */}
           <thead>
             <tr>
               <th rowSpan={2} style={groupHeadCell('left')}>PropFirm</th>
@@ -253,71 +264,98 @@ export default function FuturesRulesComparator() {
             {firms.map((firm, firmIdx) => {
               const offered = plansForFirm(firm).includes(plan)
               const { models } = getFuturesComparison(firm, plan)
-              const rows = models.length ? models : [null]
+              const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
 
-              return rows.map((model, mi) => {
-                const isFirst = mi === 0
-                const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
+              // Une SEULE ligne par firme : on affiche le modèle sélectionné.
+              const multi = models.length > 1
+              const selIdx = Math.min(modelByFirm[firm] ?? 0, Math.max(models.length - 1, 0))
+              const model = models[selIdx] || null
 
-                return (
-                  <tr key={firm + '::' + (model?.name || mi)} style={{
-                    background: rowBg,
-                    borderTop: isFirst ? `1px solid ${C.border2}` : `1px solid ${C.border}`,
-                    opacity: offered ? 1 : 0.45,
+              return (
+                <tr key={firm} style={{
+                  background: rowBg,
+                  borderTop: `1px solid ${C.border2}`,
+                  opacity: offered ? 1 : 0.45,
+                }}>
+                  {/* Cellule firme + sélecteur de modèle (si multi-modèles) */}
+                  <td style={{
+                    padding: '12px 14px', verticalAlign: 'top',
+                    borderRight: `1px solid ${C.border2}`,
+                    minWidth: 190, background: C.surface,
                   }}>
-                    {/* Cellule firme (rowSpan sur ses modèles) */}
-                    {isFirst && (
-                      <td rowSpan={rows.length} style={{
-                        padding: '12px 14px', verticalAlign: 'top',
-                        borderRight: `1px solid ${C.border2}`,
-                        minWidth: 190, background: C.surface,
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          {getFirmLogo(firm, C.blue, 30)}
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>
-                              {firm}
-                            </div>
-                            {!offered && (
-                              <div style={{ fontSize: 10, color: C.text3, marginTop: 3 }}>
-                                plan non dispo
-                              </div>
-                            )}
-                          </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {getFirmLogo(firm, C.blue, 30)}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>
+                          {firm}
                         </div>
-                      </td>
-                    )}
+                        {!offered && (
+                          <div style={{ fontSize: 10, color: C.text3, marginTop: 3 }}>
+                            plan non dispo
+                          </div>
+                        )}
+                        {/* Modèle unique : simple label. Multi : sélecteur. */}
+                        {offered && model && !multi && model.name && (
+                          <div style={{
+                            fontSize: 10, color: C.blueLight, fontWeight: 600,
+                            marginTop: 4, letterSpacing: '0.04em', textTransform: 'uppercase',
+                          }}>{model.name}</div>
+                        )}
+                        {offered && multi && (
+                          <select
+                            value={selIdx}
+                            onChange={e =>
+                              setModelByFirm(prev => ({ ...prev, [firm]: Number(e.target.value) }))
+                            }
+                            aria-label={`Modèle ${firm}`}
+                            style={{
+                              marginTop: 6, maxWidth: 160,
+                              fontSize: 11, fontFamily: 'inherit', fontWeight: 600,
+                              color: C.blueLight, cursor: 'pointer',
+                              background: C.surface2, border: `1px solid ${C.border2}`,
+                              borderRadius: 7, padding: '4px 8px', minHeight: 32,
+                            }}>
+                            {models.map((m, i) => (
+                              <option key={m.name || i} value={i} style={{ color: C.text, background: C.surface }}>
+                                {m.name || `Modèle ${i + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </div>
+                  </td>
 
-                    {/* Sous-label modèle + cellules */}
-                    {model ? (
-                      <>
-                        {/* On affiche le nom du modèle dans la 1ère cellule CHALLENGE
-                            comme sous-label sous la valeur. */}
-                        {CHALLENGE_COLS.map((col, ci) => (
+                  {/* Cellules de données du modèle sélectionné */}
+                  {model ? (
+                    <>
+                      {CHALLENGE_COLS.map((col, ci) => {
+                        // 'ddType' vit au niveau du modèle, pas dans .challenge.
+                        const rawVal = col.key === 'ddType' ? model.ddType : model.challenge[col.key]
+                        return (
                           <DataCell
                             key={'c-' + col.key}
-                            cell={offered ? cleanCell(model.challenge[col.key], col.kind) : { text: '—', title: '' }}
-                            firstOfGroup={ci === 0}
-                            subLabel={ci === 0 ? (models.length > 1 ? model.name : null) : null}
-                          />
-                        ))}
-                        {FUNDED_COLS.map((col, ci) => (
-                          <DataCell
-                            key={'f-' + col.key}
-                            cell={offered ? cleanCell(model.funded[col.key], col.kind) : { text: '—', title: '' }}
+                            cell={offered ? cleanCell(rawVal, col.kind) : { text: '—', title: '' }}
                             firstOfGroup={ci === 0}
                           />
-                        ))}
-                      </>
-                    ) : (
-                      // Firme sans modèle résolu (sécurité)
-                      <td colSpan={TOTAL_COLS - 1} style={{ padding: '12px 14px', color: C.text3 }}>
-                        —
-                      </td>
-                    )}
-                  </tr>
-                )
-              })
+                        )
+                      })}
+                      {FUNDED_COLS.map((col, ci) => (
+                        <DataCell
+                          key={'f-' + col.key}
+                          cell={offered ? cleanCell(model.funded[col.key], col.kind) : { text: '—', title: '' }}
+                          firstOfGroup={ci === 0}
+                        />
+                      ))}
+                    </>
+                  ) : (
+                    // Firme sans modèle résolu (sécurité)
+                    <td colSpan={TOTAL_COLS - 1} style={{ padding: '12px 14px', color: C.text3 }}>
+                      —
+                    </td>
+                  )}
+                </tr>
+              )
             })}
           </tbody>
         </table>
@@ -331,7 +369,7 @@ export default function FuturesRulesComparator() {
 }
 
 // === Cellule de données ====================================================
-function DataCell({ cell, firstOfGroup, subLabel }) {
+function DataCell({ cell, firstOfGroup }) {
   return (
     <td
       title={cell.title || undefined}
@@ -343,12 +381,6 @@ function DataCell({ cell, firstOfGroup, subLabel }) {
         cursor: cell.title ? 'help' : 'default',
       }}>
       <div>{cell.text}</div>
-      {subLabel && (
-        <div style={{
-          fontSize: 10, color: C.blueLight, fontWeight: 600,
-          marginTop: 4, letterSpacing: '0.04em', textTransform: 'uppercase',
-        }}>{subLabel}</div>
-      )}
     </td>
   )
 }

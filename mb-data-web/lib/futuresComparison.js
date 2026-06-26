@@ -9,8 +9,14 @@
 // says, per firm/model, which rule KEY feeds each comparison cell.
 //
 // Shape consumed by the future comparator UI (plan selector + grouped table):
-//   CHALLENGE : drawdown, dailyDrawdown, objectif, consistance
-//   FINANCÉ   : drawdown, dailyDrawdown, buffer, jourMin, minDailyProfit, consistance
+//   per-model : ddType  (curated short DD classification — see below)
+//   CHALLENGE : ddType, drawdown, dailyDrawdown, objectif, consistance
+//   FINANCÉ   : buffer, jourMin, minDailyProfit, consistance
+//
+// ddType ('Static' | 'EOD' | 'Trailing', or a combo like 'EOD / Trailing') is a
+// CURATED literal classification per model — it is NOT a numeric rule resolved
+// live, but it is derived from the firm's real drawdown rule text in
+// PROPFIRM_RULES and FIRM_META[firm].ddType (lib/firmSlugs.js). null → '—'.
 //
 // A null cell means "no reliable source in the data" → the UI renders '—'.
 // We are CONSERVATIVE : when unsure which key maps to a cell, the map uses null.
@@ -116,6 +122,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Combine → XFA',
+        ddType: 'EOD',   // MLL "EOD seulement (PAS intraday)" + FIRM_META 'EOD uniquement'
         challenge: {
           drawdown: { helper: 'maxDrawdown' },              // Max Loss Limit (MLL)
           dailyDrawdown: { key: 'Daily Loss Limit (DLL)' }, // real DLL, Combine + XFA
@@ -139,6 +146,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Apex (EOD)',
+        ddType: 'EOD',   // mapped model = EOD variant (Apex offre aussi Intraday) ; defaultDdType=eod
         challenge: {
           drawdown: { helper: 'maxDrawdown' },                 // Drawdown trailing max
           dailyDrawdown: { key: 'Daily Loss Limit (EOD)' },    // DLL on EOD accounts
@@ -162,6 +170,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Option 1 (No Scaling)',
+        ddType: 'Trailing',   // "Option 1 real-time" (trailing intraday)
         challenge: {
           drawdown: { helper: 'maxDrawdown' },                 // Drawdown trailing max
           dailyDrawdown: { key: 'DLL Option 1 (No Scaling)' }, // AUCUN
@@ -179,6 +188,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Option 2 (EOD)',
+        ddType: 'EOD',   // "Option 2 EOD close 16h CT"
         challenge: {
           drawdown: { helper: 'maxDrawdown' },
           dailyDrawdown: { key: 'DLL Option 2 (EOD)' },        // $500 / $1,100 ...
@@ -202,6 +212,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'LucidPro',
+        ddType: 'EOD',   // "EOD trailing (recalcule à 16h45 EST close)" ; FIRM_META 'Trailing intraday OU Static'
         challenge: {
           drawdown: { helper: 'maxDrawdown' },                   // Drawdown trailing max
           dailyDrawdown: { key: 'DLL LucidPro/Direct' },         // ~$1,200
@@ -219,6 +230,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'LucidFlex',
+        ddType: 'EOD',   // partage le "Drawdown trailing max" EOD de Lucid (pas de DLL)
         challenge: {
           drawdown: { helper: 'maxDrawdown' },
           dailyDrawdown: { key: 'DLL LucidFlex' },               // AUCUN (differentiator)
@@ -236,6 +248,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'LucidDirect',
+        ddType: 'Static',   // l'option "Static" du couple FIRM_META 'Trailing intraday OU Static (au choix)'
         challenge: {
           drawdown: { helper: 'maxDrawdown' },
           dailyDrawdown: { key: 'DLL LucidPro/Direct' },         // shares Pro/Direct DLL
@@ -259,6 +272,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Select Daily',
+        ddType: 'EOD',   // 'Drawdown Select (EOD)' + FIRM_META 'EOD uniquement'
         challenge: {
           drawdown: { key: 'Drawdown Select (EOD)' },
           dailyDrawdown: { key: 'DLL Select Daily' },
@@ -276,6 +290,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Select Flex',
+        ddType: 'EOD',   // 'Drawdown Select (EOD)'
         challenge: {
           drawdown: { key: 'Drawdown Select (EOD)' },
           dailyDrawdown: { key: 'DLL Select Flex' },                  // AUCUN
@@ -293,6 +308,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Growth',
+        ddType: 'EOD',   // 'Drawdown Growth (EOD)'
         challenge: {
           drawdown: { key: 'Drawdown Growth (EOD)' },
           dailyDrawdown: { key: 'DLL Growth' },
@@ -310,6 +326,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Lightning Funded',
+        ddType: 'EOD',   // 'Drawdown Lightning (EOD)' (instant, funded-only)
         challenge: {
           // Lightning skips evaluation (instant) — no eval drawdown/objectif/consistency.
           drawdown: null,
@@ -334,6 +351,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Test → PRO → PRO+',
+        ddType: 'EOD / Trailing',   // Test = 'Drawdown Test (EOD)' · PRO funded = 'Drawdown PRO (INTRADAY)'
         challenge: {
           drawdown: { key: 'Drawdown Test (EOD)' },          // Test EOD trailing
           dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN (removed Jan 2025)
@@ -357,6 +375,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Rapid',
+        ddType: 'Trailing',   // 'Drawdown Rapid (intraday)' (4% intraday trailing)
         challenge: {
           drawdown: { key: 'Drawdown Rapid (intraday)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN (string notes Builder/LIVE exceptions)
@@ -374,6 +393,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Pro',
+        ddType: 'EOD',   // 'Drawdown Core/Pro (EOD)' (3% EOD trailing)
         challenge: {
           drawdown: { key: 'Drawdown Core/Pro (EOD)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
@@ -391,6 +411,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Flex',
+        ddType: 'Static',   // 'Drawdown Flex (EOD static)' (4% EOD STATIC · ne trail jamais)
         challenge: {
           drawdown: { key: 'Drawdown Flex (EOD static)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
@@ -408,6 +429,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Builder',
+        ddType: 'Static',   // 'Drawdown Builder (buffer)' (fixed buffer, no trail)
         challenge: {
           drawdown: { key: 'Drawdown Builder (buffer)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },        // Builder: $1,000 soft pause (in string)
@@ -431,6 +453,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Static / E2L',
+        ddType: 'Static',   // 'Drawdown Static (25K only)' ($500 STATIQUE PUR · ne trail jamais)
         challenge: {
           drawdown: { key: 'Drawdown Static (25K only)' },   // $500 static (25K only)
           dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN (no DLL any family)
@@ -448,6 +471,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Fundamental / Swing',
+        ddType: 'EOD',   // 'Drawdown Fundamental/Swing (EOD)' (EOD trailing)
         challenge: {
           drawdown: { key: 'Drawdown Fundamental/Swing (EOD)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN
@@ -471,6 +495,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Standard',
+        ddType: 'EOD / Static',   // eval 'Drawdown trailing max (eval)' EOD → 'Drawdown post-Exhibition' STATIC en funded
         challenge: {
           drawdown: { key: 'Drawdown trailing max (eval)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },          // AUCUN
@@ -488,6 +513,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Express',
+        ddType: 'EOD / Static',   // idem Standard : EOD en éval → STATIC une fois funded
         challenge: {
           drawdown: { key: 'Drawdown trailing max (eval)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
@@ -511,6 +537,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Starter',
+        ddType: 'EOD',   // 'Drawdown trailing max' = "$2,000 EOD (Starter/Pro)"
         challenge: {
           drawdown: { helper: 'maxDrawdown' },                  // Drawdown trailing max
           dailyDrawdown: { key: 'DLL Starter' },                // $1,100 / $2,000 / $3,000
@@ -528,6 +555,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Pro',
+        ddType: 'EOD',   // 'Drawdown trailing max' = "$2,000 EOD (Starter/Pro)"
         challenge: {
           drawdown: { helper: 'maxDrawdown' },
           dailyDrawdown: { key: 'DLL Pro' },                    // AUCUN (differentiator)
@@ -545,6 +573,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Instant Funded',
+        ddType: 'Trailing',   // 'Drawdown trailing max' = "Instant : 5% current balance (trailing dynamique)"
         challenge: {
           // Instant Funded skips evaluation; eval-side cells left null.
           drawdown: null,
@@ -570,6 +599,7 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Premium',
+        ddType: 'EOD',   // 'MLL (Maximum Loss Limit)' = "EOD trailing, lock starting balance"
         challenge: {
           drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Premium' },
           dailyDrawdown: { key: 'Daily Loss Guard', model: 'Premium' }, // AUCUN
@@ -587,6 +617,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Zero',
+        ddType: 'EOD',   // 'MLL (Maximum Loss Limit)' = "EOD trailing, lock starting balance"
         challenge: {
           drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Zero' },
           dailyDrawdown: { key: 'Daily Loss Guard', model: 'Zero' },    // $500/$1,000/$2,000
@@ -604,6 +635,7 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Advanced',
+        ddType: 'EOD',   // 'MLL (Maximum Loss Limit)' = "EOD trailing, lock starting balance"
         challenge: {
           drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Advanced' },
           dailyDrawdown: { key: 'Daily Loss Guard', model: 'Advanced' }, // AUCUN
@@ -642,6 +674,9 @@ export function getFuturesComparison(firmName, plan) {
 
   const models = entry.models.map(model => ({
     name: model.name,
+    // ddType is a curated classification (not a live numeric rule). It is short
+    // ('Static' | 'EOD' | 'Trailing' or a combo). null → UI renders '—'.
+    ddType: model.ddType ?? null,
     challenge: {
       drawdown: resolveCell(firmName, model.challenge.drawdown, plan),
       dailyDrawdown: resolveCell(firmName, model.challenge.dailyDrawdown, plan),
