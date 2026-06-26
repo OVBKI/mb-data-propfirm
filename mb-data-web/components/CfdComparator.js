@@ -1,17 +1,17 @@
 'use client'
-// components/CfdComparator.js — In-app CFD PropFirm comparator.
+// components/CfdComparator.js — In-app CFD PropFirm RULES comparator.
 // Rendered inside the /app/rules tab when the global marketMode is 'cfd'.
-// Mirrors the public app/cfd/CfdIndexClient.js comparison table, but as an in-app
-// component (no PageHeader/Footer) using the app theme CSS vars + i18n.
+// Mirrors the FuturesRulesComparator visual language: a two-tier grouped table
+// (CHALLENGE / FINANCÉ), one row per firm using its flagship model, compact
+// full-width styling.
 // READ-ONLY: renders only data from lib/cfdConstants.js + lib/cfdSlugs.js.
 // Never mixes CFD with futures firms — driven solely by getCfdFirmsOrdered().
+// '—' wherever a value is absent. No invented rules.
 
 import Link from 'next/link'
 import { useT } from './LanguageProvider'
 import {
   CFD_REPUTATION,
-  CFD_DAILY_BASIS_LABEL,
-  CFD_MAX_BASIS_LABEL,
 } from '../lib/cfdConstants'
 import { getCfdFirmsOrdered, CFD_FIRM_TAGLINE, cfdFirmToSlug } from '../lib/cfdSlugs'
 
@@ -19,11 +19,13 @@ const C = {
   surface: 'var(--surface)',
   surface2: 'var(--surface2, rgba(255,255,255,0.025))',
   border: 'var(--border)',
+  border2: 'var(--border2, rgba(255,255,255,0.05))',
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
   blue: 'var(--accent, #2d6fff)',
   amber: '#fac775',
+  green: '#10b981',
 }
 
 // Simple initial avatar (no CFD logos available — same approach as the public page).
@@ -75,30 +77,9 @@ function ReputationBadge({ reputation }) {
   )
 }
 
-function dash(v) {
-  return v === null || v === undefined || v === '' ? '—' : v
-}
+// === Cell value derivation (null-safe; '—' where absent) ====================
 
-function profitTargetsText(f) {
-  return Array.isArray(f.profitTargets) && f.profitTargets.length
-    ? f.profitTargets.map((p) => `${p}%`).join(' / ')
-    : '—'
-}
-
-function splitText(f) {
-  const s = f.profitSplit
-  if (!s || s.from === null || s.from === undefined) return '—'
-  if (s.to === null || s.to === undefined || s.from === s.to) return `${s.from}%`
-  return `${s.from}–${s.to}%`
-}
-
-function platformsText(firm) {
-  return Array.isArray(firm.platforms) && firm.platforms.length
-    ? firm.platforms.join(', ')
-    : '—'
-}
-
-// Short drawdown-type label from the max-loss basis (mirrors the futures 'Type' column).
+// Short drawdown-type label from the max-loss basis.
 function ddTypeShort(f) {
   const b = f.maxLoss?.basis
   if (b === 'static') return 'Static'
@@ -107,28 +88,89 @@ function ddTypeShort(f) {
   return '—'
 }
 
+// Max drawdown (e.g. '10%').
+function maxLossText(f) {
+  const p = f.maxLoss?.pct
+  return p === null || p === undefined ? '—' : `${p}%`
+}
+
+// Daily loss (e.g. '5%').
+function dailyLossText(f) {
+  const p = f.dailyLoss?.pct
+  return p === null || p === undefined ? '—' : `${p}%`
+}
+
+// Profit targets joined (e.g. '8% / 5%').
+function profitTargetsText(f) {
+  return Array.isArray(f.profitTargets) && f.profitTargets.length
+    ? f.profitTargets.map((p) => `${p}%`).join(' / ')
+    : '—'
+}
+
+// Consistency — short text + full text in title tooltip (truncate long sentences).
+function consistencyCell(f) {
+  const raw = f.consistency
+  if (raw === null || raw === undefined || raw === '') return { text: '—', title: '' }
+  const full = String(raw)
+  const text = full.length > 22 ? full.slice(0, 21).trimEnd() + '…' : full
+  return { text, title: full !== text ? full : '' }
+}
+
+// Profit split 'from–to%' (or single '%' when from===to).
+function splitText(f) {
+  const s = f.profitSplit
+  if (!s || s.from === null || s.from === undefined) return '—'
+  if (s.to === null || s.to === undefined || s.from === s.to) return `${s.from}%`
+  return `${s.from}–${s.to}%`
+}
+
+// Min trading days (integer; else '—').
+function minDaysText(f) {
+  const d = f.minTradingDays
+  return d === null || d === undefined ? '—' : String(d)
+}
+
+// Short payout summary from payout.cycle; prepend 'J+N · ' when firstDays present.
+// Full payout object detail goes into the title tooltip.
+function payoutCell(f) {
+  const p = f.payout
+  if (!p) return { text: '—', title: '' }
+  const cycle = p.cycle === null || p.cycle === undefined || p.cycle === '' ? '' : String(p.cycle)
+  const short = cycle.length > 18 ? cycle.slice(0, 17).trimEnd() + '…' : cycle
+  let text = short
+  if (p.firstDays !== null && p.firstDays !== undefined) {
+    text = `J+${p.firstDays}${short ? ' · ' + short : ''}`
+  }
+  if (!text) text = '—'
+  // Build full tooltip from the payout object detail.
+  const parts = []
+  if (p.firstDays !== null && p.firstDays !== undefined) parts.push(`1er payout : J+${p.firstDays}`)
+  if (cycle) parts.push(`Cycle : ${cycle}`)
+  if (p.min !== null && p.min !== undefined && p.min !== '') parts.push(`Min : ${p.min}`)
+  const title = parts.join(' · ')
+  return { text, title: title !== text ? title : '' }
+}
+
+// === Column definitions (array-derived colSpans so they can't drift) ========
+// CHALLENGE group (5) — each maps from the firm's flagship.
+const CHALLENGE_COLS = [
+  { key: 'type', label: 'Type' },
+  { key: 'drawdown', label: 'Drawdown' },
+  { key: 'dailyLoss', label: 'DD / jour' },
+  { key: 'objectif', label: 'Objectif' },
+  { key: 'consistance', label: 'Consistance' },
+]
+// FINANCÉ group (3).
+const FUNDED_COLS = [
+  { key: 'split', label: 'Split' },
+  { key: 'jourMin', label: 'Jour min' },
+  { key: 'payout', label: 'Payout' },
+]
+// Total columns: 1 + CHALLENGE_COLS.length (5) + FUNDED_COLS.length (3) = 9.
+
 export default function CfdComparator() {
   const t = useT()
   const firms = getCfdFirmsOrdered()
-
-  const headers = [
-    t('app.cfd.comparator.colFirm'),
-    t('app.cfd.comparator.colModel'),
-    t('app.cfd.comparator.colType'),
-    t('app.cfd.comparator.colSteps'),
-    t('app.cfd.comparator.colProfitTarget'),
-    t('app.cfd.comparator.colDailyLoss'),
-    t('app.cfd.comparator.colMaxLoss'),
-    t('app.cfd.comparator.colSplit'),
-    t('app.cfd.comparator.colPlatforms'),
-  ]
-
-  const cellStyle = {
-    padding: '8px 9px',
-    borderBottom: `1px solid ${C.border}`,
-    color: C.text2,
-    whiteSpace: 'nowrap',
-  }
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', width: '100%' }}>
@@ -169,33 +211,77 @@ export default function CfdComparator() {
         </div>
       </div>
 
-      {/* Comparison table (horizontally scrollable on small screens) */}
+      {/* Grouped comparison table : PROPFIRM | CHALLENGE (5) | FINANCÉ (3) */}
       <div style={{ overflowX: 'auto', border: `1px solid ${C.border}`, borderRadius: 14, background: C.surface }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 880, fontSize: 12 }}>
+        <table style={{
+          width: '100%', borderCollapse: 'collapse', minWidth: 820,
+          tableLayout: 'auto', fontSize: 12, color: C.text,
+        }}>
           <thead>
-            <tr style={{ textAlign: 'left' }}>
-              {headers.map((h) => (
-                <th key={h} style={{
-                  padding: '8px 9px',
-                  borderBottom: `1px solid ${C.border}`,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: C.text3,
-                  letterSpacing: '0.03em',
-                  textTransform: 'uppercase',
-                  lineHeight: 1.2,
-                }}>{h}</th>
+            <tr>
+              <th rowSpan={2} style={groupHeadCell('left')}>PropFirm</th>
+              <th colSpan={CHALLENGE_COLS.length} style={{
+                ...groupHeadCell(),
+                color: C.amber, borderLeft: `1px solid ${C.border2}`,
+              }}>CHALLENGE</th>
+              <th colSpan={FUNDED_COLS.length} style={{
+                ...groupHeadCell(),
+                color: C.green, borderLeft: `1px solid ${C.border2}`,
+              }}>FINANCÉ</th>
+            </tr>
+            <tr>
+              {CHALLENGE_COLS.map((col, i) => (
+                <th key={'c-' + col.key} style={{
+                  ...subHeadCell(),
+                  borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
+                }}>{col.label}</th>
+              ))}
+              {FUNDED_COLS.map((col, i) => (
+                <th key={'f-' + col.key} style={{
+                  ...subHeadCell(),
+                  borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
+                }}>{col.label}</th>
               ))}
             </tr>
           </thead>
+
           <tbody>
-            {firms.map((firm) => {
+            {firms.map((firm, firmIdx) => {
               const f = firm.flagship || {}
               const slug = firm.slug || cfdFirmToSlug(firm.name)
               const color = CFD_REPUTATION[firm.reputation]?.color || C.blue
+              const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
+
+              const consistance = consistencyCell(f)
+              const payout = payoutCell(f)
+
+              // CHALLENGE cells (text + optional tooltip), order matches CHALLENGE_COLS.
+              const challengeCells = [
+                { text: ddTypeShort(f), title: '' },
+                { text: maxLossText(f), title: '' },
+                { text: dailyLossText(f), title: '' },
+                { text: profitTargetsText(f), title: '' },
+                consistance,
+              ]
+              // FINANCÉ cells, order matches FUNDED_COLS.
+              const fundedCells = [
+                { text: splitText(f), title: '' },
+                { text: minDaysText(f), title: '' },
+                payout,
+              ]
+
               return (
-                <tr key={slug} style={{ verticalAlign: 'top' }}>
-                  <td style={{ padding: '8px 10px', borderBottom: `1px solid ${C.border}` }}>
+                <tr key={slug} style={{
+                  background: rowBg,
+                  borderTop: `1px solid ${C.border2}`,
+                  verticalAlign: 'top',
+                }}>
+                  {/* Firm cell : avatar + name (link) + reputation badge + flagship model */}
+                  <td style={{
+                    padding: '8px 10px', verticalAlign: 'top',
+                    borderRight: `1px solid ${C.border2}`,
+                    minWidth: 170, background: C.surface,
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <InitialAvatar name={firm.name} color={color} size={28} />
                       <div style={{ minWidth: 0 }}>
@@ -203,52 +289,84 @@ export default function CfdComparator() {
                           href={`/cfd/${slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ color: C.text, fontWeight: 700, textDecoration: 'none' }}
+                          title={CFD_FIRM_TAGLINE[firm.name] || undefined}
+                          style={{ color: C.text, fontWeight: 700, textDecoration: 'none', fontSize: 13, lineHeight: 1.2 }}
                         >
                           {firm.name}
                         </Link>
                         <div style={{ marginTop: 4 }}><ReputationBadge reputation={firm.reputation} /></div>
-                        <div style={{ fontSize: 10, color: C.text3, marginTop: 4, maxWidth: 170, lineHeight: 1.35 }}>
-                          {CFD_FIRM_TAGLINE[firm.name] || ''}
-                        </div>
+                        {f.model && (
+                          <div style={{
+                            fontSize: 10, color: C.text3, fontWeight: 600,
+                            marginTop: 5, letterSpacing: '0.03em', textTransform: 'uppercase',
+                            maxWidth: 170, lineHeight: 1.3,
+                          }}>{f.model}</div>
+                        )}
                       </div>
                     </div>
                   </td>
-                  <td style={cellStyle}>{dash(f.model)}</td>
-                  <td style={cellStyle}>{ddTypeShort(f)}</td>
-                  <td style={cellStyle}>{dash(f.steps)}</td>
-                  <td style={cellStyle}>{profitTargetsText(f)}</td>
-                  <td style={cellStyle}>
-                    {f.dailyLoss ? (
-                      <>
-                        <strong style={{ color: C.text }}>{f.dailyLoss.pct}%</strong>
-                        <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>
-                          {CFD_DAILY_BASIS_LABEL[f.dailyLoss.basis] || f.dailyLoss.basis}
-                        </div>
-                      </>
-                    ) : '—'}
-                  </td>
-                  <td style={cellStyle}>
-                    {f.maxLoss ? (
-                      <>
-                        <strong style={{ color: C.text }}>{f.maxLoss.pct}%</strong>
-                        <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>
-                          {CFD_MAX_BASIS_LABEL[f.maxLoss.basis] || f.maxLoss.basis}
-                        </div>
-                      </>
-                    ) : '—'}
-                  </td>
-                  <td style={cellStyle}>{splitText(f)}</td>
-                  <td style={cellStyle}>{platformsText(firm)}</td>
+
+                  {/* CHALLENGE data cells */}
+                  {challengeCells.map((cell, ci) => (
+                    <DataCell key={'c-' + CHALLENGE_COLS[ci].key} cell={cell} firstOfGroup={ci === 0} />
+                  ))}
+                  {/* FINANCÉ data cells */}
+                  {fundedCells.map((cell, ci) => (
+                    <DataCell key={'f-' + FUNDED_COLS[ci].key} cell={cell} firstOfGroup={ci === 0} />
+                  ))}
                 </tr>
               )
             })}
           </tbody>
         </table>
       </div>
-      <p style={{ fontSize: 12, color: C.text3, marginTop: 10, marginBottom: 0 }}>
-        {t('app.cfd.comparator.footnote')}
+
+      <p style={{ fontSize: 12, color: C.text3, marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
+        {t('app.cfd.comparator.footnote')} {' '}
+        Survolez une cellule pour voir la règle complète. « — » = non documenté.
       </p>
     </div>
   )
+}
+
+// === Data cell =============================================================
+function DataCell({ cell, firstOfGroup }) {
+  const text = cell && cell.text ? cell.text : '—'
+  const title = cell && cell.title ? cell.title : ''
+  return (
+    <td
+      title={title || undefined}
+      style={{
+        padding: '8px 9px', whiteSpace: 'nowrap',
+        verticalAlign: 'top',
+        borderLeft: firstOfGroup ? `1px solid ${C.border2}` : `1px solid ${C.border}`,
+        color: text === '—' ? C.text3 : C.text2,
+        cursor: title ? 'help' : 'default',
+      }}>
+      <div>{text}</div>
+    </td>
+  )
+}
+
+// === Header styles =========================================================
+function groupHeadCell(align) {
+  return {
+    padding: '10px 10px',
+    fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color: C.text2,
+    textAlign: align === 'left' ? 'left' : 'center',
+    background: C.surface2,
+    borderBottom: `1px solid ${C.border2}`,
+  }
+}
+function subHeadCell() {
+  return {
+    padding: '8px 9px',
+    fontSize: 10, fontWeight: 600, letterSpacing: '0.03em',
+    textTransform: 'uppercase',
+    color: C.text3, textAlign: 'left', lineHeight: 1.2,
+    background: C.surface2,
+    borderBottom: `1px solid ${C.border2}`,
+  }
 }
