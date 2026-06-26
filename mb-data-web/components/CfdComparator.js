@@ -98,6 +98,15 @@ function platformsText(firm) {
     : '—'
 }
 
+// Short drawdown-type label from the max-loss basis (mirrors the futures 'Type' column).
+function ddTypeShort(f) {
+  const b = f.maxLoss?.basis
+  if (b === 'static') return 'Static'
+  if (b === 'trailing-relative') return 'Trailing'
+  if (b === 'eod-trailing') return 'EOD'
+  return '—'
+}
+
 export default function CfdComparator() {
   const t = useT()
   const firms = getCfdFirmsOrdered()
@@ -105,6 +114,7 @@ export default function CfdComparator() {
   const headers = [
     t('app.cfd.comparator.colFirm'),
     t('app.cfd.comparator.colModel'),
+    t('app.cfd.comparator.colType'),
     t('app.cfd.comparator.colSteps'),
     t('app.cfd.comparator.colProfitTarget'),
     t('app.cfd.comparator.colDailyLoss'),
@@ -114,9 +124,10 @@ export default function CfdComparator() {
   ]
 
   const cellStyle = {
-    padding: '14px',
+    padding: '8px 9px',
     borderBottom: `1px solid ${C.border}`,
     color: C.text2,
+    whiteSpace: 'nowrap',
   }
 
   return (
@@ -160,19 +171,19 @@ export default function CfdComparator() {
 
       {/* Comparison table (horizontally scrollable on small screens) */}
       <div style={{ overflowX: 'auto', border: `1px solid ${C.border}`, borderRadius: 14, background: C.surface }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980, fontSize: 13 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 880, fontSize: 12 }}>
           <thead>
             <tr style={{ textAlign: 'left' }}>
               {headers.map((h) => (
                 <th key={h} style={{
-                  padding: '12px 14px',
+                  padding: '8px 9px',
                   borderBottom: `1px solid ${C.border}`,
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: 700,
                   color: C.text3,
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.03em',
                   textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
+                  lineHeight: 1.2,
                 }}>{h}</th>
               ))}
             </tr>
@@ -184,9 +195,9 @@ export default function CfdComparator() {
               const color = CFD_REPUTATION[firm.reputation]?.color || C.blue
               return (
                 <tr key={slug} style={{ verticalAlign: 'top' }}>
-                  <td style={{ padding: '14px', borderBottom: `1px solid ${C.border}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <InitialAvatar name={firm.name} color={color} size={34} />
+                  <td style={{ padding: '8px 10px', borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <InitialAvatar name={firm.name} color={color} size={28} />
                       <div style={{ minWidth: 0 }}>
                         <Link
                           href={`/cfd/${slug}`}
@@ -197,13 +208,14 @@ export default function CfdComparator() {
                           {firm.name}
                         </Link>
                         <div style={{ marginTop: 4 }}><ReputationBadge reputation={firm.reputation} /></div>
-                        <div style={{ fontSize: 11, color: C.text3, marginTop: 5, maxWidth: 220, lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 10, color: C.text3, marginTop: 4, maxWidth: 170, lineHeight: 1.35 }}>
                           {CFD_FIRM_TAGLINE[firm.name] || ''}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td style={cellStyle}>{dash(f.model)}</td>
+                  <td style={cellStyle}>{ddTypeShort(f)}</td>
                   <td style={cellStyle}>{dash(f.steps)}</td>
                   <td style={cellStyle}>{profitTargetsText(f)}</td>
                   <td style={cellStyle}>
