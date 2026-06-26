@@ -616,6 +616,23 @@ const FR = {
       // Confirms
       confirmDeleteAccount: 'Supprimer définitivement ce compte CFD et ses payouts ?',
       confirmDeletePayout: 'Supprimer ce payout ?',
+      // In-app comparator (components/CfdComparator.js)
+      comparator: {
+        title: 'Comparateur PropFirms CFD',
+        intro: 'FTMO, FundedNext, The5ers, E8 Markets, FundingPips, Alpha Capital, Funded Trading Plus, Blueberry et The Funded Trader : modèle phare, daily loss, max loss, profit split et plateformes. Sourcé depuis les docs officielles, vérifié juin 2026.',
+        noticePricesStrong: 'Prix indicatifs.',
+        noticePrices: 'La plupart des checkout étant dynamiques ou protégés, les tarifs affichés sont indicatifs — vérifie toujours sur le site officiel de la firme avant d’acheter.',
+        noticeDisclaimer: 'Quantara est un outil de journalisation et d’analyse, pas un conseil financier. Les règles des PropFirms changent fréquemment ; vérifie toujours les conditions officielles avant de t’engager.',
+        colFirm: 'Firme',
+        colModel: 'Modèle phare',
+        colSteps: 'Étapes',
+        colProfitTarget: 'Profit target',
+        colDailyLoss: 'Daily loss',
+        colMaxLoss: 'Max loss',
+        colSplit: 'Split',
+        colPlatforms: 'Plateformes',
+        footnote: 'Chaque ligne montre le modèle phare ; la plupart des firmes proposent aussi 1-step / instant / scaling. Clique sur une firme pour le détail complet.',
+      },
     },
     topbar: {
       menu: 'Menu',
@@ -2323,6 +2340,23 @@ const EN = {
       // Confirms
       confirmDeleteAccount: 'Permanently delete this CFD account and its payouts?',
       confirmDeletePayout: 'Delete this payout?',
+      // In-app comparator (components/CfdComparator.js)
+      comparator: {
+        title: 'CFD PropFirms comparator',
+        intro: 'FTMO, FundedNext, The5ers, E8 Markets, FundingPips, Alpha Capital, Funded Trading Plus, Blueberry and The Funded Trader: flagship model, daily loss, max loss, profit split and platforms. Sourced from official docs, verified June 2026.',
+        noticePricesStrong: 'Indicative prices.',
+        noticePrices: 'Most checkouts are dynamic or protected, so the prices shown are indicative — always check the firm’s official website before buying.',
+        noticeDisclaimer: 'Quantara is a journaling and analytics tool, not financial advice. PropFirm rules change frequently; always verify the official terms before committing.',
+        colFirm: 'Firm',
+        colModel: 'Flagship model',
+        colSteps: 'Steps',
+        colProfitTarget: 'Profit target',
+        colDailyLoss: 'Daily loss',
+        colMaxLoss: 'Max loss',
+        colSplit: 'Split',
+        colPlatforms: 'Platforms',
+        footnote: 'Each row shows the flagship model; most firms also offer 1-step / instant / scaling. Click a firm for the full breakdown.',
+      },
     },
     topbar: {
       menu: 'Menu',

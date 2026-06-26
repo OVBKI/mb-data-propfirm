@@ -2,11 +2,10 @@
 // app/app/rules/page.js — PropFirm Comparator
 import { useApp } from '../AppContext'
 import PropfirmComparator from '../../../../components/PropfirmComparator'
+import CfdComparator from '../../../../components/CfdComparator'
 
 export default function RulesRoute() {
-  const { user } = useApp()
+  const { user, marketMode } = useApp()
 
-  return (
-    <PropfirmComparator user={user} />
-  )
+  return marketMode === 'cfd' ? <CfdComparator /> : <PropfirmComparator user={user} />
 }
