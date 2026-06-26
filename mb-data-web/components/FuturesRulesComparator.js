@@ -129,7 +129,7 @@ function fmtMoney(num) {
 const CHALLENGE_COLS = [
   { key: 'ddType', label: 'Type', kind: 'type' },
   { key: 'drawdown', label: 'Drawdown', kind: 'money' },
-  { key: 'dailyDrawdown', label: 'Drawdown journalier', kind: 'money' },
+  { key: 'dailyDrawdown', label: 'DD / jour', kind: 'money' },
   { key: 'objectif', label: 'Objectif', kind: 'money' },
   { key: 'consistance', label: 'Consistance', kind: 'pct' },
 ]
@@ -137,7 +137,7 @@ const CHALLENGE_COLS = [
 const FUNDED_COLS = [
   { key: 'buffer', label: 'Buffer', kind: 'buffer' },
   { key: 'jourMin', label: 'Jour min', kind: 'days' },
-  { key: 'minDailyProfit', label: 'Combien pour valider 1 jour', kind: 'money' },
+  { key: 'minDailyProfit', label: 'Valider 1 jour', kind: 'money' },
   { key: 'consistance', label: 'Consistance', kind: 'pct' },
 ]
 
@@ -227,9 +227,9 @@ export default function FuturesRulesComparator() {
         background: C.surface,
       }}>
         <table style={{
-          borderCollapse: 'collapse', width: '100%', minWidth: 760,
+          borderCollapse: 'collapse', width: '100%', minWidth: 720,
           tableLayout: 'auto',
-          fontSize: 12.5, color: C.text,
+          fontSize: 12, color: C.text,
         }}>
           {/* En-tête groupé : PROPFIRM | CHALLENGE (5) | FINANCÉ (4) */}
           <thead>
@@ -279,12 +279,12 @@ export default function FuturesRulesComparator() {
                 }}>
                   {/* Cellule firme + sélecteur de modèle (si multi-modèles) */}
                   <td style={{
-                    padding: '12px 14px', verticalAlign: 'top',
+                    padding: '8px 10px', verticalAlign: 'top',
                     borderRight: `1px solid ${C.border2}`,
-                    minWidth: 190, background: C.surface,
+                    minWidth: 150, background: C.surface,
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {getFirmLogo(firm, C.blue, 30)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {getFirmLogo(firm, C.blue, 26)}
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>
                           {firm}
@@ -374,7 +374,7 @@ function DataCell({ cell, firstOfGroup }) {
     <td
       title={cell.title || undefined}
       style={{
-        padding: '11px 14px', whiteSpace: 'nowrap',
+        padding: '8px 9px', whiteSpace: 'nowrap',
         verticalAlign: 'top',
         borderLeft: firstOfGroup ? `1px solid ${C.border2}` : `1px solid ${C.border}`,
         color: cell.text === '—' ? C.text3 : C.text,
@@ -388,8 +388,8 @@ function DataCell({ cell, firstOfGroup }) {
 // === Styles d'en-tête ======================================================
 function groupHeadCell(align) {
   return {
-    padding: '12px 14px',
-    fontSize: 12, fontWeight: 700, letterSpacing: '0.1em',
+    padding: '10px 10px',
+    fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
     textTransform: 'uppercase',
     color: C.text2,
     textAlign: align === 'left' ? 'left' : 'center',
@@ -400,10 +400,10 @@ function groupHeadCell(align) {
 }
 function subHeadCell() {
   return {
-    padding: '9px 14px',
-    fontSize: 10.5, fontWeight: 600, letterSpacing: '0.06em',
+    padding: '8px 9px',
+    fontSize: 10, fontWeight: 600, letterSpacing: '0.03em',
     textTransform: 'uppercase',
-    color: C.text3, textAlign: 'left', whiteSpace: 'nowrap',
+    color: C.text3, textAlign: 'left', lineHeight: 1.2,
     background: C.surface2,
     borderBottom: `1px solid ${C.border2}`,
   }
