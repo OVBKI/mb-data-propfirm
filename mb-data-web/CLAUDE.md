@@ -17,7 +17,7 @@ npm run build        # production build
 npm run lint         # ESLint (next/core-web-vitals)
 ```
 
-No test framework is configured yet. When adding tests, use Vitest.
+Tests: Vitest (`npm test`) — suites dans `lib/*.test.js`.
 
 ## Architecture
 
@@ -470,19 +470,19 @@ Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
 SUPABASE_URL=https://xxxxxxx.supabase.co  (auto-stripped /rest/v1 or /auth/v1 if pasted)
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 SUPABASE_JWT_SECRET=...  (Legacy JWT secret from Supabase Auth Settings)
-ENCRYPTION_KEY=lSkf1SV-eq3efx_53Gw_HER7GwFDt0cpb5ZZ5kA5eZ8=  (Fernet 32-byte base64)
+ENCRYPTION_KEY=<Fernet 32-byte base64 — voir Railway ; ⚠️ ROTATION REQUISE : l'ancienne clé a été committée dans git>
 RITHMIC_GATEWAY_URI=wss://rprotocol.rithmic.com:443  (PRODUCTION Chicago — NOT rituz00100 which is Test)
 RITHMIC_SYSTEM_NAME=Rithmic Paper Trading  (default, overridden per credential set)
 CORS_ORIGINS=https://quantara.tech,http://localhost:3000
 DEFAULT_SYNC_DAYS=90
-RITHMIC_CRON_SECRET=SdV0QfO8egkKrQwpnsu4tgKow91v38NB3p4zjB4GSGw  (also set on Vercel — currently unused since APScheduler runs in-process)
+RITHMIC_CRON_SECRET=<voir Railway ; ⚠️ ROTATION REQUISE : l'ancien secret a été committé dans git> (also set on Vercel — currently unused since APScheduler runs in-process)
 PORT=8001  (set explicitly to match Railway public domain forward)
 ```
 
 ### Env vars on Vercel (1 added)
 ```
 RITHMIC_SYNC_URL=https://mb-data-propfirm-production.up.railway.app
-RITHMIC_CRON_SECRET=SdV0QfO8egkKrQwpnsu4tgKow91v38NB3p4zjB4GSGw  (unused now, kept for future Vercel cron if user upgrades to Pro)
+RITHMIC_CRON_SECRET=<voir Vercel ; ⚠️ ROTATION REQUISE> (unused now, kept for future Vercel cron if user upgrades to Pro)
 ```
 
 ### async_rithmic v1.5 API surface (discovered via diagnostic logging)
