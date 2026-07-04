@@ -42,6 +42,24 @@ const S = {
 // Stored status literals — NEVER translate (these are DB values).
 const STATUS_VALUES = ['Challenge', 'Financé', 'Échoué']
 
+// i18n-first label helpers keyed by enum/tier, falling back to the FR constants
+// (covers unknown/custom values while giving EN users English labels).
+function repTierLabel(t, tier, rep) {
+  const key = `app.cfd.reputation.${tier}`
+  const v = t(key)
+  return v !== key ? v : rep?.label
+}
+function dailyBasisLabel(t, basis) {
+  const key = `app.cfd.basisDaily.${basis}`
+  const v = t(key)
+  return v !== key ? v : CFD_DAILY_BASIS_LABEL[basis]
+}
+function maxBasisLabel(t, basis) {
+  const key = `app.cfd.basisMax.${basis}`
+  const v = t(key)
+  return v !== key ? v : CFD_MAX_BASIS_LABEL[basis]
+}
+
 const currencySymbol = (cur) => (cur === 'EUR' ? '€' : cur === 'GBP' ? '£' : cur === 'CHF' ? 'CHF' : '$')
 
 // Currency string in the catalog can be "multi (EUR base, …)" — normalize to a clean code.
@@ -255,7 +273,7 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
               return (
                 <button type="button" key={f.name} onClick={() => onPickFirm(f.name)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '10px 10px', borderRadius: 8, background: selected ? 'rgba(45,111,255,0.12)' : 'var(--surface2)', border: `1px solid ${selected ? 'var(--blue-light)' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit' }}>
                   <span style={{ fontSize: 12, fontWeight: selected ? 700 : 500, color: selected ? 'var(--blue-light)' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
-                  {rep && <span style={{ width: 8, height: 8, borderRadius: '50%', background: rep.color, flexShrink: 0 }} title={rep.label} />}
+                  {rep && <span style={{ width: 8, height: 8, borderRadius: '50%', background: rep.color, flexShrink: 0 }} title={repTierLabel(t, f.reputation, rep)} />}
                 </button>
               )
             })}
@@ -282,12 +300,10 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
               color: THEME.amber,
               lineHeight: 1.5,
             }}>
-              {/* TODO i18n */}
-              <strong>⚠️ Règles pré-remplies = modèle phare « {flagship.model} ».</strong>{' '}
-              Vérifie et ajuste les pourcentages (daily/max loss, target, split), les bases et
-              la taille de compte pour « {form.cfd_model} » avant d’enregistrer.
+              <strong>{t('app.cfd.nonFlagshipWarnStrong').replace('{flagship}', flagship.model)}</strong>{' '}
+              {t('app.cfd.nonFlagshipWarnBody').replace('{model}', form.cfd_model)}
               {selectedModelHint && (
-                <div style={{ marginTop: 4, color: 'var(--text2)' }}>Catalogue : {selectedModelHint}</div>
+                <div style={{ marginTop: 4, color: 'var(--text2)' }}>{t('app.cfd.catalogHint')} {selectedModelHint}</div>
               )}
             </div>
           )}
@@ -351,17 +367,17 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
             <input type="number" step="0.1" value={form.max_loss_pct} onChange={set('max_loss_pct')} style={S.input} />
           </div>
           <div>
-            <label style={S.label}>{t('app.cfd.dailyLoss')} — {CFD_DAILY_BASIS_LABEL[form.daily_loss_basis] || '—'}</label>
+            <label style={S.label}>{t('app.cfd.dailyLoss')} — {dailyBasisLabel(t, form.daily_loss_basis) || '—'}</label>
             <select value={form.daily_loss_basis} onChange={set('daily_loss_basis')} style={S.input}>
               <option value="">—</option>
-              {Object.entries(CFD_DAILY_BASIS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {Object.keys(CFD_DAILY_BASIS_LABEL).map(k => <option key={k} value={k}>{dailyBasisLabel(t, k)}</option>)}
             </select>
           </div>
           <div>
-            <label style={S.label}>{t('app.cfd.maxLoss')} — {CFD_MAX_BASIS_LABEL[form.max_loss_basis] || '—'}</label>
+            <label style={S.label}>{t('app.cfd.maxLoss')} — {maxBasisLabel(t, form.max_loss_basis) || '—'}</label>
             <select value={form.max_loss_basis} onChange={set('max_loss_basis')} style={S.input}>
               <option value="">—</option>
-              {Object.entries(CFD_MAX_BASIS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {Object.keys(CFD_MAX_BASIS_LABEL).map(k => <option key={k} value={k}>{maxBasisLabel(t, k)}</option>)}
             </select>
           </div>
           <div>

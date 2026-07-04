@@ -13,6 +13,7 @@
 //   - met TOUJOURS la valeur brute complète en title= (tooltip au survol).
 
 import { useState, useMemo } from 'react'
+import { useT } from './LanguageProvider'
 import {
   getFuturesComparison,
   getFirmsWithComparison,
@@ -20,6 +21,12 @@ import {
 } from '../lib/futuresComparison'
 import { plansForFirm, planSizeNum } from '../lib/constants'
 import { getFirmLogo } from '../lib/firmLogos'
+
+// Style inline "visually hidden" (lecteurs d'écran uniquement).
+const SR_ONLY = {
+  position: 'absolute', width: 1, height: 1, overflow: 'hidden',
+  clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap',
+}
 
 // === Tokens de thème (cohérents avec globals.css / lib/theme.js) ===
 const C = {
@@ -37,26 +44,27 @@ const C = {
   green: '#10b981',
 }
 
-// Colonnes : libellé + kind appliqué.
+// Colonnes : clé i18n du libellé (app.futuresComparator.*) + kind appliqué.
 // 'type' = nouveau champ ddType (classification courte, pas une valeur monnaie).
 const CHALLENGE_COLS = [
-  { key: 'ddType', label: 'Type', kind: 'type' },
-  { key: 'drawdown', label: 'Drawdown', kind: 'money' },
-  { key: 'dailyDrawdown', label: 'DD / jour', kind: 'money' },
-  { key: 'objectif', label: 'Objectif', kind: 'money' },
-  { key: 'consistance', label: 'Consistance', kind: 'pct' },
+  { key: 'ddType', labelKey: 'colType', kind: 'type' },
+  { key: 'drawdown', labelKey: 'colDrawdown', kind: 'money' },
+  { key: 'dailyDrawdown', labelKey: 'colDailyDrawdown', kind: 'money' },
+  { key: 'objectif', labelKey: 'colTarget', kind: 'money' },
+  { key: 'consistance', labelKey: 'colConsistency', kind: 'pct' },
 ]
 // FINANCÉ a perdu Drawdown + Drawdown journalier (demande user).
 const FUNDED_COLS = [
-  { key: 'buffer', label: 'Buffer', kind: 'buffer' },
-  { key: 'jourMin', label: 'Jour min', kind: 'days' },
-  { key: 'minDailyProfit', label: 'Valider 1 jour', kind: 'money' },
-  { key: 'consistance', label: 'Consistance', kind: 'pct' },
+  { key: 'buffer', labelKey: 'colBuffer', kind: 'buffer' },
+  { key: 'jourMin', labelKey: 'colMinDays', kind: 'days' },
+  { key: 'minDailyProfit', labelKey: 'colMinDailyProfit', kind: 'money' },
+  { key: 'consistance', labelKey: 'colConsistency', kind: 'pct' },
 ]
 
 const TOTAL_COLS = 1 + CHALLENGE_COLS.length + FUNDED_COLS.length // 1 + 5 + 4 = 10
 
 export default function FuturesRulesComparator() {
+  const t = useT()
   const firms = useMemo(() => getFirmsWithComparison(), [])
 
   // Union des tailles de plan sur toutes les firmes, triées par montant.
@@ -85,16 +93,16 @@ export default function FuturesRulesComparator() {
           fontSize: 11, color: C.blueLight, letterSpacing: '0.16em',
           marginBottom: 10, textTransform: 'uppercase', fontWeight: 600,
         }}>
-          Comparateur de règles
+          {t('app.futuresComparator.eyebrow')}
         </div>
         <h1 style={{
           fontSize: 30, fontWeight: 700, letterSpacing: '-0.025em',
           margin: 0, marginBottom: 8, lineHeight: 1.1, color: C.text,
         }}>
-          Règles PropFirms Futures
+          {t('app.futuresComparator.title')}
         </h1>
         <p style={{ fontSize: 14, color: C.text3, margin: 0, lineHeight: 1.5 }}>
-          Drawdown, consistance et conditions de financement — par taille de compte.
+          {t('app.futuresComparator.subtitle')}
         </p>
       </div>
 
@@ -109,7 +117,7 @@ export default function FuturesRulesComparator() {
           fontSize: 11, color: C.text3, letterSpacing: '0.12em',
           fontWeight: 600, textTransform: 'uppercase', marginRight: 4,
         }}>
-          Taille de compte
+          {t('app.futuresComparator.planSize')}
         </div>
         {planOptions.map(p => {
           const active = p === plan
@@ -117,6 +125,7 @@ export default function FuturesRulesComparator() {
             <button
               key={p}
               onClick={() => setPlan(p)}
+              aria-pressed={active}
               style={{
                 padding: '7px 16px', fontSize: 12.5, cursor: 'pointer',
                 borderRadius: 99, fontWeight: active ? 700 : 500,
@@ -147,28 +156,28 @@ export default function FuturesRulesComparator() {
           {/* En-tête groupé : PROPFIRM | CHALLENGE (5) | FINANCÉ (4) */}
           <thead>
             <tr>
-              <th rowSpan={2} style={groupHeadCell('left')}>PropFirm</th>
-              <th colSpan={CHALLENGE_COLS.length} style={{
+              <th rowSpan={2} scope="col" style={groupHeadCell('left')}>{t('app.futuresComparator.colPropfirm')}</th>
+              <th colSpan={CHALLENGE_COLS.length} scope="colgroup" style={{
                 ...groupHeadCell(),
                 color: C.amber, borderLeft: `1px solid ${C.border2}`,
-              }}>CHALLENGE</th>
-              <th colSpan={FUNDED_COLS.length} style={{
+              }}>{t('app.futuresComparator.groupChallenge')}</th>
+              <th colSpan={FUNDED_COLS.length} scope="colgroup" style={{
                 ...groupHeadCell(),
                 color: C.green, borderLeft: `1px solid ${C.border2}`,
-              }}>FINANCÉ</th>
+              }}>{t('app.futuresComparator.groupFunded')}</th>
             </tr>
             <tr>
               {CHALLENGE_COLS.map((col, i) => (
-                <th key={'c-' + col.key} style={{
+                <th key={'c-' + col.key} scope="col" style={{
                   ...subHeadCell(),
                   borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
-                }}>{col.label}</th>
+                }}>{t(`app.futuresComparator.${col.labelKey}`)}</th>
               ))}
               {FUNDED_COLS.map((col, i) => (
-                <th key={'f-' + col.key} style={{
+                <th key={'f-' + col.key} scope="col" style={{
                   ...subHeadCell(),
                   borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
-                }}>{col.label}</th>
+                }}>{t(`app.futuresComparator.${col.labelKey}`)}</th>
               ))}
             </tr>
           </thead>
@@ -217,7 +226,7 @@ export default function FuturesRulesComparator() {
                         </div>
                         {!rowOffered && (
                           <div style={{ fontSize: 10, color: C.text3, marginTop: 3 }}>
-                            plan non dispo
+                            {t('app.futuresComparator.planNotAvailable')}
                           </div>
                         )}
                         {/* Modèle unique : simple label. Multi : sélecteur
@@ -235,7 +244,7 @@ export default function FuturesRulesComparator() {
                             onChange={e =>
                               setModelByFirm(prev => ({ ...prev, [firm]: Number(e.target.value) }))
                             }
-                            aria-label={`Modèle ${firm}`}
+                            aria-label={t('app.futuresComparator.modelSelectAria').replace('{firm}', firm)}
                             style={{
                               marginTop: 6, maxWidth: 160,
                               fontSize: 11, fontFamily: 'inherit', fontWeight: 600,
@@ -245,7 +254,7 @@ export default function FuturesRulesComparator() {
                             }}>
                             {models.map((m, i) => (
                               <option key={m.name || i} value={i} style={{ color: C.text, background: C.surface }}>
-                                {m.name || `Modèle ${i + 1}`}
+                                {m.name || t('app.futuresComparator.modelFallback').replace('{n}', i + 1)}
                               </option>
                             ))}
                           </select>
@@ -290,7 +299,7 @@ export default function FuturesRulesComparator() {
       </div>
 
       <div style={{ marginTop: 14, fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
-        Survolez une cellule pour voir la règle complète. « — » = non documenté pour ce plan/modèle.
+        {t('app.futuresComparator.footer')}
       </div>
     </div>
   )
@@ -298,6 +307,9 @@ export default function FuturesRulesComparator() {
 
 // === Cellule de données ====================================================
 function DataCell({ cell, firstOfGroup }) {
+  // Cellule tronquée : le title= garde le tooltip souris, et un span
+  // visuellement masqué expose la règle complète aux lecteurs d'écran.
+  const truncated = !!cell.title && cell.title !== cell.text
   return (
     <td
       title={cell.title || undefined}
@@ -308,7 +320,8 @@ function DataCell({ cell, firstOfGroup }) {
         color: cell.text === '—' ? C.text3 : C.text,
         cursor: cell.title ? 'help' : 'default',
       }}>
-      <div>{cell.text}</div>
+      <div aria-hidden={truncated || undefined}>{cell.text}</div>
+      {truncated && <span style={SR_ONLY}>{cell.title}</span>}
     </td>
   )
 }

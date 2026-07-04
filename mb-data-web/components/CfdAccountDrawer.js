@@ -46,6 +46,13 @@ function statusLabel(t, status) {
   return status || '—'
 }
 
+// Reputation label: i18n key first (keyed by tier), FR constant as fallback.
+function repTierLabel(t, tier, rep) {
+  const key = `app.cfd.reputation.${tier}`
+  const v = t(key)
+  return v !== key ? v : rep?.label
+}
+
 const inputStyle = {
   background: 'var(--surface2)',
   border: '1px solid var(--border)',
@@ -181,7 +188,7 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
                 </span>
                 {repTier && (
                   <span style={{ padding: '1px 7px', background: `${repTier.color}18`, border: `1px solid ${repTier.color}40`, borderRadius: 5, fontSize: 10, fontWeight: 700, color: repTier.color }}>
-                    {repTier.label}
+                    {repTierLabel(t, repKey, repTier)}
                   </span>
                 )}
                 <span style={{ ...statusBadge(a.status) }}>{statusLabel(t, a.status)}</span>

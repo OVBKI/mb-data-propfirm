@@ -21,6 +21,10 @@
 //   « remboursé avec le 1er payout » quand les conditions réelles diffèrent (ex : The
 //   Funded Trader = bonus au 3e payout, The5ers = 70% des frais).
 
+// NOTE i18n : ces labels/notes FR sont canoniques pour les pages publiques /cfd (FR-only).
+// Les composants in-app (CfdAccountModal, CfdAccountDrawer, CfdDrawdownCard, CfdComparator)
+// passent par les clés app.cfd.reputation.* / app.cfd.basisDaily.* / app.cfd.basisMax.*
+// (lib/i18n.js) avec fallback sur ces constantes.
 export const CFD_REPUTATION = {
   solid: { label: 'Fiable', color: '#1db87a', note: 'Historique de payouts régulier, pas de scandale notable.' },
   ok: { label: 'Correct', color: '#fac775', note: 'Globalement correct ; quelques points à surveiller.' },
@@ -100,8 +104,8 @@ export const CFD_PROPFIRM_RULES = {
     flagship: {
       model: 'High Stakes (2-Step)',
       steps: 2,
-      // ⚠️ à re-vérifier : cette échelle ne correspond à aucun programme The5ers connu
-      // (High Stakes historiquement $5K / $20K / $60K / $100K) — audit juillet 2026.
+      // ✓ Vérifié juillet 2026 (help.the5ers.com) : gamme High Stakes actuelle
+      // 2.5K/5K/10K/25K/50K/100K (l'ancienne échelle $5K/$20K/$60K/$100K est obsolète).
       accountSizes: [2500, 5000, 10000, 25000, 50000, 100000],
       currency: 'USD',
       profitTargets: [10, 5], // "New" version ; variante "Classic" 8/5
@@ -317,7 +321,8 @@ export const CFD_FIRM_ORDER = [
   'The Funded Trader',
 ]
 
-// Basis labels for UI (FR).
+// Basis labels for UI (FR — canonical for the public /cfd pages; in-app components
+// resolve app.cfd.basisDaily.* / app.cfd.basisMax.* first and fall back to these).
 export const CFD_DAILY_BASIS_LABEL = {
   'balance': 'Solde (début de journée)',
   'equity': 'Equity',

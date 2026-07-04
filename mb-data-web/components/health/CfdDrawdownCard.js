@@ -37,6 +37,33 @@ function statusColor(status) {
   return C.grey
 }
 
+// Display label for the stored DB status ('Challenge'/'Financé'/'Échoué' — never
+// translate the stored values themselves; mirror CfdAccountDrawer's statusLabel()).
+function accountStatusLabel(t, status) {
+  if (status === 'Challenge') return t('app.cfd.statusChallenge')
+  if (status === 'Financé') return t('app.cfd.statusFunded')
+  if (status === 'Échoué') return t('app.cfd.statusFailed')
+  return status || '—'
+}
+
+// i18n-first label helpers keyed by enum/tier, falling back to the FR constants
+// (covers unknown/custom values while giving EN users English labels).
+function repTierLabel(t, tier, rep) {
+  const key = `app.cfd.reputation.${tier}`
+  const v = t(key)
+  return v !== key ? v : rep?.label
+}
+function dailyBasisLabel(t, basis) {
+  const key = `app.cfd.basisDaily.${basis}`
+  const v = t(key)
+  return v !== key ? v : CFD_DAILY_BASIS_LABEL[basis]
+}
+function maxBasisLabel(t, basis) {
+  const key = `app.cfd.basisMax.${basis}`
+  const v = t(key)
+  return v !== key ? v : CFD_MAX_BASIS_LABEL[basis]
+}
+
 function isFiniteNum(v) {
   return v != null && v !== '' && Number.isFinite(Number(v))
 }
@@ -237,7 +264,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
                 fontWeight: 700,
                 color: repTier.color,
               }}>
-                {repTier.label}
+                {repTierLabel(t, repKey, repTier)}
               </span>
             )}
           </div>
@@ -256,7 +283,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
             color: C.text2,
             whiteSpace: 'nowrap',
           }}>
-            {a.status}
+            {accountStatusLabel(t, a.status)}
           </div>
         )}
       </div>
@@ -273,16 +300,16 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
           {dailyLossPct != null && (
             <span>
               {t('app.cfdHealth.dailyLoss')}: <strong style={{ color: C.text }}>{dailyLossPct}%</strong>
-              {a.daily_loss_basis && CFD_DAILY_BASIS_LABEL[a.daily_loss_basis]
-                ? <span style={{ color: C.text3 }}> ({CFD_DAILY_BASIS_LABEL[a.daily_loss_basis]})</span>
+              {a.daily_loss_basis && dailyBasisLabel(t, a.daily_loss_basis)
+                ? <span style={{ color: C.text3 }}> ({dailyBasisLabel(t, a.daily_loss_basis)})</span>
                 : null}
             </span>
           )}
           {maxLossPct != null && (
             <span>
               {t('app.cfdHealth.maxLoss')}: <strong style={{ color: C.text }}>{maxLossPct}%</strong>
-              {a.max_loss_basis && CFD_MAX_BASIS_LABEL[a.max_loss_basis]
-                ? <span style={{ color: C.text3 }}> ({CFD_MAX_BASIS_LABEL[a.max_loss_basis]})</span>
+              {a.max_loss_basis && maxBasisLabel(t, a.max_loss_basis)
+                ? <span style={{ color: C.text3 }}> ({maxBasisLabel(t, a.max_loss_basis)})</span>
                 : null}
             </span>
           )}
@@ -322,8 +349,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
               'higher-of-balance-equity' (sinon l'ancre daily retombe sur le solde). */}
           {needsDayStartEquity && (
             <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11, color: C.text3 }}>
-              {/* TODO i18n */}
-              {'Equity début de journée'} {t('app.cfdHealth.dayStartBalanceOptional')}
+              {t('app.cfdHealth.dayStartEquityLabel')} {t('app.cfdHealth.dayStartBalanceOptional')}
               <input
                 type="number"
                 inputMode="decimal"

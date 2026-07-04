@@ -15,6 +15,12 @@ import {
 } from '../lib/cfdConstants'
 import { getCfdFirmsOrdered, CFD_FIRM_TAGLINE, cfdFirmToSlug } from '../lib/cfdSlugs'
 
+// Inline "visually hidden" style (screen readers only).
+const SR_ONLY = {
+  position: 'absolute', width: 1, height: 1, overflow: 'hidden',
+  clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap',
+}
+
 const C = {
   surface: 'var(--surface)',
   surface2: 'var(--surface2, rgba(255,255,255,0.025))',
@@ -54,12 +60,25 @@ function InitialAvatar({ name, color, size = 34 }) {
   )
 }
 
+// Reputation label/note: i18n key first (keyed by tier), constant (FR) as fallback.
+function repLabel(t, tier, rep) {
+  const key = `app.cfd.reputation.${tier}`
+  const v = t(key)
+  return v !== key ? v : rep?.label
+}
+function repNote(t, tier, rep) {
+  const key = `app.cfd.reputation.${tier}Note`
+  const v = t(key)
+  return v !== key ? v : rep?.note
+}
+
 function ReputationBadge({ reputation }) {
+  const t = useT()
   const rep = CFD_REPUTATION[reputation]
   if (!rep) return null
   return (
     <span
-      title={rep.note}
+      title={repNote(t, reputation, rep)}
       style={{
         display: 'inline-block',
         padding: '2px 8px',
@@ -72,7 +91,7 @@ function ReputationBadge({ reputation }) {
         whiteSpace: 'nowrap',
       }}
     >
-      {rep.label}
+      {repLabel(t, reputation, rep)}
     </span>
   )
 }
@@ -131,40 +150,42 @@ function minDaysText(f) {
 }
 
 // Short payout summary from payout.cycle; prepend 'J+N · ' when firstDays present.
-// Full payout object detail goes into the title tooltip.
-function payoutCell(f) {
+// Full payout object detail goes into the title tooltip. Fragments are i18n'd
+// (app.cfd.comparator.dayPlus / tipFirstPayout / tipCycle / tipMin).
+function payoutCell(f, t) {
   const p = f.payout
   if (!p) return { text: '—', title: '' }
   const cycle = p.cycle === null || p.cycle === undefined || p.cycle === '' ? '' : String(p.cycle)
   const short = cycle.length > 18 ? cycle.slice(0, 17).trimEnd() + '…' : cycle
   let text = short
   if (p.firstDays !== null && p.firstDays !== undefined) {
-    text = `J+${p.firstDays}${short ? ' · ' + short : ''}`
+    text = `${t('app.cfd.comparator.dayPlus')}${p.firstDays}${short ? ' · ' + short : ''}`
   }
   if (!text) text = '—'
   // Build full tooltip from the payout object detail.
   const parts = []
-  if (p.firstDays !== null && p.firstDays !== undefined) parts.push(`1er payout : J+${p.firstDays}`)
-  if (cycle) parts.push(`Cycle : ${cycle}`)
-  if (p.min !== null && p.min !== undefined && p.min !== '') parts.push(`Min : ${p.min}`)
+  if (p.firstDays !== null && p.firstDays !== undefined) parts.push(`${t('app.cfd.comparator.tipFirstPayout')}${p.firstDays}`)
+  if (cycle) parts.push(`${t('app.cfd.comparator.tipCycle')} ${cycle}`)
+  if (p.min !== null && p.min !== undefined && p.min !== '') parts.push(`${t('app.cfd.comparator.tipMin')} ${p.min}`)
   const title = parts.join(' · ')
   return { text, title: title !== text ? title : '' }
 }
 
 // === Column definitions (array-derived colSpans so they can't drift) ========
+// Labels are i18n keys under app.cfd.comparator.*.
 // CHALLENGE group (5) — each maps from the firm's flagship.
 const CHALLENGE_COLS = [
-  { key: 'type', label: 'Type' },
-  { key: 'drawdown', label: 'Drawdown' },
-  { key: 'dailyLoss', label: 'DD / jour' },
-  { key: 'objectif', label: 'Objectif' },
-  { key: 'consistance', label: 'Consistance' },
+  { key: 'type', labelKey: 'colType' },
+  { key: 'drawdown', labelKey: 'colDrawdown' },
+  { key: 'dailyLoss', labelKey: 'colDailyLoss' },
+  { key: 'objectif', labelKey: 'colProfitTarget' },
+  { key: 'consistance', labelKey: 'colConsistency' },
 ]
 // FINANCÉ group (3).
 const FUNDED_COLS = [
-  { key: 'split', label: 'Split' },
-  { key: 'jourMin', label: 'Jour min' },
-  { key: 'payout', label: 'Payout' },
+  { key: 'split', labelKey: 'colSplit' },
+  { key: 'jourMin', labelKey: 'colMinDays' },
+  { key: 'payout', labelKey: 'colPayout' },
 ]
 // Total columns: 1 + CHALLENGE_COLS.length (5) + FUNDED_COLS.length (3) = 9.
 
@@ -219,28 +240,28 @@ export default function CfdComparator() {
         }}>
           <thead>
             <tr>
-              <th rowSpan={2} style={groupHeadCell('left')}>PropFirm</th>
-              <th colSpan={CHALLENGE_COLS.length} style={{
+              <th rowSpan={2} scope="col" style={groupHeadCell('left')}>{t('app.cfd.comparator.colFirm')}</th>
+              <th colSpan={CHALLENGE_COLS.length} scope="colgroup" style={{
                 ...groupHeadCell(),
                 color: C.amber, borderLeft: `1px solid ${C.border2}`,
-              }}>CHALLENGE</th>
-              <th colSpan={FUNDED_COLS.length} style={{
+              }}>{t('app.cfd.comparator.groupChallenge')}</th>
+              <th colSpan={FUNDED_COLS.length} scope="colgroup" style={{
                 ...groupHeadCell(),
                 color: C.green, borderLeft: `1px solid ${C.border2}`,
-              }}>FINANCÉ</th>
+              }}>{t('app.cfd.comparator.groupFunded')}</th>
             </tr>
             <tr>
               {CHALLENGE_COLS.map((col, i) => (
-                <th key={'c-' + col.key} style={{
+                <th key={'c-' + col.key} scope="col" style={{
                   ...subHeadCell(),
                   borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
-                }}>{col.label}</th>
+                }}>{t(`app.cfd.comparator.${col.labelKey}`)}</th>
               ))}
               {FUNDED_COLS.map((col, i) => (
-                <th key={'f-' + col.key} style={{
+                <th key={'f-' + col.key} scope="col" style={{
                   ...subHeadCell(),
                   borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
-                }}>{col.label}</th>
+                }}>{t(`app.cfd.comparator.${col.labelKey}`)}</th>
               ))}
             </tr>
           </thead>
@@ -253,7 +274,7 @@ export default function CfdComparator() {
               const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
 
               const consistance = consistencyCell(f)
-              const payout = payoutCell(f)
+              const payout = payoutCell(f, t)
 
               // CHALLENGE cells (text + optional tooltip), order matches CHALLENGE_COLS.
               const challengeCells = [
@@ -323,7 +344,7 @@ export default function CfdComparator() {
 
       <p style={{ fontSize: 12, color: C.text3, marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
         {t('app.cfd.comparator.footnote')} {' '}
-        Survolez une cellule pour voir la règle complète. « — » = non documenté.
+        {t('app.cfd.comparator.hoverHint')}
       </p>
     </div>
   )
@@ -333,6 +354,9 @@ export default function CfdComparator() {
 function DataCell({ cell, firstOfGroup }) {
   const text = cell && cell.text ? cell.text : '—'
   const title = cell && cell.title ? cell.title : ''
+  // Truncated cell: keep the mouse tooltip (title=) and also expose the full
+  // rule to screen readers through a visually-hidden span.
+  const truncated = !!title && title !== text
   return (
     <td
       title={title || undefined}
@@ -343,7 +367,8 @@ function DataCell({ cell, firstOfGroup }) {
         color: text === '—' ? C.text3 : C.text2,
         cursor: title ? 'help' : 'default',
       }}>
-      <div>{text}</div>
+      <div aria-hidden={truncated || undefined}>{text}</div>
+      {truncated && <span style={SR_ONLY}>{title}</span>}
     </td>
   )
 }
