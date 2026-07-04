@@ -31,7 +31,16 @@ const FIRM_SLUG_TO_CANONICAL = {
   'tradeday':              'TradeDay',
 }
 
-const VALID_STATUS = new Set(['Challenge', 'Funded', 'Failed'])
+// L'extension envoie des statuts en anglais, mais la DB stocke l'enum FRANÇAIS
+// ('Challenge'/'Financé'/'Échoué') — on normalise avant écriture, en acceptant
+// aussi les formes françaises directement.
+const STATUS_NORMALIZE = {
+  'Challenge': 'Challenge',
+  'Funded': 'Financé',
+  'Financé': 'Financé',
+  'Failed': 'Échoué',
+  'Échoué': 'Échoué',
+}
 
 // PAUSED (juin 2026) — extension Quantara Sync en pause. Réactiver : passer à false.
 const SYNC_PAUSED = true
@@ -66,12 +75,14 @@ export async function POST(request) {
   // 1) Find the user's firm
   const { data: firms, error: firmsErr } = await supa
     .from('firms')
-    .select('id, name, accounts(id, name, rithmic_account_id, status)')
+    .select('id, name, market, accounts(id, name, rithmic_account_id, status)')
     .eq('user_id', auth.user.id)
 
   if (firmsErr) return Response.json({ error: 'DB error firms', detail: firmsErr.message }, { status: 500 })
 
-  const firm = matchFirm(firms || [], canonical)
+  // L'extension ne sync que des propfirms futures : on exclut les firms CFD du
+  // fuzzy-match pour ne jamais créer/mettre à jour des comptes sous une firm CFD.
+  const firm = matchFirm((firms || []).filter(f => f.market !== 'cfd'), canonical)
   if (!firm) {
     return Response.json({
       error: 'NO_FIRM',
@@ -91,7 +102,7 @@ export async function POST(request) {
     if (!a || !a.accountKey) continue
     const accountKey  = String(a.accountKey).slice(0, 80)
     const accountName = String(a.accountName || '').slice(0, 120)
-    const status      = VALID_STATUS.has(a.quantaraStatus) ? a.quantaraStatus : 'Challenge'
+    const status      = STATUS_NORMALIZE[a.quantaraStatus] || 'Challenge'
     const planSize    = (String(a.planSize || '').match(/^\d+k$/) ? a.planSize : '50k')
     const balance     = numOrNull(a.accountBalance)
     const minBalance  = numOrNull(a.minAccountBalance)
@@ -110,8 +121,8 @@ export async function POST(request) {
       // Only rename if user kept the default empty name
       if (!match.name && accountName) patch.name = accountName
 
-      // Auto-flag liquidation timestamp the first time we see Failed
-      if (status === 'Failed' && match.status !== 'Failed') {
+      // Auto-flag liquidation timestamp the first time we see Failed (statut FR normalisé)
+      if (status === 'Échoué' && match.status !== 'Échoué') {
         patch.liquidated_at = new Date().toISOString()
       }
 
@@ -126,6 +137,7 @@ export async function POST(request) {
       const insertRow = {
         user_id: auth.user.id,
         firm_id: firm.id,
+        market: 'futures', // extension = comptes propfirm futures uniquement
         buy_date: today,
         currency: 'USD',
         status,
@@ -137,7 +149,7 @@ export async function POST(request) {
         rithmic_synced_at: new Date().toISOString(),
         notes: `[ext:${firmSlug}:auto-created]`,
       }
-      if (status === 'Failed') insertRow.liquidated_at = new Date().toISOString()
+      if (status === 'Échoué') insertRow.liquidated_at = new Date().toISOString()
 
       const { error: insErr } = await supa.from('accounts').insert(insertRow)
       if (insErr) { conflicts.push({ accountKey, error: insErr.message }); continue }

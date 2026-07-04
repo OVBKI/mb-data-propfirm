@@ -28,12 +28,15 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  // Récupère tous les comptes Challenge en mode monthly
+  // Récupère tous les comptes Challenge en mode monthly.
+  // Exclut les comptes CFD : la facturation mensuelle propfirm ne les concerne pas
+  // (même garde que côté client — les lignes legacy futures ont market='futures' par défaut).
   const { data: accounts, error: accErr } = await supabase
     .from('accounts')
     .select('id, user_id, name, buy_date, months_count, spent, currency, firm_id')
     .eq('status', 'Challenge')
     .eq('payment_mode', 'monthly')
+    .neq('market', 'cfd')
   if (accErr) return Response.json({ error: accErr.message }, { status: 500 })
 
   // Récupère noms des firmes (pour personnaliser le message)

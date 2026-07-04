@@ -535,6 +535,16 @@ export default function JournalPage({
     })))
   },[firms])
 
+  // Si le scope sélectionné (firme ou firme:compte) n'existe plus dans les
+  // firms courantes (ex: switch de marché Futures ⇄ CFD), reset automatique
+  // à "all" — même pattern que HeatmapPage.
+  useEffect(() => {
+    if (scope === 'all') return
+    const [firmId, accountId] = scope.split(':')
+    const firm = firms.find(f => f.id === firmId)
+    if (!firm || (accountId && !(firm.accounts || []).some(a => a.id === accountId))) setScope('all')
+  }, [scope, firms])
+
   const [loadError, setLoadError] = useState('')
   async function loadEntries(){
     setLoading(true);setLoadError('')

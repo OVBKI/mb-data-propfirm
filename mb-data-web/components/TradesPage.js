@@ -93,6 +93,14 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
     })))
   }, [firms])
 
+  // Si la firme / le compte sélectionné n'existe plus dans les firms courantes
+  // (ex: switch de marché Futures ⇄ CFD), reset automatique à "all" — même
+  // pattern que HeatmapPage pour éviter un état de filtre incohérent.
+  useEffect(() => {
+    if (firmFilter !== 'all' && !firms.some(f => f.id === firmFilter)) setFirmFilter('all')
+    if (accountFilter !== 'all' && !allAccounts.some(a => a.id === accountFilter)) setAccountFilter('all')
+  }, [firmFilter, accountFilter, firms, allAccounts])
+
   // === Load entries ===
   async function loadEntries() {
     if (!user) { setLoading(false); return }

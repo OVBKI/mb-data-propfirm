@@ -89,6 +89,11 @@ export default function HeatmapPage({ user, firms, showToast }) {
     })))
   }, [firms])
 
+  // Set des comptes valides (issus des `firms` du marché courant, comme
+  // TradesPage/JournalPage) — exclut les trades de l'autre marché et les
+  // trades orphelins de comptes supprimés.
+  const validAccountIds = useMemo(() => new Set(allAccounts.map(a => a.id)), [allAccounts])
+
   // Map account_id → status pour le filtre statut (lookup O(1) au filtrage)
   const accountStatusMap = useMemo(() => {
     const m = new Map()
@@ -159,6 +164,9 @@ export default function HeatmapPage({ user, firms, showToast }) {
       cutoff = d.toISOString().slice(0, 10)
     }
     return entries.filter(e => {
+      // Restreint aux comptes des firms visibles (marché courant) — un trade
+      // CFD ou orphelin ne doit jamais alimenter les heatmaps futures (et inversement).
+      if (!validAccountIds.has(e.account_id)) return false
       if (cutoff && e.date < cutoff) return false
       if (accountFilter !== 'all' && e.account_id !== accountFilter) return false
       if (statusFilter !== 'all') {
@@ -171,7 +179,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
       }
       return true
     })
-  }, [entries, period, accountFilter, statusFilter, firmFilter, accountStatusMap, accountFirmMap])
+  }, [entries, period, accountFilter, statusFilter, firmFilter, accountStatusMap, accountFirmMap, validAccountIds])
 
   // === Agrégations ===
   const stats = useMemo(() => {

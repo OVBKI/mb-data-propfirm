@@ -116,12 +116,15 @@ export default function ImportLabPage() {
     let mounted = true
     ;(async () => {
       setLoadingExisting(true)
+      // Import Lab = outil Rithmic/futures uniquement : on exclut les firms et
+      // comptes CFD (market='cfd') pour ne jamais mapper/écraser un compte CFD.
       const [firmsRes, accountsRes] = await Promise.all([
-        supabase.from('firms').select('id, name, color').eq('user_id', user.id).order('name'),
+        supabase.from('firms').select('id, name, color, market').eq('user_id', user.id).neq('market', 'cfd').order('name'),
         supabase
           .from('accounts')
-          .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at, user_id')
+          .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at, user_id, market')
           .eq('user_id', user.id)
+          .neq('market', 'cfd')
           .order('buy_date', { ascending: false }),
       ])
       if (!mounted) return
@@ -135,12 +138,14 @@ export default function ImportLabPage() {
   // Réutilisable : déclenche un re-fetch après un import réussi
   async function refreshExisting() {
     if (!user) return
+    // Même filtre futures-only que le chargement initial (voir commentaire ci-dessus).
     const [firmsRes, accountsRes] = await Promise.all([
-      supabase.from('firms').select('id, name, color').eq('user_id', user.id).order('name'),
+      supabase.from('firms').select('id, name, color, market').eq('user_id', user.id).neq('market', 'cfd').order('name'),
       supabase
         .from('accounts')
-        .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at, user_id')
+        .select('id, firm_id, name, plan_size, status, buy_date, rithmic_account_id, rithmic_balance, rithmic_min_balance, liquidated_at, user_id, market')
         .eq('user_id', user.id)
+        .neq('market', 'cfd')
         .order('buy_date', { ascending: false }),
     ])
     setExistingFirms(firmsRes.data || [])
@@ -293,6 +298,14 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
     if (parsed) reset()
   }
 
+  // Valide la firme persistée : si elle n'existe plus dans la liste (filtrée
+  // futures-only — ex: switch de marché, firme supprimée), on reset la sélection.
+  useEffect(() => {
+    if (!selectedFirmId || loadingExisting) return
+    if (!existingFirms.some(f => f.id === selectedFirmId)) changeSelectedFirm('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFirmId, existingFirms, loadingExisting])
+
   const selectedFirm = existingFirms.find(f => f.id === selectedFirmId) || null
 
   function handleFile(file) {
@@ -399,7 +412,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
         if (!dryRun) {
           const { data, error } = await supabase
             .from('firms')
-            .insert({ user_id: user.id, name: 'Lucid Trading', color: '#2d6fff' })
+            .insert({ user_id: user.id, name: 'Lucid Trading', color: '#2d6fff', market: 'futures' })
             .select().single()
           if (error) throw new Error(`Création firme : ${error.message}`)
           lucidFirm = data
@@ -422,7 +435,9 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
           // → permet au prochain import de matcher exactement (stratégie 'rithmic_id')
           if (!dryRun) {
             const ea = existingAccounts.find(a => a.id === m.accountId)
-            if (ea && !ea.rithmic_account_id) {
+            // Garde défensive : jamais de backfill Rithmic sur un compte CFD
+            // (la liste est déjà filtrée futures-only, ceinture + bretelles).
+            if (ea && ea.market !== 'cfd' && !ea.rithmic_account_id) {
               const { error } = await supabase
                 .from('accounts')
                 .update({ rithmic_account_id: acc.rithmicId })
@@ -439,6 +454,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
           const payload = {
             user_id: user.id,
             firm_id: lucidFirm.id,
+            market: 'futures', // import Rithmic = comptes futures uniquement
             buy_date: m.buyDate || fallbackDate,
             currency: 'USD',
             spent: Number(m.challengeCost) || 0,                        // coût du challenge
@@ -686,6 +702,14 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
     }
     if (parsed) reset()
   }
+
+  // Même validation de la firme persistée que dans TradesImporter.
+  useEffect(() => {
+    if (!selectedFirmId || loadingExisting) return
+    if (!existingFirms.some(f => f.id === selectedFirmId)) changeSelectedFirm('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFirmId, existingFirms, loadingExisting])
+
   const selectedFirm = existingFirms.find(f => f.id === selectedFirmId) || null
 
   function handleFile(file) {
@@ -814,7 +838,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
           if (!dryRun) {
             const { data, error } = await supabase
               .from('firms')
-              .insert({ user_id: user.id, name: firmName, color: '#2d6fff' })
+              .insert({ user_id: user.id, name: firmName, color: '#2d6fff', market: 'futures' })
               .select().single()
             if (error) throw new Error(`Création firme ${firmName} : ${error.message}`)
             firmRow = data
@@ -834,6 +858,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
         const payload = {
           user_id: user.id,
           firm_id: firmRow.id,
+          market: 'futures', // import Rithmic = comptes futures uniquement
           buy_date: m.buyDate || nowIso.slice(0, 10),
           currency: acc.currency || 'USD',
           spent: Number(m.challengeCost) || 0,

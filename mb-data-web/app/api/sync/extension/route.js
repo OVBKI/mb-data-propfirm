@@ -69,12 +69,14 @@ export async function POST(request) {
   //    matching token from the canonical name).
   const { data: firms, error: firmsErr } = await supa
     .from('firms')
-    .select('id, name, accounts(id, name, rithmic_account_id, status)')
+    .select('id, name, market, accounts(id, name, rithmic_account_id, status)')
     .eq('user_id', auth.user.id)
 
   if (firmsErr) return Response.json({ error: 'DB error firms', detail: firmsErr.message }, { status: 500 })
 
-  const firm = matchFirm(firms || [], canonical)
+  // L'extension ne sync que des propfirms futures : on exclut les firms CFD du
+  // fuzzy-match pour ne jamais rattacher des trades à une firm de l'autre marché.
+  const firm = matchFirm((firms || []).filter(f => f.market !== 'cfd'), canonical)
   if (!firm) {
     return Response.json({
       error: 'NO_FIRM',

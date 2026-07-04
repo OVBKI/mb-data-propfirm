@@ -74,7 +74,8 @@ export async function POST(request) {
     ends_at: body.ends_at || null,
     link_url: body.link_url?.trim() || null,
     link_label: body.link_label?.trim() || null,
-    created_by: auth.user.id,
+    // Pas de `created_by` : la colonne n'existe pas dans la table announcements
+    // (voir supabase-schema.sql) — l'envoyer fait échouer l'insert (PGRST204).
   }
 
   const { data, error } = await admin.from('announcements').insert(payload).select().single()

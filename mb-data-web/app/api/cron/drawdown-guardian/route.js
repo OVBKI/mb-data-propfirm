@@ -23,10 +23,13 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
+  // Exclut les comptes CFD : les règles de drawdown propfirm (PROPFIRM_RULES)
+  // sont futures-only, ce guardian ne doit surveiller que ces comptes.
   const { data: accounts, error: accountsError } = await supabase
     .from('accounts')
     .select('id, firm_id, plan_size, status, balance, dd_floor, dd_type, user_id:firms(user_id, name)')
     .in('status', ['Challenge', 'Financé', 'Funded'])
+    .neq('market', 'cfd')
 
   if (accountsError) return Response.json({ error: 'DB error', detail: accountsError.message }, { status: 500 })
   if (!accounts?.length) return Response.json({ sent: 0, checked: 0 })

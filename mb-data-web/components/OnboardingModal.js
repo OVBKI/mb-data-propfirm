@@ -132,7 +132,8 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
     try {
       const { data: firm, error: firmErr } = await supabase
         .from('firms')
-        .insert({ name: t('app.onboarding.demoFirmName'), color: '#ff8c42', user_id: user.id })
+        // Démo 100% futures (Topstep) — market explicite pour rester hors du scope CFD.
+        .insert({ name: t('app.onboarding.demoFirmName'), color: '#ff8c42', user_id: user.id, market: 'futures' })
         .select()
         .single()
       if (firmErr) throw firmErr
@@ -149,6 +150,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
         .insert({
           firm_id: firm.id,
           user_id: user.id,
+          market: 'futures',
           buy_date: buyDate.toISOString().slice(0, 10),
           currency: 'USD',
           spent: pr || 49,

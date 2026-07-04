@@ -68,8 +68,9 @@ export default function JournalSyncPage() {
       supabase.from('accounts').select('*').eq('user_id', userId).order('buy_date'),
       supabase.from('payouts').select('*').eq('user_id', userId).order('date'),
     ])
-    const firmsRaw = fd.data || []
-    const accountsRaw = ad.data || []
+    // Vue Rithmic = futures uniquement : on exclut les firms/comptes CFD.
+    const firmsRaw = (fd.data || []).filter(f => f.market !== 'cfd')
+    const accountsRaw = (ad.data || []).filter(a => a.market !== 'cfd')
     const payoutsRaw = pd.data || []
 
     const hydrated = firmsRaw.map((f, i) => ({

@@ -145,7 +145,11 @@ export default function AppLayout({ children }) {
   const firmModalRef = useDialog({ open: !!firmModal, onClose: () => setFirmModal(null) })
   const acctModalRef = useDialog({ open: !!acctModal, onClose: () => setAcctModal(null) })
   const firmDrawerRef = useDialog({ open: !!firmDrawer && !!firms.find(f => f.id === firmDrawer), onClose: () => setFirmDrawer(null) })
-  const acctDrawerRef = useDialog({ open: !!acctDrawer && !!(acctDrawer && firms.find(f => f.id === acctDrawer.firmId)?.accounts?.find(a => a.id === acctDrawer.acctId)), onClose: () => setAcctDrawer(null) })
+  // NB : le drawer futures ne doit s'enregistrer comme dialog QUE pour un compte
+  // futures — pour un compte CFD c'est CfdAccountDrawer qui gère son propre focus
+  // trap (sinon on empile un dialog fantôme à ref null qui casse le sien).
+  const acctDrawerAcct = acctDrawer ? firms.find(f => f.id === acctDrawer.firmId)?.accounts?.find(a => a.id === acctDrawer.acctId) : null
+  const acctDrawerRef = useDialog({ open: !!acctDrawerAcct && acctDrawerAcct.market !== 'cfd', onClose: () => setAcctDrawer(null) })
   const promoteModalRef = useDialog({ open: !!promoteModal, onClose: () => setPromoteModal(null) })
   const failModalRef = useDialog({ open: !!failModal, onClose: () => setFailModal(null) })
 
@@ -180,11 +184,14 @@ export default function AppLayout({ children }) {
     if (!user || loading) return
     if (typeof window === 'undefined') return
     const dismissed = localStorage.getItem('quantara_onboarding_dismissed') === '1'
+    // L'onboarding démo est un contenu 100% futures (Topstep) : en mode CFD,
+    // l'état vide doit mener au modal compte CFD, pas à ce wizard.
+    if (marketMode === 'cfd') return
     if (!dismissed && firms.length === 0) {
       const t = setTimeout(() => setShowOnboarding(true), 600)
       return () => clearTimeout(t)
     }
-  }, [user, loading, firms.length])
+  }, [user, loading, firms.length, marketMode])
 
   async function loadProfile() {
     if (!user) return
@@ -216,6 +223,9 @@ export default function AppLayout({ children }) {
     } catch { setRateInfo(t('app.toasts.ratesOffline')) }
   }
 
+  // Déclaré AVANT loadFirms (référencé dans ses deps).
+  const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }, [])
+
   const loadFirms = useCallback(async () => {
     if (!user) return
 
@@ -233,11 +243,15 @@ export default function AppLayout({ children }) {
             const expectedMonths = calendarMonthsCount(new Date(a.buy_date), now)
             const currentMonths = a.months_count || 1
             if (expectedMonths <= currentMonths) return
-            await supabase
+            const { error } = await supabase
               .from('accounts')
               .update({ months_count: expectedMonths, last_bill_check_at: now.toISOString() })
               .eq('id', a.id)
               .lt('months_count', expectedMonths)
+            if (error) {
+              console.error('[loadFirms months_count]', error)
+              showToast(t('app.toasts.errorPrefix') + (error.message || t('app.toasts.unknownError')))
+            }
           })
       )
     }
@@ -271,16 +285,16 @@ export default function AppLayout({ children }) {
       const { count: tc } = await supabase.from('journal_entries').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
       setTradesCount(tc || 0)
     } catch {}
-  }, [user, marketMode])
+  }, [user, marketMode, showToast, t])
 
-  const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }, [])
   const navigateTo = useCallback((page) => router.push(`/app/${page}`), [router])
   async function signOut() { await supabase.auth.signOut(); setUser(null); setFirms([]) }
 
   async function createFirm() {
     if (!newFirmName.trim()) { showToast(t('app.toasts.nameRequired')); return }
     const color = FIRM_COLORS[firms.length % FIRM_COLORS.length]
-    const { data, error } = await supabase.from('firms').insert({ name: newFirmName.trim(), color, user_id: user.id }).select().single()
+    // `market` scelle la firme dans le marché courant (Futures ⇄ CFD) — loadFirms filtre dessus.
+    const { data, error } = await supabase.from('firms').insert({ name: newFirmName.trim(), color, user_id: user.id, market: marketMode === 'cfd' ? 'cfd' : 'futures' }).select().single()
     if (error || !data) { showToast(t('app.toasts.errorPrefix') + (error?.message || t('app.toasts.firmCreationFailed'))); return }
     setFirmModal(false); setNewFirmName('')
     await loadFirms(); showToast(t('app.toasts.propfirmAdded'))
@@ -290,7 +304,8 @@ export default function AppLayout({ children }) {
 
   async function deleteFirm(firmId) {
     if (!confirm(t('app.prompts.deleteFirmConfirm'))) return
-    await supabase.from('firms').delete().eq('id', firmId)
+    const { error } = await supabase.from('firms').delete().eq('id', firmId)
+    if (error) { console.error('[deleteFirm]', error); showToast(t('app.toasts.errorPrefix') + (error.message || t('app.toasts.unknownError'))); return }
     setFirmDrawer(null); await loadFirms(); showToast(t('app.toasts.firmDeleted'))
   }
 
@@ -298,7 +313,8 @@ export default function AppLayout({ children }) {
     const firm = firms.find(f => f.id === firmId)
     const name = prompt(t('app.prompts.renameFirmTitle'), firm?.name)
     if (!name?.trim()) return
-    await supabase.from('firms').update({ name: name.trim() }).eq('id', firmId)
+    const { error } = await supabase.from('firms').update({ name: name.trim() }).eq('id', firmId)
+    if (error) { console.error('[renameFirm]', error); showToast(t('app.toasts.errorPrefix') + (error.message || t('app.toasts.unknownError'))); return }
     await loadFirms(); showToast(t('app.toasts.renamed'))
   }
 
@@ -317,7 +333,8 @@ export default function AppLayout({ children }) {
     if (!acctForm.buyDate) { showToast(t('app.toasts.dateRequired')); return }
     const isOneTime = acctForm.paymentMode === 'onetime'
     const quantity = acct ? 1 : Math.max(1, parseInt(acctForm.quantity, 10) || 1)
-    const basePayload = { firm_id: firmId, user_id: user.id, buy_date: acctForm.buyDate, currency: acctForm.currency, spent: parseFloat(acctForm.spent) || 0, activation_fee: isOneTime ? 0 : (parseFloat(acctForm.activationFee) || 0), activation_date: acctForm.activationDate || null, status: acctForm.status, notes: acctForm.notes, plan_size: acctForm.planSize || '50k', dd_type: acctForm.ddType || 'static', payout_target: acctForm.payoutTarget ? parseFloat(acctForm.payoutTarget) : null, min_trading_days: acctForm.minTradingDays ? parseInt(acctForm.minTradingDays, 10) : null, min_daily_profit: acctForm.minDailyProfit ? parseFloat(acctForm.minDailyProfit) : null, profit_split: acctForm.profitSplit ? parseInt(acctForm.profitSplit, 10) : 90, payment_mode: acctForm.paymentMode || 'monthly', custom_drawdown: acctForm.customDrawdown ? parseFloat(acctForm.customDrawdown) : null }
+    // `market` : le modal générique suit le marché courant (les inserts CFD dédiés passent par CfdAccountModal).
+    const basePayload = { firm_id: firmId, user_id: user.id, market: marketMode === 'cfd' ? 'cfd' : 'futures', buy_date: acctForm.buyDate, currency: acctForm.currency, spent: parseFloat(acctForm.spent) || 0, activation_fee: isOneTime ? 0 : (parseFloat(acctForm.activationFee) || 0), activation_date: acctForm.activationDate || null, status: acctForm.status, notes: acctForm.notes, plan_size: acctForm.planSize || '50k', dd_type: acctForm.ddType || 'static', payout_target: acctForm.payoutTarget ? parseFloat(acctForm.payoutTarget) : null, min_trading_days: acctForm.minTradingDays ? parseInt(acctForm.minTradingDays, 10) : null, min_daily_profit: acctForm.minDailyProfit ? parseFloat(acctForm.minDailyProfit) : null, profit_split: acctForm.profitSplit ? parseInt(acctForm.profitSplit, 10) : 90, payment_mode: acctForm.paymentMode || 'monthly', custom_drawdown: acctForm.customDrawdown ? parseFloat(acctForm.customDrawdown) : null }
     let autoReset = false
     if (acctForm.status === 'Financé') {
       const wasFinanced = acct?.status === 'Financé'
@@ -350,7 +367,8 @@ export default function AppLayout({ children }) {
 
   async function deleteAccount(acctId) {
     if (!confirm(t('app.prompts.deleteAccountConfirm'))) return
-    await supabase.from('accounts').delete().eq('id', acctId)
+    const { error } = await supabase.from('accounts').delete().eq('id', acctId)
+    if (error) { console.error('[deleteAccount]', error); showToast(t('app.toasts.errorPrefix') + (error.message || t('app.toasts.unknownError'))); return }
     setAcctDrawer(null); await loadFirms(); showToast(t('app.toasts.accountDeleted'))
   }
 
@@ -426,7 +444,8 @@ export default function AppLayout({ children }) {
 
   async function deletePayout(payoutId) {
     if (!confirm(t('app.prompts.deletePayoutConfirm'))) return
-    await supabase.from('payouts').delete().eq('id', payoutId)
+    const { error } = await supabase.from('payouts').delete().eq('id', payoutId)
+    if (error) { console.error('[deletePayout]', error); showToast(t('app.toasts.errorPrefix') + (error.message || t('app.toasts.unknownError'))); return }
     await loadFirms(); showToast(t('app.toasts.payoutDeleted'))
   }
 
@@ -481,7 +500,8 @@ export default function AppLayout({ children }) {
         if (a.status === 'Challenge') {
           const days = Math.floor((new Date() - new Date(a.buy_date + 'T00:00:00')) / 86400000)
           if (days > 30) alerts.push({ icon: '⏰', title: `${t('app.alerts.challengeSincePrefix')} ${days} ${t('app.alerts.challengeDaysSuffix')} ${f.name}`, sub: t('app.alerts.challengeSub'), type: 'warn' })
-          if (a.payment_mode === 'monthly' && a.buy_date) {
+          // Même garde que loadFirms : la logique de facturation mensuelle ne concerne pas les comptes CFD.
+          if (a.market !== 'cfd' && a.payment_mode === 'monthly' && a.buy_date) {
             const buyD = new Date(a.buy_date + 'T00:00:00Z')
             const nextB = new Date(buyD); nextB.setUTCDate(buyD.getUTCDate() + (a.months_count || 1) * 30); nextB.setUTCHours(0, 0, 0, 0)
             const todayMid = new Date(); todayMid.setUTCHours(0, 0, 0, 0)
