@@ -10,6 +10,33 @@ Helper legend:
 - `profitTarget()` → `$` profit target (parses the "Objectif/Profit Target" key)
 - `defaultMinDailyProfit()` → `$` min daily profit (parses a "Profit min …" key)
 
+> **Sentinelles résolues par `ruleValue()`** :
+> - `'idem'` (même décoré : `'🚨 idem'`, `'🌟 idem (ex: …)'`) = « même règle que
+>   la taille de plan INFÉRIEURE la plus proche » → résolu en redescendant vers
+>   le plan inférieur le plus proche ayant une vraie valeur. Jamais affiché tel
+>   quel. Si rien ne se résout → `null`.
+> - `'n/a'` exact = non applicable pour ce plan → `null` → `—`.
+>
+> **`extractModelSegment()` (descripteurs `{ key, model }`)** gère 3 styles de
+> chaînes composites : `'Model: valeur'` (Alpha, préfixe pouvant lister
+> plusieurs modèles : `'Select/Growth Eval : $1,500'`), `'valeur (ModelA/ModelB)'`
+> (Phidias/Tradeify, note finale entre parenthèses) et `'Model valeur'` sans
+> deux-points (FuturesElites `'Starter ~$3,000'`). Une note finale
+> `'(… non dispo …)'` est RETIRÉE de la valeur (elle parle d'autres modèles :
+> `'Advanced: $12,000 (Zero non dispo)'` → `'$12,000'` pour Advanced, `null`
+> pour Zero). `'non dispo'`/`'n/a'`/`'—'` ne rendent `null` que s'ils sont la
+> valeur du modèle lui-même. Dans une chaîne composite, un modèle sans segment
+> est indisponible à cette taille → `null`.
+>
+> **`cleanCell()` / `extractMoney()` / `fmtMoney()`** vivent désormais ici
+> (exportés, unit-testés dans `futuresComparison.test.js`) et sont importés par
+> le composant UI. `extractMoney` exige un montant ancré par `$` (jamais de
+> nombre inventé depuis des chiffres non monétaires) ; `pct` ne traite
+> `AUCUN(E)` comme « pas de règle » que s'il ouvre la valeur ; un buffer `null`
+> rend `—` (pas de donnée fiable), pas `Non`. Côté UI, un modèle dont les
+> cellules drawdown (challenge ET financé) sont `null` est traité comme « plan
+> non dispo » (ligne grisée) au lieu d'afficher des données partielles.
+
 Cells: **CHALLENGE** = ddType · drawdown · dailyDrawdown · objectif · consistance.
 **FINANCÉ** = buffer · jourMin · minDailyProfit · consistance.
 
@@ -117,8 +144,8 @@ Cells: **CHALLENGE** = ddType · drawdown · dailyDrawdown · objectif · consis
 ⚠ **Buffer caveat (Lucid):** the only buffer-like rule is `Buffer post-payout`,
 which is a *post-payout withdrawal hold* ("leave $1,000–$1,500 above MLL min"),
 **not** a drawdown buffer/cushion. It is mapped here per the task's allowance,
-but flagged. Also note the source stores only the `25k` text and `idem` for the
-other plan sizes, so non-25k plans resolve to the literal string `"idem"`.
+but flagged. The source stores only the `25k` text and `idem` for the other
+plan sizes — `ruleValue()` now resolves `idem` down to the `25k` text.
 
 ## Tradeify — 4 models: `Select Daily`, `Select Flex`, `Growth`, `Lightning Funded`
 | Cell | Select Daily | Select Flex | Growth | Lightning |
@@ -126,17 +153,19 @@ other plan sizes, so non-25k plans resolve to the literal string `"idem"`.
 | chal.drawdown | `Drawdown Select (EOD)` | `Drawdown Select (EOD)` | `Drawdown Growth (EOD)` | `null` (instant, no eval) |
 | chal.dailyDrawdown | `DLL Select Daily` | `DLL Select Flex` (AUCUN) | `DLL Growth` | `null` |
 | chal.objectif | `profitTarget()` | `profitTarget()` | `profitTarget()` | `null` |
-| chal.consistance | `Consistency Select (eval)` (40%) | `Consistency Select (eval)` (40%) | `Consistency Growth` | `null` |
+| chal.consistance | `Consistency Select (eval)` (40%) | `Consistency Select (eval)` (40%) | `Consistency Growth`/Eval (AUCUNE) | `null` |
 | fund.drawdown | `Drawdown Select (EOD)` | `Drawdown Select (EOD)` | `Drawdown Growth (EOD)` | `Drawdown Lightning (EOD)` |
 | fund.dailyDrawdown | `DLL Select Daily` | `DLL Select Flex` | `DLL Growth` | `DLL Lightning` |
 | fund.buffer | `Lock drawdown` (+$100) | `Lock drawdown` | `Lock drawdown` | `Lock drawdown` |
-| fund.jourMin | `Jours de trading min` ⚠ | same ⚠ | same ⚠ | same ⚠ |
+| fund.jourMin | `Jours de trading min`/Select (3 j) | same (3 j) | …/Growth (1 j) | …/Lightning → `null` ⚠ |
 | fund.minDailyProfit | `Profit min jour valide` | same | same | same |
-| fund.consistance | `Consistency Select Daily (funded)` | `Consistency Select Flex (funded)` (50%) | `Consistency Growth` (35% funded) | `Consistency Lightning` |
+| fund.consistance | `Consistency Select Daily (funded)` | `Consistency Select Flex (funded)` (50%) | `Consistency Growth`/Funded (35%) | `Consistency Lightning` |
 
 ⚠ `Jours de trading min` is a single shared key holding a composite string
-("1 jour (Growth) · 3 jours (Select…)") — same value surfaces for all models;
-not model-split. Acceptable pass-through; UI shows the full text.
+("1 jour (Growth) · 3 jours (Select…)", `idem` at 50k+) — now **model-split**
+via `{ key, model }` : Select → `3 jours`, Growth → `1 jour`, Lightning → no
+segment in the source → `null`. `Consistency Growth` ("Eval : AUCUNE · Funded :
+35%") is likewise split with phase labels `Eval` / `Funded`.
 
 ## Take Profit Trader — 1 model: `Test → PRO → PRO+`
 | Cell | CHALLENGE | FINANCÉ |
@@ -172,9 +201,9 @@ gate — no per-plan numeric min-days field exists.
 ## Phidias Propfirm — 2 models: `Static / E2L`, `Fundamental / Swing`
 | Cell | Static / E2L | Fundamental / Swing |
 |---|---|---|
-| chal.drawdown | `Drawdown Static (25K only)` (n/a at 50k+) | `Drawdown Fundamental/Swing (EOD)` |
+| chal.drawdown | `Drawdown Static (25K only)` (n/a at 50k+ → null) | `Drawdown Fundamental/Swing (EOD)` (n/a at 25k → null) |
 | chal.dailyDrawdown | `Daily Loss Limit` (AUCUN) | `Daily Loss Limit` (AUCUN) |
-| chal.objectif | `profitTarget()` | `profitTarget()` |
+| chal.objectif | `Objectif de profit`/E2L ($1,500 @25k, $3,000 @50k, null @100k+) | `Objectif de profit`/Fundamental ($4,000 @50k…, null @25k) |
 | chal.consistance | `Consistency (eval)` (AUCUNE) | `Consistency (eval)` (AUCUNE) |
 | fund.drawdown | `Drawdown Static (25K only)` | `Drawdown Fundamental/Swing (EOD)` |
 | fund.dailyDrawdown | `Daily Loss Limit` | `Daily Loss Limit` |
@@ -205,7 +234,7 @@ gate — no per-plan numeric min-days field exists.
 |---|---|---|---|
 | chal.drawdown | `maxDrawdown()` | `maxDrawdown()` | `null` (instant, no eval) |
 | chal.dailyDrawdown | `DLL Starter` | `DLL Pro` (AUCUN) | `null` |
-| chal.objectif | `profitTarget()` ⚠ | same ⚠ | `null` |
+| chal.objectif | `Objectif de profit`/Starter ⚠ | …/Pro ⚠ | `null` |
 | chal.consistance | `Consistency Starter/Pro` (40%) | same | `null` |
 | fund.drawdown | `maxDrawdown()` | `maxDrawdown()` | `maxDrawdown()` |
 | fund.dailyDrawdown | `DLL Starter` | `DLL Pro` | `DLL Instant` (string "Non documenté") |
@@ -214,15 +243,22 @@ gate — no per-plan numeric min-days field exists.
 | fund.minDailyProfit | `Profit min jour valide` ("Non documenté") | same | same |
 | fund.consistance | `Consistency Starter/Pro` (40%) | same | `Consistency Instant` (25%/20% disputed) |
 
-⚠ `Objectif de profit` for FuturesElites is a single composite string
-("Starter ~$3,000 · Pro ~$4,000 · Instant …"); `profitTarget()` extracts the
-first number ($3,000 at 50k) for all models. Not model-split.
+⚠ `Objectif de profit` for FuturesElites is a composite string. At 50k
+("Starter ~$3,000 · Pro ~$4,000 · Instant …") it is now **model-split** via
+`{ key, model }` (Starter → `~$3,000`, Pro → `~$4,000`). **Known limitation** :
+at 100k/150k the source string ("~$6,000 / ~$7,500") carries no model labels →
+it is returned globally and the money extractor surfaces the FIRST amount for
+both Starter and Pro (Pro devrait être $7,500 — non désambiguïsable sans
+hardcoder ; le tooltip montre la chaîne complète).
 
 ## Alpha Futures — 3 models: `Premium`, `Zero`, `Advanced`
 Alpha packs every model into composite strings (e.g. `"Premium: $3,000 · Zero:
 $3,000 · Advanced: $4,000"`). The map uses `{ key, model }` descriptors and the
 `extractModelSegment()` parser to pull each model's segment. `"… non dispo"`
-markers resolve to `null` (e.g. Premium/Advanced at 25k, Zero at 150k).
+resolves to `null` **only for the model it names** (e.g. Premium/Advanced at
+25k, Zero at 150k) ; a trailing `"(Zero non dispo)"` note is stripped from the
+OTHER models' values (`"Advanced: $12,000 (Zero non dispo)"` → `$12,000` for
+Advanced at 150k, not null).
 
 | Cell | Premium | Zero | Advanced |
 |---|---|---|---|
