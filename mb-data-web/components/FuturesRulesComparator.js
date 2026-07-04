@@ -6,7 +6,8 @@
 // étant regroupées (nom de firme en rowSpan + sous-label modèle par sous-ligne).
 //
 // Données : 100% consommées depuis lib/futuresComparison.js — RIEN n'est inventé.
-// Chaque cellule passe par cleanCell(value, kind) qui :
+// Chaque cellule passe par cleanCell(value, kind) (lib/futuresComparison.js,
+// exporté là-bas pour être testable unitairement) qui :
 //   - normalise un affichage court et lisible,
 //   - retombe sur la valeur brute (tronquée) si l'extraction échoue,
 //   - met TOUJOURS la valeur brute complète en title= (tooltip au survol).
@@ -15,6 +16,7 @@ import { useState, useMemo } from 'react'
 import {
   getFuturesComparison,
   getFirmsWithComparison,
+  cleanCell,
 } from '../lib/futuresComparison'
 import { plansForFirm, planSizeNum } from '../lib/constants'
 import { getFirmLogo } from '../lib/firmLogos'
@@ -33,95 +35,6 @@ const C = {
   blueLight: '#4d8fff',
   amber: '#fac775',
   green: '#10b981',
-}
-
-// === Normalisation d'une cellule =========================================
-// kind ∈ 'money' | 'pct' | 'days' | 'buffer' | 'type'
-// Retourne TOUJOURS { text, title } — title = valeur brute complète (tooltip).
-function cleanCell(value, kind) {
-  // null / undefined / '' → '—' pour tous les kinds
-  if (value === null || value === undefined || value === '') {
-    // buffer absent = 'Non' (mockup : Topstep/Alpha buffer = NON)
-    return { text: kind === 'buffer' ? 'Non' : '—', title: '' }
-  }
-
-  const rawTitle = String(value)
-  const raw = rawTitle.trim()
-
-  // 'type' (ddType) : classification courte déjà normalisée → passe-through.
-  if (kind === 'type') {
-    return { text: raw, title: rawTitle }
-  }
-
-  const trunc = (s, n = 18) =>
-    s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s
-
-  // Extrait un montant et le formate en monnaie fr. On privilégie un montant
-  // explicitement préfixé par '$' (ex: '5 winning days ≥ $150' → 150), sinon
-  // on retombe sur le premier nombre rencontré. Jamais inventé : sinon null.
-  const extractMoney = str => {
-    // Run de chiffres + séparateurs de milliers usuels (espace, NBSP, thin
-    // space, point, virgule). On privilégie un montant préfixé par '$'.
-    const sepRun = '([\\d][\\d.,\\u00a0\\u2009 ]*)'
-    const m = str.match(new RegExp('\\$\\s*' + sepRun)) || str.match(new RegExp(sepRun))
-    if (!m) return null
-    // Nettoie les séparateurs de milliers, garde un éventuel décimal.
-    const digits = m[1].replace(/[\s\u00a0\u2009]/g, '')
-    // '2,000' / '2.000' / '2,000.50' -> on isole la partie entiere.
-    const cleaned = digits.replace(/[.,](?=\d{3}\b)/g, '')
-    const num = parseFloat(cleaned.replace(',', '.'))
-    if (!isFinite(num)) return null
-    return fmtMoney(num)
-  }
-
-  if (kind === 'money') {
-    if (typeof value === 'number') {
-      return { text: fmtMoney(value), title: rawTitle }
-    }
-    if (/aucun/i.test(raw) || raw === '—') return { text: '—', title: rawTitle }
-    const money = extractMoney(raw)
-    if (money) return { text: money, title: rawTitle }
-    return { text: trunc(raw), title: rawTitle }
-  }
-
-  if (kind === 'pct') {
-    if (typeof value === 'number') {
-      return { text: value + ' %', title: rawTitle }
-    }
-    if (/aucun/i.test(raw)) return { text: '—', title: rawTitle }
-    const m = raw.match(/(\d+(?:[.,]\d+)?)\s*%/)
-    if (m) return { text: m[1].replace(',', '.') + ' %', title: rawTitle }
-    return { text: trunc(raw), title: rawTitle }
-  }
-
-  if (kind === 'days') {
-    if (typeof value === 'number') {
-      return { text: String(value), title: rawTitle }
-    }
-    const m = raw.match(/\d+/)
-    if (m) return { text: m[0], title: rawTitle }
-    return { text: trunc(raw), title: rawTitle }
-  }
-
-  if (kind === 'buffer') {
-    if (/aucun|^non\b|^non$/i.test(raw)) return { text: 'Non', title: rawTitle }
-    if (typeof value === 'number') return { text: fmtMoney(value), title: rawTitle }
-    const money = extractMoney(raw)
-    if (money) return { text: money, title: rawTitle }
-    return { text: trunc(raw), title: rawTitle }
-  }
-
-  // fallback générique
-  return { text: trunc(raw), title: rawTitle }
-}
-
-// Format monnaie fr : '2 000 $' (espace insécable comme séparateur de milliers).
-function fmtMoney(num) {
-  const neg = num < 0
-  const abs = Math.abs(num)
-  const int = Math.round(abs)
-  const s = String(int).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-  return (neg ? '-' : '') + s + ' $'
 }
 
 // Colonnes : libellé + kind appliqué.
@@ -266,16 +179,29 @@ export default function FuturesRulesComparator() {
               const { models } = getFuturesComparison(firm, plan)
               const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
 
+              // Un modèle est « dispo » pour ce plan si au moins une de ses
+              // cellules cœur (drawdown challenge/financé) se résout. Sinon les
+              // données du plan n'existent pas pour ce modèle (ex: MFFU Builder
+              // hors 50K, Phidias E2L en 50K+, Alpha Zero en 150K).
+              const isModelAvailable = m =>
+                !!m && (m.challenge.drawdown !== null || m.funded.drawdown !== null)
+
               // Une SEULE ligne par firme : on affiche le modèle sélectionné.
+              // Défaut = 1er modèle DISPO pour ce plan (choix explicite respecté).
               const multi = models.length > 1
-              const selIdx = Math.min(modelByFirm[firm] ?? 0, Math.max(models.length - 1, 0))
+              const chosen = modelByFirm[firm]
+              const selIdx = chosen !== undefined
+                ? Math.min(chosen, Math.max(models.length - 1, 0))
+                : Math.max(models.findIndex(isModelAvailable), 0)
               const model = models[selIdx] || null
+              // Plan proposé par la firme ET données du modèle présentes.
+              const rowOffered = offered && isModelAvailable(model)
 
               return (
                 <tr key={firm} style={{
                   background: rowBg,
                   borderTop: `1px solid ${C.border2}`,
-                  opacity: offered ? 1 : 0.45,
+                  opacity: rowOffered ? 1 : 0.45,
                 }}>
                   {/* Cellule firme + sélecteur de modèle (si multi-modèles) */}
                   <td style={{
@@ -289,13 +215,15 @@ export default function FuturesRulesComparator() {
                         <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>
                           {firm}
                         </div>
-                        {!offered && (
+                        {!rowOffered && (
                           <div style={{ fontSize: 10, color: C.text3, marginTop: 3 }}>
                             plan non dispo
                           </div>
                         )}
-                        {/* Modèle unique : simple label. Multi : sélecteur. */}
-                        {offered && model && !multi && model.name && (
+                        {/* Modèle unique : simple label. Multi : sélecteur
+                            (gardé même si le modèle courant est indispo, pour
+                            pouvoir revenir sur un modèle dispo). */}
+                        {rowOffered && model && !multi && model.name && (
                           <div style={{
                             fontSize: 10, color: C.blueLight, fontWeight: 600,
                             marginTop: 4, letterSpacing: '0.04em', textTransform: 'uppercase',
@@ -335,7 +263,7 @@ export default function FuturesRulesComparator() {
                         return (
                           <DataCell
                             key={'c-' + col.key}
-                            cell={offered ? cleanCell(rawVal, col.kind) : { text: '—', title: '' }}
+                            cell={rowOffered ? cleanCell(rawVal, col.kind) : { text: '—', title: '' }}
                             firstOfGroup={ci === 0}
                           />
                         )
@@ -343,7 +271,7 @@ export default function FuturesRulesComparator() {
                       {FUNDED_COLS.map((col, ci) => (
                         <DataCell
                           key={'f-' + col.key}
-                          cell={offered ? cleanCell(model.funded[col.key], col.kind) : { text: '—', title: '' }}
+                          cell={rowOffered ? cleanCell(model.funded[col.key], col.kind) : { text: '—', title: '' }}
                           firstOfGroup={ci === 0}
                         />
                       ))}

@@ -28,55 +28,140 @@ import {
   maxDrawdown,
   profitTarget,
   defaultMinDailyProfit,
+  planSizeNum,
 } from './constants'
 
 // ---------------------------------------------------------------------------
 // Resolver helpers
 // ---------------------------------------------------------------------------
 
+// Détecte la sentinelle 'idem' — éventuellement décorée d'un emoji/symbole en
+// tête (ex: '🚨 idem', '🌟 idem (ex: 50K → bloque à $50,100)'). Dans les
+// données, 'idem' signifie « même règle que la taille de plan INFÉRIEURE la
+// plus proche ». Ce n'est jamais une valeur affichable.
+function isIdemSentinel(v) {
+  if (typeof v !== 'string') return false
+  // Retire les symboles/emoji de tête avant de tester le mot 'idem'.
+  const stripped = v.trim().replace(/^[^a-zà-ÿ0-9]+/i, '')
+  return /^idem\b/i.test(stripped)
+}
+
+// 'n/a' exact = non applicable pour ce plan/modèle → null (l'UI rend '—').
+function isNaSentinel(v) {
+  return typeof v === 'string' && /^n\/a$/i.test(v.trim())
+}
+
 // Resolve a raw rule value: PROPFIRM_RULES[firm].rules[KEY][plan].
 // Returns null if the firm/key/plan is missing. Strings (e.g. '40%', 'AUCUNE')
 // and money strings ('$2,000') are passed through verbatim.
+// Sentinelles : 'idem' est résolu en redescendant vers la taille de plan
+// inférieure la plus proche ayant une vraie valeur ; 'n/a' exact devient null.
 function ruleValue(firm, key, plan) {
   if (!key) return null
   const rules = PROPFIRM_RULES[firm]?.rules
   if (!rules) return null
   const row = rules[key]
   if (!row) return null
-  const v = row[plan]
-  return v === undefined ? null : v
+  let v = row[plan]
+  if (v === undefined) return null
+  if (isIdemSentinel(v)) {
+    // 'idem' → plan inférieur le plus proche avec une valeur non-'idem'.
+    const smaller = Object.keys(row)
+      .filter(p => planSizeNum(p) < planSizeNum(plan))
+      .sort((a, b) => planSizeNum(b) - planSizeNum(a))
+    v = undefined
+    for (const p of smaller) {
+      const candidate = row[p]
+      if (candidate !== undefined && !isIdemSentinel(candidate)) {
+        v = candidate
+        break
+      }
+    }
+    if (v === undefined) return null // rien ne se résout → pas de donnée fiable
+  }
+  if (isNaSentinel(v)) return null
+  return v
 }
 
-// Per-model extractor for firms (Alpha Futures) whose rule values pack several
-// models into one composite string, e.g.
-//   'Premium: $3,000 · Zero: $3,000 · Advanced: $4,000'
-//   'Zero: $1,500 (Premium/Advanced non dispo)'
-// Given such a string and a model label ('Premium' | 'Zero' | 'Advanced'),
-// returns the segment value for that model, or null if the model is not
-// available at that plan size.
-function extractModelSegment(rawValue, modelLabel) {
+// Retire une note finale '(… non dispo …)' — elle parle d'AUTRES modèles, la
+// valeur qui précède reste valide ('$12,000 (Zero non dispo)' → '$12,000').
+function stripNonDispoNote(val) {
+  return val.replace(/\s*\([^)]*non\s+dispo[^)]*\)\s*$/i, '').trim()
+}
+
+// Vrai si la valeur (une fois une éventuelle note entre parenthèses retirée)
+// est un marqueur d'indisponibilité pour le modèle LUI-MÊME :
+// 'non dispo', '— non dispo en 25K', 'n/a', '—', '-'. 'AUCUN(E)' (une vraie
+// règle « aucune limite ») n'est PAS un marqueur d'indisponibilité.
+function isUnavailableValue(val) {
+  const core = val.replace(/\s*\([^)]*\)\s*$/, '').trim()
+  if (core === '' || core === '—' || core === '-') return true
+  if (/^n\/a$/i.test(core)) return true
+  if (/^[—–-]?\s*non\s+dispo/i.test(core)) return true
+  return false
+}
+
+// Per-model extractor for firms whose rule values pack several models into one
+// composite string. Trois styles coexistent dans constants.js :
+//   Alpha         : 'Premium: $3,000 · Zero: $3,000 · Advanced: $4,000'
+//   Phidias       : '$3,000 (E2L) · $4,000 (Fundamental/Premium)'
+//   FuturesElites : 'Starter ~$3,000 · Pro ~$4,000' (préfixe sans deux-points)
+// Given such a string and a model label, returns the segment value for that
+// model, or null if the model is not available at that plan size.
+// Une note '(… non dispo …)' en fin de valeur est retirée (elle concerne les
+// autres modèles) ; 'non dispo' ne rend null QUE si la valeur du modèle
+// lui-même est un marqueur d'indisponibilité, ou si la parenthèse cite
+// explicitement CE modèle comme non dispo.
+export function extractModelSegment(rawValue, modelLabel) {
   if (rawValue === null || rawValue === undefined) return null
-  const str = String(rawValue)
+  const str = String(rawValue).trim()
+  const esc = String(modelLabel).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const labelRe = new RegExp('\\b' + esc + '\\b', 'i')
   // Split on the firm's segment separator '·'
-  const segments = str.split('·').map(s => s.trim())
-  const re = new RegExp('^' + modelLabel + '\\s*:\\s*(.+)$', 'i')
+  const segments = str.split('·').map(s => s.trim()).filter(Boolean)
+
+  // Vrai si la chaîne est composite (segments ciblant des modèles) : dans ce
+  // cas, un modèle sans segment est indisponible à cette taille → null.
+  let sawModelTargetedSegment = false
+
   for (const seg of segments) {
-    const m = seg.match(re)
-    if (m) {
-      const val = m[1].trim()
-      // 'non dispo' / 'AUCUN(E)' style → treat unavailability as null, but keep
-      // explicit 'AUCUN'/'AUCUNE' (a real "no daily loss" rule) as-is.
-      if (/non\s+dispo/i.test(val) || val === '—' || val === '-') return null
-      return val
+    const colonIdx = seg.indexOf(':')
+    if (colonIdx > 0) {
+      // Style 'Model: valeur' — le préfixe peut lister plusieurs modèles
+      // (ex: 'Select/Growth Eval : $1,500').
+      sawModelTargetedSegment = true
+      if (labelRe.test(seg.slice(0, colonIdx))) {
+        const val = stripNonDispoNote(seg.slice(colonIdx + 1).trim())
+        return isUnavailableValue(val) ? null : val
+      }
+      continue
+    }
+    // Style 'valeur (ModelA/ModelB)' — note finale entre parenthèses.
+    const pm = seg.match(/^(.*?)\s*\(([^)]*)\)$/)
+    if (pm && labelRe.test(pm[2])) {
+      // La parenthèse cite CE modèle : indisponibilité explicite ou valeur.
+      if (/non\s+dispo/i.test(pm[2])) return null
+      const val = pm[1].trim()
+      return isUnavailableValue(val) ? null : val
+    }
+    if (pm && /^[A-ZÀ-Ý]/.test(pm[2].trim()) && !/non\s+dispo/i.test(pm[2])) {
+      // Parenthèse « garde-modèle » citant d'AUTRES modèles → pas pour nous.
+      sawModelTargetedSegment = true
+      continue
+    }
+    // Style 'Model valeur' sans deux-points (ex: 'Starter ~$3,000').
+    const lm = seg.match(new RegExp('^' + esc + '\\s+(.+)$', 'i'))
+    if (lm) {
+      const val = stripNonDispoNote(lm[1].trim())
+      return isUnavailableValue(val) ? null : val
     }
   }
-  // No "Model:" prefix anywhere → the string is global (applies to all models).
-  // Only return it if it isn't an unavailability marker.
-  if (!/:/.test(str)) {
-    if (/non\s+dispo/i.test(str) || str === '—' || str === '-') return null
-    return str
-  }
-  return null
+
+  // Aucun segment ne cible ce modèle.
+  if (sawModelTargetedSegment) return null // composite : modèle absent ici
+  // Chaîne globale (s'applique à tous les modèles) — sauf marqueur d'indispo.
+  const val = stripNonDispoNote(str)
+  return isUnavailableValue(val) ? null : val
 }
 
 // Resolve a cell described by a mapping descriptor.
@@ -113,7 +198,8 @@ function resolveCell(firm, descriptor, plan) {
 //   null                          (no reliable source → '—')
 //   { helper: '<helperName>' }    (use a constants helper)
 //   { key: '<exact rule key>' }   (raw value)
-//   { key: '...', model: '...' }  (composite per-model segment, Alpha Futures)
+//   { key: '...', model: '...' }  (composite per-model segment — Alpha Futures,
+//                                  Phidias, Tradeify, FuturesElites)
 // ---------------------------------------------------------------------------
 
 export const FIRM_COMPARISON_MAP = {
@@ -283,7 +369,7 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Select (EOD)' },
           dailyDrawdown: { key: 'DLL Select Daily' },
           buffer: { key: 'Lock drawdown' },                           // +$100 lock cushion
-          jourMin: { key: 'Jours de trading min' },                   // 3 days (Select)
+          jourMin: { key: 'Jours de trading min', model: 'Select' },  // '3 jours (Select …)'
           minDailyProfit: { key: 'Profit min jour valide' },          // $50/$100/$200/$300
           consistance: { key: 'Consistency Select Daily (funded)' },  // balance-based (string)
         },
@@ -301,7 +387,7 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Select (EOD)' },
           dailyDrawdown: { key: 'DLL Select Flex' },                  // AUCUN
           buffer: { key: 'Lock drawdown' },
-          jourMin: { key: 'Jours de trading min' },
+          jourMin: { key: 'Jours de trading min', model: 'Select' },  // '3 jours (Select …)'
           minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Consistency Select Flex (funded)' },   // 50%
         },
@@ -313,15 +399,15 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Growth (EOD)' },
           dailyDrawdown: { key: 'DLL Growth' },
           objectif: { helper: 'profitTarget' },
-          consistance: { key: 'Consistency Growth' },                 // string: Eval AUCUNE · Funded 35%
+          consistance: { key: 'Consistency Growth', model: 'Eval' },  // 'Eval : AUCUNE (unrestricted)'
         },
         funded: {
           drawdown: { key: 'Drawdown Growth (EOD)' },
           dailyDrawdown: { key: 'DLL Growth' },
           buffer: { key: 'Lock drawdown' },
-          jourMin: { key: 'Jours de trading min' },                   // 1 day (Growth) — see string
+          jourMin: { key: 'Jours de trading min', model: 'Growth' },  // '1 jour (Growth)'
           minDailyProfit: { key: 'Profit min jour valide' },
-          consistance: { key: 'Consistency Growth' },                 // 35% funded (within string)
+          consistance: { key: 'Consistency Growth', model: 'Funded' }, // 'Funded : 35%'
         },
       },
       {
@@ -338,7 +424,7 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Lightning (EOD)' },
           dailyDrawdown: { key: 'DLL Lightning' },
           buffer: { key: 'Lock drawdown' },
-          jourMin: { key: 'Jours de trading min' },
+          jourMin: { key: 'Jours de trading min', model: 'Lightning' }, // pas documenté pour Lightning → null
           minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Consistency Lightning' },              // 20/25/30% string
         },
@@ -457,7 +543,7 @@ export const FIRM_COMPARISON_MAP = {
         challenge: {
           drawdown: { key: 'Drawdown Static (25K only)' },   // $500 static (25K only)
           dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN (no DLL any family)
-          objectif: { helper: 'profitTarget' },
+          objectif: { key: 'Objectif de profit', model: 'E2L' }, // '$1,500 (Static/E2L)' / '$3,000 (E2L)'
           consistance: { key: 'Consistency (eval)' },        // AUCUNE
         },
         funded: {
@@ -475,7 +561,7 @@ export const FIRM_COMPARISON_MAP = {
         challenge: {
           drawdown: { key: 'Drawdown Fundamental/Swing (EOD)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN
-          objectif: { helper: 'profitTarget' },
+          objectif: { key: 'Objectif de profit', model: 'Fundamental' }, // '$4,000 (Fundamental/Premium)'
           consistance: { key: 'Consistency (eval)' },        // AUCUNE
         },
         funded: {
@@ -541,7 +627,7 @@ export const FIRM_COMPARISON_MAP = {
         challenge: {
           drawdown: { helper: 'maxDrawdown' },                  // Drawdown trailing max
           dailyDrawdown: { key: 'DLL Starter' },                // $1,100 / $2,000 / $3,000
-          objectif: { helper: 'profitTarget' },                 // composite string (Starter/Pro/Instant)
+          objectif: { key: 'Objectif de profit', model: 'Starter' }, // 'Starter ~$3,000 · Pro ~$4,000 · …'
           consistance: { key: 'Consistency Starter/Pro' },      // 40%
         },
         funded: {
@@ -559,7 +645,7 @@ export const FIRM_COMPARISON_MAP = {
         challenge: {
           drawdown: { helper: 'maxDrawdown' },
           dailyDrawdown: { key: 'DLL Pro' },                    // AUCUN (differentiator)
-          objectif: { helper: 'profitTarget' },
+          objectif: { key: 'Objectif de profit', model: 'Pro' }, // 'Pro ~$4,000' (segment dédié à 50K)
           consistance: { key: 'Consistency Starter/Pro' },
         },
         funded: {
@@ -694,4 +780,106 @@ export function getFuturesComparison(firmName, plan) {
   }))
 
   return { models }
+}
+
+// ---------------------------------------------------------------------------
+// Normalisation d'affichage des cellules — partagée avec le comparateur UI
+// (components/FuturesRulesComparator.js) et exportée pour être testable.
+// ---------------------------------------------------------------------------
+
+// Format monnaie fr : '2 000 $' (espace comme séparateur de milliers).
+export function fmtMoney(num) {
+  const neg = num < 0
+  const abs = Math.abs(num)
+  const int = Math.round(abs)
+  const s = String(int).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  return (neg ? '-' : '') + s + ' $'
+}
+
+// Extrait le premier montant PRÉFIXÉ par '$' d'une chaîne et le retourne en
+// NOMBRE (ex: '5 winning days ≥ $150' → 150, '$2,500' → 2500). Un montant
+// DOIT être ancré par '$' : les chiffres nus (dates, compteurs, « 3 sources »,
+// « 1er payout »…) ne sont JAMAIS interprétés comme de l'argent.
+// Retourne null si aucun montant '$' n'existe dans la chaîne.
+export function extractMoney(str) {
+  if (typeof str !== 'string') return null
+  // Run de chiffres + séparateurs de milliers usuels (espace, NBSP, thin
+  // space, point, virgule) précédé de '$'.
+  const m = str.match(/\$\s*([\d][\d.,\u00a0\u2009 ]*)/)
+  if (!m) return null
+  // Nettoie les séparateurs de milliers, garde un éventuel décimal.
+  const digits = m[1].replace(/[\s\u00a0\u2009]/g, '')
+  // '2,000' / '2.000' / '2,000.50' -> on isole la partie entiere.
+  const cleaned = digits.replace(/[.,](?=\d{3}\b)/g, '')
+  const num = parseFloat(cleaned.replace(',', '.'))
+  if (!isFinite(num)) return null
+  return num
+}
+
+// Normalisation d'une cellule pour l'affichage.
+// kind ∈ 'money' | 'pct' | 'days' | 'buffer' | 'type'
+// Retourne TOUJOURS { text, title } — title = valeur brute complète (tooltip).
+export function cleanCell(value, kind) {
+  // null / undefined / '' → '—' pour TOUS les kinds. Pour 'buffer' aussi :
+  // null signifie « pas de donnée fiable », PAS « pas de buffer » → jamais 'Non'.
+  if (value === null || value === undefined || value === '') {
+    return { text: '—', title: '' }
+  }
+
+  const rawTitle = String(value)
+  const raw = rawTitle.trim()
+
+  // 'type' (ddType) : classification courte déjà normalisée → passe-through.
+  if (kind === 'type') {
+    return { text: raw, title: rawTitle }
+  }
+
+  const trunc = (s, n = 18) =>
+    s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s
+
+  if (kind === 'money') {
+    if (typeof value === 'number') {
+      return { text: fmtMoney(value), title: rawTitle }
+    }
+    if (/aucun/i.test(raw) || raw === '—') return { text: '—', title: rawTitle }
+    const money = extractMoney(raw)
+    if (money !== null) return { text: fmtMoney(money), title: rawTitle }
+    // Pas de montant '$' → on retombe sur le texte brut tronqué (jamais un
+    // nombre inventé depuis des chiffres non monétaires).
+    return { text: trunc(raw), title: rawTitle }
+  }
+
+  if (kind === 'pct') {
+    if (typeof value === 'number') {
+      return { text: value + ' %', title: rawTitle }
+    }
+    // 'AUCUN(E)' ne vaut « pas de règle » que s'il OUVRE la valeur — pas quand
+    // il apparaît en milieu de phrase après un vrai pourcentage
+    // (ex: '50% — aucun jour > 50% du profit total…' doit afficher '50 %').
+    if (/^aucun/i.test(raw)) return { text: '—', title: rawTitle }
+    const m = raw.match(/(\d+(?:[.,]\d+)?)\s*%/)
+    if (m) return { text: m[1].replace(',', '.') + ' %', title: rawTitle }
+    return { text: trunc(raw), title: rawTitle }
+  }
+
+  if (kind === 'days') {
+    if (typeof value === 'number') {
+      return { text: String(value), title: rawTitle }
+    }
+    const m = raw.match(/\d+/)
+    if (m) return { text: m[0], title: rawTitle }
+    return { text: trunc(raw), title: rawTitle }
+  }
+
+  if (kind === 'buffer') {
+    // 'AUCUN' / 'Non …' explicites = un vrai « pas de buffer » → 'Non'.
+    if (/aucun|^non\b/i.test(raw)) return { text: 'Non', title: rawTitle }
+    if (typeof value === 'number') return { text: fmtMoney(value), title: rawTitle }
+    const money = extractMoney(raw)
+    if (money !== null) return { text: fmtMoney(money), title: rawTitle }
+    return { text: trunc(raw), title: rawTitle }
+  }
+
+  // fallback générique
+  return { text: trunc(raw), title: rawTitle }
 }
