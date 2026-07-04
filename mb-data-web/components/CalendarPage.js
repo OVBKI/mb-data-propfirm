@@ -12,6 +12,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import Skeleton from './Skeleton'
+import { useDialog } from './useDialog'
 
 const T = {
   fr: {
@@ -1238,6 +1239,8 @@ function CalendarSkeleton({ card }) {
 
 // Currency modal — reused from original, slightly restyled
 function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, events, onClose, t, mono }) {
+  // Monté uniquement quand ouvert → open: true (Escape, focus trap, restore focus).
+  const dialogRef = useDialog({ open: true, onClose })
   const majors = availableCurrencies.filter(c => MAJOR_CURRENCIES.includes(c))
   const others = availableCurrencies.filter(c => !MAJOR_CURRENCIES.includes(c))
   const counts = {}
@@ -1264,7 +1267,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
       background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
-      <div onClick={e => e.stopPropagation()} style={{
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t.flagFilter} onClick={e => e.stopPropagation()} style={{
         background: 'linear-gradient(180deg, rgba(28,32,48,0.95), rgba(20,23,32,0.95))',
         borderRadius: 14,
         border: '1px solid rgba(255,255,255,0.10)',
@@ -1284,7 +1287,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
                 : `${fCurrencies.length}/${availableCurrencies.length} ${t.flagFilter.toLowerCase()}`}
             </div>
           </div>
-          <button onClick={onClose} style={{
+          <button onClick={onClose} aria-label={'Fermer' /* TODO i18n */} style={{
             width: 32, height: 32, borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.08)',
             background: 'transparent', color: 'var(--text2)', cursor: 'pointer', fontSize: 14,

@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase'
 import { uploadFile } from '../lib/uploadFile'
 import { useT } from './LanguageProvider'
 import Skeleton from './Skeleton'
+import { useDialog } from './useDialog'
 
 const C = {
   surface:   'rgba(20,23,32,0.65)',
@@ -352,6 +353,9 @@ function SetupCard({ setup, onEdit, onDelete }) {
 
 function SetupModal({ user, setup, onClose, onSave, showToast }) {
   const t = useT()
+  // Monté uniquement quand ouvert (comme ProfileModal) → open: true.
+  // L'autoFocus du champ "nom" est respecté par le hook (focus initial conservé).
+  const dialogRef = useDialog({ open: true, onClose })
   const [form, setForm] = useState({
     id: setup?.id,
     name: setup?.name || '',
@@ -382,7 +386,7 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
 
   return (
     <div className="qt-modal-backdrop" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, overflowY: 'auto' }}>
-      <div className="qt-modal-content" onClick={e => e.stopPropagation()} style={{ ...card, padding: 24, width: 560, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={setup ? t('app.myrules.setupModalEdit') : t('app.myrules.setupModalNew')} className="qt-modal-content" onClick={e => e.stopPropagation()} style={{ ...card, padding: 24, width: 560, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 18 }}>
           {setup ? t('app.myrules.setupModalEdit') : t('app.myrules.setupModalNew')}
         </h3>

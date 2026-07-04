@@ -7,7 +7,11 @@ import { useEffect, useRef } from 'react'
 // top one per Escape (instead of every open dialog at once).
 const dialogStack = []
 
-// Accessible dialog behavior: focus management + Escape + focus trap.
+// Body overflow value saved when the FIRST dialog opens, restored when the LAST
+// one closes — so nested dialogs (modal over drawer) don't clobber each other.
+let savedBodyOverflow = ''
+
+// Accessible dialog behavior: focus management + Escape + focus trap + scroll lock.
 // Usage: const dialogRef = useDialog({ open: !!someState, onClose: () => setSomeState(null) })
 //        <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} ...>
 export function useDialog({ open, onClose }) {
@@ -30,6 +34,13 @@ export function useDialog({ open, onClose }) {
     const token = {}
     dialogStack.push(token)
     const isTop = () => dialogStack[dialogStack.length - 1] === token
+
+    // Lock background scroll while at least one dialog is open. Save the previous
+    // inline value only when this is the first dialog (stack was empty before push).
+    if (typeof document !== 'undefined' && dialogStack.length === 1) {
+      savedBodyOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+    }
 
     // collect focusable elements inside the dialog
     const focusables = () => node
@@ -77,6 +88,10 @@ export function useDialog({ open, onClose }) {
       // out of order, so splice by identity rather than pop).
       const i = dialogStack.indexOf(token)
       if (i !== -1) dialogStack.splice(i, 1)
+      // Restore background scroll only when the LAST dialog closes.
+      if (typeof document !== 'undefined' && dialogStack.length === 0) {
+        document.body.style.overflow = savedBodyOverflow
+      }
       // restore focus to the element focused before opening
       const prev = lastFocused.current
       if (prev && typeof prev.focus === 'function') {

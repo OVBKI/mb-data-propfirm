@@ -24,6 +24,7 @@ import { C } from '../lib/theme'
 import { fmtMoney, todayISO, daysAgoISO } from '../lib/format'
 import { useT } from './LanguageProvider'
 import Skeleton from './Skeleton'
+import { useDialog } from './useDialog'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
 // Local variants — differ from shared theme (smaller padding/fontSize/borderRadius, no transitions)
@@ -58,6 +59,9 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
   const [loadError, setLoadError] = useState('')
   const [lightboxUrl, setLightboxUrl] = useState(null)
   const [editing, setEditing] = useState(null) // null | { entry?: ..., defaultDate?, defaultAccountId? }
+  // Dialog accessible pour le lightbox (Escape, focus trap) — peut s'ouvrir
+  // par-dessus TradeEntryModal, le dialogStack du hook gère l'empilement.
+  const lightboxRef = useDialog({ open: !!lightboxUrl, onClose: () => setLightboxUrl(null) })
 
   // === Filtres ===
   const [period, setPeriod] = useState('all')
@@ -547,6 +551,11 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
       {/* === Lightbox screenshot plein écran === */}
       {lightboxUrl && (
         <div
+          ref={lightboxRef}
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
+          aria-label={'Screenshot' /* TODO i18n */}
           className="qt-modal-backdrop"
           onClick={() => setLightboxUrl(null)}
           style={{

@@ -47,6 +47,10 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
   const [uploading, setUploading] = useState(false)
   // Lightbox
   const [zoomCert, setZoomCert] = useState(null)
+  // Dialog empilé par-dessus le modal principal (Escape ferme le zoom seul).
+  // `open` reproduit exactement la condition de rendu (les PDFs n'ouvrent pas le lightbox).
+  const zoomOpen = !!zoomCert && !/\.pdf(\?|$)/i.test(zoomCert.file_url || '')
+  const zoomRef = useDialog({ open: zoomOpen, onClose: () => setZoomCert(null) })
 
   async function load(){
     setLoading(true); setError('')
@@ -131,7 +135,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
       position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)',
       zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px',
     }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={`🎓 Diplômes — ${firm.name}`} onClick={e=>e.stopPropagation()} style={{
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={`Diplômes — ${firm.name}`} onClick={e=>e.stopPropagation()} style={{
         background:'var(--surface)', borderRadius:'var(--radius-lg)',
         border:'1px solid var(--border2)',
         width:'100%', maxWidth:'900px', maxHeight:'90vh',
@@ -315,7 +319,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
 
       {/* Lightbox zoom */}
       {zoomCert && !isPdf(zoomCert.file_url) && (
-        <div onClick={()=>setZoomCert(null)} style={{
+        <div ref={zoomRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={'Diplôme' /* TODO i18n */} onClick={e=>{e.stopPropagation();setZoomCert(null)}} style={{
           position:'fixed', inset:0, background:'rgba(0,0,0,0.95)', zIndex:600,
           display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', cursor:'zoom-out',
         }}>

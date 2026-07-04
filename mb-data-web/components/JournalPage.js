@@ -14,6 +14,7 @@ import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR }
 import { fmtMoney, todayISO } from '../lib/format'
 import { cardStyle as card, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn } from '../lib/theme'
 import Skeleton from './Skeleton'
+import { useDialog } from './useDialog'
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -524,6 +525,12 @@ export default function JournalPage({
   const [uploadingScreen, setUploadingScreen] = useState(false)
   // Lightbox pour afficher un screenshot en grand
   const [lightboxUrl, setLightboxUrl] = useState(null)
+
+  // Sémantique dialog accessible (Escape, focus trap, restore focus) — le
+  // lightbox peut s'ouvrir PAR-DESSUS le modal (screenshot du form) : le
+  // dialogStack du hook gère l'empilement.
+  const entryDialogRef = useDialog({ open: !!entryModal, onClose: () => setEntryModal(null) })
+  const lightboxRef = useDialog({ open: !!lightboxUrl, onClose: () => setLightboxUrl(null) })
 
   // Tous les comptes plats
   const allAccounts = useMemo(()=>{
@@ -1447,7 +1454,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
 
       {/* Lightbox plein écran pour visualiser un screenshot */}
       {lightboxUrl && (
-        <div onClick={()=>setLightboxUrl(null)} style={{
+        <div ref={lightboxRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={'Screenshot' /* TODO i18n */} onClick={()=>setLightboxUrl(null)} style={{
           position:'fixed',inset:0,background:'rgba(0,0,0,0.92)',zIndex:600,
           display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',cursor:'zoom-out',
         }}>
@@ -1465,7 +1472,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
       {/* Modal ajout / édition */}
       {entryModal && (
         <div onClick={()=>setEntryModal(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}>
-          <div className="modal" onClick={e=>e.stopPropagation()} style={{...card,padding:'28px',width:'560px',maxWidth:'100%',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
+          <div ref={entryDialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')} className="modal" onClick={e=>e.stopPropagation()} style={{...card,padding:'28px',width:'560px',maxWidth:'100%',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
             <h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>
               {entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
             </h3>

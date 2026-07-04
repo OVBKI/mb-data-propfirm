@@ -11,19 +11,18 @@
 //     <span style={{cursor:'help'}}>ⓘ</span>
 //   </Tooltip>
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
+import { C } from '../lib/theme'
 
-const C = {
-  surface3: '#222637',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-}
+// Fond opaque du tooltip — pas d'équivalent dans lib/theme.js (les surfaces du
+// thème sont translucides, illisibles pour un élément flottant au-dessus du contenu).
+const TOOLTIP_BG = '#222637'
 
 export default function Tooltip({ text, children, maxWidth = 280, position = 'top', style = {} }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef(null)
   const tooltipRef = useRef(null)
+  const tooltipId = useId()
   const [coords, setCoords] = useState({ left: 0, top: 0, placement: position })
 
   // Repositionne le tooltip dynamiquement (et flip si dépasse de l'écran)
@@ -54,15 +53,18 @@ export default function Tooltip({ text, children, maxWidth = 280, position = 'to
     setCoords({ left, top, placement })
   }, [open, maxWidth, position])
 
-  // Ferme au scroll/resize
+  // Ferme au scroll/resize + Escape (accessibilité clavier)
   useEffect(() => {
     if (!open) return
     const close = () => setOpen(false)
+    const onKeyDown = (e) => { if (e.key === 'Escape') setOpen(false) }
     window.addEventListener('scroll', close, true)
     window.addEventListener('resize', close)
+    document.addEventListener('keydown', onKeyDown, true)
     return () => {
       window.removeEventListener('scroll', close, true)
       window.removeEventListener('resize', close)
+      document.removeEventListener('keydown', onKeyDown, true)
     }
   }, [open])
 
@@ -70,8 +72,12 @@ export default function Tooltip({ text, children, maxWidth = 280, position = 'to
     <>
       <span
         ref={triggerRef}
+        tabIndex={0}
+        aria-describedby={open ? tooltipId : undefined}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
         onClick={() => setOpen(o => !o)} // mobile-friendly (tap)
         style={{
           cursor: 'help',
@@ -85,6 +91,7 @@ export default function Tooltip({ text, children, maxWidth = 280, position = 'to
       {open && typeof window !== 'undefined' && (
         <div
           ref={tooltipRef}
+          id={tooltipId}
           role="tooltip"
           style={{
             position: 'fixed',
@@ -93,7 +100,7 @@ export default function Tooltip({ text, children, maxWidth = 280, position = 'to
             left: coords.left,
             maxWidth,
             padding: '10px 14px',
-            background: C.surface3,
+            background: TOOLTIP_BG,
             border: `1px solid ${C.border2}`,
             borderRadius: 8,
             fontSize: 12,
