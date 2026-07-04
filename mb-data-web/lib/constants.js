@@ -1,5 +1,6 @@
 // PropFirm rules data — vérifiées 2024/2025 (toujours vérifier sur le site officiel)
-// Toutes les firmes futures ci-dessous utilisent un drawdown TRAILING avec stop au balance initial.
+// La plupart des firmes utilisent un drawdown TRAILING avec lock au solde initial — mais pas toutes
+// (Phidias Static, MFFU Flex/Builder statique, FFN statique une fois financé) : voir le détail par firme.
 export const PROPFIRM_RULES = {
   'Topstep': {
     // VÉRIFIÉ MAI 2026 — Sources OFFICIELLES :
@@ -455,17 +456,17 @@ export const PROPFIRM_RULES = {
     rules: {
       // === TEST (Évaluation mensuelle) ===
       'Objectif de profit':       {'25k':'$1,500 (6%)','50k':'$3,000 (6%)','75k':'$4,500 (6%)','100k':'$6,000 (6%)','150k':'$9,000 (6%)'},
-      'Drawdown Test (EOD)':      {'25k':'$1,500 EOD trailing — recalcule UNE FOIS à 17h ET sur closing balance · locke à starting','50k':'$2,500 EOD','75k':'$3,000 EOD','100k':'$3,500 EOD','150k':'$5,000 EOD'},
+      'Drawdown Test (EOD)':      {'25k':'$1,500 EOD trailing — recalcule UNE FOIS à 17h ET sur closing balance · locke à starting','50k':'$2,000 EOD','75k':'$2,500 EOD','100k':'$3,000 EOD','150k':'$4,500 EOD'},
       'Daily Loss Limit':         {'25k':'🚨 AUCUN (DLL supprimée janvier 2025) — seul guardrail = trailing','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'Jours de trading min':     {'25k':'5 jours minimum (≥1 trade/jour, pas de seuil profit)','50k':'5 jours','75k':'5 jours','100k':'5 jours','150k':'5 jours'},
       'Profit min jour valide':   {'25k':'AUCUN seuil — juste ≥1 trade/jour','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'Règle de cohérence (Test)':{'25k':'Best day ≤ 50% du profit total — Test SEULEMENT (pas de consistency sur PRO/PRO+)','50k':'≤ 50%','75k':'≤ 50%','100k':'≤ 50%','150k':'≤ 50%'},
       // === PRO (Sim funded, 80/20, intraday DD) ===
-      'Drawdown PRO (INTRADAY)':  {'25k':'$1,500 INTRADAY trailing — follow peak real-time INCL. unrealized · locke à starting','50k':'$2,500 INTRADAY','75k':'$3,000 INTRADAY','100k':'$3,500 INTRADAY','150k':'$5,000 INTRADAY'},
+      'Drawdown PRO (INTRADAY)':  {'25k':'$1,500 INTRADAY trailing — follow peak real-time INCL. unrealized · locke à starting','50k':'$2,000 INTRADAY','75k':'$2,500 INTRADAY','100k':'$3,000 INTRADAY','150k':'$4,500 INTRADAY'},
       'PRO → PRO+ promotion':     {'25k':'$5,000 freeze de profits réalisés sur PRO requis · auto-promotion depuis 18 mars 2026 (no app, $0 fee)','50k':'$5,000 freeze','75k':'$5,000 freeze','100k':'$5,000 freeze','150k':'$5,000 freeze'},
       'Activation PRO+':          {'25k':'$0 (auto-promotion) · plateforme : Tradovate live execution','50k':'$0','75k':'$0','100k':'$0','150k':'$0'},
       // === PRO+ (LIVE Tradovate, 90/10, EOD DD) ===
-      'Drawdown PRO+ (EOD)':      {'25k':'$1,500 EOD trailing (retour mécanisme Test) · live execution Tradovate','50k':'$2,500 EOD','75k':'$3,000 EOD','100k':'$3,500 EOD','150k':'$5,000 EOD'},
+      'Drawdown PRO+ (EOD)':      {'25k':'$1,500 EOD trailing (retour mécanisme Test) · live execution Tradovate','50k':'$2,000 EOD','75k':'$2,500 EOD','100k':'$3,000 EOD','150k':'$4,500 EOD'},
       // === TRADING RESTRICTIONS ===
       'Positions overnight':      {'25k':'INTERDIT — auto-flat 17h ET strict (Mon-Fri) toutes phases','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       'News T1 (Test)':           {'25k':'Autorisé sans restriction (NFP/FOMC/CPI/Powell)','50k':'Autorisé','75k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
@@ -489,7 +490,7 @@ export const PROPFIRM_RULES = {
       // === PAYOUTS ===
       'Répartition gains':        {'25k':'PRO : 80/20 (trader 80%) → PRO+ : 90/10 (trader 90%)','50k':'80/20 → 90/10','75k':'80/20 → 90/10','100k':'80/20 → 90/10','150k':'80/20 → 90/10'},
       'Payout minimum':           {'25k':'Pas de minimum strict (≥ buffer = starting + MLL)','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
-      'Buffer payout (PRO/PRO+)': {'25k':'Buffer = Starting balance + Maximum Loss Limit ($26,500 sur PRO 25K) — formulation officielle TPT','50k':'$52,500','75k':'$78,000','100k':'$103,500','150k':'$155,000'},
+      'Buffer payout (PRO/PRO+)': {'25k':'Buffer = Starting balance + Maximum Loss Limit ($26,500 sur PRO 25K) — formulation officielle TPT','50k':'$52,000','75k':'$77,500','100k':'$103,000','150k':'$154,500'},
       'Min entre payouts (PRO)':  {'25k':'7 jours minimum + 1 trade/semaine civile','50k':'7 jours','75k':'7 jours','100k':'7 jours','150k':'7 jours'},
       'Min entre payouts (PRO+)': {'25k':'0 (daily payouts possibles)','50k':'0','75k':'0','100k':'0','150k':'0'},
       'Délai payout':             {'25k':'~4-9h processing (max ~24h)','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
