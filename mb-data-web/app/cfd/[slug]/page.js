@@ -4,7 +4,7 @@
 
 import { notFound } from 'next/navigation'
 import CfdFirmClient from './CfdFirmClient'
-import JsonLd, { ORGANIZATION_SCHEMA } from '../../../components/JsonLd'
+import JsonLd from '../../../components/JsonLd'
 import { CFD_PROPFIRM_RULES, CFD_DAILY_BASIS_LABEL, CFD_MAX_BASIS_LABEL } from '../../../lib/cfdConstants'
 import { cfdSlugToFirm, getAllCfdSlugs, CFD_FIRM_TAGLINE } from '../../../lib/cfdSlugs'
 
@@ -132,10 +132,10 @@ export default function Page({ params }) {
 
   return (
     <>
+      {/* Organization est déjà émis globalement par le root layout — pas de doublon ici. */}
       <JsonLd data={productSchema} />
       <JsonLd data={breadcrumbSchema} />
       {faqSchema && <JsonLd data={faqSchema} />}
-      <JsonLd data={ORGANIZATION_SCHEMA} />
       <CfdFirmClient firmName={firmName} firm={firm} slug={params.slug} tagline={tagline} faqs={faqs} />
     </>
   )

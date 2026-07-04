@@ -76,14 +76,16 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
     : '—'
 
   const leverageEntries = f.leverage ? Object.entries(f.leverage) : []
-  const priceText = f.priceIndicative?.note || (
-    f.priceIndicative
-      ? Object.entries(f.priceIndicative)
-        .filter(([k]) => k !== 'note' && k !== 'confidence')
-        .map(([k, v]) => `${k} = $${v}`)
-        .join(', ')
-      : null
-  )
+  // Prix par taille (clés numériques) + note : on affiche les deux quand ils coexistent
+  // (avant, la note masquait les vrais prix par taille — ex. FundingPips, FundedNext).
+  const perSizePrices = f.priceIndicative
+    ? Object.entries(f.priceIndicative)
+      .filter(([k]) => k !== 'note' && k !== 'confidence')
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([k, v]) => `$${Number(k).toLocaleString('en-US')} → $${v}`)
+      .join(' · ')
+    : ''
+  const priceText = [perSizePrices, f.priceIndicative?.note].filter(Boolean).join(' — ') || null
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
@@ -210,7 +212,9 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
               { label: 'Profit split', value: splitStr },
               { label: 'Payout', value: f.payout ? `${f.payout.firstDays ? `1er à J+${f.payout.firstDays}, ` : ''}cycle : ${dash(f.payout.cycle)}${f.payout.min ? `, min : ${f.payout.min}` : ''}` : '—' },
               { label: 'Consistency', value: dash(f.consistency) },
-              { label: 'Refundable', value: f.refundable === true ? 'Oui (remboursé avec le 1er payout)' : f.refundable === false ? 'Non' : '—' },
+              // refundNote (cfdConstants) prime quand les conditions réelles diffèrent de la
+              // phrase générique (ex : The Funded Trader = bonus au 3e payout, The5ers = 70%).
+              { label: 'Refundable', value: f.refundable === true ? (f.refundNote || 'Oui') : f.refundable === false ? 'Non' : '—' },
             ].map((row, i, arr) => (
               <div key={row.label} style={{
                 display: 'grid',

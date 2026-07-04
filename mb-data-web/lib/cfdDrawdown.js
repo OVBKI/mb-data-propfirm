@@ -61,9 +61,15 @@ export function cfdMaxLoss({ initialBalance, currentEquity, highWater, maxLossPc
 // dailyLossPct        : e.g. 5 → 5%.
 // basis               : 'balance' | 'equity' | 'higher-of-balance-equity' | 'balance+intraday-profit'.
 //
-// Most firms size the daily limit off the INITIAL balance (a fixed $ amount per day);
-// the anchor (the reference the day's loss is measured from) varies by basis.
-// For 'balance+intraday-profit' the allowance EXPANDS by profit booked that day.
+// How the $ limit is SIZED depends on the basis:
+//   'balance' / 'balance+intraday-profit' (FTMO, FundedNext…): fixed $ amount = pct of
+//     the INITIAL balance. For 'balance+intraday-profit' the allowance additionally
+//     EXPANDS by profit booked that day.
+//   'equity' / 'higher-of-balance-equity' (FundingPips, The5ers, Blueberry…): pct of the
+//     DAY-START snapshot — the same anchor the day's loss is measured from (day-start
+//     equity, resp. max(day-start balance, day-start equity)). E.g. a 100K account at a
+//     96K day-start with 5% daily → limit $4 800, breach at 91 200.
+// The anchor (the reference the day's loss is measured from) always varies by basis.
 // ─────────────────────────────────────────────────────────────────────────────
 export function cfdDailyLoss({
   initialBalance,
@@ -100,10 +106,19 @@ export function cfdDailyLoss({
       break
   }
 
-  // The allowance expands by booked intraday profit only for the profit-buffered basis.
-  const limit = basis === 'balance+intraday-profit'
-    ? baseLimit + Math.max(0, Number(intradayBookedProfit) || 0)
-    : baseLimit
+  // Size the allowance (see doc comment): anchor-sized for the day-start-snapshot bases,
+  // initial-sized (optionally expanded by booked intraday profit) for the others.
+  let limit
+  if (basis === 'equity' || basis === 'higher-of-balance-equity') {
+    limit = anchor * (pct / 100)
+  } else if (basis === 'balance+intraday-profit') {
+    limit = baseLimit + Math.max(0, Number(intradayBookedProfit) || 0)
+  } else {
+    limit = baseLimit
+  }
+  if (limit <= 0) {
+    return { limit, anchor, used: null, usedPct: null, status: 'unknown', breached: false }
+  }
 
   const used = Math.max(0, anchor - eq)
   const usedPct = clampPct((used / limit) * 100)

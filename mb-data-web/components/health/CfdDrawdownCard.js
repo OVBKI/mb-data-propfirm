@@ -1,7 +1,10 @@
 'use client'
 // CfdDrawdownCard — drawdown "Santé" card for a single CFD account.
-// Lets the trader store their current balance (and optional day-start balance),
-// then renders Max Loss + Daily Loss gauges via the pure lib/cfdDrawdown engine.
+// Lets the trader store their current balance (and optional day-start balance —
+// plus the day-start equity when the daily basis is 'equity' or
+// 'higher-of-balance-equity', otherwise the anchor would silently degrade to the
+// balance), then renders Max Loss + Daily Loss gauges via the pure
+// lib/cfdDrawdown engine.
 //
 // Status colors mirror DrawdownHealthCard:
 //   safe → green · caution → amber · danger/breached → red · unknown → grey
@@ -119,6 +122,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
 
   const [curBal, setCurBal] = useState(isFiniteNum(a.current_balance) ? String(a.current_balance) : '')
   const [dayStart, setDayStart] = useState(isFiniteNum(a.day_start_balance) ? String(a.day_start_balance) : '')
+  const [dayStartEq, setDayStartEq] = useState(isFiniteNum(a.day_start_equity) ? String(a.day_start_equity) : '')
   const [saving, setSaving] = useState(false)
 
   // CFD_REPUTATION is keyed by tier label ('solid'|'ok'|'caution'). The firm catalog maps
@@ -138,6 +142,11 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
   const maxLossPct = isFiniteNum(a.max_loss_pct) ? Number(a.max_loss_pct) : null
   const dailyLossPct = isFiniteNum(a.daily_loss_pct) ? Number(a.daily_loss_pct) : null
 
+  // L'equity de début de journée n'est pertinente que pour les bases daily ancrées
+  // sur l'equity — sinon on n'affiche pas l'input (UI compacte).
+  const dailyBasis = a.daily_loss_basis || 'balance'
+  const needsDayStartEquity = dailyBasis === 'equity' || dailyBasis === 'higher-of-balance-equity'
+
   // Engine results (only meaningful once balance is set + account size is known).
   const maxResult = (hasBalance && accountSize && maxLossPct != null)
     ? cfdMaxLoss({
@@ -154,8 +163,10 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
         initialBalance: accountSize,
         currentEquity: currentBalance,
         dayStartBalance: Number(a.day_start_balance),
+        // Sans elle, 'higher-of-balance-equity' dégénérait silencieusement en ancre solde.
+        dayStartEquity: isFiniteNum(a.day_start_equity) ? Number(a.day_start_equity) : undefined,
         dailyLossPct,
-        basis: a.daily_loss_basis || 'balance',
+        basis: dailyBasis,
       })
     : null
 
@@ -165,6 +176,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
     try {
       const parsedCur = isFiniteNum(curBal) ? Number(curBal) : null
       const parsedDay = isFiniteNum(dayStart) ? Number(dayStart) : null
+      const parsedDayEq = isFiniteNum(dayStartEq) ? Number(dayStartEq) : null
       const existingHw = isFiniteNum(a.balance_highwater)
         ? Number(a.balance_highwater)
         : (accountSize ?? 0)
@@ -177,6 +189,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
           current_balance: parsedCur,
           balance_highwater: newHw,
           day_start_balance: parsedDay,
+          day_start_equity: parsedDayEq,
         })
         .eq('id', a.id)
 
@@ -305,6 +318,21 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
               style={inputStyle}
             />
           </label>
+          {/* Equity de début de journée — seulement pour les bases daily 'equity' /
+              'higher-of-balance-equity' (sinon l'ancre daily retombe sur le solde). */}
+          {needsDayStartEquity && (
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11, color: C.text3 }}>
+              {/* TODO i18n */}
+              {'Equity début de journée'} {t('app.cfdHealth.dayStartBalanceOptional')}
+              <input
+                type="number"
+                inputMode="decimal"
+                value={dayStartEq}
+                onChange={(e) => setDayStartEq(e.target.value)}
+                style={inputStyle}
+              />
+            </label>
+          )}
         </div>
         <button
           type="button"

@@ -19,6 +19,7 @@
 import { useMemo, useState } from 'react'
 import { useT } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
+import { C as THEME } from '../lib/theme'
 import {
   CFD_PROPFIRM_RULES,
   CFD_REPUTATION,
@@ -111,6 +112,35 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
     setForm(buildDefaults(CFD_PROPFIRM_RULES[name]))
   }
 
+  // Changement de modèle. Les `otherModels` du catalogue sont des libellés descriptifs
+  // (pas de chiffres structurés par modèle), donc impossible de re-dériver les règles :
+  //   - retour au modèle phare → restaure proprement les prefills du flagship (règles,
+  //     taille, target, split, levier) en conservant les champs non liés aux règles ;
+  //   - autre modèle → on garde les valeurs (éditables) MAIS un avertissement visible
+  //     s'affiche sous le sélecteur (voir isNonFlagshipModel plus bas).
+  function onPickModel(model) {
+    setForm(p => {
+      const cat = CFD_PROPFIRM_RULES[firmName]
+      if (cat?.flagship?.model && model === cat.flagship.model) {
+        const d = buildDefaults(cat)
+        return {
+          ...p,
+          cfd_model: model,
+          account_size: d.account_size,
+          cfd_step: d.cfd_step,
+          profit_target_pct: d.profit_target_pct,
+          daily_loss_pct: d.daily_loss_pct,
+          daily_loss_basis: d.daily_loss_basis,
+          max_loss_pct: d.max_loss_pct,
+          max_loss_basis: d.max_loss_basis,
+          profit_split: d.profit_split,
+          leverage_forex: d.leverage_forex,
+        }
+      }
+      return { ...p, cfd_model: model }
+    })
+  }
+
   // When the phase (step) changes, re-derive the profit target prefill.
   function onPickStep(step) {
     setForm(p => {
@@ -138,6 +168,13 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
     for (let i = 1; i <= steps; i++) opts.push(i)
     return opts
   }, [flagship])
+
+  // Modèle non-phare sélectionné → les prefills affichés sont ceux du flagship.
+  const isNonFlagshipModel = !!(flagship?.model && form.cfd_model && form.cfd_model !== flagship.model)
+  // Libellé descriptif du modèle sélectionné dans otherModels (rappel des vraies règles).
+  const selectedModelHint = isNonFlagshipModel
+    ? (catalog?.otherModels || []).find(m => String(m).split('(')[0].split('—')[0].trim() === form.cfd_model) || null
+    : null
 
   async function save() {
     if (saving) return
@@ -228,10 +265,32 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div style={{ gridColumn: '1/-1' }}>
             <label style={S.label}>{t('app.cfd.model')}</label>
-            <select value={form.cfd_model} onChange={set('cfd_model')} style={S.input}>
+            <select value={form.cfd_model} onChange={e => onPickModel(e.target.value)} style={S.input}>
               {modelOptions.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
+
+          {/* Avertissement : les règles pré-remplies ci-dessous sont celles du modèle phare. */}
+          {isNonFlagshipModel && (
+            <div style={{
+              gridColumn: '1/-1',
+              padding: '10px 12px',
+              background: 'rgba(250,199,117,0.08)',
+              border: `1px solid ${THEME.amber}55`,
+              borderRadius: 8,
+              fontSize: 12,
+              color: THEME.amber,
+              lineHeight: 1.5,
+            }}>
+              {/* TODO i18n */}
+              <strong>⚠️ Règles pré-remplies = modèle phare « {flagship.model} ».</strong>{' '}
+              Vérifie et ajuste les pourcentages (daily/max loss, target, split), les bases et
+              la taille de compte pour « {form.cfd_model} » avant d’enregistrer.
+              {selectedModelHint && (
+                <div style={{ marginTop: 4, color: 'var(--text2)' }}>Catalogue : {selectedModelHint}</div>
+              )}
+            </div>
+          )}
 
           <div>
             <label style={S.label}>{t('app.cfd.accountSize')} ({form.currency})</label>

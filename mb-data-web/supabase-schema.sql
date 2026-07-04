@@ -89,6 +89,18 @@ alter table accounts add column if not exists profit_split      int;
 alter table accounts add column if not exists platform          text;
 alter table accounts add column if not exists leverage_forex    int;
 
+-- Suivi de balance CFD (saisie manuelle dans CfdDrawdownCard / CfdAccountDrawer).
+-- current_balance/balance_highwater/day_start_balance existaient déjà en base mais
+-- manquaient dans ce fichier ; day_start_equity est NOUVEAU (audit juillet 2026) :
+-- equity de début de journée, requise quand daily_loss_basis = 'equity' ou
+-- 'higher-of-balance-equity' (sinon l'ancre daily dégénère silencieusement en solde).
+-- ⚠️ À APPLIQUER manuellement dans le SQL editor Supabase :
+--   alter table accounts add column if not exists day_start_equity numeric(12,2);
+alter table accounts add column if not exists current_balance   numeric(12,2); -- equity/balance courante saisie par le trader
+alter table accounts add column if not exists balance_highwater numeric(12,2); -- plus haut atteint (ne redescend jamais — bases trailing)
+alter table accounts add column if not exists day_start_balance numeric(12,2); -- solde au début de la journée de trading
+alter table accounts add column if not exists day_start_equity  numeric(12,2); -- equity au début de la journée (bases equity / higher-of)
+
 -- Index pour filtrer rapidement les comptes/firmes par marché
 create index if not exists accounts_market_idx on accounts(market);
 create index if not exists firms_market_idx on firms(market);
@@ -301,13 +313,21 @@ begin
 end;
 $$;
 
--- SÉCURITÉ : anon révoqué pour resolve_username_to_email (audit mai 2026).
--- L'appel direct via le client Supabase anon permettait de contourner le rate-limit
--- de la route API /api/auth/resolve-username. Seule la route API (qui utilise
--- SUPABASE_SERVICE_ROLE_KEY) peut désormais appeler cette RPC.
--- Les users authentifiés conservent l'accès (utilisé en interne).
-grant execute on function public.resolve_username_to_email(text) to authenticated;
-grant execute on function public.username_available(text)       to anon, authenticated;
+-- SÉCURITÉ : anon révoqué (audit mai 2026) PUIS authenticated révoqué (audit juillet 2026)
+-- pour resolve_username_to_email. Le grant `authenticated` permettait à n'importe quel
+-- compte connecté d'appeler l'RPC directement via le client Supabase et d'énumérer
+-- username → email en contournant le rate-limit de /api/auth/resolve-username.
+-- Seule la route API (app/api/auth/resolve-username/route.js, qui utilise
+-- SUPABASE_SERVICE_ROLE_KEY) appelle désormais cette RPC — le login par pseudo
+-- continue donc de fonctionner. `public` est aussi révoqué (grant EXECUTE implicite
+-- de Postgres à la création de la fonction).
+-- ⚠️ À RE-APPLIQUER manuellement dans le SQL editor Supabase (le grant authenticated
+-- existe déjà en base) :
+--   revoke execute on function public.resolve_username_to_email(text) from public, anon, authenticated;
+--   grant  execute on function public.resolve_username_to_email(text) to service_role;
+revoke execute on function public.resolve_username_to_email(text) from public, anon, authenticated;
+grant execute on function public.resolve_username_to_email(text) to service_role;
+grant execute on function public.username_available(text)         to anon, authenticated;
 
 -- ============================================================================
 -- SÉCURITÉ — Anti-énumération des pseudos (mai 2026 — audit Agent #3)

@@ -3,7 +3,7 @@
 // Mirrors the futures /firms pattern (lib/cfdConstants.js + lib/cfdSlugs.js).
 
 import CfdIndexClient from './CfdIndexClient'
-import JsonLd, { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA } from '../../components/JsonLd'
+import JsonLd from '../../components/JsonLd'
 import { getAllCfdSlugs, cfdSlugToFirm } from '../../lib/cfdSlugs'
 
 export const revalidate = 3600
@@ -56,10 +56,9 @@ const BREADCRUMB_SCHEMA = {
 export default function Page() {
   return (
     <>
+      {/* Organization + WebSite sont déjà émis globalement par le root layout — pas de doublon ici. */}
       <JsonLd data={ITEM_LIST_SCHEMA} />
       <JsonLd data={BREADCRUMB_SCHEMA} />
-      <JsonLd data={ORGANIZATION_SCHEMA} />
-      <JsonLd data={WEBSITE_SCHEMA} />
       <CfdIndexClient />
     </>
   )

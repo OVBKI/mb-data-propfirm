@@ -15,6 +15,11 @@
 // Drawdown basis vocabulary (differs fundamentally from futures trailing-EOD/intraday):
 //   dailyLoss.basis : 'balance' | 'equity' | 'higher-of-balance-equity' | 'balance+intraday-profit'
 //   maxLoss.basis   : 'static' (fixed on initial balance) | 'trailing-relative' (trails highwater, locks at initial) | 'eod-trailing'
+//
+// `refundable` (bool) : les frais du challenge sont-ils remboursés une fois financé.
+// `refundNote` (string, optionnel) : détail FR affiché à la place de la phrase générique
+//   « remboursé avec le 1er payout » quand les conditions réelles diffèrent (ex : The
+//   Funded Trader = bonus au 3e payout, The5ers = 70% des frais).
 
 export const CFD_REPUTATION = {
   solid: { label: 'Fiable', color: '#1db87a', note: 'Historique de payouts régulier, pas de scandale notable.' },
@@ -76,6 +81,7 @@ export const CFD_PROPFIRM_RULES = {
       leverage: { forex: 100 }, // commonly cited; per-instrument table unconfirmed
       priceIndicative: { '100000': 549, note: '100k = $549 (confirmé) ; autres tailles non confirmées', confidence: 'medium' },
       refundable: true, // refunded with first funded payout
+      refundNote: 'Oui — remboursé avec le 1er payout du compte financé',
     },
     otherModels: ['Stellar 1-Step (10%, daily 3%, max 6% static)', 'Stellar Lite (8/4, daily 4%, max 8% static, pas de reward en éval)', 'Stellar Instant (pas de daily, max 6% trailing)'],
     notable: 'Express & Evaluation arrêtés aux nouveaux clients depuis mars 2025. Reward share base 80% depuis le 12 janv 2026. News autorisées (financé : trades ±5 min high-impact = 40% du profit).',
@@ -94,6 +100,8 @@ export const CFD_PROPFIRM_RULES = {
     flagship: {
       model: 'High Stakes (2-Step)',
       steps: 2,
+      // ⚠️ à re-vérifier : cette échelle ne correspond à aucun programme The5ers connu
+      // (High Stakes historiquement $5K / $20K / $60K / $100K) — audit juillet 2026.
       accountSizes: [2500, 5000, 10000, 25000, 50000, 100000],
       currency: 'USD',
       profitTargets: [10, 5], // "New" version ; variante "Classic" 8/5
@@ -106,6 +114,7 @@ export const CFD_PROPFIRM_RULES = {
       leverage: { forex: 100 },
       priceIndicative: { note: 'dès ~$39 (5k) — non confirmé (site 503)', confidence: 'low' },
       refundable: true, // 70% fee refund at funded stage + hub credit
+      refundNote: 'Partiel — 70% des frais remboursés au passage en financé (+ crédit hub)',
     },
     otherModels: ['Hyper Growth (1-step/instant, daily 3% pause, max 6% static, balance double par +10%)', 'Bootcamp (3-step, ~6%, max 5%)', 'ProGrowth (nouveau 1-step, 10%, max 6%)'],
     notable: 'News : pas d’exécution ±2 min high-impact. Interdits : HFT, arbitrage, bracketing, copy entre traders.',
@@ -256,6 +265,7 @@ export const CFD_PROPFIRM_RULES = {
       leverage: { forex: 50 }, // historiquement 1:200, conflit
       priceIndicative: { note: 'prix 3rd-party uniquement, conflits (100k ~$489–$600)', confidence: 'low' },
       refundable: true, // bonus = fee, paid with 3rd payout (not cash refund)
+      refundNote: 'Oui — sous forme de bonus (pas de cash), versé avec le 3e payout',
     },
     otherModels: ['Rapid / Royal / Royal Pro (2-step)', 'Knight / Knight Pro (1-step, max 8% relatif)', 'Dragon (3-step)', 'Classic 1-Step / 2-Step'],
     notable: 'Standard : news interdites + pas de hold week-end. Gros roster (9 programmes). Remboursement = bonus (pas cash) au 3e payout.',
