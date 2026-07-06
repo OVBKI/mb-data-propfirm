@@ -12,7 +12,15 @@ import {
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from './cfdConstants'
-import { cfdFirmToSlug, cfdSlugToFirm, getAllCfdSlugs, getCfdFirmsOrdered, getCfdModels } from './cfdSlugs'
+import {
+  cfdFirmToSlug,
+  cfdSlugToFirm,
+  getAllCfdSlugs,
+  getCfdFirmsOrdered,
+  getCfdModels,
+  getAllCfdFirmPairs,
+  cfdSlugToPair,
+} from './cfdSlugs'
 
 const FIRMS = Object.keys(CFD_PROPFIRM_RULES)
 const DAILY_BASES = Object.keys(CFD_DAILY_BASIS_LABEL) // enums supported by cfdDailyLoss
@@ -187,5 +195,47 @@ describe('CFD slugs — bidirectional mapping (mirror of firmSlugs futures tests
       expect(f.slug).toBe(cfdFirmToSlug(f.name))
       expect(f.flagship).toBe(CFD_PROPFIRM_RULES[f.name].flagship)
     }
+  })
+})
+
+describe('CFD firm-vs-firm pairs (mirror of futures getAllFirmPairs / slugToPair)', () => {
+  const pairs = getAllCfdFirmPairs()
+  const N = FIRMS.length
+
+  it('has C(n,2) entries', () => {
+    expect(pairs.length).toBe((N * (N - 1)) / 2)
+  })
+
+  it('orders each pair alphabetically by slug and builds an -vs- slug', () => {
+    for (const { firmA, firmB, slug } of pairs) {
+      const slugA = cfdFirmToSlug(firmA)
+      const slugB = cfdFirmToSlug(firmB)
+      expect(slugA < slugB).toBe(true)
+      expect(slug).toBe(`${slugA}-vs-${slugB}`)
+    }
+  })
+
+  it('produces unique pair slugs', () => {
+    const slugs = pairs.map((p) => p.slug)
+    expect(new Set(slugs).size).toBe(slugs.length)
+  })
+
+  it('never pairs a firm with itself', () => {
+    for (const { firmA, firmB } of pairs) expect(firmA).not.toBe(firmB)
+  })
+
+  it('round-trips every generated pair slug back to its firms', () => {
+    for (const { firmA, firmB, slug } of pairs) {
+      const parsed = cfdSlugToPair(slug)
+      expect(parsed).not.toBeNull()
+      expect(new Set([parsed.firmA, parsed.firmB])).toEqual(new Set([firmA, firmB]))
+    }
+  })
+
+  it('returns null for invalid or non-firm slugs', () => {
+    expect(cfdSlugToPair('foo-bar')).toBeNull()
+    expect(cfdSlugToPair('')).toBeNull()
+    expect(cfdSlugToPair(null)).toBeNull()
+    expect(cfdSlugToPair('ftmo-vs-not-a-firm')).toBeNull()
   })
 })
