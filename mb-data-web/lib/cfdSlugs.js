@@ -77,6 +77,44 @@ export function getCfdModels(firmName) {
   return [flagshipModel, ...others]
 }
 
+// === Firm-vs-firm pairs (public /cfd/compare/[pair] SSG) ====================
+// C(9,2) = 36 unique pairs, canonical order = alphabetical by slug (stable URLs).
+// Mirrors lib/firmSlugs.js#getAllFirmPairs / slugToPair for the futures vertical.
+export function getAllCfdFirmPairs() {
+  const firms = CFD_FIRM_ORDER.filter((name) => CFD_PROPFIRM_RULES[name])
+  const pairs = []
+  for (let i = 0; i < firms.length; i++) {
+    for (let j = i + 1; j < firms.length; j++) {
+      const a = firms[i]
+      const b = firms[j]
+      const slugA = cfdFirmToSlug(a)
+      const slugB = cfdFirmToSlug(b)
+      const [first, firstSlug, second, secondSlug] = slugA < slugB
+        ? [a, slugA, b, slugB]
+        : [b, slugB, a, slugA]
+      pairs.push({ firmA: first, firmB: second, slug: `${firstSlug}-vs-${secondSlug}` })
+    }
+  }
+  return pairs
+}
+
+// Parse "ftmo-vs-the5ers" → { firmA, firmB, slugA, slugB }. Returns null if either
+// side is unknown. Handles the -vs- delimiter even if a firm slug contains hyphens.
+export function cfdSlugToPair(pairSlug) {
+  if (!pairSlug || !pairSlug.includes('-vs-')) return null
+  const parts = pairSlug.split('-vs-')
+  for (let i = 1; i < parts.length; i++) {
+    const left = parts.slice(0, i).join('-vs-')
+    const right = parts.slice(i).join('-vs-')
+    const firmA = cfdSlugToFirm(left)
+    const firmB = cfdSlugToFirm(right)
+    if (firmA && firmB && firmA !== firmB) {
+      return { firmA, firmB, slugA: left, slugB: right }
+    }
+  }
+  return null
+}
+
 // One-line factual taglines (FR). Derived from the sourced research, no invented rules.
 export const CFD_FIRM_TAGLINE = {
   'FTMO': 'La référence CFD historique : challenge 2-step, max loss statique 10%, payouts on-demand.',

@@ -4,7 +4,7 @@
 
 import { getAllFirmSlugs, getAllFirmPairs } from '../lib/firmSlugs'
 import { getAllGuideSlugs, GUIDES } from '../lib/guides'
-import { getAllCfdSlugs } from '../lib/cfdSlugs'
+import { getAllCfdSlugs, getAllCfdFirmPairs } from '../lib/cfdSlugs'
 
 const BASE_URL = 'https://quantara.tech'
 
@@ -57,7 +57,8 @@ export default function sitemap() {
     })),
   ]
 
-  // CFD / forex vertical : 1 index /cfd + 9 pages /cfd/[slug] depuis CFD_PROPFIRM_RULES
+  // CFD / forex vertical : 1 index /cfd + 9 pages /cfd/[slug] + 36 vs-pages
+  // /cfd/compare/[pair] — tout dérivé de CFD_PROPFIRM_RULES.
   const cfdPages = [
     {
       url: `${BASE_URL}/cfd`,
@@ -70,6 +71,12 @@ export default function sitemap() {
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.8,
+    })),
+    ...getAllCfdFirmPairs().map(({ slug }) => ({
+      url: `${BASE_URL}/cfd/compare/${slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.75,
     })),
   ]
 

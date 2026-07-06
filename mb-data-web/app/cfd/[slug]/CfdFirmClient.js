@@ -8,6 +8,7 @@ import {
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from '../../../lib/cfdConstants'
+import { getAllCfdFirmPairs } from '../../../lib/cfdSlugs'
 
 const C = {
   bg: '#0d0f14',
@@ -70,6 +71,11 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
   const rep = CFD_REPUTATION[firm.reputation]
   const color = rep?.color || C.blue
   const f = firm.flagship || {}
+
+  // Head-to-head links: every /cfd/compare/[pair] page involving this firm.
+  const versusLinks = getAllCfdFirmPairs()
+    .filter((p) => p.firmA === firmName || p.firmB === firmName)
+    .map((p) => ({ other: p.firmA === firmName ? p.firmB : p.firmA, slug: p.slug }))
 
   const splitStr = f.profitSplit
     ? (f.profitSplit.from === f.profitSplit.to ? `${f.profitSplit.from}%` : `${f.profitSplit.from}–${f.profitSplit.to}%`)
@@ -324,6 +330,23 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
                 )
               })}
             </ul>
+          </section>
+        )}
+
+        {/* Head-to-head comparisons */}
+        {versusLinks.length > 0 && (
+          <section style={{ marginBottom: 36 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, marginBottom: 14 }}>Comparer {firmName} avec…</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {versusLinks.map(({ other, slug: pairSlug }) => (
+                <Link key={pairSlug} href={`/cfd/compare/${pairSlug}`} style={{
+                  padding: '8px 14px', background: C.surface, border: `1px solid ${C.border}`,
+                  borderRadius: 8, fontSize: 13, color: C.text2, textDecoration: 'none',
+                }}>
+                  {firmName} <span style={{ color: C.text3 }}>vs</span> {other} →
+                </Link>
+              ))}
+            </div>
           </section>
         )}
 
