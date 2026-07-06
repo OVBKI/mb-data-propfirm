@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
@@ -7,7 +8,7 @@ import {
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from '../../lib/cfdConstants'
-import { getCfdFirmsOrdered, CFD_FIRM_TAGLINE } from '../../lib/cfdSlugs'
+import { getCfdFirmsOrdered, getCfdModels, CFD_FIRM_TAGLINE } from '../../lib/cfdSlugs'
 
 const C = {
   bg: '#0d0f14',
@@ -79,6 +80,8 @@ function dash(v) {
 
 export default function CfdIndexClient() {
   const firms = getCfdFirmsOrdered()
+  // Displayed model per firm in the comparison table (flagship at index 0).
+  const [modelByFirm, setModelByFirm] = useState({})
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
@@ -136,7 +139,7 @@ export default function CfdIndexClient() {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980, fontSize: 13 }}>
               <thead>
                 <tr style={{ textAlign: 'left' }}>
-                  {['Firme', 'Modèle phare', 'Étapes', 'Profit target', 'Daily loss', 'Max loss', 'Split', 'Plateformes'].map((h) => (
+                  {['Firme', 'Modèle', 'Étapes', 'Profit target', 'Daily loss', 'Max loss', 'Split', 'Plateformes'].map((h) => (
                     <th key={h} style={{
                       padding: '12px 14px',
                       borderBottom: `1px solid ${C.border}`,
@@ -152,7 +155,12 @@ export default function CfdIndexClient() {
               </thead>
               <tbody>
                 {firms.map((firm) => {
-                  const f = firm.flagship || {}
+                  const models = getCfdModels(firm.name)
+                  const multi = models.length > 1
+                  const selIdx = Math.min(modelByFirm[firm.name] ?? 0, Math.max(models.length - 1, 0))
+                  // Selected model (flagship at 0). Sub-models inherit firm-wide infra
+                  // but only surface the rules their catalog entry states.
+                  const f = models[selIdx] || firm.flagship || {}
                   const color = CFD_REPUTATION[firm.reputation]?.color || C.blue
                   return (
                     <tr key={firm.slug} style={{ verticalAlign: 'top' }}>
@@ -170,7 +178,26 @@ export default function CfdIndexClient() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '14px', borderBottom: `1px solid ${C.border}`, color: C.text2 }}>{dash(f.model)}</td>
+                      <td style={{ padding: '14px', borderBottom: `1px solid ${C.border}`, color: C.text2 }}>
+                        {multi ? (
+                          <select
+                            value={selIdx}
+                            onChange={(e) => setModelByFirm((prev) => ({ ...prev, [firm.name]: Number(e.target.value) }))}
+                            aria-label={`Modèle ${firm.name}`}
+                            title={f.desc || undefined}
+                            style={{
+                              maxWidth: 200, fontSize: 12, fontFamily: 'inherit', fontWeight: 600,
+                              color: C.blueLight, cursor: 'pointer', background: C.surface2,
+                              border: `1px solid ${C.border}`, borderRadius: 7, padding: '6px 8px',
+                            }}>
+                            {models.map((m, i) => (
+                              <option key={m.name || i} value={i} style={{ color: C.text, background: C.surface }}>
+                                {m.name}{m.isFlagship ? ' · phare' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        ) : dash(f.name || f.model)}
+                      </td>
                       <td style={{ padding: '14px', borderBottom: `1px solid ${C.border}`, color: C.text2 }}>{dash(f.steps)}</td>
                       <td style={{ padding: '14px', borderBottom: `1px solid ${C.border}`, color: C.text2 }}>
                         {f.profitTargets?.length ? f.profitTargets.map((p) => `${p}%`).join(' / ') : '—'}
@@ -212,7 +239,8 @@ export default function CfdIndexClient() {
             </table>
           </div>
           <p style={{ fontSize: 12, color: C.text3, marginTop: 10, marginBottom: 0 }}>
-            Chaque ligne montre le modèle phare ; la plupart des firmes proposent aussi 1-step / instant / scaling.
+            Chaque firme affiche son modèle phare par défaut ; déroule le sélecteur de modèle pour comparer
+            ses variantes (1-step, instant, scaling…). « — » = non documenté pour ce modèle.
             Clique sur une firme pour le détail complet.
           </p>
         </section>
