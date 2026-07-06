@@ -8,7 +8,8 @@ import {
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from '../../lib/cfdConstants'
-import { getCfdFirmsOrdered, getCfdModels, CFD_FIRM_TAGLINE } from '../../lib/cfdSlugs'
+import { getCfdFirmsOrdered, getCfdModels, getAllCfdFirmPairs, CFD_FIRM_TAGLINE } from '../../lib/cfdSlugs'
+import { getGuidesOrdered } from '../../lib/guides'
 
 const C = {
   bg: '#0d0f14',
@@ -82,6 +83,9 @@ export default function CfdIndexClient() {
   const firms = getCfdFirmsOrdered()
   // Displayed model per firm in the comparison table (flagship at index 0).
   const [modelByFirm, setModelByFirm] = useState({})
+  // CFD content cluster for internal linking (SEO).
+  const cfdGuides = getGuidesOrdered().filter((g) => g.market === 'cfd')
+  const cfdPairs = getAllCfdFirmPairs()
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
@@ -327,6 +331,48 @@ export default function CfdIndexClient() {
             {`Le profit split (souvent 80% à 90–100%), la cadence des payouts et les plateformes (MT4/MT5, cTrader, Match-Trader, DXtrade) complètent le tableau. Attention à la réputation : certaines firmes ont connu des incidents de payouts — elles sont signalées « Prudence » ci-dessus.`}
           </p>
         </section>
+
+        {/* Guides CFD */}
+        {cfdGuides.length > 0 && (
+          <section style={{ marginBottom: 48 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, marginBottom: 16 }}>Guides CFD</h2>
+            <div className="firms-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              {cfdGuides.map((g) => (
+                <Link key={g.slug} href={`/guides/${g.slug}`} style={{
+                  display: 'flex', flexDirection: 'column', padding: 20, background: C.surface,
+                  border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text,
+                }}>
+                  <div style={{ fontSize: 11, color: '#22d3ee', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                    {g.category} · {g.readingTime} min
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 8 }}>{g.title}</div>
+                  <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, flex: 1 }}>{g.description}</p>
+                  <div style={{ marginTop: 12, fontSize: 12, color: C.blueLight, fontWeight: 600 }}>Lire le guide →</div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Head-to-head comparisons */}
+        {cfdPairs.length > 0 && (
+          <section style={{ marginBottom: 48 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, marginBottom: 6 }}>Comparatifs tête-à-tête</h2>
+            <p style={{ fontSize: 13, color: C.text3, marginTop: 0, marginBottom: 16 }}>
+              Compare deux firmes CFD côte à côte : daily loss, max loss, split, payouts, réputation.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {cfdPairs.map(({ firmA, firmB, slug }) => (
+                <Link key={slug} href={`/cfd/compare/${slug}`} style={{
+                  padding: '7px 12px', background: C.surface, border: `1px solid ${C.border}`,
+                  borderRadius: 8, fontSize: 12.5, color: C.text2, textDecoration: 'none',
+                }}>
+                  {firmA} <span style={{ color: C.text3 }}>vs</span> {firmB}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Cross-link to futures */}
         <section style={{ textAlign: 'center', padding: '32px 24px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14 }}>
