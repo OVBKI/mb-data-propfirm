@@ -4,6 +4,7 @@ import Link from 'next/link'
 import PageHeader from '../../../components/PageHeader'
 import Footer from '../../../components/Footer'
 import { firmToSlug } from '../../../lib/firmSlugs'
+import { cfdFirmToSlug } from '../../../lib/cfdSlugs'
 
 const C = {
   bg: '#0d0f14',
@@ -22,6 +23,7 @@ const CATEGORY_COLORS = {
   'Règles': '#a78bfa',
   'Guide PropFirm': '#fac775',
   'Payouts': C.green,
+  'CFD / Forex': '#22d3ee',
 }
 
 export default function GuidePageClient({ guide, slug, relatedGuides }) {
@@ -92,7 +94,7 @@ export default function GuidePageClient({ guide, slug, relatedGuides }) {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {guide.relatedFirms.map((firm) => (
-                <Link key={firm} href={`/firms/${firmToSlug(firm)}`} style={{
+                <Link key={firm} href={guide.market === 'cfd' ? `/cfd/${cfdFirmToSlug(firm)}` : `/firms/${firmToSlug(firm)}`} style={{
                   padding: '6px 12px',
                   background: 'rgba(45,111,255,0.08)',
                   border: '1px solid rgba(45,111,255,0.18)',

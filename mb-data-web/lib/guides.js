@@ -411,6 +411,211 @@ export const GUIDES = {
       },
     ],
   },
+
+  // ── CFD / forex vertical ──────────────────────────────────────────────────
+  'drawdown-cfd-statique-vs-trailing': {
+    title: 'Max loss statique vs trailing sur les PropFirms CFD',
+    description: 'Drawdown CFD expliqué : max loss statique (figé sur le solde initial) vs trailing relatif (suit le plus haut puis se verrouille). Qui utilise quoi (FTMO, The5ers, E8, FundingPips) et comment adapter ton risque.',
+    h1: 'Drawdown CFD : statique vs trailing, la différence qui fait tout',
+    category: 'CFD / Forex',
+    updatedDate: '2026-07-01',
+    readingTime: 7,
+    market: 'cfd',
+    relatedFirms: ['FTMO', 'The5ers', 'E8 Markets', 'FundingPips'],
+    relatedGuides: ['daily-loss-cfd-base-calcul', 'choisir-propfirm-cfd-fiable', 'eod-vs-intraday-drawdown'],
+    intro: `Sur les PropFirms CFD / forex, la mécanique du max loss (perte maximale avant de casser le compte) est LE paramètre qui détermine ta vraie marge de manœuvre. Deux grandes familles cohabitent : le drawdown statique, figé sur le solde initial, et le drawdown trailing, qui suit ton plus haut. Contrairement aux futures — où le trailing intraday/EOD domine — la majorité des firmes CFD phares utilisent un max loss STATIQUE de 10%, ce qui change radicalement la façon de gérer le risque. Ce guide décortique les deux modèles, dit qui utilise quoi, et donne les réflexes pour ne pas casser un compte bêtement.`,
+    sections: [
+      {
+        heading: 'Le max loss statique : le standard CFD',
+        body: [
+          `Un max loss statique est calculé une fois pour toutes sur le solde initial du compte, et ne bouge JAMAIS. Sur un compte 100K avec 10% de max loss statique, ton seuil de liquidation est fixé à 90 000 $ — que tu montes à 130K ou que tu redescendes, le plancher reste 90 000 $.`,
+          `C'est le modèle le plus indulgent pour un trader qui construit du profit : plus tu gagnes, plus ton coussin au-dessus du seuil grandit. La plupart des modèles phares du secteur — FTMO 2-step, The5ers High Stakes, FundingPips 2-Step Standard, Blueberry 2-Step — appliquent un max loss statique à 10%.`,
+        ],
+      },
+      {
+        heading: 'Le trailing relatif : réservé aux modèles instant / 1-step',
+        body: [
+          `Un max loss trailing relatif suit ton equity la plus haute, puis se VERROUILLE une fois que le compte revient à l'équilibre au niveau du solde initial. Tant que le compte est en profit non verrouillé, le seuil monte avec toi — un retournement peut donc te casser même en zone de gain.`,
+          `Sur le marché CFD, ce modèle est surtout utilisé par les offres instant funding et certains 1-step : E8 One (max 4% trailing relatif), FundingPips Zero (5% trailing), FundedNext Stellar Instant (6% trailing), Alpha One, les modèles Instant de Funded Trading Plus et Blueberry. Le trailing est le prix à payer pour l'absence de phase d'évaluation.`,
+        ],
+      },
+      {
+        heading: 'EOD trailing : la variante intermédiaire',
+        body: `Quelques firmes ajoutent une troisième nuance : le trailing EOD (end-of-day), où le seuil ne se recalcule qu'à la clôture quotidienne — comme sur les futures Topstep. On le retrouve sur FTMO Challenge 1-Step et E8 Signature Forex. C'est plus indulgent que le trailing tick-by-tick : ton drawdown intraday peut être profond sans casser le compte tant que tu clôtures au-dessus du seuil de la veille.`,
+      },
+      {
+        heading: 'Tableau récapitulatif (modèles phares)',
+        body: `Résumé de la base de max loss par firme, modèle phare, vérifié 2026 :`,
+        list: [
+          `Statique 10% : FTMO 2-step, The5ers High Stakes, FundingPips 2-Step, Alpha Pro, The Funded Trader Standard, Blueberry 2-Step`,
+          `Statique 8% : Funded Trading Plus 2-Step Classic`,
+          `Trailing relatif : E8 One (4%), FundedNext Instant (6%), FundingPips Zero (5%), Alpha One (6%)`,
+          `EOD trailing : FTMO 1-Step (10%), E8 Signature Forex (4%)`,
+        ],
+      },
+      {
+        heading: 'Comment adapter ton risque selon le modèle',
+        body: `La bonne gestion dépend directement de la base :`,
+        list: [
+          `Statique : tu peux viser un objectif sereinement — chaque gain élargit ton coussin. Le danger n'est qu'en début de compte, avant d'avoir bâti du profit.`,
+          `Trailing relatif : réduis ta taille de position et sécurise tes gains plus tôt — un retournement en zone de profit peut casser le compte tant que le trailing n'est pas verrouillé.`,
+          `EOD trailing : tu as de la marge intraday, mais surveille ton solde à la clôture — c'est le seul instant qui compte pour le recalcul.`,
+        ],
+      },
+      {
+        heading: 'Le rôle de Quantara',
+        body: `Dans l'onglet CFD de Quantara, chaque compte affiche sa jauge de max loss ET de daily loss calculée selon la vraie base de la firme (statique, trailing relatif, EOD). Tu vois ta room restante en temps réel, sans avoir à recalculer à la main la différence entre solde et equity la plus haute. Ajoute simplement ton compte, choisis la firme et le modèle : les règles se pré-remplissent depuis le catalogue.`,
+      },
+    ],
+    faqs: [
+      {
+        q: 'Le max loss statique est-il vraiment plus sûr ?',
+        a: 'Pour un trader qui construit du profit, oui : le seuil ne monte jamais, donc chaque gain agrandit ton coussin. Le trailing relatif peut te casser en zone de gain avant verrouillage. À règles égales, un modèle statique 10% laisse plus de marge qu\'un trailing 6%.',
+      },
+      {
+        q: 'Le trailing CFD fonctionne-t-il comme le trailing des futures ?',
+        a: 'Pas exactement. Sur les futures, le trailing suit souvent la balance et se lock au solde initial. Sur les CFD, il suit généralement l\'equity (positions ouvertes comprises) et se verrouille aussi au solde initial. La logique est proche mais la base equity rend le CFD plus réactif intraday.',
+      },
+      {
+        q: 'Quelle base choisir quand je débute en CFD ?',
+        a: 'Un modèle 2-step à max loss statique (FTMO, The5ers, FundingPips) est le plus lisible et le plus indulgent pour apprendre. Garde les modèles instant/trailing pour quand tu maîtrises ta gestion du risque intraday.',
+      },
+    ],
+  },
+
+  'daily-loss-cfd-base-calcul': {
+    title: 'Daily loss CFD : solde, equity ou higher-of ?',
+    description: 'La limite de perte journalière (daily loss) des PropFirms CFD change selon sa base de calcul : solde de début de journée, equity, ou le plus haut des deux. Comprendre la base pour ne pas casser ton compte à cause d\'une position ouverte.',
+    h1: 'Daily loss CFD : la base de calcul qui piège les traders',
+    category: 'CFD / Forex',
+    updatedDate: '2026-07-01',
+    readingTime: 6,
+    market: 'cfd',
+    relatedFirms: ['FundedNext', 'The5ers', 'FundingPips', 'Blueberry Funded'],
+    relatedGuides: ['drawdown-cfd-statique-vs-trailing', 'choisir-propfirm-cfd-fiable'],
+    intro: `La limite de perte journalière (daily loss limit) casse plus de comptes CFD que le max loss. Pourquoi ? Parce que sa BASE de calcul varie d'une firme à l'autre, et qu'une même perte peut être tolérée chez l'une et fatale chez l'autre. Solde de début de journée, equity, « le plus haut des deux », solde initial + profit intraday... Ce guide clarifie les quatre bases utilisées sur le marché CFD et montre comment chacune traite tes positions ouvertes.`,
+    sections: [
+      {
+        heading: 'Ce que mesure la daily loss',
+        body: `La daily loss limite la perte que tu peux subir sur une seule journée de trading (souvent 5% du compte). Dépasser ce seuil, ne serait-ce qu'un instant selon la firme, casse le compte. La question clé : le seuil est-il calculé à partir de ton SOLDE (trades clôturés uniquement) ou de ton EQUITY (positions ouvertes incluses) ? C'est toute la différence.`,
+      },
+      {
+        heading: 'Base 1 — Solde de début de journée',
+        body: [
+          `Le seuil est figé sur le solde à l'ouverture de la journée (ex. 00:00 CET). Tes positions ouvertes en cours de journée n'affectent le calcul que lorsqu'elles sont réalisées. C'est la base la plus indulgente : un drawdown flottant profond ne casse pas le compte tant que tu ne réalises pas la perte.`,
+          `Firmes : FTMO (solde début de journée), Alpha Capital Group, The Funded Trader (lock 17h EST).`,
+        ],
+      },
+      {
+        heading: 'Base 2 — Equity (le plus haut des deux)',
+        body: [
+          `Le seuil est calculé sur l'equity, souvent « le plus haut entre solde et equity » à l'ouverture. Ici, tes positions ouvertes COMPTENT : un drawdown flottant peut casser le compte instantanément, même sans clôturer. C'est la base la plus stricte.`,
+          `Firmes : The5ers, FundingPips (higher-of à 00:00 CET), Blueberry Funded.`,
+        ],
+      },
+      {
+        heading: 'Base 3 — Solde initial + profit intraday',
+        body: `Variante spécifique à FundedNext (Stellar) : la limite s'appuie sur le solde initial augmenté du profit intraday déjà réalisé. Concrètement, plus tu sécurises de gains dans la journée, plus ta marge de perte du jour s'élargit — mais le profit flottant non réalisé ne compte pas.`,
+      },
+      {
+        heading: 'Pourquoi ça piège autant',
+        body: `Le piège classique : un trader habitué à une firme « solde de début de journée » ouvre un compte chez une firme « equity ». Il laisse courir une position perdante en pensant avoir de la marge (car son solde n'a pas bougé), sans réaliser que son equity flottante a déjà franchi le seuil. Compte cassé, sans même un trade clôturé en perte.`,
+        list: [
+          `Base solde : le drawdown flottant est toléré tant qu'il n'est pas réalisé.`,
+          `Base equity / higher-of : le drawdown flottant casse le compte en direct.`,
+          `Toujours vérifier la base AVANT de laisser courir une position.`,
+        ],
+      },
+      {
+        heading: 'Comment Quantara t\'aide',
+        body: `Quantara stocke la base de daily loss de chaque firme (solde, equity, higher-of, solde+intraday) et calcule ta jauge journalière en conséquence. Tu renseignes ton solde de début de journée et ton equity du moment : la jauge te dit exactement combien de room il te reste selon la vraie règle de TA firme — pas une estimation générique.`,
+      },
+    ],
+    faqs: [
+      {
+        q: 'La base « equity » est-elle vraiment plus dangereuse ?',
+        a: 'Oui. Avec une base equity ou « higher-of », un drawdown flottant sur une position ouverte peut casser le compte instantanément, sans clôture. Avec une base « solde de début de journée », seule la perte réalisée compte — bien plus indulgent pour qui laisse respirer ses trades.',
+      },
+      {
+        q: 'À quelle heure la daily loss se remet à zéro ?',
+        a: 'Ça dépend de la firme : 00:00 CET (FTMO, FundingPips), 17h EST (The Funded Trader, Blueberry). Le reset fixe ton nouveau seuil de départ pour la journée — connaître l\'heure exacte évite les mauvaises surprises sur les sessions à cheval.',
+      },
+      {
+        q: 'Le profit flottant compte-t-il dans la base FundedNext ?',
+        a: 'Non : la base FundedNext (solde initial + profit intraday) ne prend en compte que le profit RÉALISÉ dans la journée. Le profit flottant d\'une position encore ouverte n\'élargit pas ta marge de perte du jour.',
+      },
+    ],
+  },
+
+  'choisir-propfirm-cfd-fiable': {
+    title: 'Comment choisir une PropFirm CFD fiable en 2026',
+    description: 'Choisir une PropFirm CFD / forex : réputation et historique de payouts, base de drawdown, profit split, plateformes, frais remboursables. La méthode et les signaux d\'alerte à connaître avant de payer un challenge.',
+    h1: 'Choisir une PropFirm CFD fiable : la méthode 2026',
+    category: 'CFD / Forex',
+    updatedDate: '2026-07-01',
+    readingTime: 8,
+    market: 'cfd',
+    relatedFirms: ['FTMO', 'FundedNext', 'The5ers', 'Funded Trading Plus'],
+    relatedGuides: ['drawdown-cfd-statique-vs-trailing', 'daily-loss-cfd-base-calcul'],
+    intro: `Le marché des PropFirms CFD / forex est bien plus vaste — et bien plus risqué — que celui des futures. Des dizaines de firmes ouvrent chaque année, certaines disparaissent avec l'argent des traders. Avant de payer un challenge, la question n'est pas « laquelle a le plus gros split » mais « laquelle va réellement me payer ». Ce guide donne une méthode en cinq critères pour trier le sérieux du douteux, et liste les signaux d'alerte qui doivent te faire fuir.`,
+    sections: [
+      {
+        heading: 'Critère n°1 — La réputation et l\'historique de payouts',
+        body: [
+          `C'est LE critère décisif sur le CFD. Une firme peut afficher des règles parfaites et ne jamais payer. Regarde l'ancienneté (une firme née il y a 3 mois n'a pas d'historique), le volume de payouts publiés, et surtout les incidents passés.`,
+          `Exemples de repères 2026 : FTMO et The5ers ont un historique long et régulier ; The Funded Trader a connu une suspension de payouts majeure en 2024 (2 M$+ contestés) et reste à surveiller ; Blueberry Funded traîne des plaintes récurrentes de comptes cassés juste avant payout. Dans Quantara, chaque firme CFD porte un badge réputation (Fiable / Correct / Prudence) basé sur ces éléments.`,
+        ],
+      },
+      {
+        heading: 'Critère n°2 — La base de drawdown',
+        body: `Une firme fiable avec des règles piégeuses reste un mauvais choix. Vérifie la base du max loss (statique vs trailing) et du daily loss (solde vs equity). Un max loss statique 10% + daily loss sur solde de début de journée = les conditions les plus lisibles. Un trailing relatif + daily loss equity = beaucoup plus exigeant. (Voir les deux guides dédiés liés en bas de page.)`,
+      },
+      {
+        heading: 'Critère n°3 — Le profit split et sa progression',
+        body: [
+          `Le split de base tourne autour de 80%, avec une progression vers 90-100% selon la firme et le volume de payouts. Méfie-toi des « 100% de split » affichés en gros : ils sont souvent conditionnés (premier palier, add-on payant, cadence imposée).`,
+          `Regarde aussi la CADENCE : un split de 90% payé tous les 14 jours vaut mieux qu'un 100% « on-demand » assorti d'une règle de consistance stricte qui bloque le retrait.`,
+        ],
+      },
+      {
+        heading: 'Critère n°4 — Plateformes et instruments',
+        body: `Assure-toi que la firme propose la plateforme que tu maîtrises (MT4/MT5, cTrader, Match-Trader, DXtrade) et les instruments que tu trades (forex, indices, métaux, crypto). Une firme US bloque parfois MT5/cTrader pour raisons réglementaires. Vérifie aussi les restrictions : news trading, hold week-end, HFT/arbitrage souvent interdits.`,
+      },
+      {
+        heading: 'Critère n°5 — Frais remboursables et conditions',
+        body: `Beaucoup de firmes remboursent les frais du challenge une fois financé — mais les modalités varient : remboursé avec le 1er payout (FTMO, FundedNext), remboursé partiellement au passage financé (The5ers : 70%), sous forme de bonus au 3e payout (The Funded Trader), ou pas de remboursement du tout. Lis les conditions exactes avant de payer.`,
+      },
+      {
+        heading: 'Les signaux d\'alerte',
+        body: `Fais demi-tour si tu observes :`,
+        list: [
+          `Firme née il y a quelques mois sans historique de payouts vérifiable.`,
+          `Règles de consistance ou de « manipulation » vagues, utilisables pour refuser un payout a posteriori.`,
+          `Avis récurrents de comptes cassés juste avant un retrait.`,
+          `Split « trop beau » assorti de conditions cachées.`,
+          `Support injoignable ou réponses évasives sur les délais de paiement.`,
+        ],
+      },
+      {
+        heading: 'Suivre tes comptes CFD dans Quantara',
+        body: `Quantara pré-configure les 9 principales PropFirms CFD avec leurs règles, leur badge réputation et leurs bases de drawdown. Tu peux comparer deux firmes côte à côte (pages /cfd/compare), lire chaque fiche détaillée, puis suivre tes comptes financés dans un seul dashboard — drawdown, daily loss et pipeline de payouts inclus.`,
+      },
+    ],
+    faqs: [
+      {
+        q: 'Quelle est la PropFirm CFD la plus fiable en 2026 ?',
+        a: 'FTMO reste la référence historique (payouts on-demand réguliers, max loss statique 10%). The5ers et FundedNext ont aussi un solide historique. « Fiable » ne veut pas dire « facile » : ces firmes ont des règles exigeantes, mais elles paient. Vérifie toujours l\'actualité avant de t\'engager.',
+      },
+      {
+        q: 'Faut-il éviter les firmes marquées « Prudence » ?',
+        a: 'Pas forcément les éviter, mais y aller les yeux ouverts : un badge Prudence signale un incident de payouts passé ou une réputation fragile. Si tu tentes malgré tout, limite ton exposition (petite taille de compte) et retire tes gains rapidement plutôt que de laisser grossir le solde.',
+      },
+      {
+        q: 'Le plus gros profit split est-il le meilleur choix ?',
+        a: 'Non. Un split de 100% ne vaut rien si la firme ne paie pas, ou s\'il est verrouillé derrière une règle de consistance impossible. La fiabilité des payouts et la lisibilité des règles de drawdown priment toujours sur le pourcentage affiché.',
+      },
+    ],
+  },
 }
 
 // Sorted list for index page + sitemap generation
@@ -420,6 +625,9 @@ export const GUIDE_ORDER = [
   'consistency-rule',
   'comment-passer-evaluation-topstep',
   'payout-methods-propfirm',
+  'drawdown-cfd-statique-vs-trailing',
+  'daily-loss-cfd-base-calcul',
+  'choisir-propfirm-cfd-fiable',
 ]
 
 export function getAllGuideSlugs() {
