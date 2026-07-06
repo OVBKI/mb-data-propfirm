@@ -617,9 +617,9 @@ const FR = {
       // Confirms
       confirmDeleteAccount: 'Supprimer définitivement ce compte CFD et ses payouts ?',
       confirmDeletePayout: 'Supprimer ce payout ?',
-      // Avertissement modèle non-phare (CfdAccountModal)
-      nonFlagshipWarnStrong: '⚠️ Règles pré-remplies = modèle phare « {flagship} ».',
-      nonFlagshipWarnBody: 'Vérifie et ajuste les pourcentages (daily/max loss, target, split), les bases et la taille de compte pour « {model} » avant d’enregistrer.',
+      // Rappel modèle non-phare (CfdAccountModal) — règles pré-remplies par modèle
+      nonFlagshipWarnStrong: 'Règles pré-remplies pour « {model} » d’après le catalogue.',
+      nonFlagshipWarnBody: 'Les champs non documentés pour ce modèle sont laissés vides ; vérifie et ajuste sur le site officiel avant d’enregistrer — les conditions changent souvent.',
       catalogHint: 'Catalogue :',
       // Labels de base de drawdown — clés = enums DB (cfdConstants.js reste la source FR canonique)
       basisDaily: {
@@ -664,8 +664,10 @@ const FR = {
         tipFirstPayout: '1er payout : J+',
         tipCycle: 'Cycle :',
         tipMin: 'Min :',
-        footnote: 'Chaque ligne montre le modèle phare ; la plupart des firmes proposent aussi 1-step / instant / scaling. Clique sur une firme pour le détail complet.',
-        hoverHint: 'Survolez une cellule pour voir la règle complète. « — » = non documenté.',
+        modelSelectAria: 'Modèle {firm}',
+        flagshipTag: 'phare',
+        footnote: 'Chaque firme affiche son modèle phare par défaut ; déroule le sélecteur de modèle pour comparer ses variantes (1-step, instant, scaling…). Clique sur une firme pour le détail complet.',
+        hoverHint: 'Survolez une cellule pour voir la règle complète. « — » = non documenté pour ce modèle.',
       },
     },
     // Comparateur de règles futures in-app (components/FuturesRulesComparator.js)
@@ -2408,9 +2410,9 @@ const EN = {
       // Confirms
       confirmDeleteAccount: 'Permanently delete this CFD account and its payouts?',
       confirmDeletePayout: 'Delete this payout?',
-      // Non-flagship model warning (CfdAccountModal)
-      nonFlagshipWarnStrong: '⚠️ Prefilled rules = flagship model “{flagship}”.',
-      nonFlagshipWarnBody: 'Check and adjust the percentages (daily/max loss, target, split), the bases and the account size for “{model}” before saving.',
+      // Non-flagship model note (CfdAccountModal) — rules prefilled per model
+      nonFlagshipWarnStrong: 'Rules prefilled for “{model}” from the catalog.',
+      nonFlagshipWarnBody: 'Fields this model doesn’t document are left blank; check and adjust on the official website before saving — terms change often.',
       catalogHint: 'Catalog:',
       // Drawdown basis labels — keys = DB enums (cfdConstants.js stays the canonical FR source)
       basisDaily: {
@@ -2455,8 +2457,10 @@ const EN = {
         tipFirstPayout: 'First payout: D+',
         tipCycle: 'Cycle:',
         tipMin: 'Min:',
-        footnote: 'Each row shows the flagship model; most firms also offer 1-step / instant / scaling. Click a firm for the full breakdown.',
-        hoverHint: 'Hover a cell to see the full rule. “—” = not documented.',
+        modelSelectAria: 'Model {firm}',
+        flagshipTag: 'flagship',
+        footnote: 'Each firm shows its flagship model by default; open the model selector to compare its variants (1-step, instant, scaling…). Click a firm for the full breakdown.',
+        hoverHint: 'Hover a cell to see the full rule. “—” = not documented for this model.',
       },
     },
     // In-app futures rules comparator (components/FuturesRulesComparator.js)

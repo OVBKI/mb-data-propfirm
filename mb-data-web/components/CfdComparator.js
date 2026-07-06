@@ -2,18 +2,21 @@
 // components/CfdComparator.js — In-app CFD PropFirm RULES comparator.
 // Rendered inside the /app/rules tab when the global marketMode is 'cfd'.
 // Mirrors the FuturesRulesComparator visual language: a two-tier grouped table
-// (CHALLENGE / FINANCÉ), one row per firm using its flagship model, compact
-// full-width styling.
+// (CHALLENGE / FINANCÉ), one row per firm, compact full-width styling. Multi-model
+// firms expose a per-firm model selector (flagship first) that re-derives the row's
+// rules from getCfdModels(firm) — sub-models inherit firm-wide infra but only surface
+// the rules their catalog entry states.
 // READ-ONLY: renders only data from lib/cfdConstants.js + lib/cfdSlugs.js.
 // Never mixes CFD with futures firms — driven solely by getCfdFirmsOrdered().
 // '—' wherever a value is absent. No invented rules.
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useT } from './LanguageProvider'
 import {
   CFD_REPUTATION,
 } from '../lib/cfdConstants'
-import { getCfdFirmsOrdered, CFD_FIRM_TAGLINE, cfdFirmToSlug } from '../lib/cfdSlugs'
+import { getCfdFirmsOrdered, getCfdModels, CFD_FIRM_TAGLINE, cfdFirmToSlug } from '../lib/cfdSlugs'
 
 // Inline "visually hidden" style (screen readers only).
 const SR_ONLY = {
@@ -193,6 +196,11 @@ export default function CfdComparator() {
   const t = useT()
   const firms = getCfdFirmsOrdered()
 
+  // Displayed model per firm (multi-model firms). Key = firm name, value = index
+  // into getCfdModels(firm). Default = 0 (flagship) when unset. Mirrors the futures
+  // comparator's modelByFirm.
+  const [modelByFirm, setModelByFirm] = useState({})
+
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', width: '100%' }}>
       {/* Header / intro */}
@@ -268,7 +276,12 @@ export default function CfdComparator() {
 
           <tbody>
             {firms.map((firm, firmIdx) => {
-              const f = firm.flagship || {}
+              const models = getCfdModels(firm.name)
+              const multi = models.length > 1
+              const selIdx = Math.min(modelByFirm[firm.name] ?? 0, Math.max(models.length - 1, 0))
+              // Selected model (flagship at index 0). Its rules come from the catalog:
+              // sub-models inherit firm-wide infra but only expose rules they state.
+              const f = models[selIdx] || firm.flagship || {}
               const slug = firm.slug || cfdFirmToSlug(firm.name)
               const color = CFD_REPUTATION[firm.reputation]?.color || C.blue
               const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
@@ -316,12 +329,35 @@ export default function CfdComparator() {
                           {firm.name}
                         </Link>
                         <div style={{ marginTop: 4 }}><ReputationBadge reputation={firm.reputation} /></div>
-                        {f.model && (
+                        {/* Single model → label. Multi → selector (switches the row's
+                            rules to that sub-model). Selected model's FR summary sits in
+                            title= as a tooltip. */}
+                        {!multi && f.name && (
                           <div style={{
                             fontSize: 10, color: C.text3, fontWeight: 600,
                             marginTop: 5, letterSpacing: '0.03em', textTransform: 'uppercase',
                             maxWidth: 170, lineHeight: 1.3,
-                          }}>{f.model}</div>
+                          }}>{f.name}</div>
+                        )}
+                        {multi && (
+                          <select
+                            value={selIdx}
+                            onChange={(e) => setModelByFirm((prev) => ({ ...prev, [firm.name]: Number(e.target.value) }))}
+                            aria-label={t('app.cfd.comparator.modelSelectAria').replace('{firm}', firm.name)}
+                            title={f.desc || undefined}
+                            style={{
+                              marginTop: 6, maxWidth: 168,
+                              fontSize: 11, fontFamily: 'inherit', fontWeight: 600,
+                              color: C.blue, cursor: 'pointer',
+                              background: C.surface2, border: `1px solid ${C.border2}`,
+                              borderRadius: 7, padding: '4px 8px', minHeight: 32,
+                            }}>
+                            {models.map((m, i) => (
+                              <option key={m.name || i} value={i} style={{ color: C.text, background: C.surface }}>
+                                {m.name}{m.isFlagship ? ` · ${t('app.cfd.comparator.flagshipTag')}` : ''}
+                              </option>
+                            ))}
+                          </select>
                         )}
                       </div>
                     </div>

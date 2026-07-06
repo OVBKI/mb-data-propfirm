@@ -278,7 +278,7 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
                   fontSize: 13,
                   color: C.text2,
                   lineHeight: 1.5,
-                }}>{m}</li>
+                }}>{typeof m === 'string' ? m : (m.desc || m.name)}</li>
               ))}
             </ul>
           </section>

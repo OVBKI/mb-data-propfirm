@@ -26,7 +26,7 @@ import {
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from '../lib/cfdConstants'
-import { getCfdFirmsOrdered } from '../lib/cfdSlugs'
+import { getCfdFirmsOrdered, getCfdModels } from '../lib/cfdSlugs'
 
 const FIRM_COLORS_CFD = ['#4d8fff', '#1db87a', '#fac775', '#a78bfa', '#e8504a', '#22d3ee', '#f472b6', '#34d399', '#fb923c']
 
@@ -80,30 +80,43 @@ function fmtSize(n) {
   return String(v)
 }
 
-// Build the prefilled (editable) form defaults from a firm's flagship model.
-function buildDefaults(catalog) {
-  const fl = catalog?.flagship
-  const step = 1
-  const pt = fl ? (fl.profitTargets?.[step - 1] ?? fl.profitTargets?.[0]) : null
+// Only the rule/size fields that depend on the selected MODEL (used both when the
+// model changes and when the phase does). A null rule → '' (blank & editable) so a
+// sub-model that doesn't document a value never inherits a stale one from another model.
+function modelRuleFields(model, step = 1) {
+  const pt = model ? (model.profitTargets?.[step - 1] ?? model.profitTargets?.[0] ?? null) : null
   return {
-    cfd_model: fl?.model || '',
-    account_size: fl?.accountSizes?.[0] != null ? String(fl.accountSizes[0]) : '',
-    cfd_step: step,
+    account_size: model?.accountSizes?.[0] != null ? String(model.accountSizes[0]) : '',
+    profit_target_pct: pt != null ? String(pt) : '',
+    daily_loss_pct: model?.dailyLoss?.pct != null ? String(model.dailyLoss.pct) : '',
+    daily_loss_basis: model?.dailyLoss?.basis || '',
+    max_loss_pct: model?.maxLoss?.pct != null ? String(model.maxLoss.pct) : '',
+    max_loss_basis: model?.maxLoss?.basis || '',
+    profit_split: model?.profitSplit?.from != null ? String(model.profitSplit.from) : '',
+    leverage_forex: model?.leverage?.forex != null ? String(model.leverage.forex) : '',
+  }
+}
+
+// Build the prefilled (editable) form defaults from a normalized model (getCfdModels
+// entry). `catalog` supplies the firm's platform default.
+function buildDefaultsFromModel(model, catalog) {
+  return {
+    cfd_model: model?.name || '',
+    cfd_step: 1,
     platform: catalog?.platforms?.[0] || '',
-    currency: cleanCurrency(fl?.currency),
+    currency: cleanCurrency(model?.currency),
     buy_date: new Date().toISOString().slice(0, 10),
     spent: '',
     status: 'Challenge',
     name: '',
     notes: '',
-    profit_target_pct: pt != null ? String(pt) : '',
-    daily_loss_pct: fl?.dailyLoss?.pct != null ? String(fl.dailyLoss.pct) : '',
-    daily_loss_basis: fl?.dailyLoss?.basis || '',
-    max_loss_pct: fl?.maxLoss?.pct != null ? String(fl.maxLoss.pct) : '',
-    max_loss_basis: fl?.maxLoss?.basis || '',
-    profit_split: fl?.profitSplit?.from != null ? String(fl.profitSplit.from) : '',
-    leverage_forex: fl?.leverage?.forex != null ? String(fl.leverage.forex) : '',
+    ...modelRuleFields(model, 1),
   }
+}
+
+// Firm-level defaults = its flagship model (getCfdModels()[0]).
+function buildDefaults(catalog, firmName) {
+  return buildDefaultsFromModel(getCfdModels(firmName)[0], catalog)
 }
 
 export default function CfdAccountModal({ open, onClose, onSaved, user, showToast }) {
@@ -118,81 +131,55 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
   const firmsCatalog = useMemo(() => getCfdFirmsOrdered(), [])
   const [firmName, setFirmName] = useState(firmsCatalog[0]?.name || '')
   const catalog = CFD_PROPFIRM_RULES[firmName]
-  const flagship = catalog?.flagship
+
+  // Normalized [flagship, ...sub-models] for this firm. Each carries real per-model
+  // rules (sub-models inherit firm-wide infra, expose only the rules they document).
+  const models = useMemo(() => getCfdModels(firmName), [firmName])
 
   // Form state
-  const [form, setForm] = useState(() => buildDefaults(catalog))
+  const [form, setForm] = useState(() => buildDefaults(catalog, firmName))
   const [saving, setSaving] = useState(false)
 
-  // Rebuild prefilled defaults when the firm changes.
+  const selectedModel = useMemo(
+    () => models.find(m => m.name === form.cfd_model) || models[0] || null,
+    [models, form.cfd_model],
+  )
+
+  // Rebuild prefilled defaults when the firm changes (defaults to its flagship).
   function onPickFirm(name) {
     setFirmName(name)
-    setForm(buildDefaults(CFD_PROPFIRM_RULES[name]))
+    setForm(buildDefaults(CFD_PROPFIRM_RULES[name], name))
   }
 
-  // Changement de modèle. Les `otherModels` du catalogue sont des libellés descriptifs
-  // (pas de chiffres structurés par modèle), donc impossible de re-dériver les règles :
-  //   - retour au modèle phare → restaure proprement les prefills du flagship (règles,
-  //     taille, target, split, levier) en conservant les champs non liés aux règles ;
-  //   - autre modèle → on garde les valeurs (éditables) MAIS un avertissement visible
-  //     s'affiche sous le sélecteur (voir isNonFlagshipModel plus bas).
-  function onPickModel(model) {
-    setForm(p => {
-      const cat = CFD_PROPFIRM_RULES[firmName]
-      if (cat?.flagship?.model && model === cat.flagship.model) {
-        const d = buildDefaults(cat)
-        return {
-          ...p,
-          cfd_model: model,
-          account_size: d.account_size,
-          cfd_step: d.cfd_step,
-          profit_target_pct: d.profit_target_pct,
-          daily_loss_pct: d.daily_loss_pct,
-          daily_loss_basis: d.daily_loss_basis,
-          max_loss_pct: d.max_loss_pct,
-          max_loss_basis: d.max_loss_basis,
-          profit_split: d.profit_split,
-          leverage_forex: d.leverage_forex,
-        }
-      }
-      return { ...p, cfd_model: model }
-    })
+  // Changement de modèle → pré-remplit les VRAIES règles du sous-modèle (daily/max
+  // loss + bases, target, taille) depuis getCfdModels(). Une règle non documentée par
+  // ce modèle est remise à vide (éditable) plutôt que d'hériter d'une valeur périmée.
+  function onPickModel(name) {
+    const model = getCfdModels(firmName).find(m => m.name === name)
+    setForm(p => ({ ...p, cfd_model: name, cfd_step: 1, ...modelRuleFields(model, 1) }))
   }
 
-  // When the phase (step) changes, re-derive the profit target prefill.
+  // When the phase (step) changes, re-derive the profit target prefill from the model.
   function onPickStep(step) {
     setForm(p => {
-      const fl = CFD_PROPFIRM_RULES[firmName]?.flagship
-      const pt = fl ? (fl.profitTargets?.[step - 1] ?? fl.profitTargets?.[0]) : p.profit_target_pct
+      const model = getCfdModels(firmName).find(m => m.name === p.cfd_model)
+      const pt = model ? (model.profitTargets?.[step - 1] ?? model.profitTargets?.[0]) : null
       return { ...p, cfd_step: step, profit_target_pct: step === 0 ? p.profit_target_pct : (pt != null ? String(pt) : p.profit_target_pct) }
     })
   }
 
-  const modelOptions = useMemo(() => {
-    if (!catalog) return []
-    const opts = []
-    if (flagship?.model) opts.push(flagship.model)
-    for (const m of (catalog.otherModels || [])) {
-      // otherModels entries are descriptive strings; use the leading name fragment.
-      const name = String(m).split('(')[0].split('—')[0].trim()
-      if (name && !opts.includes(name)) opts.push(name)
-    }
-    return opts
-  }, [catalog, flagship])
+  const modelOptions = useMemo(() => models.map(m => m.name), [models])
 
   const stepOptions = useMemo(() => {
-    const steps = flagship?.steps || 1
+    const steps = selectedModel?.steps || 1
     const opts = [0]
     for (let i = 1; i <= steps; i++) opts.push(i)
     return opts
-  }, [flagship])
+  }, [selectedModel])
 
-  // Modèle non-phare sélectionné → les prefills affichés sont ceux du flagship.
-  const isNonFlagshipModel = !!(flagship?.model && form.cfd_model && form.cfd_model !== flagship.model)
-  // Libellé descriptif du modèle sélectionné dans otherModels (rappel des vraies règles).
-  const selectedModelHint = isNonFlagshipModel
-    ? (catalog?.otherModels || []).find(m => String(m).split('(')[0].split('—')[0].trim() === form.cfd_model) || null
-    : null
+  // Sous-modèle sélectionné (≠ phare) → on affiche son résumé catalogue en rappel.
+  const isNonFlagshipModel = !!(selectedModel && !selectedModel.isFlagship)
+  const selectedModelHint = isNonFlagshipModel ? (selectedModel.desc || null) : null
 
   async function save() {
     if (saving) return
@@ -288,7 +275,8 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
             </select>
           </div>
 
-          {/* Avertissement : les règles pré-remplies ci-dessous sont celles du modèle phare. */}
+          {/* Sous-modèle sélectionné : les champs de règles sont pré-remplis d'après le
+              catalogue pour CE modèle ; rappel de vérifier + résumé catalogue. */}
           {isNonFlagshipModel && (
             <div style={{
               gridColumn: '1/-1',
@@ -300,8 +288,8 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
               color: THEME.amber,
               lineHeight: 1.5,
             }}>
-              <strong>{t('app.cfd.nonFlagshipWarnStrong').replace('{flagship}', flagship.model)}</strong>{' '}
-              {t('app.cfd.nonFlagshipWarnBody').replace('{model}', form.cfd_model)}
+              <strong>{t('app.cfd.nonFlagshipWarnStrong').replace('{model}', form.cfd_model)}</strong>{' '}
+              {t('app.cfd.nonFlagshipWarnBody')}
               {selectedModelHint && (
                 <div style={{ marginTop: 4, color: 'var(--text2)' }}>{t('app.cfd.catalogHint')} {selectedModelHint}</div>
               )}
@@ -311,7 +299,7 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
           <div>
             <label style={S.label}>{t('app.cfd.accountSize')} ({form.currency})</label>
             <select value={form.account_size} onChange={set('account_size')} style={S.input}>
-              {(flagship?.accountSizes || []).map(s => (
+              {(selectedModel?.accountSizes || []).map(s => (
                 <option key={s} value={s}>{fmtSize(s)}</option>
               ))}
             </select>

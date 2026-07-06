@@ -8,8 +8,15 @@
 //   • PRICES are almost all INDICATIVE / third-party — most firms' checkout pages are
 //     Cloudflare-protected or dynamic. Every price here is flagged `priceConfidence`
 //     and the UI must show an "indicatif — vérifier sur le site officiel" label.
-//   • Each firm has 3–9 challenge models; v1 stores ONE flagship model in detail and
-//     lists the rest by name in `otherModels`.
+//   • Each firm has 3–9 challenge models. The primary one is stored in full detail as
+//     `flagship`; the others live in `otherModels` as objects
+//     `{ name, desc, ...overrides }` where `desc` is the human FR summary (rendered on
+//     the public /cfd pages) and the optional overrides (steps, profitTargets,
+//     dailyLoss{pct,basis}, maxLoss{pct,basis}, profitSplit, consistency) carry ONLY the
+//     values the summary states explicitly. lib/cfdSlugs.js#getCfdModels() merges each
+//     model over the flagship's firm-wide infra (account sizes, currency, leverage,
+//     platforms, payout, profit split) so the model/comparator selectors resolve real
+//     per-model rules; anything not stated stays absent (shown as '—', never invented).
 //   • Always verify on the firm's official site before acting — rules change often.
 //
 // Drawdown basis vocabulary (differs fundamentally from futures trailing-EOD/intraday):
@@ -56,7 +63,9 @@ export const CFD_PROPFIRM_RULES = {
       priceIndicative: { note: '~€155 (10k) → ~€1 080 (200k)', confidence: 'low' },
       refundable: true, // refunded with first reward
     },
-    otherModels: ['FTMO Challenge (1-Step) — daily 3%, max 10% trailing EOD, 90% split, règle 50% best-day'],
+    otherModels: [
+      { name: 'FTMO Challenge (1-Step)', desc: 'FTMO Challenge (1-Step) — daily 3%, max 10% trailing EOD, 90% split, règle 50% best-day', steps: 1, profitTargets: [10], dailyLoss: { pct: 3, basis: 'balance' }, maxLoss: { pct: 10, basis: 'eod-trailing' }, profitSplit: { from: 90, to: 90 }, consistency: '50% best-day' },
+    ],
     notable: 'Capital simulé. Comptes Standard : pas de hold week-end + restriction news sur compte financé (pas en éval). Swing sans ces limites.',
     sources: ['ftmo.com/en/trading-objectives', 'ftmo.com/en/1-step-challenge'],
     verified: '2026-06',
@@ -87,7 +96,11 @@ export const CFD_PROPFIRM_RULES = {
       refundable: true, // refunded with first funded payout
       refundNote: 'Oui — remboursé avec le 1er payout du compte financé',
     },
-    otherModels: ['Stellar 1-Step (10%, daily 3%, max 6% static)', 'Stellar Lite (8/4, daily 4%, max 8% static, pas de reward en éval)', 'Stellar Instant (pas de daily, max 6% trailing)'],
+    otherModels: [
+      { name: 'Stellar 1-Step', desc: 'Stellar 1-Step (10%, daily 3%, max 6% static)', steps: 1, profitTargets: [10], dailyLoss: { pct: 3, basis: 'balance+intraday-profit' }, maxLoss: { pct: 6, basis: 'static' } },
+      { name: 'Stellar Lite', desc: 'Stellar Lite (8/4, daily 4%, max 8% static, pas de reward en éval)', steps: 2, profitTargets: [8, 4], dailyLoss: { pct: 4, basis: 'balance+intraday-profit' }, maxLoss: { pct: 8, basis: 'static' } },
+      { name: 'Stellar Instant', desc: 'Stellar Instant (pas de daily, max 6% trailing)', steps: 1, profitTargets: null, dailyLoss: { pct: null, basis: null }, maxLoss: { pct: 6, basis: 'trailing-relative' } },
+    ],
     notable: 'Express & Evaluation arrêtés aux nouveaux clients depuis mars 2025. Reward share base 80% depuis le 12 janv 2026. News autorisées (financé : trades ±5 min high-impact = 40% du profit).',
     sources: ['help.fundednext.com (Stellar 2-Step rules/target/reward)'],
     verified: '2026-06',
@@ -120,7 +133,11 @@ export const CFD_PROPFIRM_RULES = {
       refundable: true, // 70% fee refund at funded stage + hub credit
       refundNote: 'Partiel — 70% des frais remboursés au passage en financé (+ crédit hub)',
     },
-    otherModels: ['Hyper Growth (1-step/instant, daily 3% pause, max 6% static, balance double par +10%)', 'Bootcamp (3-step, ~6%, max 5%)', 'ProGrowth (nouveau 1-step, 10%, max 6%)'],
+    otherModels: [
+      { name: 'Hyper Growth', desc: 'Hyper Growth (1-step/instant, daily 3% pause, max 6% static, balance double par +10%)', steps: 1, dailyLoss: { pct: 3, basis: 'higher-of-balance-equity' }, maxLoss: { pct: 6, basis: 'static' } },
+      { name: 'Bootcamp', desc: 'Bootcamp (3-step, ~6%, max 5%)', steps: 3, maxLoss: { pct: 5, basis: 'static' } },
+      { name: 'ProGrowth', desc: 'ProGrowth (nouveau 1-step, 10%, max 6%)', steps: 1, profitTargets: [10], maxLoss: { pct: 6, basis: 'static' } },
+    ],
     notable: 'News : pas d’exécution ±2 min high-impact. Interdits : HFT, arbitrage, bracketing, copy entre traders.',
     sources: ['help.the5ers.com (High Stakes general rules / drawdown / payout)'],
     verified: '2026-06',
@@ -150,7 +167,11 @@ export const CFD_PROPFIRM_RULES = {
       priceIndicative: { note: '~$40 (5k) → ~$1 627 (500k) — non confirmé (checkout dynamique)', confidence: 'low' },
       refundable: null,
     },
-    otherModels: ['E8 Signature Forex (1-step, max 4% EOD trailing, daily pause 2%, consistency 35%)', 'E8 Track (3-step, 8/4/4, max 8% static)', 'E8 Classic (2-step, 8/4)'],
+    otherModels: [
+      { name: 'E8 Signature Forex', desc: 'E8 Signature Forex (1-step, max 4% EOD trailing, daily pause 2%, consistency 35%)', steps: 1, dailyLoss: { pct: 2, basis: 'balance' }, maxLoss: { pct: 4, basis: 'eod-trailing' }, consistency: '35% best-day' },
+      { name: 'E8 Track', desc: 'E8 Track (3-step, 8/4/4, max 8% static)', steps: 3, profitTargets: [8, 4, 4], maxLoss: { pct: 8, basis: 'static' } },
+      { name: 'E8 Classic', desc: 'E8 Classic (2-step, 8/4)', steps: 2, profitTargets: [8, 4] },
+    ],
     notable: 'Drawdowns personnalisables (target/daily/max liés). US : MT5/cTrader bloqués. Paiements passés en on-demand (~avr 2026).',
     sources: ['help.e8markets.com/articles/11775980-e8-one', 'help.e8markets.com/articles/11755943-e8-signature-forex'],
     verified: '2026-06',
@@ -180,7 +201,12 @@ export const CFD_PROPFIRM_RULES = {
       priceIndicative: { '5000': 36, '10000': 66, '25000': 156, '50000': 289, '100000': 529, note: 'indicatif 3rd-party', confidence: 'low' },
       refundable: true, // 1-Step & 2-Step Standard only
     },
-    otherModels: ['1-Step (10%, daily 3%, max 6% static)', '2-Step Pro (6/6, daily 3%, max 6%)', '2-Step Flex (10/6, max 12%)', 'Zero (instant, max 5% trailing, consistency 15%)'],
+    otherModels: [
+      { name: '1-Step', desc: '1-Step (10%, daily 3%, max 6% static)', steps: 1, profitTargets: [10], dailyLoss: { pct: 3, basis: 'higher-of-balance-equity' }, maxLoss: { pct: 6, basis: 'static' } },
+      { name: '2-Step Pro', desc: '2-Step Pro (6/6, daily 3%, max 6%)', steps: 2, profitTargets: [6, 6], dailyLoss: { pct: 3, basis: 'higher-of-balance-equity' }, maxLoss: { pct: 6, basis: 'static' } },
+      { name: '2-Step Flex', desc: '2-Step Flex (10/6, max 12%)', steps: 2, profitTargets: [10, 6], maxLoss: { pct: 12, basis: 'static' } },
+      { name: 'Zero', desc: 'Zero (instant, max 5% trailing, consistency 15%)', steps: 1, profitTargets: null, dailyLoss: { pct: null, basis: null }, maxLoss: { pct: 5, basis: 'trailing-relative' }, consistency: '15% best-day' },
+    ],
     notable: 'Hold week-end désactivé sur comptes financés depuis le 29 janv 2026 (autorisé en éval). Max DD static sauf Zero (trailing).',
     sources: ['fundingpips.com/trading-objectives', 'help.fundingpips.com (1/2-Step, Zero)'],
     verified: '2026-06',
@@ -210,7 +236,12 @@ export const CFD_PROPFIRM_RULES = {
       priceIndicative: { note: '~$50 (5k) → ~$997 (200k) — non confirmé (page 403)', confidence: 'low' },
       refundable: false,
     },
-    otherModels: ['Alpha One (1-step, daily 4%, max 6% trailing — seul modèle trailing)', 'Alpha Pro 6% / 8%', 'Alpha Swing (2-step, on-demand only)', 'Alpha Three (3-step, 8/4/4, max 6% static)'],
+    otherModels: [
+      { name: 'Alpha One', desc: 'Alpha One (1-step, daily 4%, max 6% trailing — seul modèle trailing)', steps: 1, dailyLoss: { pct: 4, basis: 'balance' }, maxLoss: { pct: 6, basis: 'trailing-relative' } },
+      { name: 'Alpha Pro 6% / 8%', desc: 'Alpha Pro 6% / 8% (variantes de target du 2-step)', steps: 2 },
+      { name: 'Alpha Swing', desc: 'Alpha Swing (2-step, on-demand only)', steps: 2 },
+      { name: 'Alpha Three', desc: 'Alpha Three (3-step, 8/4/4, max 6% static)', steps: 3, profitTargets: [8, 4, 4], maxLoss: { pct: 6, basis: 'static' } },
+    ],
     notable: 'Trade min 2 min. Pas de group/copy. EAs MT5 (risk-mgmt) sur approbation. Alloc max $400k sur 4 plans. Pas d’expiration.',
     sources: ['help.alphacapitalgroup.uk (Alpha One/Pro/Swing/Three)'],
     verified: '2026-06',
@@ -240,7 +271,10 @@ export const CFD_PROPFIRM_RULES = {
       priceIndicative: { note: '~$89/10k de taille ; 100k ≈ $549 — indicatif', confidence: 'low' },
       refundable: true, // refunded with first payout (likely)
     },
-    otherModels: ['Instant Funding (pas de target, daily 6%, max 6% trailing relatif, pas de hold week-end)', '1-Step Express (10%, daily 4%, max 6% trailing relatif, hold week-end ok)'],
+    otherModels: [
+      { name: 'Instant Funding', desc: 'Instant Funding (pas de target, daily 6%, max 6% trailing relatif, pas de hold week-end)', steps: 1, profitTargets: null, dailyLoss: { pct: 6, basis: 'balance' }, maxLoss: { pct: 6, basis: 'trailing-relative' } },
+      { name: '1-Step Express', desc: '1-Step Express (10%, daily 4%, max 6% trailing relatif, hold week-end ok)', steps: 1, profitTargets: [10], dailyLoss: { pct: 4, basis: 'balance' }, maxLoss: { pct: 6, basis: 'trailing-relative' } },
+    ],
     notable: 'Swap-free. 1 trade / 30 j sinon clôture. Anciennes gammes (Prestige/Master…) retirées ~avr 2026.',
     sources: ['help.fundedtradingplus.com (instant / 1-step-express / consistency / leverage)'],
     verified: '2026-06',
@@ -271,7 +305,12 @@ export const CFD_PROPFIRM_RULES = {
       refundable: true, // bonus = fee, paid with 3rd payout (not cash refund)
       refundNote: 'Oui — sous forme de bonus (pas de cash), versé avec le 3e payout',
     },
-    otherModels: ['Rapid / Royal / Royal Pro (2-step)', 'Knight / Knight Pro (1-step, max 8% relatif)', 'Dragon (3-step)', 'Classic 1-Step / 2-Step'],
+    otherModels: [
+      { name: 'Rapid / Royal / Royal Pro', desc: 'Rapid / Royal / Royal Pro (2-step)', steps: 2 },
+      { name: 'Knight / Knight Pro', desc: 'Knight / Knight Pro (1-step, max 8% relatif)', steps: 1, maxLoss: { pct: 8, basis: 'trailing-relative' } },
+      { name: 'Dragon', desc: 'Dragon (3-step)', steps: 3 },
+      { name: 'Classic 1-Step / 2-Step', desc: 'Classic 1-Step / 2-Step' },
+    ],
     notable: 'Standard : news interdites + pas de hold week-end. Gros roster (9 programmes). Remboursement = bonus (pas cash) au 3e payout.',
     sources: ['help.thefundedtraderprogram.com (programmes, 403 — 3rd-party cross-check)'],
     verified: '2026-06',
@@ -301,7 +340,12 @@ export const CFD_PROPFIRM_RULES = {
       priceIndicative: { note: 'headline ~$300 (2-step) — par taille non confirmé', confidence: 'low' },
       refundable: null,
     },
-    otherModels: ['1-Step (10%, daily 4%, max 6% static)', 'Prime 2-Step (8/6)', 'Instant Elite (max 10% trailing)', 'Instant Lite (daily 2%, max 4% trailing)'],
+    otherModels: [
+      { name: '1-Step', desc: '1-Step (10%, daily 4%, max 6% static)', steps: 1, profitTargets: [10], dailyLoss: { pct: 4, basis: 'higher-of-balance-equity' }, maxLoss: { pct: 6, basis: 'static' } },
+      { name: 'Prime 2-Step', desc: 'Prime 2-Step (8/6)', steps: 2 },
+      { name: 'Instant Elite', desc: 'Instant Elite (max 10% trailing)', steps: 1, profitTargets: null, maxLoss: { pct: 10, basis: 'trailing-relative' } },
+      { name: 'Instant Lite', desc: 'Instant Lite (daily 2%, max 4% trailing)', steps: 1, profitTargets: null, dailyLoss: { pct: 2, basis: 'higher-of-balance-equity' }, maxLoss: { pct: 4, basis: 'trailing-relative' } },
+    ],
     notable: 'Ruleset refondu le 12 mars 2026 (martingale/grid désormais autorisés). Financé : risque par trade plafonné à 1,5%. Inactivité 30 j = breach.',
     sources: ['help.blueberryfunded.com (1-step / 2-step / scaling / payout)'],
     verified: '2026-06',

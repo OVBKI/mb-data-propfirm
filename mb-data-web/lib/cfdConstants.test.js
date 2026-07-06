@@ -12,11 +12,12 @@ import {
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from './cfdConstants'
-import { cfdFirmToSlug, cfdSlugToFirm, getAllCfdSlugs, getCfdFirmsOrdered } from './cfdSlugs'
+import { cfdFirmToSlug, cfdSlugToFirm, getAllCfdSlugs, getCfdFirmsOrdered, getCfdModels } from './cfdSlugs'
 
 const FIRMS = Object.keys(CFD_PROPFIRM_RULES)
 const DAILY_BASES = Object.keys(CFD_DAILY_BASIS_LABEL) // enums supported by cfdDailyLoss
 const MAX_BASES = Object.keys(CFD_MAX_BASIS_LABEL)     // enums supported by cfdMaxLoss
+const isPctOrNull = (v) => v == null || (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 100)
 
 const isPctInRange = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 100
 
@@ -42,9 +43,68 @@ describe('CFD_PROPFIRM_RULES — firm-level fields', () => {
       expect(firm.instruments.length).toBeGreaterThan(0)
       expect(typeof firm.verified).toBe('string')
       expect(Array.isArray(firm.otherModels)).toBe(true)
-      for (const m of firm.otherModels) expect(typeof m).toBe('string')
+      for (const m of firm.otherModels) {
+        // Structured sub-model: { name, desc, ...overrides }. `desc` (the FR summary
+        // rendered on the public /cfd pages) and `name` must both be non-empty strings.
+        expect(typeof m).toBe('object')
+        expect(typeof m.name).toBe('string')
+        expect(m.name.length).toBeGreaterThan(0)
+        expect(typeof m.desc).toBe('string')
+        expect(m.desc.length).toBeGreaterThan(0)
+        // Any stated rule override must sit within the supported enums/ranges.
+        if (m.steps != null) {
+          expect(Number.isInteger(m.steps)).toBe(true)
+          expect(m.steps).toBeGreaterThanOrEqual(1)
+        }
+        if (m.dailyLoss != null) {
+          expect(isPctOrNull(m.dailyLoss.pct)).toBe(true)
+          if (m.dailyLoss.basis != null) expect(DAILY_BASES).toContain(m.dailyLoss.basis)
+        }
+        if (m.maxLoss != null) {
+          expect(isPctOrNull(m.maxLoss.pct)).toBe(true)
+          if (m.maxLoss.basis != null) expect(MAX_BASES).toContain(m.maxLoss.basis)
+        }
+        if (Array.isArray(m.profitTargets)) {
+          for (const t of m.profitTargets) expect(isPctInRange(t)).toBe(true)
+        }
+      }
     })
   }
+})
+
+describe('getCfdModels — flagship + structured sub-models for the selectors', () => {
+  for (const name of FIRMS) {
+    it(`${name}: returns flagship first, then one entry per otherModels`, () => {
+      const firm = CFD_PROPFIRM_RULES[name]
+      const models = getCfdModels(name)
+      expect(models.length).toBe(1 + firm.otherModels.length)
+
+      const [flagship, ...others] = models
+      expect(flagship.isFlagship).toBe(true)
+      expect(flagship.name).toBe(firm.flagship.model)
+
+      others.forEach((m, i) => {
+        expect(m.isFlagship).toBe(false)
+        expect(typeof m.name).toBe('string')
+        expect(m.name.length).toBeGreaterThan(0)
+        // Firm-wide infra is inherited from the flagship unless the model overrides it.
+        const src = firm.otherModels[i]
+        if (src.accountSizes === undefined) {
+          expect(m.accountSizes).toEqual(firm.flagship.accountSizes)
+        }
+        if (src.profitSplit === undefined) {
+          expect(m.profitSplit).toEqual(firm.flagship.profitSplit)
+        }
+        // Rules are NEVER inherited: a model only exposes maxLoss if it stated one.
+        if (src.maxLoss === undefined) expect(m.maxLoss).toBeUndefined()
+        if (src.dailyLoss === undefined) expect(m.dailyLoss).toBeUndefined()
+      })
+    })
+  }
+
+  it('returns [] for an unknown firm', () => {
+    expect(getCfdModels('not-a-firm')).toEqual([])
+  })
 })
 
 describe('CFD_PROPFIRM_RULES — flagship fields consumed by the engine/UI', () => {

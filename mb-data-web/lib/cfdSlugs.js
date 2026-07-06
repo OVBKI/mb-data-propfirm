@@ -35,6 +35,48 @@ export function getCfdFirmsOrdered() {
     .map((name) => ({ name, slug: FIRM_TO_SLUG[name], ...CFD_PROPFIRM_RULES[name] }))
 }
 
+// Firm-wide "infrastructure" fields a sub-model inherits from the flagship unless it
+// overrides them. These are account/firm policies (not per-model rules), so inheriting
+// them is safe; the actual RULES (steps, profitTargets, dailyLoss, maxLoss,
+// minTradingDays, consistency) are NEVER inherited — a sub-model only exposes what its
+// catalog entry states explicitly, everything else stays absent (rendered as '—').
+const CFD_INFRA_KEYS = ['accountSizes', 'currency', 'leverage', 'platforms', 'payout', 'profitSplit', 'priceIndicative']
+
+// getCfdModels(firmName) → normalized [flagship, ...otherModels] for the selectors.
+// Each entry has a stable shape:
+//   { name, desc, isFlagship, steps?, accountSizes, currency, leverage, platforms,
+//     payout, profitSplit, profitTargets?, dailyLoss?, maxLoss?, minTradingDays?,
+//     consistency? }
+// - flagship: derived from firm.flagship (name = flagship.model, desc = null).
+// - otherModels: firm-wide infra merged UNDER the entry's own fields, so overrides win
+//   and unstated rules resolve to undefined (the UI treats that as '—' / editable).
+// Back-compat: a legacy string entry is wrapped as { name, desc } with no rules.
+export function getCfdModels(firmName) {
+  const firm = CFD_PROPFIRM_RULES[firmName]
+  if (!firm) return []
+  const fl = firm.flagship || {}
+  const flagshipModel = { ...fl, name: fl.model || firmName, desc: null, isFlagship: true }
+
+  const infra = {}
+  for (const k of CFD_INFRA_KEYS) if (fl[k] !== undefined) infra[k] = fl[k]
+
+  const others = (firm.otherModels || []).map((m) => {
+    if (typeof m === 'string') {
+      const name = m.split('(')[0].split('—')[0].trim() || m
+      return { name, desc: m, isFlagship: false }
+    }
+    const { name, desc, ...overrides } = m
+    return {
+      ...infra,
+      ...overrides,
+      name: name || (desc ? String(desc).split('(')[0].trim() : firmName),
+      desc: desc || null,
+      isFlagship: false,
+    }
+  })
+  return [flagshipModel, ...others]
+}
+
 // One-line factual taglines (FR). Derived from the sourced research, no invented rules.
 export const CFD_FIRM_TAGLINE = {
   'FTMO': 'La référence CFD historique : challenge 2-step, max loss statique 10%, payouts on-demand.',
