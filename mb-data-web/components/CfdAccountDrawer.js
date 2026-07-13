@@ -22,6 +22,7 @@ import { supabase } from '../lib/supabase'
 import { useDialog } from './useDialog'
 import CfdDrawdownCard from './health/CfdDrawdownCard'
 import { CFD_REPUTATION, CFD_PROPFIRM_RULES } from '../lib/cfdConstants'
+import { getCfdModels } from '../lib/cfdSlugs'
 import { getFirmLogo } from '../lib/firmLogos'
 
 function currencySymbol(cur) {
@@ -95,11 +96,50 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
   const spent = parseFloat(a.spent) || 0
   const net = totalPayouts - spent
 
+  // Phase progression: resolve the account's model to know how many challenge
+  // phases it has, so "Promote" advances Phase 1 → Phase 2 → … → Funded rather
+  // than jumping straight to funded. cfd_step: 1..totalSteps = challenge phase,
+  // 0 = funded.
+  const models = firmName ? getCfdModels(firmName) : []
+  const model = models.find(m => m.name === a.cfd_model) || models[0] || null
+  const totalSteps = model?.steps || CFD_PROPFIRM_RULES[firmName]?.flagship?.steps || 1
+  const curStep = Number(a.cfd_step)
+  // Effective phase for a Challenge account (a 0/invalid step is treated as the
+  // final phase so promote sends it to funded).
+  const effStep = Number.isFinite(curStep) && curStep >= 1 ? curStep : totalSteps
+  const isFinalPhase = effStep >= totalSteps
+
   async function changeStatus(newStatus) {
     if (savingStatus || newStatus === a.status) return
     setSavingStatus(true)
     try {
       const { error } = await supabase.from('accounts').update({ status: newStatus }).eq('id', a.id)
+      if (error) {
+        showToast?.(t('app.cfd.toastStatusFailed') + (error.message || t('app.cfd.toastUnknownError')))
+        return
+      }
+      showToast?.(t('app.cfd.toastStatusUpdated'))
+      if (onChanged) await onChanged()
+    } finally {
+      setSavingStatus(false)
+    }
+  }
+
+  // Advance one phase, or promote to funded from the final phase.
+  async function promote() {
+    if (savingStatus) return
+    setSavingStatus(true)
+    try {
+      let patch
+      if (!isFinalPhase) {
+        const nextStep = effStep + 1
+        patch = { cfd_step: nextStep }
+        const pt = model?.profitTargets?.[nextStep - 1]
+        if (pt != null) patch.profit_target_pct = pt // re-derive the new phase's target
+      } else {
+        patch = { status: 'Financé', cfd_step: 0 }
+      }
+      const { error } = await supabase.from('accounts').update(patch).eq('id', a.id)
       if (error) {
         showToast?.(t('app.cfd.toastStatusFailed') + (error.message || t('app.cfd.toastUnknownError')))
         return
@@ -211,18 +251,28 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
           showToast={showToast}
         />
 
-        {/* Status actions — Promote / Fail buttons (mirror the futures drawer). */}
+        {/* Status actions — phase-aware Promote / Fail buttons (mirror futures). */}
         <div style={{ marginTop: 18, borderTop: '0.5px solid var(--border)', paddingTop: 16 }}>
-          <div style={{ ...sectionTitleStyle, marginBottom: 8 }}>{t('app.cfd.changeStatus')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={sectionTitleStyle}>{t('app.cfd.changeStatus')}</div>
+            {a.status === 'Challenge' && totalSteps > 1 && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)' }}>
+                {t('app.cfd.phase')} {effStep}/{totalSteps}
+              </span>
+            )}
+          </div>
           {a.status !== 'Échoué' && (
             <div style={{ display: 'flex', gap: 8 }}>
               {a.status === 'Challenge' && (
                 <button
-                  onClick={() => changeStatus('Financé')}
+                  onClick={promote}
                   disabled={savingStatus}
                   style={{ flex: 1, padding: '10px 14px', background: 'linear-gradient(135deg, #1db87a 0%, #2ed694 100%)', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
                 >
-                  <span style={{ fontSize: 15 }}>{'🚀'}</span>{t('app.cfd.promote')}
+                  <span style={{ fontSize: 15 }}>{'🚀'}</span>
+                  {isFinalPhase
+                    ? t('app.cfd.promote')
+                    : t('app.cfd.promotePhase').replace('{from}', effStep).replace('{to}', effStep + 1)}
                 </button>
               )}
               <button

@@ -605,6 +605,8 @@ const FR = {
       editTitle: 'Modifier le compte CFD',
       // Actions statut (drawer)
       promote: 'Promouvoir en financé',
+      promotePhase: 'Valider phase {from} → {to}',
+      phase: 'Phase',
       markFailed: 'Marquer échoué',
       markBlown: 'Compte cassé',
       reopenChallenge: 'Revenir en challenge',
@@ -2406,6 +2408,8 @@ const EN = {
       editTitle: 'Edit CFD account',
       // Status actions (drawer)
       promote: 'Promote to funded',
+      promotePhase: 'Pass phase {from} → {to}',
+      phase: 'Phase',
       markFailed: 'Mark failed',
       markBlown: 'Blown',
       reopenChallenge: 'Reopen as challenge',
