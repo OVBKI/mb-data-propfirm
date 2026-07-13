@@ -7,6 +7,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Quantara (Quantara Technologies LLC, New Mexico) — PropFirm trading analytics platform. Next.js 14 (App Router) + Supabase + Vercel.
 Monorepo root is `/mb-data-web/`.
 
+## ⚠️ PENDING MANUAL ACTIONS — Supabase (owner: roxxnexus@gmail.com, not yet run as of 2026-07)
+
+These must be run by the user in the Supabase SQL Editor. The CFD code is already
+live on `main`/prod and depends on block A. Status: **NOT DONE** — user deferred.
+
+**Block A — BLOCKING** (CFD Health daily/max gauge writes these columns; without
+`day_start_equity` the daily gauge breaks in prod). Idempotent:
+```sql
+alter table accounts add column if not exists current_balance   numeric(12,2);
+alter table accounts add column if not exists balance_highwater numeric(12,2);
+alter table accounts add column if not exists day_start_balance numeric(12,2);
+alter table accounts add column if not exists day_start_equity  numeric(12,2);
+notify pgrst, 'reload schema';
+```
+
+**Block B — Security** (stop email enumeration via the username→email RPC):
+```sql
+revoke execute on function public.resolve_username_to_email(text) from public, anon, authenticated;
+grant  execute on function public.resolve_username_to_email(text) to service_role;
+```
+
+**Block C — RLS verification** (diagnostic first; the last table is admin-global,
+NOT per-user `user_id`, so its policy differs — generate policies only after seeing
+the diagnostic + column names):
+```sql
+select tablename, rowsecurity as rls_active
+from pg_tables
+where schemaname = 'public'
+  and tablename in ('trading_plan','trading_setups','trading_rule_items','referrals','propfirm_rules_overrides')
+order by tablename;
+```
+
+**Also pending (non-SQL): rotate secrets committed to git history** — `ENCRYPTION_KEY`
+(Fernet) + `RITHMIC_CRON_SECRET`, regenerate on Railway + Vercel. Plus Upstash
+distributed rate-limit (M13) on `/api/px-login`.
+
+Full source-of-truth for A/B is `supabase-schema.sql` (lines ~93-102, ~326-329).
+
 ## Commands
 
 ```bash
