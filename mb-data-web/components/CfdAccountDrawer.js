@@ -24,9 +24,6 @@ import CfdDrawdownCard from './health/CfdDrawdownCard'
 import { CFD_REPUTATION, CFD_PROPFIRM_RULES } from '../lib/cfdConstants'
 import { getFirmLogo } from '../lib/firmLogos'
 
-// Stored status literals — NEVER translate (these are DB values).
-const STATUS_VALUES = ['Challenge', 'Financé', 'Échoué']
-
 function currencySymbol(cur) {
   if (cur === 'EUR') return '€'
   if (cur === 'GBP') return '£'
@@ -77,7 +74,7 @@ const sectionTitleStyle = {
 const btnGhost = { padding: '8px 14px', fontSize: 12, fontWeight: 500, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.10)', color: 'var(--text2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', minHeight: 32 }
 const btnPrimary = { padding: '8px 16px', fontSize: 12, fontWeight: 600, background: 'var(--text)', color: '#0a0c10', border: '1px solid transparent', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', minHeight: 32 }
 
-export default function CfdAccountDrawer({ account, firm, onClose, onChanged, showToast }) {
+export default function CfdAccountDrawer({ account, firm, onClose, onChanged, showToast, onEdit }) {
   const t = useT()
   const ref = useDialog({ open: true, onClose })
 
@@ -198,7 +195,12 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
               </div>
             </div>
           </div>
-          <button onClick={onClose} style={btnGhost} aria-label={t('app.cfd.cancel')}>{'✕'}</button>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {onEdit && (
+              <button onClick={() => onEdit(a)} style={btnGhost}>{'✏'} {t('app.acctDrawer.edit')}</button>
+            )}
+            <button onClick={onClose} style={btnGhost} aria-label={t('app.cfd.cancel')}>{'✕'}</button>
+          </div>
         </div>
 
         {/* Rules + balance + gauges (reused, single source of gauge logic) */}
@@ -209,17 +211,38 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
           showToast={showToast}
         />
 
-        {/* Status control */}
+        {/* Status actions — Promote / Fail buttons (mirror the futures drawer). */}
         <div style={{ marginTop: 18, borderTop: '0.5px solid var(--border)', paddingTop: 16 }}>
           <div style={{ ...sectionTitleStyle, marginBottom: 8 }}>{t('app.cfd.changeStatus')}</div>
-          <select
-            value={a.status || 'Challenge'}
-            onChange={e => changeStatus(e.target.value)}
-            disabled={savingStatus}
-            style={{ ...inputStyle, opacity: savingStatus ? 0.6 : 1 }}
-          >
-            {STATUS_VALUES.map(s => <option key={s} value={s}>{statusLabel(t, s)}</option>)}
-          </select>
+          {a.status !== 'Échoué' && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {a.status === 'Challenge' && (
+                <button
+                  onClick={() => changeStatus('Financé')}
+                  disabled={savingStatus}
+                  style={{ flex: 1, padding: '10px 14px', background: 'linear-gradient(135deg, #1db87a 0%, #2ed694 100%)', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
+                >
+                  <span style={{ fontSize: 15 }}>{'🚀'}</span>{t('app.cfd.promote')}
+                </button>
+              )}
+              <button
+                onClick={() => { if (confirm(t('app.cfd.confirmFail'))) changeStatus('Échoué') }}
+                disabled={savingStatus}
+                style={{ flex: 1, padding: '10px 14px', background: 'transparent', border: '1px solid rgba(232,80,74,0.4)', color: '#e8504a', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
+              >
+                <span style={{ fontSize: 15 }}>{'💔'}</span>{a.status === 'Challenge' ? t('app.cfd.markFailed') : t('app.cfd.markBlown')}
+              </button>
+            </div>
+          )}
+          {a.status !== 'Challenge' && (
+            <button
+              onClick={() => changeStatus('Challenge')}
+              disabled={savingStatus}
+              style={{ ...btnGhost, marginTop: 8, width: '100%', opacity: savingStatus ? 0.6 : 1 }}
+            >
+              {'↩'} {t('app.cfd.reopenChallenge')}
+            </button>
+          )}
         </div>
 
         {/* Payouts */}

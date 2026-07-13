@@ -119,25 +119,57 @@ function buildDefaults(catalog, firmName) {
   return buildDefaultsFromModel(getCfdModels(firmName)[0], catalog)
 }
 
-export default function CfdAccountModal({ open, onClose, onSaved, user, showToast }) {
+// `account` (optional) switches the modal to EDIT mode: it pre-fills from an
+// existing CFD account row (must carry `firmName`) and UPDATEs it instead of
+// inserting. Null/undefined → the original create flow.
+export default function CfdAccountModal({ open, onClose, onSaved, user, showToast, account }) {
   if (!open) return null
-  return <CfdAccountModalInner onClose={onClose} onSaved={onSaved} user={user} showToast={showToast} />
+  // key forces a clean remount (fresh form state) when switching target account.
+  return <CfdAccountModalInner key={account?.id || 'new'} account={account || null} onClose={onClose} onSaved={onSaved} user={user} showToast={showToast} />
+}
+
+// Build the editable form from an existing account row (EDIT mode prefill).
+function buildFormFromAccount(a) {
+  return {
+    cfd_model: a.cfd_model || '',
+    account_size: a.account_size != null ? String(a.account_size) : '',
+    cfd_step: a.cfd_step != null ? a.cfd_step : 1,
+    platform: a.platform || '',
+    currency: a.currency || 'USD',
+    buy_date: a.buy_date || new Date().toISOString().slice(0, 10),
+    spent: a.spent != null ? String(a.spent) : '',
+    status: a.status || 'Challenge',
+    name: a.name || '',
+    notes: a.notes || '',
+    profit_target_pct: a.profit_target_pct != null ? String(a.profit_target_pct) : '',
+    daily_loss_pct: a.daily_loss_pct != null ? String(a.daily_loss_pct) : '',
+    daily_loss_basis: a.daily_loss_basis || '',
+    max_loss_pct: a.max_loss_pct != null ? String(a.max_loss_pct) : '',
+    max_loss_basis: a.max_loss_basis || '',
+    profit_split: a.profit_split != null ? String(a.profit_split) : '',
+    leverage_forex: a.leverage_forex != null ? String(a.leverage_forex) : '',
+  }
 }
 
 // Inner component so form state resets cleanly each time the modal opens
 // (mount/unmount on `open`), preserving the original per-open default behavior.
-function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
+function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
+  const isEdit = !!account
   const t = useT()
   const firmsCatalog = useMemo(() => getCfdFirmsOrdered(), [])
-  const [firmName, setFirmName] = useState(firmsCatalog[0]?.name || '')
+  // In edit mode the firm is fixed (moving an account across firms would change its
+  // firm_id) — seed from the account and keep the picker read-only.
+  const [firmName, setFirmName] = useState(
+    isEdit ? (account.firmName || firmsCatalog[0]?.name || '') : (firmsCatalog[0]?.name || ''),
+  )
   const catalog = CFD_PROPFIRM_RULES[firmName]
 
   // Normalized [flagship, ...sub-models] for this firm. Each carries real per-model
   // rules (sub-models inherit firm-wide infra, expose only the rules they document).
   const models = useMemo(() => getCfdModels(firmName), [firmName])
 
-  // Form state
-  const [form, setForm] = useState(() => buildDefaults(catalog, firmName))
+  // Form state (prefilled from the account in edit mode, else from the flagship).
+  const [form, setForm] = useState(() => (isEdit ? buildFormFromAccount(account) : buildDefaults(catalog, firmName)))
   const [saving, setSaving] = useState(false)
 
   const selectedModel = useMemo(
@@ -168,24 +200,70 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
     })
   }
 
-  const modelOptions = useMemo(() => models.map(m => m.name), [models])
+  // Options always keep the current value selectable (edit mode / custom firm).
+  const modelOptions = useMemo(() => {
+    const opts = models.map(m => m.name)
+    if (form.cfd_model && !opts.includes(form.cfd_model)) opts.unshift(form.cfd_model)
+    return opts
+  }, [models, form.cfd_model])
+
+  const sizeOptions = useMemo(() => {
+    const opts = (selectedModel?.accountSizes || []).map(String)
+    if (form.account_size && !opts.includes(String(form.account_size))) opts.unshift(String(form.account_size))
+    return opts
+  }, [selectedModel, form.account_size])
 
   const stepOptions = useMemo(() => {
     const steps = selectedModel?.steps || 1
     const opts = [0]
     for (let i = 1; i <= steps; i++) opts.push(i)
+    const cur = Number(form.cfd_step)
+    if (Number.isFinite(cur) && !opts.includes(cur)) opts.push(cur)
     return opts
-  }, [selectedModel])
+  }, [selectedModel, form.cfd_step])
 
   // Sous-modèle sélectionné (≠ phare) → on affiche son résumé catalogue en rappel.
   const isNonFlagshipModel = !!(selectedModel && !selectedModel.isFlagship)
   const selectedModelHint = isNonFlagshipModel ? (selectedModel.desc || null) : null
 
+  // Editable account columns shared by insert (create) and update (edit).
+  function accountFields() {
+    return {
+      buy_date: form.buy_date || new Date().toISOString().slice(0, 10),
+      currency: form.currency || 'USD',
+      spent: parseFloat(form.spent) || 0,
+      status: form.status || 'Challenge',
+      name: (form.name || '').trim() || null,
+      notes: (form.notes || '').trim() || null,
+      cfd_model: form.cfd_model || null,
+      account_size: form.account_size ? parseFloat(form.account_size) : null,
+      cfd_step: form.cfd_step != null ? parseInt(form.cfd_step, 10) : 1,
+      profit_target_pct: form.profit_target_pct !== '' && form.profit_target_pct != null ? parseFloat(form.profit_target_pct) : null,
+      daily_loss_pct: form.daily_loss_pct !== '' && form.daily_loss_pct != null ? parseFloat(form.daily_loss_pct) : null,
+      daily_loss_basis: form.daily_loss_basis || null,
+      max_loss_pct: form.max_loss_pct !== '' && form.max_loss_pct != null ? parseFloat(form.max_loss_pct) : null,
+      max_loss_basis: form.max_loss_basis || null,
+      profit_split: form.profit_split !== '' && form.profit_split != null ? parseInt(form.profit_split, 10) : null,
+      platform: form.platform || null,
+      leverage_forex: form.leverage_forex !== '' && form.leverage_forex != null ? parseInt(form.leverage_forex, 10) : null,
+    }
+  }
+
   async function save() {
     if (saving) return
     setSaving(true)
     try {
-      // a. Ensure a CFD firm row exists (user_id + name + market='cfd').
+      // EDIT: update the existing account in place (firm unchanged).
+      if (isEdit) {
+        const { error: updErr } = await supabase.from('accounts').update(accountFields()).eq('id', account.id)
+        if (updErr) { showToast(t('app.cfd.toastAccountFailed') + (updErr.message || t('app.cfd.toastUnknownError'))); setSaving(false); return }
+        showToast(t('app.cfd.toastAccountUpdated'))
+        onClose()
+        if (onSaved) await onSaved()
+        return
+      }
+
+      // CREATE — a. Ensure a CFD firm row exists (user_id + name + market='cfd').
       let firmId
       const { data: existing, error: findErr } = await supabase
         .from('firms')
@@ -210,29 +288,9 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
       }
 
       // b. Insert the account.
-      const payload = {
-        user_id: user.id,
-        firm_id: firmId,
-        market: 'cfd',
-        buy_date: form.buy_date || new Date().toISOString().slice(0, 10),
-        currency: form.currency || 'USD',
-        spent: parseFloat(form.spent) || 0,
-        status: form.status || 'Challenge',
-        name: (form.name || '').trim() || null,
-        notes: (form.notes || '').trim() || null,
-        cfd_model: form.cfd_model || null,
-        account_size: form.account_size ? parseFloat(form.account_size) : null,
-        cfd_step: form.cfd_step != null ? parseInt(form.cfd_step, 10) : 1,
-        profit_target_pct: form.profit_target_pct !== '' && form.profit_target_pct != null ? parseFloat(form.profit_target_pct) : null,
-        daily_loss_pct: form.daily_loss_pct !== '' && form.daily_loss_pct != null ? parseFloat(form.daily_loss_pct) : null,
-        daily_loss_basis: form.daily_loss_basis || null,
-        max_loss_pct: form.max_loss_pct !== '' && form.max_loss_pct != null ? parseFloat(form.max_loss_pct) : null,
-        max_loss_basis: form.max_loss_basis || null,
-        profit_split: form.profit_split !== '' && form.profit_split != null ? parseInt(form.profit_split, 10) : null,
-        platform: form.platform || null,
-        leverage_forex: form.leverage_forex !== '' && form.leverage_forex != null ? parseInt(form.leverage_forex, 10) : null,
-      }
-      const { error: acctErr } = await supabase.from('accounts').insert(payload)
+      const { error: acctErr } = await supabase.from('accounts').insert({
+        user_id: user.id, firm_id: firmId, market: 'cfd', ...accountFields(),
+      })
       if (acctErr) { showToast(t('app.cfd.toastAccountFailed') + (acctErr.message || t('app.cfd.toastUnknownError'))); setSaving(false); return }
 
       showToast(t('app.cfd.toastAccountAdded'))
@@ -247,24 +305,31 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 12px', overflowY: 'auto' }}>
-      <div role="dialog" aria-modal="true" aria-label={t('app.cfd.formTitle')} onClick={e => e.stopPropagation()} style={{ ...S.card, padding: 28, width: 560, maxWidth: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
-        <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 20 }}>{t('app.cfd.formTitle')}</h3>
+      <div role="dialog" aria-modal="true" aria-label={isEdit ? t('app.cfd.editTitle') : t('app.cfd.formTitle')} onClick={e => e.stopPropagation()} style={{ ...S.card, padding: 28, width: 560, maxWidth: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+        <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 20 }}>{isEdit ? t('app.cfd.editTitle') : t('app.cfd.formTitle')}</h3>
 
-        {/* Firm picker */}
+        {/* Firm picker — read-only in edit mode (the account's firm is fixed). */}
         <div style={{ marginBottom: 16 }}>
           <label style={S.label}>{t('app.cfd.formFirm')}</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-            {firmsCatalog.map(f => {
-              const rep = CFD_REPUTATION[f.reputation]
-              const selected = f.name === firmName
-              return (
-                <button type="button" key={f.name} onClick={() => onPickFirm(f.name)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '10px 10px', borderRadius: 8, background: selected ? 'rgba(45,111,255,0.12)' : 'var(--surface2)', border: `1px solid ${selected ? 'var(--blue-light)' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <span style={{ fontSize: 12, fontWeight: selected ? 700 : 500, color: selected ? 'var(--blue-light)' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
-                  {rep && <span style={{ width: 8, height: 8, borderRadius: '50%', background: rep.color, flexShrink: 0 }} title={repTierLabel(t, f.reputation, rep)} />}
-                </button>
-              )
-            })}
-          </div>
+          {isEdit ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, background: 'var(--surface2)', border: '1px solid var(--border2)' }}>
+              {CFD_REPUTATION[catalog?.reputation] && <span style={{ width: 8, height: 8, borderRadius: '50%', background: CFD_REPUTATION[catalog.reputation].color, flexShrink: 0 }} />}
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{firmName}</span>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+              {firmsCatalog.map(f => {
+                const rep = CFD_REPUTATION[f.reputation]
+                const selected = f.name === firmName
+                return (
+                  <button type="button" key={f.name} onClick={() => onPickFirm(f.name)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '10px 10px', borderRadius: 8, background: selected ? 'rgba(45,111,255,0.12)' : 'var(--surface2)', border: `1px solid ${selected ? 'var(--blue-light)' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <span style={{ fontSize: 12, fontWeight: selected ? 700 : 500, color: selected ? 'var(--blue-light)' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+                    {rep && <span style={{ width: 8, height: 8, borderRadius: '50%', background: rep.color, flexShrink: 0 }} title={repTierLabel(t, f.reputation, rep)} />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -299,7 +364,7 @@ function CfdAccountModalInner({ onClose, onSaved, user, showToast }) {
           <div>
             <label style={S.label}>{t('app.cfd.accountSize')} ({form.currency})</label>
             <select value={form.account_size} onChange={set('account_size')} style={S.input}>
-              {(selectedModel?.accountSizes || []).map(s => (
+              {sizeOptions.map(s => (
                 <option key={s} value={s}>{fmtSize(s)}</option>
               ))}
             </select>
