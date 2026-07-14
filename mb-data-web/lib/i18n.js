@@ -1414,6 +1414,9 @@ const FR = {
     },
     acctDrawer: {
       edit: 'Modifier',
+      close: 'Fermer',
+      deletePayoutAria: 'Supprimer le payout',
+      accountFallback: 'Compte',
       firm: 'Firme',
       buyDate: 'Date achat',
       challenge: 'Challenge',
@@ -3243,6 +3246,9 @@ const EN = {
     },
     acctDrawer: {
       edit: 'Edit',
+      close: 'Close',
+      deletePayoutAria: 'Delete payout',
+      accountFallback: 'Account',
       firm: 'Firm',
       buyDate: 'Purchase date',
       challenge: 'Challenge',
