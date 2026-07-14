@@ -12,14 +12,29 @@ Monorepo root is `/mb-data-web/`.
 These must be run by the user in the Supabase SQL Editor. The CFD code is already
 live on `main`/prod and depends on block A. Status: **NOT DONE** — user deferred.
 
-**Block A — BLOCKING** (CFD Health daily/max gauge writes these columns; without
-`day_start_equity` the daily gauge breaks in prod). Idempotent:
+**Block A — HARD LAUNCH BLOCKER** (confirmed by the 2026-07 crash audit: the CFD
+balance editor writes all four columns in ONE update; if any is missing in prod the
+update fails atomically → CFD balance saving + both gauges are 100% non-functional,
+every save shows an error toast). Idempotent:
 ```sql
 alter table accounts add column if not exists current_balance   numeric(12,2);
 alter table accounts add column if not exists balance_highwater numeric(12,2);
 alter table accounts add column if not exists day_start_balance numeric(12,2);
 alter table accounts add column if not exists day_start_equity  numeric(12,2);
 notify pgrst, 'reload schema';
+```
+
+**Block D — feedback table** (open-beta feedback widget, components/BetaFeedback.js;
+without it the widget's insert errors and users see a failure toast):
+```sql
+create table if not exists feedback (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete set null,
+  email text, type text not null default 'bug' check (type in ('bug','idea','other')),
+  message text not null, url text, user_agent text, created_at timestamptz default now()
+);
+alter table feedback enable row level security;
+create policy "Users insert own feedback" on feedback for insert with check (auth.uid() = user_id);
 ```
 
 **Block B — Security** (stop email enumeration via the username→email RPC):

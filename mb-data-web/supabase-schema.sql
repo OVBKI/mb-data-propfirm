@@ -444,6 +444,23 @@ create table if not exists waitlist (
 alter table waitlist enable row level security;
 create policy "Anyone can insert waitlist" on waitlist for insert with check (true);
 
+-- FEEDBACK — retours beta (components/BetaFeedback.js). Insert client-side par
+-- l'utilisateur connecté ; lecture réservée au service role (admin). NEW: open beta.
+create table if not exists feedback (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete set null,
+  email text,
+  type text not null default 'bug' check (type in ('bug','idea','other')),
+  message text not null,
+  url text,
+  user_agent text,
+  created_at timestamptz default now()
+);
+alter table feedback enable row level security;
+-- Un utilisateur connecté ne peut insérer que ses propres retours ; personne ne
+-- peut lire la table via l'anon key (les admins passent par le service role).
+create policy "Users insert own feedback" on feedback for insert with check (auth.uid() = user_id);
+
 -- GROUPS — groupes privés avec code d'invitation
 create table if not exists groups (
   id uuid default gen_random_uuid() primary key,

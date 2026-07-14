@@ -550,6 +550,26 @@ const FR = {
       definePseudo:  '⊕ Définir un pseudo',
       quickEdit:     'Édition rapide (pseudo, bio)',
     },
+    // ── Feedback beta (components/BetaFeedback.js) ──
+    beta: {
+      bannerText: 'Quantara est en beta ouverte — merci de tester ! Un bug ou une idée ?',
+      bannerCta: 'Donner mon avis',
+      dismiss: 'Masquer',
+      floatingLabel: 'Envoyer un retour',
+      title: 'Ton avis compte',
+      subtitle: 'Bug, idée ou remarque — dis-nous tout, ça aide vraiment à améliorer Quantara.',
+      typeBug: '🐛 Bug',
+      typeIdea: '💡 Idée',
+      typeOther: '💬 Autre',
+      messageLabel: 'Message',
+      messagePlaceholder: 'Décris le bug (avec les étapes) ou ton idée…',
+      emailLabel: 'Email (optionnel, pour un suivi)',
+      send: 'Envoyer',
+      cancel: 'Annuler',
+      sent: 'Merci ! Ton retour a bien été envoyé ✓',
+      sendFailed: 'Échec de l’envoi : ',
+      messageRequired: 'Écris un message avant d’envoyer.',
+    },
     // ── Onglet CFD (vertical CFD/forex, séparé du futures) ──
     cfd: {
       title: 'Comptes CFD',
@@ -2352,6 +2372,26 @@ const EN = {
       adminPanel:    '🔧 Admin Panel',
       definePseudo:  '⊕ Set a username',
       quickEdit:     'Quick edit (username, bio)',
+    },
+    // ── Beta feedback (components/BetaFeedback.js) ──
+    beta: {
+      bannerText: 'Quantara is in open beta — thanks for testing! Found a bug or have an idea?',
+      bannerCta: 'Give feedback',
+      dismiss: 'Hide',
+      floatingLabel: 'Send feedback',
+      title: 'Your feedback matters',
+      subtitle: 'Bug, idea or remark — tell us anything, it genuinely helps improve Quantara.',
+      typeBug: '🐛 Bug',
+      typeIdea: '💡 Idea',
+      typeOther: '💬 Other',
+      messageLabel: 'Message',
+      messagePlaceholder: 'Describe the bug (with steps) or your idea…',
+      emailLabel: 'Email (optional, for follow-up)',
+      send: 'Send',
+      cancel: 'Cancel',
+      sent: 'Thanks! Your feedback was sent ✓',
+      sendFailed: 'Failed to send: ',
+      messageRequired: 'Write a message before sending.',
     },
     // ── CFD tab (CFD/forex vertical, separate from futures) ──
     cfd: {
