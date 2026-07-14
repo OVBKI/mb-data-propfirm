@@ -80,6 +80,22 @@ function fmtSize(n) {
   return String(v)
 }
 
+// Bulk-create names (mirror of layout.js generateAccountNames): increments a
+// trailing "-N" in the base name, else appends "-001", "-002"… Empty base → [''].
+function generateCfdAccountNames(baseName, quantity) {
+  const qty = Math.max(1, parseInt(quantity, 10) || 1)
+  const trimmed = (baseName || '').trim()
+  if (!trimmed) return Array(qty).fill('')
+  const match = trimmed.match(/^(.*-)(\d+)$/)
+  if (match) {
+    const prefix = match[1]
+    const startNum = parseInt(match[2], 10)
+    const padWidth = match[2].length
+    return Array.from({ length: qty }, (_, i) => prefix + String(startNum + i).padStart(padWidth, '0'))
+  }
+  return Array.from({ length: qty }, (_, i) => `${trimmed}-${String(i + 1).padStart(3, '0')}`)
+}
+
 // Only the rule/size fields that depend on the selected MODEL (used both when the
 // model changes and when the phase does). A null rule → '' (blank & editable) so a
 // sub-model that doesn't document a value never inherits a stale one from another model.
@@ -110,6 +126,9 @@ function buildDefaultsFromModel(model, catalog) {
     status: 'Challenge',
     name: '',
     notes: '',
+    quantity: '1',
+    activation_fee: '',
+    activation_date: '',
     ...modelRuleFields(model, 1),
   }
 }
@@ -141,6 +160,9 @@ function buildFormFromAccount(a) {
     status: a.status || 'Challenge',
     name: a.name || '',
     notes: a.notes || '',
+    quantity: '1', // edit = single account
+    activation_fee: a.activation_fee != null && a.activation_fee !== 0 ? String(a.activation_fee) : '',
+    activation_date: a.activation_date || '',
     profit_target_pct: a.profit_target_pct != null ? String(a.profit_target_pct) : '',
     daily_loss_pct: a.daily_loss_pct != null ? String(a.daily_loss_pct) : '',
     daily_loss_basis: a.daily_loss_basis || '',
@@ -235,9 +257,12 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
       status: form.status || 'Challenge',
       name: (form.name || '').trim() || null,
       notes: (form.notes || '').trim() || null,
+      activation_fee: parseFloat(form.activation_fee) || 0,
+      activation_date: form.activation_date || null,
       cfd_model: form.cfd_model || null,
       account_size: form.account_size ? parseFloat(form.account_size) : null,
-      cfd_step: form.cfd_step != null ? parseInt(form.cfd_step, 10) : 1,
+      // Funded accounts are phase 0 — keep step coherent with status (audit fix).
+      cfd_step: form.status === 'Financé' ? 0 : (form.cfd_step != null ? parseInt(form.cfd_step, 10) : 1),
       profit_target_pct: form.profit_target_pct !== '' && form.profit_target_pct != null ? parseFloat(form.profit_target_pct) : null,
       daily_loss_pct: form.daily_loss_pct !== '' && form.daily_loss_pct != null ? parseFloat(form.daily_loss_pct) : null,
       daily_loss_basis: form.daily_loss_basis || null,
@@ -287,13 +312,19 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
         firmId = inserted.id
       }
 
-      // b. Insert the account.
-      const { error: acctErr } = await supabase.from('accounts').insert({
-        user_id: user.id, firm_id: firmId, market: 'cfd', ...accountFields(),
-      })
+      // b. Insert the account(s) — quantity > 1 bulk-creates with generated names.
+      const qty = Math.max(1, parseInt(form.quantity, 10) || 1)
+      const base = { user_id: user.id, firm_id: firmId, market: 'cfd', ...accountFields() }
+      let acctErr
+      if (qty > 1) {
+        const rows = generateCfdAccountNames(form.name, qty).map(n => ({ ...base, name: (n || '').trim() || null }))
+        acctErr = (await supabase.from('accounts').insert(rows)).error
+      } else {
+        acctErr = (await supabase.from('accounts').insert(base)).error
+      }
       if (acctErr) { showToast(t('app.cfd.toastAccountFailed') + (acctErr.message || t('app.cfd.toastUnknownError'))); setSaving(false); return }
 
-      showToast(t('app.cfd.toastAccountAdded'))
+      showToast(qty > 1 ? t('app.cfd.toastAccountsAdded').replace('{n}', qty) : t('app.cfd.toastAccountAdded'))
       onClose()
       if (onSaved) await onSaved()
     } finally {
@@ -444,10 +475,38 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
             </select>
           </div>
 
+          {/* Funded section — activation date + fee, shown once the account is financé. */}
+          {form.status === 'Financé' && (
+            <div style={{ gridColumn: '1/-1', background: 'rgba(29,184,122,0.07)', border: '0.5px solid #1db87a55', borderRadius: 8, padding: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#1db87a', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{'✅'} {t('app.cfd.fundedSection')}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={S.label}>{t('app.cfd.activationDate')}</label>
+                  <input type="date" value={form.activation_date} onChange={set('activation_date')} style={S.input} />
+                </div>
+                <div>
+                  <label style={S.label}>{t('app.cfd.activationFee')} ({currencySymbol(form.currency)})</label>
+                  <input type="number" value={form.activation_fee} onChange={set('activation_fee')} style={S.input} />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div style={{ gridColumn: '1/-1' }}>
             <label style={S.label}>{t('app.cfd.name')}</label>
             <input value={form.name} onChange={set('name')} style={S.input} />
           </div>
+
+          {/* Quantity — bulk-create N accounts (create mode only). */}
+          {!isEdit && (
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={S.label}>{t('app.cfd.quantity')}</label>
+              <input type="number" min="1" value={form.quantity} onChange={set('quantity')} style={S.input} />
+              {Number(form.quantity) > 1 && (
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 5 }}>{t('app.cfd.quantityHint')}</div>
+              )}
+            </div>
+          )}
           <div style={{ gridColumn: '1/-1' }}>
             <label style={S.label}>{t('app.cfd.notes')}</label>
             <input value={form.notes} onChange={set('notes')} style={S.input} />
