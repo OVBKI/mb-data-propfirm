@@ -43,16 +43,12 @@ revoke execute on function public.resolve_username_to_email(text) from public, a
 grant  execute on function public.resolve_username_to_email(text) to service_role;
 ```
 
-**Block C — RLS verification** (diagnostic first; the last table is admin-global,
-NOT per-user `user_id`, so its policy differs — generate policies only after seeing
-the diagnostic + column names):
-```sql
-select tablename, rowsecurity as rls_active
-from pg_tables
-where schemaname = 'public'
-  and tablename in ('trading_plan','trading_setups','trading_rule_items','referrals','propfirm_rules_overrides')
-order by tablename;
-```
+**Block C — RLS verification — ✅ DONE (verified 2026-07).** All five tables
+(`trading_plan`, `trading_setups`, `trading_rule_items`, `referrals`,
+`propfirm_rules_overrides`) confirmed `rowsecurity = true` with correct policies
+already in place (per-user "Users manage own" + "Admin read all"; referrals =
+insert-authenticated/select-own; propfirm_rules_overrides = read-public/write-admin).
+No action left here — data isolation between users is enforced.
 
 **Also pending (non-SQL): rotate secrets committed to git history** — `ENCRYPTION_KEY`
 (Fernet) + `RITHMIC_CRON_SECRET`, regenerate on Railway + Vercel. Plus Upstash
