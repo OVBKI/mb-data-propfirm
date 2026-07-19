@@ -71,6 +71,33 @@ export default function AdminSystemPage() {
     } catch (e) { setRecapTest({ error: e.message }) }
   }
 
+  // ── Notifications diagnostics (email + push) ──
+  const [notif, setNotif] = useState(null)
+  const [notifBusy, setNotifBusy] = useState(null) // 'email' | 'push' | null
+  async function loadNotif() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/notif-health', { headers: { Authorization: `Bearer ${session?.access_token}` } })
+      const j = await res.json()
+      setNotif(res.ok ? j : { error: j.error || ('HTTP ' + res.status) })
+    } catch (e) { setNotif({ error: e.message }) }
+  }
+  async function sendNotifTest(type) {
+    setNotifBusy(type)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/notif-health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ type }),
+      })
+      const j = await res.json()
+      if (j.ok) alert(type === 'email' ? `Email de test envoyé à ${j.to} ✓` : `Push de test envoyé (${j.sent} appareil·s) ✓`)
+      else alert(`Échec : ${j.error || ('HTTP ' + res.status)}${j.hint ? '\n\n💡 ' + j.hint : ''}`)
+      loadNotif()
+    } catch (e) { alert('Erreur : ' + e.message) } finally { setNotifBusy(null) }
+  }
+
   async function loadHealth() {
     setLoading(true)
     // Counts par table
@@ -97,7 +124,7 @@ export default function AdminSystemPage() {
     setLoading(false)
   }
 
-  useEffect(() => { loadHealth() }, [])
+  useEffect(() => { loadHealth(); loadNotif() }, [])
 
   // Check des env vars client (les seules accessibles côté navigateur)
   const envChecks = [
@@ -144,6 +171,52 @@ export default function AdminSystemPage() {
           <div style={{ fontSize: 12, color: C.text2 }}>
             {totalRows} rows total · {DB_TABLES.length} tables monitorées
           </div>
+        </div>
+      </div>
+
+      {/* === Notifications (email + push) === */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, color: C.text3,
+          textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 12,
+        }}>🔔 Notifications — email &amp; push</div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18 }}>
+          {!notif ? (
+            <div style={{ color: C.text3, fontSize: 12 }}>⏳ Chargement…</div>
+          ) : notif.error ? (
+            <div style={{ color: C.red, fontSize: 12 }}>⚠ {notif.error}</div>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8, marginBottom: 14 }}>
+                {Object.entries(notif.env).map(([k, ok]) => (
+                  <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                    <span>{ok ? '✅' : '❌'}</span>
+                    <span style={{ color: ok ? C.text2 : C.red, fontFamily: 'monospace', wordBreak: 'break-all' }}>{k}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: C.text2, marginBottom: 14 }}>
+                Abonnements push : <b style={{ color: C.text }}>{notif.push.total}</b> au total · <b style={{ color: C.text }}>{notif.push.mine}</b> pour ton compte
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={() => sendNotifTest('email')} disabled={!!notifBusy} style={{
+                  padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8,
+                  background: C.blue, color: '#fff', border: 'none', cursor: notifBusy ? 'wait' : 'pointer',
+                  fontFamily: 'inherit', opacity: notifBusy ? 0.6 : 1,
+                }}>{notifBusy === 'email' ? '⏳' : '📧'} M&apos;envoyer un email de test</button>
+                <button onClick={() => sendNotifTest('push')} disabled={!!notifBusy} style={{
+                  padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8,
+                  background: 'transparent', color: C.text2, border: `1px solid ${C.border}`,
+                  cursor: notifBusy ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: notifBusy ? 0.6 : 1,
+                }}>{notifBusy === 'push' ? '⏳' : '🔔'} M&apos;envoyer un push de test</button>
+              </div>
+              <div style={{ fontSize: 11, color: C.text3, marginTop: 10, lineHeight: 1.5 }}>
+                Une var <b style={{ color: C.red }}>❌</b> = à ajouter dans Vercel (puis redéployer pour les <code>NEXT_PUBLIC_*</code>).
+                Email en échec malgré la clé présente = domaine <code>quantara.tech</code> non vérifié dans Resend (DKIM/SPF).
+                Le push de test exige un abonnement actif (toggle sur <code>/app/alerts</code>, même navigateur).
+              </div>
+            </>
+          )}
         </div>
       </div>
 
