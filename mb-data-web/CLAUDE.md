@@ -30,6 +30,28 @@ The SQL for A/B/D lives in `supabase-schema.sql` (feedback table ~line 447; bala
 columns ~93-102; revoke ~326-329). Still open (non-blocking): Upstash distributed
 rate-limit (M13) on `/api/px-login`; Sentry test; analytics wiring.
 
+### Notifications — RESOLVED 2026-07 (was fully broken)
+Symptom: no scheduled emails/push (monthly recap, bill reminders, onboarding,
+drawdown guardian) despite the manual test email working. Root cause: Vercel's
+scheduled `GET /api/cron/daily` returned **401** — on this plan Vercel did NOT
+attach the `Authorization: Bearer $CRON_SECRET` header even though CRON_SECRET was
+set, so the secret check failed and the dispatcher never fanned out. Fix (commit
+a4613fc): the dispatcher now also accepts the non-forgeable `x-vercel-cron` header
+(Vercel strips incoming `x-vercel-*`). Verified live: `/api/cron/daily` → 200.
+Debug aids added: `/admin/system` → 🔔 Notifications card (env ✅/❌ for RESEND +
+3 VAPID + CRON_SECRET, push-subscription counts, cron heartbeat, test email/push
+buttons) backed by `/api/admin/notif-health`.
+
+**Optional SQL — `cron_heartbeat`** (only needed for the admin "cron last run"
+green indicator; the cron itself works without it):
+```sql
+create table if not exists cron_heartbeat (job text primary key, last_run_at timestamptz, last_result jsonb);
+alter table cron_heartbeat enable row level security;  -- service-role only, no policy
+```
+Also required for prod notifications (config, not code): RESEND domain
+`quantara.tech` verified (DKIM/SPF) + the 3 VAPID keys + RESEND_API_KEY + CRON_SECRET
+present in Vercel Production. Confirm via the /admin/system card.
+
 ## Commands
 
 ```bash
