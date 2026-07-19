@@ -472,6 +472,34 @@ create table if not exists cron_heartbeat (
 alter table cron_heartbeat enable row level security;
 -- Aucune policy : seul le service role (dispatcher + lecture admin) accède à la table.
 
+-- CUSTOM_PROPFIRMS — firmes gérées par l'admin (en plus du catalogue statique
+-- lib/constants.js + lib/cfdConstants.js). CRUD via /api/admin/propfirms (service
+-- role) ; lecture publique pour le merge in-app. `data` = blob de règles (forme
+-- selon le marché : flagship/otherModels pour CFD, plans/rules pour futures).
+create table if not exists custom_propfirms (
+  id uuid default gen_random_uuid() primary key,
+  market text not null check (market in ('futures','cfd')),
+  name text not null,
+  slug text,
+  logo_url text,
+  website text,
+  reputation text,
+  tagline text,
+  data jsonb not null default '{}',
+  is_active boolean default true,
+  sort_order int default 100,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (market, name)
+);
+alter table custom_propfirms enable row level security;
+-- Lecture publique (le merge in-app lit via l'anon key) ; écritures par le service role uniquement.
+create policy "custom_propfirms public read" on custom_propfirms for select using (true);
+
+-- Bucket Storage requis pour les logos : Supabase Dashboard → Storage → New bucket
+--   Nom : "propfirm-logos"  ·  coche "Public bucket"  ·  Save
+-- Policies bucket : INSERT + DELETE = authenticated ; SELECT = public.
+
 -- GROUPS — groupes privés avec code d'invitation
 create table if not exists groups (
   id uuid default gen_random_uuid() primary key,

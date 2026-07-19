@@ -48,6 +48,25 @@ green indicator; the cron itself works without it):
 create table if not exists cron_heartbeat (job text primary key, last_run_at timestamptz, last_result jsonb);
 alter table cron_heartbeat enable row level security;  -- service-role only, no policy
 ```
+
+**Admin PropFirms CMS (/admin/propfirms) — required SQL + Storage bucket:**
+```sql
+create table if not exists custom_propfirms (
+  id uuid default gen_random_uuid() primary key,
+  market text not null check (market in ('futures','cfd')),
+  name text not null, slug text, logo_url text, website text, reputation text, tagline text,
+  data jsonb not null default '{}', is_active boolean default true, sort_order int default 100,
+  created_at timestamptz default now(), updated_at timestamptz default now(),
+  unique (market, name)
+);
+alter table custom_propfirms enable row level security;
+create policy "custom_propfirms public read" on custom_propfirms for select using (true);
+```
+Storage: Dashboard → Storage → New bucket `propfirm-logos` (Public); policies
+INSERT+DELETE = authenticated, SELECT = public. Without these the admin page shows
+a clear error. NOTE: Phase A = the admin CMS (CRUD + logo). Phase B (pending) =
+merge these custom firms into the in-app catalogs (account creation, comparators)
+so admin-added firms become usable — touches lib/constants + lib/cfdSlugs consumers.
 Also required for prod notifications (config, not code): RESEND domain
 `quantara.tech` verified (DKIM/SPF) + the 3 VAPID keys + RESEND_API_KEY + CRON_SECRET
 present in Vercel Production. Confirm via the /admin/system card.
