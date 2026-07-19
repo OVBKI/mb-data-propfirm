@@ -33,7 +33,14 @@ export async function GET(req) {
   const dry = new URL(req.url).searchParams.get('dry') === '1'
 
   const authHeader = req.headers.get('authorization') || ''
-  const cronOk = process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`
+  // Auth accepts EITHER the CRON_SECRET bearer OR Vercel's internal cron signature.
+  // Vercel sets `x-vercel-cron` on genuine scheduled invocations and strips any
+  // incoming `x-vercel-*` header from external requests, so it can't be forged —
+  // this makes the cron authenticate even when the Bearer header isn't attached
+  // (observed on some Vercel plans despite CRON_SECRET being set).
+  const secretOk = process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`
+  const vercelCron = !!req.headers.get('x-vercel-cron')
+  const cronOk = secretOk || vercelCron
   let adminOk = false
   if (dry && !cronOk) {
     const a = await verifyAdmin(req)
