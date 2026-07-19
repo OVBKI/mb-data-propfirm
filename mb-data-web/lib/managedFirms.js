@@ -87,7 +87,8 @@ export function managedFuturesFirmToEntry(row) {
     for (const pl of (pr.plans || [])) if (!plans.includes(pl)) plans.push(pl)
     Object.assign(rules, pr.rules || {})
   }
-  return { name: row.name, plans, rules, logo_url: row.logo_url || null, __custom: true }
+  // `programs` kept so the comparator can render one row per program.
+  return { name: row.name, plans, rules, programs, logo_url: row.logo_url || null, __custom: true }
 }
 
 // React hook: active custom FUTURES firms (empty until loaded).

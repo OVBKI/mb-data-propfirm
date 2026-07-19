@@ -26,6 +26,8 @@ import {
   PROPFIRM_RULES,
   FIRM_SUGGESTIONS,
   firmRules,
+  customFirmPrograms,
+  CUSTOM_FIRM_NAMES,
   maxDrawdown,
   profitTarget,
   defaultMinDailyProfit,
@@ -751,7 +753,43 @@ export const FIRM_COMPARISON_MAP = {
 // Ordered list of firm names for the comparator (reuses FIRM_SUGGESTIONS order).
 // Only firms present in the curated map are returned (all 11 are mapped).
 export function getFirmsWithComparison() {
-  return FIRM_SUGGESTIONS.filter(firm => FIRM_COMPARISON_MAP[firm])
+  const curated = FIRM_SUGGESTIONS.filter(firm => FIRM_COMPARISON_MAP[firm])
+  // Admin-added custom firms not already in the curated map (brand-new firms).
+  const custom = CUSTOM_FIRM_NAMES.filter(n => !FIRM_COMPARISON_MAP[n])
+  return [...curated, ...custom]
+}
+
+// Best-effort mapping of a custom firm's free-form rules → the comparator columns,
+// so a brand-new firm added from /admin/propfirms shows up. One model per program.
+function customComparisonModels(firmName, plan) {
+  const programs = customFirmPrograms(firmName)
+  if (!programs) return null
+  const findKey = (rules, re) => Object.keys(rules || {}).find(k => re.test(k)) || null
+  return programs.map(prog => {
+    const rules = prog.rules || {}
+    const val = (key) => (key ? (rules[key]?.[plan] ?? null) : null)
+    const ddKey = findKey(rules, /drawdown|dd\b|max loss|mll/i)
+    const ddRaw = ddKey ? String(rules[ddKey]?.[plan] || Object.values(rules[ddKey] || {})[0] || '') : ''
+    const ddType = /trailing/i.test(ddRaw) ? 'Trailing' : /\beod\b/i.test(ddRaw) ? 'EOD' : /static/i.test(ddRaw) ? 'Static' : null
+    return {
+      name: prog.name || '',
+      ddType,
+      challenge: {
+        drawdown: val(ddKey),
+        dailyDrawdown: val(findKey(rules, /daily|dll|perte.*jour|dd.*jour/i)),
+        objectif: val(findKey(rules, /objectif|profit.*target|target/i)),
+        consistance: val(findKey(rules, /consist/i)),
+      },
+      funded: {
+        drawdown: null,
+        dailyDrawdown: null,
+        buffer: val(findKey(rules, /buffer/i)),
+        jourMin: val(findKey(rules, /jours?.*min|min.*jours?|winning.*day/i)),
+        minDailyProfit: val(findKey(rules, /profit.*min.*jour|min.*profit.*jour/i)),
+        consistance: val(findKey(rules, /consist/i)),
+      },
+    }
+  })
 }
 
 // Resolve the full comparison block for a firm at a given plan size.
@@ -759,7 +797,11 @@ export function getFirmsWithComparison() {
 // resolved LIVE from PROPFIRM_RULES / helpers, or null where there is no source.
 export function getFuturesComparison(firmName, plan) {
   const entry = FIRM_COMPARISON_MAP[firmName]
-  if (!entry) return { models: [] }
+  if (!entry) {
+    // Not in the curated map → a custom admin firm: derive columns from its rules.
+    const custom = customComparisonModels(firmName, plan)
+    return { models: custom || [] }
+  }
 
   const models = entry.models.map(model => ({
     name: model.name,

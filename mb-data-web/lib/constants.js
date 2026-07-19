@@ -944,17 +944,26 @@ export function planSizeNum(plan){
 // and only the in-app client ever populates it (registerCustomFuturesFirms) — so the
 // SSG build output is unchanged. Each entry: { name, plans:[...], rules:{key:{plan:val}} }.
 const CUSTOM_FIRMS = {}
+const CUSTOM_FIRM_PROGRAMS = {}
 export const CUSTOM_FIRM_NAMES = []
 export function registerCustomFuturesFirms(entries) {
   for (const e of entries || []) {
     if (!e || !e.name) continue
     CUSTOM_FIRMS[e.name] = { plans: (e.plans && e.plans.length) ? e.plans : GENERIC_PLANS, rules: e.rules || {} }
+    // Per-program structure (for the comparator, which shows one row per program).
+    CUSTOM_FIRM_PROGRAMS[e.name] = (e.programs && e.programs.length)
+      ? e.programs
+      : [{ name: '', plans: e.plans || [], rules: e.rules || {} }]
     if (!CUSTOM_FIRM_NAMES.includes(e.name)) CUSTOM_FIRM_NAMES.push(e.name)
   }
 }
 // Firm rules accessor used by the prefill helpers: custom overlay first, then catalog.
 export function firmRules(firmName) {
   return CUSTOM_FIRMS[firmName] || PROPFIRM_RULES[firmName]
+}
+// Per-program data for a custom firm (or null) — consumed by the futures comparator.
+export function customFirmPrograms(firmName) {
+  return CUSTOM_FIRM_PROGRAMS[firmName] || null
 }
 
 export function plansForFirm(firmName){
