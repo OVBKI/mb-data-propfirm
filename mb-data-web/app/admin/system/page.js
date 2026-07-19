@@ -195,8 +195,19 @@ export default function AdminSystemPage() {
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize: 12, color: C.text2, marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: C.text2, marginBottom: 8 }}>
                 Abonnements push : <b style={{ color: C.text }}>{notif.push.total}</b> au total · <b style={{ color: C.text }}>{notif.push.mine}</b> pour ton compte
+              </div>
+              <div style={{ fontSize: 12, color: C.text2, marginBottom: 14 }}>
+                Cron quotidien — dernier run : {(() => {
+                  const ts = notif.cron?.lastDailyRun
+                  if (!ts) return <b style={{ color: C.red }}>jamais détecté (cron Vercel arrêté, ou table heartbeat pas encore créée)</b>
+                  const d = new Date(ts)
+                  const h = (Date.now() - d.getTime()) / 3600000
+                  const color = h < 36 ? C.green : C.red
+                  const rel = h < 1 ? 'il y a moins d’1h' : `il y a ~${Math.round(h)}h`
+                  return <b style={{ color }}>{d.toLocaleString('fr-FR')} ({rel})</b>
+                })()}
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={() => sendNotifTest('email')} disabled={!!notifBusy} style={{
@@ -214,6 +225,8 @@ export default function AdminSystemPage() {
                 Une var <b style={{ color: C.red }}>❌</b> = à ajouter dans Vercel (puis redéployer pour les <code>NEXT_PUBLIC_*</code>).
                 Email en échec malgré la clé présente = domaine <code>quantara.tech</code> non vérifié dans Resend (DKIM/SPF).
                 Le push de test exige un abonnement actif (toggle sur <code>/app/alerts</code>, même navigateur).
+                Cron « jamais » ou dernier run &gt; 24h = le cron Vercel ne tourne pas → vérifie <b>Vercel → onglet Crons</b>.
+                Le récap mensuel ne part que le 1er du mois (via ce cron).
               </div>
             </>
           )}

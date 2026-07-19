@@ -12,7 +12,19 @@
 //
 //   ?dry=1 (admin ou cron secret) → n'appelle RIEN, renvoie seulement le plan du jour.
 
+import { createClient } from '@supabase/supabase-js'
 import { verifyAdmin } from '../../../../lib/apiAuth'
+
+// Record a heartbeat so the admin can see the cron is actually alive (the #1
+// question when scheduled emails/push don't fire). Best-effort — never breaks
+// the run if the cron_heartbeat table doesn't exist.
+async function recordHeartbeat(payload) {
+  try {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    await supabase.from('cron_heartbeat').upsert({ job: 'daily', last_run_at: new Date().toISOString(), last_result: payload })
+  } catch { /* heartbeat table optional */ }
+}
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -65,6 +77,8 @@ export async function GET(req) {
       return { job: j.name, error: String(e?.message || e) }
     }
   }))
+
+  await recordHeartbeat({ dateUTC: now.toISOString(), results })
 
   return Response.json({ ok: true, dateUTC: now.toISOString(), results })
 }

@@ -34,17 +34,25 @@ export async function GET(req) {
   const auth = await verifyAdmin(req)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
+  const supabase = svc()
   let total = 0
   let mine = 0
   try {
-    const supabase = svc()
     const { count } = await supabase.from('push_subscriptions').select('id', { count: 'exact', head: true })
     total = count || 0
     const { count: myCount } = await supabase.from('push_subscriptions').select('id', { count: 'exact', head: true }).eq('user_id', auth.user.id)
     mine = myCount || 0
   } catch { /* table missing/empty */ }
 
-  return Response.json({ ok: true, env: envStatus(), push: { total, mine }, adminEmail: auth.user.email })
+  // Cron heartbeat — is the daily dispatcher actually running? (null = never, or
+  // the cron_heartbeat table hasn't been created yet.)
+  let lastDailyRun = null
+  try {
+    const { data } = await supabase.from('cron_heartbeat').select('last_run_at').eq('job', 'daily').maybeSingle()
+    lastDailyRun = data?.last_run_at || null
+  } catch { /* table optional */ }
+
+  return Response.json({ ok: true, env: envStatus(), push: { total, mine }, cron: { lastDailyRun }, adminEmail: auth.user.email })
 }
 
 export async function POST(req) {

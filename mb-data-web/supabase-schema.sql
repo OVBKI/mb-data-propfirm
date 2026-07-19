@@ -461,6 +461,17 @@ alter table feedback enable row level security;
 -- peut lire la table via l'anon key (les admins passent par le service role).
 create policy "Users insert own feedback" on feedback for insert with check (auth.uid() = user_id);
 
+-- CRON_HEARTBEAT — le dispatcher /api/cron/daily y écrit son dernier run (service
+-- role uniquement). Permet à /admin/system de répondre à « est-ce que le cron tourne ? »
+-- (le récap mensuel ne part que le 1er du mois, donc c'est le seul moyen de vérifier).
+create table if not exists cron_heartbeat (
+  job text primary key,
+  last_run_at timestamptz,
+  last_result jsonb
+);
+alter table cron_heartbeat enable row level security;
+-- Aucune policy : seul le service role (dispatcher + lecture admin) accède à la table.
+
 -- GROUPS — groupes privés avec code d'invitation
 create table if not exists groups (
   id uuid default gen_random_uuid() primary key,
