@@ -938,8 +938,27 @@ export function planSizeNum(plan){
 }
 
 // Retourne la liste des plans disponibles pour une firme (ou GENERIC_PLANS)
+// ── Runtime overlay for admin-managed custom futures firms ──
+// PROPFIRM_RULES stays pure (the public SSG pages read it directly). Custom firms
+// live in a SEPARATE registry that only the helpers below consult via firmRules(),
+// and only the in-app client ever populates it (registerCustomFuturesFirms) — so the
+// SSG build output is unchanged. Each entry: { name, plans:[...], rules:{key:{plan:val}} }.
+const CUSTOM_FIRMS = {}
+export const CUSTOM_FIRM_NAMES = []
+export function registerCustomFuturesFirms(entries) {
+  for (const e of entries || []) {
+    if (!e || !e.name) continue
+    CUSTOM_FIRMS[e.name] = { plans: (e.plans && e.plans.length) ? e.plans : GENERIC_PLANS, rules: e.rules || {} }
+    if (!CUSTOM_FIRM_NAMES.includes(e.name)) CUSTOM_FIRM_NAMES.push(e.name)
+  }
+}
+// Firm rules accessor used by the prefill helpers: custom overlay first, then catalog.
+export function firmRules(firmName) {
+  return CUSTOM_FIRMS[firmName] || PROPFIRM_RULES[firmName]
+}
+
 export function plansForFirm(firmName){
-  return PROPFIRM_RULES[firmName]?.plans || GENERIC_PLANS
+  return firmRules(firmName)?.plans || GENERIC_PLANS
 }
 
 // Retourne le drawdown max (en $ numérique) pour une firme + plan.
@@ -950,7 +969,7 @@ export function plansForFirm(firmName){
 // Ne match PAS les clés mécaniques/contextuelles (ex: "MLL mécanique XFA") pour éviter de
 // capter une description plutôt qu'un montant.
 export function maxDrawdown(firmName, plan){
-  const rules = PROPFIRM_RULES[firmName]?.rules
+  const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const ddKey = Object.keys(rules).find(k => {
     if (/drawdown\s+(total|trailing)/i.test(k)) return true
@@ -967,7 +986,7 @@ export function maxDrawdown(firmName, plan){
 
 // Indique si la firme utilise un drawdown trailing (selon PROPFIRM_RULES)
 export function isTrailingDD(firmName){
-  const rules = PROPFIRM_RULES[firmName]?.rules
+  const rules = firmRules(firmName)?.rules
   if(!rules) return false
   return Object.keys(rules).some(k => /drawdown\s+trailing/i.test(k))
 }
@@ -1012,7 +1031,7 @@ export function accountLabel(a){
 
 // Retourne le profit target ($ numérique) selon les règles de la firme (sans le balance initial)
 export function profitTarget(firmName, plan){
-  const rules = PROPFIRM_RULES[firmName]?.rules
+  const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const ptKey = Object.keys(rules).find(k => /objectif|profit\s+target/i.test(k))
   if(!ptKey) return null
@@ -1031,7 +1050,7 @@ export function defaultPayoutTarget(firmName, plan){
 
 // Retourne le nombre de jours de trading min selon la firme
 export function defaultMinTradingDays(firmName, plan){
-  const rules = PROPFIRM_RULES[firmName]?.rules
+  const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const dKey = Object.keys(rules).find(k => /jours.*trading.*min/i.test(k))
   if(!dKey) return null
@@ -1045,7 +1064,7 @@ export function defaultMinTradingDays(firmName, plan){
 // Cherche la clé "Répartition gains" dans les règles. Pour les valeurs composées
 // "80% trader / 90% (PRO+)" prend le PREMIER nombre rencontré.
 export function defaultProfitSplit(firmName, plan){
-  const rules = PROPFIRM_RULES[firmName]?.rules
+  const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const k = Object.keys(rules).find(k => /répartition.*gains|profit.*split/i.test(k))
   if(!k) return null
@@ -1058,7 +1077,7 @@ export function defaultProfitSplit(firmName, plan){
 // Ex: Lucid demande $150 profit/jour pour valider un jour de trading.
 // Cherche la clé "Profit min jour" / "Min profit / jour" / etc.
 export function defaultMinDailyProfit(firmName, plan){
-  const rules = PROPFIRM_RULES[firmName]?.rules
+  const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const k = Object.keys(rules).find(k =>
     /profit\s*min.*jour|min.*profit.*jour|jour.*valid|min.*winning/i.test(k)
@@ -1075,7 +1094,7 @@ export function defaultMinDailyProfit(firmName, plan){
 // prend la PREMIÈRE valeur ($X = mensuel typiquement).
 // → Sert à pré-remplir le champ "Montant dépensé" du formulaire création de compte.
 export function defaultChallengePrice(firmName, plan){
-  const rules = PROPFIRM_RULES[firmName]?.rules
+  const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   // Cherche la clé prix la plus appropriée (priorité : mensuel > one-time > évaluation)
   const keys = Object.keys(rules)

@@ -69,3 +69,29 @@ export function useManagedCfdFirms() {
   }, [])
   return firms
 }
+
+// Normalize a custom FUTURES firm row → { name, plans, rules, logo_url } for the
+// PROPFIRM_RULES-shaped overlay (lib/constants registerCustomFuturesFirms).
+export function managedFuturesFirmToEntry(row) {
+  const d = row.data || {}
+  return {
+    name: row.name,
+    plans: Array.isArray(d.plans) ? d.plans : [],
+    rules: d.rules && typeof d.rules === 'object' ? d.rules : {},
+    logo_url: row.logo_url || null,
+    __custom: true,
+  }
+}
+
+// React hook: active custom FUTURES firms (empty until loaded).
+export function useManagedFuturesFirms() {
+  const [firms, setFirms] = useState([])
+  useEffect(() => {
+    let mounted = true
+    loadManagedFirms().then((all) => {
+      if (mounted) setFirms((all || []).filter((f) => f.market === 'futures').map(managedFuturesFirmToEntry))
+    })
+    return () => { mounted = false }
+  }, [])
+  return firms
+}

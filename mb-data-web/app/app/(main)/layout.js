@@ -7,7 +7,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 import AuthPage from '../../../components/AuthPage'
-import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS, STATUS_COLORS, PX_FIRMS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, defaultProfitSplit as defaultProfitSplitFromRules } from '../../../lib/constants'
+import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS, STATUS_COLORS, PX_FIRMS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, defaultProfitSplit as defaultProfitSplitFromRules, registerCustomFuturesFirms } from '../../../lib/constants'
+import { useManagedFuturesFirms } from '../../../lib/managedFirms'
 import AppSidebar from '../../../components/AppSidebar'
 import QLogoIcon from '../../../components/QLogoIcon'
 import CertificatesModal from '../../../components/CertificatesModal'
@@ -120,6 +121,10 @@ export default function AppLayout({ children }) {
   const [marketMode, setMarketModeState] = useState('futures')
   const [cfdAddOpen, setCfdAddOpen] = useState(false)
   const [cfdEditAccount, setCfdEditAccount] = useState(null) // CFD account being edited (with firmName), or null
+  // Admin-managed custom FUTURES firms: register into the prefill helpers (client-only
+  // overlay — SSG unaffected) and expose their names as create-firm suggestions.
+  const customFutures = useManagedFuturesFirms()
+  useEffect(() => { registerCustomFuturesFirms(customFutures) }, [customFutures])
 
   // Read persisted marketMode on mount (SSR-guarded).
   useEffect(() => {
@@ -653,7 +658,7 @@ export default function AppLayout({ children }) {
                 {t('app.firmModal.subtitle')}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px', marginBottom: '18px' }}>
-                {FIRM_SUGGESTIONS.map(s => {
+                {[...FIRM_SUGGESTIONS, ...customFutures.map(f => f.name).filter(n => !FIRM_SUGGESTIONS.includes(n))].map(s => {
                   const isSelected = newFirmName === s
                   const color = FIRM_SUGGESTION_COLORS[s] || '#4d8fff'
                   return (
@@ -665,7 +670,7 @@ export default function AppLayout({ children }) {
                   )
                 })}
                 {(() => {
-                  const isCustom = newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName)
+                  const isCustom = newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName) && !customFutures.some(f => f.name === newFirmName)
                   return (
                     <button type="button" onClick={() => { const input = document.getElementById('firm-custom-input'); if (input) input.focus() }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '14px 8px', borderRadius: '10px', background: isCustom ? 'rgba(167,139,250,0.12)' : 'var(--surface2)', border: `1px dashed ${isCustom ? '#a78bfa' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
                       <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#a78bfa', fontWeight: 700 }}>+</div>
@@ -677,7 +682,7 @@ export default function AppLayout({ children }) {
               <div style={{ marginBottom: '20px' }}>
                 <label style={S.label}>
                   {t('app.firmModal.firmNameLabel')}
-                  {newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName) && (
+                  {newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName) && !customFutures.some(f => f.name === newFirmName) && (
                     <span style={{ marginLeft: 8, fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>{t('app.firmModal.customBadge')}</span>
                   )}
                 </label>
