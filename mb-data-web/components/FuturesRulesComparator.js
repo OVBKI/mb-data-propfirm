@@ -19,7 +19,8 @@ import {
   getFirmsWithComparison,
   cleanCell,
 } from '../lib/futuresComparison'
-import { plansForFirm, planSizeNum } from '../lib/constants'
+import { plansForFirm, planSizeNum, registerCustomFuturesFirms } from '../lib/constants'
+import { useManagedFuturesFirms } from '../lib/managedFirms'
 import { getFirmLogo } from '../lib/firmLogos'
 
 // Style inline "visually hidden" (lecteurs d'écran uniquement).
@@ -65,7 +66,13 @@ const TOTAL_COLS = 1 + CHALLENGE_COLS.length + FUNDED_COLS.length // 1 + 5 + 4 =
 
 export default function FuturesRulesComparator() {
   const t = useT()
-  const firms = useMemo(() => getFirmsWithComparison(), [])
+  // Admin overrides (custom_propfirms): register the overlay synchronously so the
+  // resolvers below reflect edits made from /admin/propfirms, and re-render once
+  // the custom firms have loaded.
+  const managed = useManagedFuturesFirms()
+  // Idempotent overlay registration — runs before the resolvers below read firmRules().
+  registerCustomFuturesFirms(managed)
+  const firms = useMemo(() => getFirmsWithComparison(), [managed])
 
   // Union des tailles de plan sur toutes les firmes, triées par montant.
   const planOptions = useMemo(() => {

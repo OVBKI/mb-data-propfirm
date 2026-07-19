@@ -25,6 +25,7 @@
 import {
   PROPFIRM_RULES,
   FIRM_SUGGESTIONS,
+  firmRules,
   maxDrawdown,
   profitTarget,
   defaultMinDailyProfit,
@@ -58,7 +59,9 @@ function isNaSentinel(v) {
 // inférieure la plus proche ayant une vraie valeur ; 'n/a' exact devient null.
 function ruleValue(firm, key, plan) {
   if (!key) return null
-  const rules = PROPFIRM_RULES[firm]?.rules
+  // firmRules() = admin override (custom_propfirms) first, else the static catalog —
+  // so editing a firm from /admin/propfirms reflects live in the comparator.
+  const rules = firmRules(firm)?.rules
   if (!rules) return null
   const row = rules[key]
   if (!row) return null
