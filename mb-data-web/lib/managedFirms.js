@@ -72,15 +72,22 @@ export function useManagedCfdFirms() {
 
 // Normalize a custom FUTURES firm row → { name, plans, rules, logo_url } for the
 // PROPFIRM_RULES-shaped overlay (lib/constants registerCustomFuturesFirms).
+// A firm has one or more PROGRAMS (Lucid FLEX/PRO/INSTANT); they're flattened into a
+// single { plans: union, rules: merged } — the same flat shape the static catalog uses
+// (distinct programs use distinct rule labels, e.g. "DLL FLEX" vs "DLL PRO").
+// Back-compat: an old flat { plans, rules } blob is treated as one program.
 export function managedFuturesFirmToEntry(row) {
   const d = row.data || {}
-  return {
-    name: row.name,
-    plans: Array.isArray(d.plans) ? d.plans : [],
-    rules: d.rules && typeof d.rules === 'object' ? d.rules : {},
-    logo_url: row.logo_url || null,
-    __custom: true,
+  const programs = Array.isArray(d.programs) && d.programs.length
+    ? d.programs
+    : ((d.plans || d.rules) ? [{ name: '', plans: d.plans, rules: d.rules }] : [])
+  const plans = []
+  const rules = {}
+  for (const pr of programs) {
+    for (const pl of (pr.plans || [])) if (!plans.includes(pl)) plans.push(pl)
+    Object.assign(rules, pr.rules || {})
   }
+  return { name: row.name, plans, rules, logo_url: row.logo_url || null, __custom: true }
 }
 
 // React hook: active custom FUTURES firms (empty until loaded).

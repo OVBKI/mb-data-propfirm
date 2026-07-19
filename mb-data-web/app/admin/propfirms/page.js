@@ -42,10 +42,13 @@ const intOrNull = (s) => (s === '' || s == null ? null : (parseInt(s, 10) || 0))
 
 const emptyFlagship = () => ({ model: '', steps: 2, accountSizes: '', currency: 'USD', profitTargets: '', dailyPct: '', dailyBasis: 'balance', maxPct: '', maxBasis: 'static', splitFrom: '', splitTo: '', minDays: '', consistency: '', leverageForex: '', payoutCycle: '', payoutFirstDays: '', payoutMin: '' })
 const emptyOther = () => ({ name: '', desc: '', steps: '', profitTargets: '', dailyPct: '', dailyBasis: '', maxPct: '', maxBasis: '' })
-const emptyForm = (market = 'cfd') => ({ id: null, market, name: '', slug: '', logo_url: '', website: '', reputation: '', tagline: '', is_active: true, sort_order: 100, platforms: '', instruments: '', flagship: emptyFlagship(), otherModels: [], plans: '', rules: [] })
+// Futures firms have one or more PROGRAMS (e.g. Lucid FLEX / PRO / INSTANT), each with
+// its own account-size plans + a plans × rules table.
+const emptyProgram = () => ({ name: '', plans: '', rules: [] })
+const emptyForm = (market = 'cfd') => ({ id: null, market, name: '', slug: '', logo_url: '', website: '', reputation: '', tagline: '', is_active: true, sort_order: 100, platforms: '', instruments: '', flagship: emptyFlagship(), otherModels: [], programs: market === 'futures' ? [emptyProgram()] : [] })
 
 function parseForm(f) {
-  const base = { id: f.id, market: f.market, name: f.name, slug: f.slug || '', logo_url: f.logo_url || '', website: f.website || '', reputation: f.reputation || '', tagline: f.tagline || '', is_active: f.is_active !== false, sort_order: f.sort_order ?? 100, platforms: '', instruments: '', flagship: emptyFlagship(), otherModels: [], plans: '', rules: [] }
+  const base = { id: f.id, market: f.market, name: f.name, slug: f.slug || '', logo_url: f.logo_url || '', website: f.website || '', reputation: f.reputation || '', tagline: f.tagline || '', is_active: f.is_active !== false, sort_order: f.sort_order ?? 100, platforms: '', instruments: '', flagship: emptyFlagship(), otherModels: [], programs: [] }
   const d = f.data || {}
   if (f.market === 'cfd') {
     base.platforms = (d.platforms || []).join(', ')
@@ -64,8 +67,12 @@ function parseForm(f) {
       ? { ...emptyOther(), name: o.split('(')[0].split('—')[0].trim(), desc: o }
       : { name: o.name || '', desc: o.desc || '', steps: o.steps ?? '', profitTargets: (o.profitTargets || []).join(', '), dailyPct: o.dailyLoss?.pct ?? '', dailyBasis: o.dailyLoss?.basis || '', maxPct: o.maxLoss?.pct ?? '', maxBasis: o.maxLoss?.basis || '' })
   } else {
-    base.plans = (d.plans || []).join(', ')
-    base.rules = Object.entries(d.rules || {}).map(([lbl, values]) => ({ label: lbl, values: values || {} }))
+    // Futures: one or more programs. Back-compat with the old flat { plans, rules }.
+    const progs = Array.isArray(d.programs) && d.programs.length
+      ? d.programs
+      : (((d.plans && d.plans.length) || Object.keys(d.rules || {}).length) ? [{ name: '', plans: d.plans, rules: d.rules }] : [])
+    base.programs = progs.map(p => ({ name: p.name || '', plans: (p.plans || []).join(', '), rules: Object.entries(p.rules || {}).map(([lbl, values]) => ({ label: lbl, values: values || {} })) }))
+    if (!base.programs.length) base.programs = [emptyProgram()]
   }
   return base
 }
@@ -94,10 +101,14 @@ function buildData(form) {
     })
     return { platforms: csvStr(form.platforms), instruments: csvStr(form.instruments), flagship, otherModels }
   }
-  const plans = csvStr(form.plans)
-  const rules = {}
-  form.rules.filter(r => (r.label || '').trim()).forEach(r => { rules[r.label.trim()] = r.values || {} })
-  return { plans, rules }
+  const programs = (form.programs || [])
+    .filter(p => (p.plans || '').trim() || (p.rules || []).some(r => (r.label || '').trim()))
+    .map(p => {
+      const rules = {}
+      ;(p.rules || []).filter(r => (r.label || '').trim()).forEach(r => { rules[r.label.trim()] = r.values || {} })
+      return { name: (p.name || '').trim(), plans: csvStr(p.plans), rules }
+    })
+  return { programs }
 }
 
 async function authHeaders() {
@@ -167,7 +178,6 @@ export default function AdminPropfirmsPage() {
 
   // ── FORM ──
   if (form) {
-    const futuresPlans = form.market === 'futures' ? csvStr(form.plans) : []
     return (
       <div style={{ padding: '28px 32px', maxWidth: 900 }}>
         <div style={{ fontSize: 11, color: C.red, letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>Admin · PropFirms</div>
@@ -247,36 +257,47 @@ export default function AdminPropfirmsPage() {
           </>
         ) : (
           <>
-            <div style={sectionTitle}>Plans</div>
-            <Field label="Plans (séparés par ,)"><input value={form.plans} onChange={set('plans')} style={input} placeholder="50k, 100k, 150k" /></Field>
-
             <div style={{ ...sectionTitle, display: 'flex', alignItems: 'center', gap: 10 }}>
-              Tableau des règles ({form.rules.length})
-              <button onClick={() => setForm(p => ({ ...p, rules: [...p.rules, { label: '', values: {} }] }))} style={{ ...ghost, padding: '4px 10px' }}>+ Ligne</button>
+              Programmes ({form.programs.length})
+              <button onClick={() => setForm(p => ({ ...p, programs: [...p.programs, emptyProgram()] }))} style={{ ...ghost, padding: '4px 10px' }}>+ Programme</button>
             </div>
-            {futuresPlans.length === 0 && <div style={{ fontSize: 12, color: C.text3, marginBottom: 10 }}>Renseigne d’abord les plans pour afficher les colonnes du tableau.</div>}
-            {form.rules.length > 0 && (
-              <div style={{ overflowX: 'auto', border: `1px solid ${C.border}`, borderRadius: 10 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-                  <thead><tr>
-                    <th style={{ ...thStyle, minWidth: 160 }}>Règle</th>
-                    {futuresPlans.map(p => <th key={p} style={thStyle}>{p.toUpperCase()}</th>)}
-                    <th style={thStyle} />
-                  </tr></thead>
-                  <tbody>
-                    {form.rules.map((r, i) => (
-                      <tr key={i}>
-                        <td style={tdStyle}><input value={r.label} onChange={e => setForm(p => ({ ...p, rules: p.rules.map((x, idx) => idx === i ? { ...x, label: e.target.value } : x) }))} style={{ ...input, background: C.surface }} placeholder="Ex : Max Loss Limit" /></td>
-                        {futuresPlans.map(pl => (
-                          <td key={pl} style={tdStyle}><input value={r.values[pl] || ''} onChange={e => setForm(p => ({ ...p, rules: p.rules.map((x, idx) => idx === i ? { ...x, values: { ...x.values, [pl]: e.target.value } } : x) }))} style={{ ...input, background: C.surface }} placeholder="—" /></td>
-                        ))}
-                        <td style={tdStyle}><button onClick={() => setForm(p => ({ ...p, rules: p.rules.filter((_, idx) => idx !== i) }))} style={{ ...ghost, color: C.red, borderColor: 'rgba(232,80,74,0.4)', padding: '6px 10px' }}>✕</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <div style={{ fontSize: 11, color: C.text3, marginBottom: 12 }}>Un programme = une famille de comptes (ex : Lucid FLEX / PRO / INSTANT), avec ses tailles de compte et son tableau de règles.</div>
+            {form.programs.map((prog, pi) => {
+              const plans = csvStr(prog.plans)
+              const setProg = (k, v) => setForm(p => ({ ...p, programs: p.programs.map((x, idx) => idx === pi ? { ...x, [k]: v } : x) }))
+              const setRuleField = (ri, updater) => setForm(p => ({ ...p, programs: p.programs.map((x, idx) => idx === pi ? { ...x, rules: x.rules.map((r, j) => j === ri ? updater(r) : r) } : x) }))
+              return (
+                <div key={pi} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1 }}><label style={label}>Nom du programme</label><input value={prog.name} onChange={e => setProg('name', e.target.value)} style={input} placeholder="Ex : FLEX" /></div>
+                    <div style={{ flex: 2 }}><label style={label}>Plans / tailles (,)</label><input value={prog.plans} onChange={e => setProg('plans', e.target.value)} style={input} placeholder="25k, 50k, 100k, 150k" /></div>
+                    {form.programs.length > 1 && <button onClick={() => setForm(p => ({ ...p, programs: p.programs.filter((_, idx) => idx !== pi) }))} style={{ ...ghost, color: C.red, borderColor: 'rgba(232,80,74,0.4)' }}>Retirer</button>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 8px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Règles ({prog.rules.length})</span>
+                    <button onClick={() => setProg('rules', [...prog.rules, { label: '', values: {} }])} style={{ ...ghost, padding: '3px 9px' }}>+ Ligne</button>
+                  </div>
+                  {plans.length === 0
+                    ? <div style={{ fontSize: 12, color: C.text3 }}>Renseigne les plans ci-dessus pour afficher les colonnes.</div>
+                    : prog.rules.length > 0 && (
+                      <div style={{ overflowX: 'auto', border: `1px solid ${C.border}`, borderRadius: 10 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                          <thead><tr><th style={{ ...thStyle, minWidth: 150 }}>Règle</th>{plans.map(pl => <th key={pl} style={thStyle}>{pl.toUpperCase()}</th>)}<th style={thStyle} /></tr></thead>
+                          <tbody>
+                            {prog.rules.map((r, ri) => (
+                              <tr key={ri}>
+                                <td style={tdStyle}><input value={r.label} onChange={e => setRuleField(ri, x => ({ ...x, label: e.target.value }))} style={{ ...input, background: C.surface2 }} placeholder="Ex : Drawdown trailing max" /></td>
+                                {plans.map(pl => <td key={pl} style={tdStyle}><input value={r.values[pl] || ''} onChange={e => setRuleField(ri, x => ({ ...x, values: { ...x.values, [pl]: e.target.value } }))} style={{ ...input, background: C.surface2 }} placeholder="—" /></td>)}
+                                <td style={tdStyle}><button onClick={() => setProg('rules', prog.rules.filter((_, j) => j !== ri))} style={{ ...ghost, color: C.red, borderColor: 'rgba(232,80,74,0.4)', padding: '6px 10px' }}>✕</button></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                </div>
+              )
+            })}
           </>
         )}
 
