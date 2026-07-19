@@ -21,12 +21,12 @@ import { useT } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
 import { C as THEME } from '../lib/theme'
 import {
-  CFD_PROPFIRM_RULES,
   CFD_REPUTATION,
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from '../lib/cfdConstants'
-import { getCfdFirmsOrdered, getCfdModels } from '../lib/cfdSlugs'
+import { getCfdFirmsOrdered, getCfdModelsFromFirm } from '../lib/cfdSlugs'
+import { useManagedCfdFirms } from '../lib/managedFirms'
 
 const FIRM_COLORS_CFD = ['#4d8fff', '#1db87a', '#fac775', '#a78bfa', '#e8504a', '#22d3ee', '#f472b6', '#34d399', '#fb923c']
 
@@ -133,9 +133,10 @@ function buildDefaultsFromModel(model, catalog) {
   }
 }
 
-// Firm-level defaults = its flagship model (getCfdModels()[0]).
-function buildDefaults(catalog, firmName) {
-  return buildDefaultsFromModel(getCfdModels(firmName)[0], catalog)
+// Firm-level defaults = its flagship model. `firm` is a catalog entry (static OR
+// admin-managed custom firm) carrying flagship/otherModels/platforms.
+function buildDefaults(firm) {
+  return buildDefaultsFromModel(getCfdModelsFromFirm(firm)[0], firm)
 }
 
 // `account` (optional) switches the modal to EDIT mode: it pre-fills from an
@@ -178,20 +179,24 @@ function buildFormFromAccount(a) {
 function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
   const isEdit = !!account
   const t = useT()
-  const firmsCatalog = useMemo(() => getCfdFirmsOrdered(), [])
+  // Static catalog + admin-managed custom firms (loaded async; merged reactively).
+  const managed = useManagedCfdFirms()
+  const staticCatalog = useMemo(() => getCfdFirmsOrdered(), [])
+  const firmsCatalog = useMemo(() => [...staticCatalog, ...managed], [staticCatalog, managed])
   // In edit mode the firm is fixed (moving an account across firms would change its
   // firm_id) — seed from the account and keep the picker read-only.
   const [firmName, setFirmName] = useState(
-    isEdit ? (account.firmName || firmsCatalog[0]?.name || '') : (firmsCatalog[0]?.name || ''),
+    isEdit ? (account.firmName || staticCatalog[0]?.name || '') : (staticCatalog[0]?.name || ''),
   )
-  const catalog = CFD_PROPFIRM_RULES[firmName]
+  // The selected firm entry (works for static + custom firms).
+  const catalog = useMemo(() => firmsCatalog.find(f => f.name === firmName) || null, [firmsCatalog, firmName])
 
   // Normalized [flagship, ...sub-models] for this firm. Each carries real per-model
   // rules (sub-models inherit firm-wide infra, expose only the rules they document).
-  const models = useMemo(() => getCfdModels(firmName), [firmName])
+  const models = useMemo(() => getCfdModelsFromFirm(catalog), [catalog])
 
   // Form state (prefilled from the account in edit mode, else from the flagship).
-  const [form, setForm] = useState(() => (isEdit ? buildFormFromAccount(account) : buildDefaults(catalog, firmName)))
+  const [form, setForm] = useState(() => (isEdit ? buildFormFromAccount(account) : buildDefaults(catalog)))
   const [saving, setSaving] = useState(false)
 
   const selectedModel = useMemo(
@@ -202,21 +207,21 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
   // Rebuild prefilled defaults when the firm changes (defaults to its flagship).
   function onPickFirm(name) {
     setFirmName(name)
-    setForm(buildDefaults(CFD_PROPFIRM_RULES[name], name))
+    setForm(buildDefaults(firmsCatalog.find(f => f.name === name)))
   }
 
   // Changement de modèle → pré-remplit les VRAIES règles du sous-modèle (daily/max
-  // loss + bases, target, taille) depuis getCfdModels(). Une règle non documentée par
-  // ce modèle est remise à vide (éditable) plutôt que d'hériter d'une valeur périmée.
+  // loss + bases, target, taille). Une règle non documentée par ce modèle est remise
+  // à vide (éditable) plutôt que d'hériter d'une valeur périmée.
   function onPickModel(name) {
-    const model = getCfdModels(firmName).find(m => m.name === name)
+    const model = models.find(m => m.name === name)
     setForm(p => ({ ...p, cfd_model: name, cfd_step: 1, ...modelRuleFields(model, 1) }))
   }
 
   // When the phase (step) changes, re-derive the profit target prefill from the model.
   function onPickStep(step) {
     setForm(p => {
-      const model = getCfdModels(firmName).find(m => m.name === p.cfd_model)
+      const model = models.find(m => m.name === p.cfd_model)
       const pt = model ? (model.profitTargets?.[step - 1] ?? model.profitTargets?.[0]) : null
       return { ...p, cfd_step: step, profit_target_pct: step === 0 ? p.profit_target_pct : (pt != null ? String(pt) : p.profit_target_pct) }
     })

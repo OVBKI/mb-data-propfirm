@@ -16,7 +16,8 @@ import { useT } from './LanguageProvider'
 import {
   CFD_REPUTATION,
 } from '../lib/cfdConstants'
-import { getCfdFirmsOrdered, getCfdModels, CFD_FIRM_TAGLINE, cfdFirmToSlug } from '../lib/cfdSlugs'
+import { getCfdFirmsOrdered, getCfdModelsFromFirm, CFD_FIRM_TAGLINE, cfdFirmToSlug } from '../lib/cfdSlugs'
+import { useManagedCfdFirms } from '../lib/managedFirms'
 
 // Inline "visually hidden" style (screen readers only).
 const SR_ONLY = {
@@ -194,7 +195,8 @@ const FUNDED_COLS = [
 
 export default function CfdComparator() {
   const t = useT()
-  const firms = getCfdFirmsOrdered()
+  const managed = useManagedCfdFirms()
+  const firms = [...getCfdFirmsOrdered(), ...managed]
 
   // Displayed model per firm (multi-model firms). Key = firm name, value = index
   // into getCfdModels(firm). Default = 0 (flagship) when unset. Mirrors the futures
@@ -276,7 +278,7 @@ export default function CfdComparator() {
 
           <tbody>
             {firms.map((firm, firmIdx) => {
-              const models = getCfdModels(firm.name)
+              const models = getCfdModelsFromFirm(firm)
               const multi = models.length > 1
               const selIdx = Math.min(modelByFirm[firm.name] ?? 0, Math.max(models.length - 1, 0))
               // Selected model (flagship at index 0). Its rules come from the catalog:
@@ -317,17 +319,24 @@ export default function CfdComparator() {
                     minWidth: 170, background: C.surface,
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <InitialAvatar name={firm.name} color={color} size={28} />
+                      {firm.logoUrl
+                        ? <img src={firm.logoUrl} alt="" style={{ width: 28, height: 28, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                        : <InitialAvatar name={firm.name} color={color} size={28} />}
                       <div style={{ minWidth: 0 }}>
-                        <Link
-                          href={`/cfd/${slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={CFD_FIRM_TAGLINE[firm.name] || undefined}
-                          style={{ color: C.text, fontWeight: 700, textDecoration: 'none', fontSize: 13, lineHeight: 1.2 }}
-                        >
-                          {firm.name}
-                        </Link>
+                        {firm.__custom ? (
+                          // Custom firms have no public /cfd/[slug] SSG page → plain label.
+                          <span title={firm.tagline || undefined} style={{ color: C.text, fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{firm.name}</span>
+                        ) : (
+                          <Link
+                            href={`/cfd/${slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={CFD_FIRM_TAGLINE[firm.name] || undefined}
+                            style={{ color: C.text, fontWeight: 700, textDecoration: 'none', fontSize: 13, lineHeight: 1.2 }}
+                          >
+                            {firm.name}
+                          </Link>
+                        )}
                         <div style={{ marginTop: 4 }}><ReputationBadge reputation={firm.reputation} /></div>
                         {/* Single model → label. Multi → selector (switches the row's
                             rules to that sub-model). Selected model's FR summary sits in

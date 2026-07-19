@@ -51,11 +51,14 @@ const CFD_INFRA_KEYS = ['accountSizes', 'currency', 'leverage', 'platforms', 'pa
 // - otherModels: firm-wide infra merged UNDER the entry's own fields, so overrides win
 //   and unstated rules resolve to undefined (the UI treats that as '—' / editable).
 // Back-compat: a legacy string entry is wrapped as { name, desc } with no rules.
-export function getCfdModels(firmName) {
-  const firm = CFD_PROPFIRM_RULES[firmName]
-  if (!firm) return []
-  const fl = firm.flagship || {}
-  const flagshipModel = { ...fl, name: fl.model || firmName, desc: null, isFlagship: true }
+// Build normalized models from a firm OBJECT (a static catalog entry OR an
+// admin-managed custom firm — both expose flagship + otherModels). Returns [] when
+// the firm has no flagship. This is what powers the in-app merge of custom firms.
+export function getCfdModelsFromFirm(firm) {
+  const fl = firm && firm.flagship
+  if (!fl) return []
+  const fallbackName = (firm && firm.name) || 'firm'
+  const flagshipModel = { ...fl, name: fl.model || fallbackName, desc: null, isFlagship: true }
 
   const infra = {}
   for (const k of CFD_INFRA_KEYS) if (fl[k] !== undefined) infra[k] = fl[k]
@@ -69,12 +72,17 @@ export function getCfdModels(firmName) {
     return {
       ...infra,
       ...overrides,
-      name: name || (desc ? String(desc).split('(')[0].trim() : firmName),
+      name: name || (desc ? String(desc).split('(')[0].trim() : fallbackName),
       desc: desc || null,
       isFlagship: false,
     }
   })
   return [flagshipModel, ...others]
+}
+
+// By firm NAME from the static catalog (kept for existing callers + tests).
+export function getCfdModels(firmName) {
+  return getCfdModelsFromFirm(CFD_PROPFIRM_RULES[firmName])
 }
 
 // === Firm-vs-firm pairs (public /cfd/compare/[pair] SSG) ====================
