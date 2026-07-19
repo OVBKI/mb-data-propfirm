@@ -7,6 +7,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { uploadFile } from '../../../lib/uploadFile'
+import { PROPFIRM_RULES } from '../../../lib/constants'
+import { CFD_PROPFIRM_RULES } from '../../../lib/cfdConstants'
+import { CFD_FIRM_TAGLINE } from '../../../lib/cfdSlugs'
 
 const C = {
   bg: '#0d0f14', surface: '#141720', surface2: '#1c2030',
@@ -109,6 +112,28 @@ function buildData(form) {
       return { name: (p.name || '').trim(), plans: csvStr(p.plans), rules }
     })
   return { programs }
+}
+
+// Static catalog firms, for the "edit an existing firm" (override) flow.
+const STATIC_FIRMS = [
+  ...Object.keys(CFD_PROPFIRM_RULES).map(name => ({ market: 'cfd', name })),
+  ...Object.keys(PROPFIRM_RULES).map(name => ({ market: 'futures', name })),
+]
+
+// Build the editor form from a STATIC catalog firm. Saving writes a custom_propfirms
+// row with the same name → the in-app merge prioritizes it (= edit the existing firm).
+function importStaticFirm(market, name) {
+  const entry = market === 'cfd' ? CFD_PROPFIRM_RULES[name] : PROPFIRM_RULES[name]
+  if (!entry) return emptyForm(market)
+  return parseForm({
+    id: null, market, name,
+    slug: '', logo_url: '',
+    website: entry.website || '',
+    reputation: entry.reputation || '',
+    tagline: market === 'cfd' ? (CFD_FIRM_TAGLINE[name] || '') : '',
+    is_active: true, sort_order: 100,
+    data: entry,
+  })
 }
 
 async function authHeaders() {
@@ -320,9 +345,16 @@ export default function AdminPropfirmsPage() {
           <div style={{ fontSize: 11, color: C.red, letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>Admin</div>
           <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>PropFirms</h1>
         </div>
-        <button onClick={() => setForm(emptyForm('cfd'))} style={btn(C.blue)}>+ Nouvelle firme</button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select value="" onChange={e => { if (!e.target.value) return; const [m, ...rest] = e.target.value.split('|'); setForm(importStaticFirm(m, rest.join('|'))) }} style={{ ...input, width: 'auto', maxWidth: 260 }}>
+            <option value="">✎ Éditer une firme du catalogue…</option>
+            <optgroup label="CFD / Forex">{STATIC_FIRMS.filter(s => s.market === 'cfd').map(s => <option key={'cfd|' + s.name} value={'cfd|' + s.name}>{s.name}</option>)}</optgroup>
+            <optgroup label="Futures">{STATIC_FIRMS.filter(s => s.market === 'futures').map(s => <option key={'futures|' + s.name} value={'futures|' + s.name}>{s.name}</option>)}</optgroup>
+          </select>
+          <button onClick={() => setForm(emptyForm('cfd'))} style={btn(C.blue)}>+ Nouvelle firme</button>
+        </div>
       </div>
-      <p style={{ fontSize: 13, color: C.text3, marginBottom: 22 }}>Firmes gérées par l’admin (en plus du catalogue codé en dur). Visibles in-app une fois actives.</p>
+      <p style={{ fontSize: 13, color: C.text3, marginBottom: 22 }}>Ajoute de nouvelles firmes ou <b>édite une firme du catalogue</b> (crée un override prioritaire). Visibles in-app une fois actives.</p>
 
       {err && (
         <div style={{ padding: '12px 16px', background: 'rgba(232,80,74,0.08)', border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 12.5, color: C.red, marginBottom: 20, whiteSpace: 'pre-wrap' }}>

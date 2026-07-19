@@ -182,7 +182,11 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
   // Static catalog + admin-managed custom firms (loaded async; merged reactively).
   const managed = useManagedCfdFirms()
   const staticCatalog = useMemo(() => getCfdFirmsOrdered(), [])
-  const firmsCatalog = useMemo(() => [...staticCatalog, ...managed], [staticCatalog, managed])
+  // A custom firm with a static firm's name OVERRIDES it (edit-existing), not duplicates.
+  const firmsCatalog = useMemo(() => {
+    const names = new Set(managed.map(f => f.name))
+    return [...staticCatalog.filter(f => !names.has(f.name)), ...managed]
+  }, [staticCatalog, managed])
   // In edit mode the firm is fixed (moving an account across firms would change its
   // firm_id) — seed from the account and keep the picker read-only.
   const [firmName, setFirmName] = useState(

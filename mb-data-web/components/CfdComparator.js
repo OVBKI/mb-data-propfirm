@@ -196,7 +196,9 @@ const FUNDED_COLS = [
 export default function CfdComparator() {
   const t = useT()
   const managed = useManagedCfdFirms()
-  const firms = [...getCfdFirmsOrdered(), ...managed]
+  // A custom firm with a static firm's name OVERRIDES it (edit-existing), not duplicates.
+  const managedNames = new Set(managed.map(f => f.name))
+  const firms = [...getCfdFirmsOrdered().filter(f => !managedNames.has(f.name)), ...managed]
 
   // Displayed model per firm (multi-model firms). Key = firm name, value = index
   // into getCfdModels(firm). Default = 0 (flagship) when unset. Mirrors the futures
