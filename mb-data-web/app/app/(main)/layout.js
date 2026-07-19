@@ -498,10 +498,10 @@ export default function AppLayout({ children }) {
     firms.forEach(f => {
       ;(f.accounts || []).forEach(a => {
         const tp = totalPayoutsEUR(a), sp = totalSpentForAccount(a)
-        if (a.status === 'Financé' && (a.payouts || []).length === 0) alerts.push({ icon: '💰', title: `${t('app.alerts.payoutAvailablePrefix')} ${f.name}`, sub: t('app.alerts.payoutAvailableSub'), type: 'success' })
+        if (a.status === 'Financé' && (a.payouts || []).length === 0) alerts.push({ key: 'payout:' + a.id, category: 'payout', icon: '💰', title: `${t('app.alerts.payoutAvailablePrefix')} ${f.name}`, sub: t('app.alerts.payoutAvailableSub'), type: 'success' })
         if (a.status === 'Challenge') {
           const days = Math.floor((new Date() - new Date(a.buy_date + 'T00:00:00')) / 86400000)
-          if (days > 30) alerts.push({ icon: '⏰', title: `${t('app.alerts.challengeSincePrefix')} ${days} ${t('app.alerts.challengeDaysSuffix')} ${f.name}`, sub: t('app.alerts.challengeSub'), type: 'warn' })
+          if (days > 30) alerts.push({ key: 'challenge:' + a.id, category: 'challenge', icon: '⏰', title: `${t('app.alerts.challengeSincePrefix')} ${days} ${t('app.alerts.challengeDaysSuffix')} ${f.name}`, sub: t('app.alerts.challengeSub'), type: 'warn' })
           // Même garde que loadFirms : la logique de facturation mensuelle ne concerne pas les comptes CFD.
           if (a.market !== 'cfd' && a.payment_mode === 'monthly' && a.buy_date) {
             const buyD = new Date(a.buy_date + 'T00:00:00Z')
@@ -513,24 +513,45 @@ export default function AppLayout({ children }) {
             const dStr = nextB.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
             const cost = Number(a.spent) || 0
             if (dLeft === 0) {
-              alerts.push({ icon: '🚨', title: `${t('app.alerts.billTodayPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billTodaySubPrefix')} ${cost} ${sym} ${t('app.alerts.billTodaySubSuffix')}`, type: 'warn' })
+              alerts.push({ key: 'bill:' + a.id, category: 'billing', icon: '🚨', title: `${t('app.alerts.billTodayPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billTodaySubPrefix')} ${cost} ${sym} ${t('app.alerts.billTodaySubSuffix')}`, type: 'warn' })
             } else if (dLeft > 0 && dLeft <= 2) {
-              alerts.push({ icon: '📅', title: `${t('app.alerts.billSoonPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billSoonSubPrefix')} ${dLeft === 1 ? t('app.alerts.tomorrow') : `${t('app.alerts.inDaysPrefix')} ${dLeft} ${t('app.alerts.inDaysSuffix')}`} (${dStr}) · ${cost} ${sym}`, type: 'warn' })
+              alerts.push({ key: 'bill:' + a.id, category: 'billing', icon: '📅', title: `${t('app.alerts.billSoonPrefix')} ${f.name} · ${acctName}`, sub: `${t('app.alerts.billSoonSubPrefix')} ${dLeft === 1 ? t('app.alerts.tomorrow') : `${t('app.alerts.inDaysPrefix')} ${dLeft} ${t('app.alerts.inDaysSuffix')}`} (${dStr}) · ${cost} ${sym}`, type: 'warn' })
             }
             if (dLeft >= 0 && dLeft <= 30) {
               upcomingBills.push({ date: nextB, dateStr: dStr, daysLeft: dLeft, firm: f.name, firmColor: f.color, account: acctName, cost, sym })
             }
           }
         }
-        if (tp > sp * 2) alerts.push({ icon: '🏆', title: `${t('app.alerts.excellentRoiPrefix')} ${f.name}`, sub: `${(tp / sp).toFixed(1)}x ${t('app.alerts.excellentRoiSubSuffix')}`, type: 'success' })
+        if (tp > sp * 2) alerts.push({ key: 'roi:' + a.id, category: 'performance', icon: '🏆', title: `${t('app.alerts.excellentRoiPrefix')} ${f.name}`, sub: `${(tp / sp).toFixed(1)}x ${t('app.alerts.excellentRoiSubSuffix')}`, type: 'success' })
       })
     })
     upcomingBills.sort((a, b) => a.date - b.date)
-    if (!alerts.length && firms.length) alerts.push({ icon: '✅', title: t('app.alerts.allClearTitle'), sub: t('app.alerts.allClearSub'), type: 'ok' })
+    if (!alerts.length && firms.length) alerts.push({ key: 'allclear', category: 'ok', icon: '✅', title: t('app.alerts.allClearTitle'), sub: t('app.alerts.allClearSub'), type: 'ok' })
     return { alerts, upcomingBills }
   }, [firms, totalPayoutsEUR, totalSpentForAccount, t])
 
-  const alertsBadgeCount = useMemo(() => alerts.filter(a => a.type !== 'ok').length, [alerts])
+  // "Seen" alerts (localStorage) → the sidebar badge counts only alerts that were
+  // NOT present at the last visit to /app/alerts. markAlertsSeen() snapshots the
+  // current keys; the alerts page calls it on mount so the badge clears once viewed
+  // and only re-appears for genuinely new alerts.
+  const [alertsSeen, setAlertsSeen] = useState(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('quantara.alertsSeen') || '[]') } catch { return [] }
+  })
+  const markAlertsSeen = useCallback(() => {
+    const keys = alerts.filter(a => a.type !== 'ok').map(a => a.key)
+    setAlertsSeen(prev => {
+      const same = keys.length === prev.length && keys.every(k => prev.includes(k))
+      if (same) return prev
+      try { localStorage.setItem('quantara.alertsSeen', JSON.stringify(keys)) } catch { /* ignore */ }
+      return keys
+    })
+  }, [alerts])
+
+  const alertsBadgeCount = useMemo(() => {
+    const seen = new Set(alertsSeen)
+    return alerts.filter(a => a.type !== 'ok' && !seen.has(a.key)).length
+  }, [alerts, alertsSeen])
 
   // ── Context value ──
   const contextValue = useMemo(() => ({
@@ -544,7 +565,7 @@ export default function AppLayout({ children }) {
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
     // Computed
     accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
-    alerts, upcomingBills,
+    alerts, upcomingBills, markAlertsSeen,
     // Styles
     S,
     // Modal / drawer setters (consumed by pages)
@@ -558,7 +579,7 @@ export default function AppLayout({ children }) {
     fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
     accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
-    alerts, upcomingBills,
+    alerts, upcomingBills, markAlertsSeen,
   ])
 
   // ── Guards ──

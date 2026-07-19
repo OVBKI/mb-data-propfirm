@@ -2,15 +2,28 @@
 // app/app/alerts/page.js — Alerts: upcoming bills, payment reminders, ROI alerts.
 // Extracted from the original monolithic app/app/page.js (lines ~1043-1126).
 
+import { useEffect } from 'react'
 import { useApp } from '../AppContext'
 import { useT, useLanguage } from '../../../../components/LanguageProvider'
 import PushNotificationToggle from '../../../../components/PushNotificationToggle'
 
+// Alert categories (order = display order). Each groups alerts sharing a `category`.
+const CATS = [
+  { key: 'payout', icon: '💰', labelKey: 'catPayout' },
+  { key: 'billing', icon: '📅', labelKey: 'catBilling' },
+  { key: 'challenge', icon: '⏰', labelKey: 'catChallenge' },
+  { key: 'performance', icon: '🏆', labelKey: 'catPerformance' },
+]
+
 export default function AlertsPage() {
   const t = useT()
   const { locale } = useLanguage()
-  const { firms, alerts, upcomingBills, S } = useApp()
+  const { firms, alerts, upcomingBills, markAlertsSeen, S } = useApp()
   const dateLocale = locale === 'en' ? 'en-US' : 'fr-FR'
+
+  // Visiting the page = the alerts are seen → clears the sidebar badge (it only
+  // re-appears for genuinely new alerts).
+  useEffect(() => { markAlertsSeen?.() }, [markAlertsSeen])
 
   return (
     <div className="page-pad" style={{ maxWidth: '1160px', margin: '0 auto', padding: '32px 24px 60px' }}>
@@ -25,15 +38,50 @@ export default function AlertsPage() {
         <PushNotificationToggle />
       </div>
 
-      {/* Liste des alertes */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
-        {alerts.map((alert, i) => (
-          <div key={i} style={{ ...S.card, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', background: alert.type === 'success' ? 'var(--green-bg)' : alert.type === 'warn' ? 'var(--amber-bg)' : 'var(--surface)', borderColor: alert.type === 'success' ? 'var(--green)' : alert.type === 'warn' ? 'var(--amber-text)' : 'rgba(255,255,255,0.07)' }}>
-            <div style={{ fontSize: '22px' }}>{alert.icon}</div>
-            <div><div style={{ fontSize: '13px', fontWeight: '600' }}>{alert.title}</div><div style={{ fontSize: '12px', color: 'var(--text2)' }}>{alert.sub}</div></div>
+      {/* Alertes groupées par catégorie */}
+      {(() => {
+        const active = alerts.filter(a => a.type !== 'ok')
+        // Tout est calme → carte "all clear".
+        if (!active.length) {
+          const ok = alerts.find(a => a.type === 'ok')
+          return (
+            <div style={{ ...S.card, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
+              <div style={{ fontSize: '26px' }}>{ok?.icon || '✅'}</div>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: '700' }}>{ok?.title || t('app.alerts.allClearTitle')}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text2)' }}>{ok?.sub || t('app.alerts.allClearSub')}</div>
+              </div>
+            </div>
+          )
+        }
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '32px' }}>
+            {CATS.map(cat => {
+              const items = active.filter(a => a.category === cat.key)
+              if (!items.length) return null
+              return (
+                <div key={cat.key}>
+                  {/* En-tête de catégorie */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '15px' }}>{cat.icon}</span>
+                    <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text2)' }}>{t('app.alerts.' + cat.labelKey)}</span>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text3)', background: 'var(--surface2)', borderRadius: '99px', padding: '1px 8px' }}>{items.length}</span>
+                  </div>
+                  {/* Cartes de la catégorie */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {items.map((alert, i) => (
+                      <div key={alert.key || i} style={{ ...S.card, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', background: alert.type === 'success' ? 'var(--green-bg)' : alert.type === 'warn' ? 'var(--amber-bg)' : 'var(--surface)', borderColor: alert.type === 'success' ? 'var(--green)' : alert.type === 'warn' ? 'var(--amber-text)' : 'rgba(255,255,255,0.07)' }}>
+                        <div style={{ fontSize: '22px' }}>{alert.icon}</div>
+                        <div><div style={{ fontSize: '13px', fontWeight: '600' }}>{alert.title}</div><div style={{ fontSize: '12px', color: 'var(--text2)' }}>{alert.sub}</div></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
-        ))}
-      </div>
+        )
+      })()}
 
       {/* Prochains prélèvements (30 jours) */}
       {upcomingBills.length > 0 && (() => {
