@@ -7,54 +7,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Quantara (Quantara Technologies LLC, New Mexico) — PropFirm trading analytics platform. Next.js 14 (App Router) + Supabase + Vercel.
 Monorepo root is `/mb-data-web/`.
 
-## ⚠️ PENDING MANUAL ACTIONS — Supabase (owner: roxxnexus@gmail.com, not yet run as of 2026-07)
+## Beta launch — manual actions (owner: roxxnexus@gmail.com)
 
-These must be run by the user in the Supabase SQL Editor. The CFD code is already
-live on `main`/prod and depends on block A. Status: **NOT DONE** — user deferred.
+Beta type = **open public** (anyone can sign up; no access gating). Status of the
+pre-launch manual items, as of 2026-07:
 
-**Block A — HARD LAUNCH BLOCKER** (confirmed by the 2026-07 crash audit: the CFD
-balance editor writes all four columns in ONE update; if any is missing in prod the
-update fails atomically → CFD balance saving + both gauges are 100% non-functional,
-every save shows an error toast). Idempotent:
-```sql
-alter table accounts add column if not exists current_balance   numeric(12,2);
-alter table accounts add column if not exists balance_highwater numeric(12,2);
-alter table accounts add column if not exists day_start_balance numeric(12,2);
-alter table accounts add column if not exists day_start_equity  numeric(12,2);
-notify pgrst, 'reload schema';
-```
+- **Block A — CFD balance columns** (`current_balance`, `balance_highwater`,
+  `day_start_balance`, `day_start_equity` on `accounts`) — ✅ **DONE** (user ran it).
+  Was a hard blocker: the CFD balance editor writes all four in one update, so a
+  missing column broke CFD Health saving + both gauges.
+- **Block B — email-enumeration revoke** on `resolve_username_to_email(text)` — ✅ **DONE**.
+- **Block C — RLS on the 5 extra tables** (`trading_plan`, `trading_setups`,
+  `trading_rule_items`, `referrals`, `propfirm_rules_overrides`) — ✅ **DONE**, verified
+  `rowsecurity = true` on all five with correct pre-existing policies. User data
+  isolation is enforced.
+- **Block D — `feedback` table** (open-beta feedback widget, components/BetaFeedback.js) — ✅ **DONE**.
+- **Secret rotation** — `ENCRYPTION_KEY` (Fernet) + `RITHMIC_CRON_SECRET` on Railway +
+  Vercel — user reports all launched 2026-07 (double-check these two were regenerated,
+  since they're non-SQL and were exposed in git history).
 
-**Block D — feedback table** (open-beta feedback widget, components/BetaFeedback.js;
-without it the widget's insert errors and users see a failure toast):
-```sql
-create table if not exists feedback (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete set null,
-  email text, type text not null default 'bug' check (type in ('bug','idea','other')),
-  message text not null, url text, user_agent text, created_at timestamptz default now()
-);
-alter table feedback enable row level security;
-create policy "Users insert own feedback" on feedback for insert with check (auth.uid() = user_id);
-```
-
-**Block B — Security** (stop email enumeration via the username→email RPC):
-```sql
-revoke execute on function public.resolve_username_to_email(text) from public, anon, authenticated;
-grant  execute on function public.resolve_username_to_email(text) to service_role;
-```
-
-**Block C — RLS verification — ✅ DONE (verified 2026-07).** All five tables
-(`trading_plan`, `trading_setups`, `trading_rule_items`, `referrals`,
-`propfirm_rules_overrides`) confirmed `rowsecurity = true` with correct policies
-already in place (per-user "Users manage own" + "Admin read all"; referrals =
-insert-authenticated/select-own; propfirm_rules_overrides = read-public/write-admin).
-No action left here — data isolation between users is enforced.
-
-**Also pending (non-SQL): rotate secrets committed to git history** — `ENCRYPTION_KEY`
-(Fernet) + `RITHMIC_CRON_SECRET`, regenerate on Railway + Vercel. Plus Upstash
-distributed rate-limit (M13) on `/api/px-login`.
-
-Full source-of-truth for A/B is `supabase-schema.sql` (lines ~93-102, ~326-329).
+The SQL for A/B/D lives in `supabase-schema.sql` (feedback table ~line 447; balance
+columns ~93-102; revoke ~326-329). Still open (non-blocking): Upstash distributed
+rate-limit (M13) on `/api/px-login`; Sentry test; analytics wiring.
 
 ## Commands
 
