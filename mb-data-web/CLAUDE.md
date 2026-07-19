@@ -64,9 +64,18 @@ create policy "custom_propfirms public read" on custom_propfirms for select usin
 ```
 Storage: Dashboard → Storage → New bucket `propfirm-logos` (Public); policies
 INSERT+DELETE = authenticated, SELECT = public. Without these the admin page shows
-a clear error. NOTE: Phase A = the admin CMS (CRUD + logo). Phase B (pending) =
-merge these custom firms into the in-app catalogs (account creation, comparators)
-so admin-added firms become usable — touches lib/constants + lib/cfdSlugs consumers.
+a clear error.
+
+PropFirms CMS is COMPLETE (2026-07): structured editor (no raw JSON) — CFD flagship
++ sub-models; futures multiple PROGRAMS (Lucid FLEX/PRO/INSTANT) each with a plans×rules
+table; logo upload; "edit an existing catalog firm" (override by name). In-app merge:
+CFD comparator + add-account modal (lib/managedFirms useManagedCfdFirms +
+getCfdModelsFromFirm, dedup by name); futures account creation (lib/constants
+CUSTOM_FIRMS overlay via firmRules() + registerCustomFuturesFirms, custom names in the
+create-firm grid) AND the /app/rules futures comparator (futuresComparison firmRules()
+for overrides + customFirmPrograms() derives columns for brand-new firms). All static
+catalog helpers stay synchronous so SSG public pages are unaffected; the overlay is
+client-only.
 Also required for prod notifications (config, not code): RESEND domain
 `quantara.tech` verified (DKIM/SPF) + the 3 VAPID keys + RESEND_API_KEY + CRON_SECRET
 present in Vercel Production. Confirm via the /admin/system card.
