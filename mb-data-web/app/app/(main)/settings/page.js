@@ -7,6 +7,7 @@ import { useApp } from '../AppContext'
 import { useT } from '../../../../components/LanguageProvider'
 import { C, cardStyle } from '../../../../lib/theme'
 import PushNotificationToggle from '../../../../components/PushNotificationToggle'
+import BillingSection from '../../../../components/BillingSection'
 import LanguageSwitcher from '../../../../components/LanguageSwitcher'
 import Link from 'next/link'
 
@@ -180,7 +181,13 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* ── 2. Notifications ── */}
+      {/* ── 2. Abonnement ── */}
+      <SectionTitle icon="💳">
+        Abonnement
+      </SectionTitle>
+      <BillingSection onError={showToast} />
+
+      {/* ── 3. Notifications ── */}
       <SectionTitle icon="🔔">
         {t('app.settings.notificationsSection')}
       </SectionTitle>
@@ -203,7 +210,7 @@ export default function SettingsPage() {
         </SettingRow>
       </Card>
 
-      {/* ── 3. Langue ── */}
+      {/* ── 4. Langue ── */}
       <SectionTitle icon="🌐">
         {t('app.settings.languageSection')}
       </SectionTitle>
@@ -216,7 +223,7 @@ export default function SettingsPage() {
         </SettingRow>
       </Card>
 
-      {/* ── 4. Donnees ── */}
+      {/* ── 5. Donnees ── */}
       <SectionTitle icon="🗂">
         {t('app.settings.dataSection')}
       </SectionTitle>
@@ -296,7 +303,7 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* ── 5. A propos ── */}
+      {/* ── 6. A propos ── */}
       <SectionTitle icon="ℹ️">
         {t('app.settings.aboutSection')}
       </SectionTitle>

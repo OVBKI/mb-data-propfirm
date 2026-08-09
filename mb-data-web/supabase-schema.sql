@@ -591,3 +591,48 @@ create index if not exists journal_entries_user_date_idx
 
 -- INDEX PAYOUTS par user_id (manquant)
 create index if not exists payouts_user_id_idx on payouts(user_id);
+
+-- ============================================================================
+-- STRIPE BILLING — colonnes d'abonnement + idempotence des webhooks
+-- ============================================================================
+-- Écrites EXCLUSIVEMENT par app/api/stripe/webhook (service role). Aucune
+-- policy d'UPDATE n'est ajoutée : le client ne doit jamais pouvoir se donner
+-- un plan. La policy de SELECT existante sur `profiles` suffit à la lecture.
+
+alter table profiles add column if not exists plan                     text        default 'free';
+alter table profiles add column if not exists plan_status              text;         -- statut Stripe brut : active, trialing, past_due, canceled, unpaid…
+alter table profiles add column if not exists plan_interval            text;         -- month | year
+alter table profiles add column if not exists plan_started_at          timestamptz;
+alter table profiles add column if not exists plan_expires_at          timestamptz;  -- fin de la période en cours
+alter table profiles add column if not exists plan_cancel_at_period_end boolean     default false;
+alter table profiles add column if not exists stripe_customer_id       text;
+alter table profiles add column if not exists stripe_subscription_id   text;
+alter table profiles add column if not exists beta_grandfather         boolean     default false;
+alter table profiles add column if not exists last_invoice_status      text;
+alter table profiles add column if not exists last_invoice_at          timestamptz;
+
+alter table profiles drop constraint if exists profiles_plan_check;
+alter table profiles add constraint profiles_plan_check
+  check (plan is null or plan in ('free','pro','elite','business'));
+
+-- Le webhook retrouve le profil par stripe_customer_id : unique + indexé.
+create unique index if not exists profiles_stripe_customer_id_uniq
+  on profiles(stripe_customer_id) where stripe_customer_id is not null;
+
+-- STRIPE_EVENTS — dédoublonnage des webhooks. Stripe garantit "au moins une
+-- fois", pas "exactement une fois" : sans cette table un event rejoué peut
+-- réappliquer un downgrade après un upgrade.
+create table if not exists stripe_events (
+  id           text primary key,         -- event.id Stripe (evt_…)
+  type         text not null,
+  received_at  timestamptz default now()
+);
+alter table stripe_events enable row level security;
+-- Aucune policy : service role uniquement (le webhook). Personne d'autre ne lit.
+
+create index if not exists stripe_events_received_at_idx on stripe_events(received_at desc);
+
+-- GRANDFATHER DES BÊTA-TESTEURS — à jouer LE JOUR du lancement payant, une
+-- seule fois, en remplaçant la date par celle du lancement :
+--   update profiles set beta_grandfather = true
+--   where created_at < '2026-09-01' and coalesce(beta_grandfather, false) = false;

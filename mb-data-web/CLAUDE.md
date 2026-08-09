@@ -636,10 +636,67 @@ RITHMIC_CRON_SECRET=<voir Vercel ; ⚠️ ROTATION REQUISE> (unused now, kept fo
   Should produce an issue in https://quantara-ag.sentry.io/issues/ within 30s.
   Config: DSN, ORG=quantara-ag, PROJECT=quantara-web, AUTH_TOKEN all set.
   Note: user should rotate the auth token after first verified test (was shared in chat).
-- **Stripe** — waiting for LLC EIN
+- **Stripe** — CODE SHIPPED, compte à configurer (voir « Stripe Billing » ci-dessous)
 - **Sync Rithmic/ProjectX** — waiting for 50 users
 - **Tests** — no framework yet; use Vitest when adding
 - **SEO content engine** — /firms/[slug], /guides/[slug], /blog/[slug] templates not built
 - **Social login** — Google OAuth + Discord OAuth via Supabase Auth providers
 - **Topstep vs Apex page** — highest-value missing content (2.4k/mo keyword)
 - **LAUNCH_PLAN.md** — detailed 5-phase plan with timelines and go/no-go criteria
+
+## Stripe Billing / Invoicing / Tax
+
+Code livré (2026-08). Le compte Stripe reste à configurer côté Dashboard.
+
+### Fichiers
+| Fichier | Rôle |
+|---|---|
+| `lib/stripe.js` | Client serveur (API `2026-07-29.dahlia`), mapping plan ↔ Price ID |
+| `lib/planLimits.js` | **Source de vérité unique** des limites par palier (isomorphe client/serveur) |
+| `app/api/stripe/checkout/route.js` | POST → Checkout Session `mode: 'subscription'` |
+| `app/api/stripe/portal/route.js` | POST → Customer Portal (upgrade, résiliation, factures PDF) |
+| `app/api/stripe/webhook/route.js` | **Seul écrivain** de `profiles.plan` — signature + idempotence |
+| `app/api/stripe/subscription/route.js` | GET → plan courant + liste des factures |
+| `components/BillingSection.js` | Bloc « Abonnement » dans /app/settings |
+
+### Règles à ne pas casser
+- Le plan ne vient **jamais** du client ni de la `success_url` : uniquement du webhook.
+- Le webhook lit `request.text()` (corps brut) — `request.json()` invaliderait la signature.
+- Ne jamais passer `payment_method_types` : Stripe choisit dynamiquement (SEPA, iDEAL, Link…).
+- Un **Produit** Stripe par palier, deux **Prix** par produit (mensuel/annuel). Jamais
+  plusieurs paliers sur un même produit (les lignes de facture seraient indistinguables).
+- `automatic_tax` ne collecte RIEN tant qu'aucune immatriculation (registration) n'est
+  active dans la juridiction du client — et ne renvoie aucune erreur. Silencieux.
+
+### SQL — à jouer sur Supabase (fin de `supabase-schema.sql`)
+Colonnes `profiles` (plan, plan_status, plan_interval, plan_started_at, plan_expires_at,
+plan_cancel_at_period_end, stripe_customer_id, stripe_subscription_id, beta_grandfather,
+last_invoice_status, last_invoice_at) + table `stripe_events` (idempotence webhook).
+Aucune policy d'UPDATE : service role uniquement.
+
+### Env vars (Vercel) — voir `.env.example`
+`STRIPE_SECRET_KEY` (préférer une clé restreinte `rk_`), `STRIPE_WEBHOOK_SECRET`,
+les 6 `STRIPE_PRICE_*`, `NEXT_PUBLIC_SITE_URL`.
+
+### Config Dashboard restante
+1. **Products/Prices** — 3 produits (Pro, Elite, Business) × 2 prix (mensuel/annuel), EUR.
+   Tax code SaaS `txcd_10103001` sur chaque produit ; `tax_behavior` = `inclusive` si les
+   prix affichés sur /pricing sont TTC (c'est le cas : « 19€ »).
+2. **Tax → Settings** — adresse du siège (Albuquerque NM) ; le statut reste `pending`
+   tant qu'elle n'est pas renseignée, et `automatic_tax` ne calcule rien.
+3. **Tax → Locations** — immatriculations. LLC US vendant des services numériques à des
+   consommateurs UE : le régime **OSS non-Union** (TVA due dès le 1er euro, pas de seuil)
+   est le point à valider avec un fiscaliste. Plus les États US où il y a nexus.
+4. **Customer portal** — Settings → Billing → activer, autoriser les changements de plan.
+5. **Webhook** — endpoint `https://quantara.tech/api/stripe/webhook`, événements :
+   `checkout.session.completed`, `customer.subscription.created|updated|deleted`,
+   `invoice.paid`, `invoice.payment_failed`.
+6. **Grandfather beta** — le jour du lancement payant, jouer l'UPDATE commenté en fin de
+   `supabase-schema.sql`.
+
+### Pas encore fait
+- Gating serveur (402 `PLAN_LIMIT_REACHED`) sur les routes de création firms/accounts/trades :
+  `planLimits.js` expose déjà `isAtLimit()` et `planLimitError()`, reste à les brancher.
+- Le palier Lifetime (249€ one-time, 100 places) : c'est un `mode: 'payment'`, pas un
+  abonnement — non implémenté.
+- /pricing pointe toujours vers la waitlist (normal tant que les Price IDs n'existent pas).
