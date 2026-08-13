@@ -6,19 +6,19 @@ import Reveal from '../../components/Reveal'
 import { useT, useLanguage } from '../../components/LanguageProvider'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
 }
 
 // === SECTIONS DOCUMENTATION ===
@@ -404,7 +404,7 @@ export default function DocsClient() {
                   done:     { color: C.green,    bg: 'rgba(29,184,122,0.08)', border: 'rgba(29,184,122,0.30)', label: badges?.done || '✓' },
                   next:     { color: C.blueLight, bg: 'rgba(45,111,255,0.08)', border: 'rgba(45,111,255,0.30)', label: badges?.next || '⚡' },
                   planned:  { color: C.amber,   bg: 'rgba(250,199,117,0.08)', border: 'rgba(250,199,117,0.30)', label: badges?.planned || '📅' },
-                  wishlist: { color: C.text3,   bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.10)', label: badges?.wishlist || '✨' },
+                  wishlist: { color: C.text3,   bg: 'var(--tint1)', border: 'var(--hairline)', label: badges?.wishlist || '✨' },
                 }[q.status]
                 return (
                   <div key={q.quarter} style={{

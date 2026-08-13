@@ -21,31 +21,31 @@ import { useDialog } from './useDialog'
 const C = {
   surface:   'rgba(20,23,32,0.65)',
   surface2:  'rgba(28,32,48,0.7)',
-  border:    'rgba(255,255,255,0.07)',
-  border2:   'rgba(255,255,255,0.13)',
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
-  green:     '#1db87a',
-  red:       '#e8504a',
-  amber:     '#fac775',
-  blue:      '#2d6fff',
-  blueLt:    '#4d8fff',
+  border:    'var(--border)',
+  border2:   'var(--border2)',
+  text:      'var(--text)',
+  text2:     'var(--text2)',
+  text3:     'var(--text3)',
+  green:     'var(--green)',
+  red:       'var(--red)',
+  amber:     'var(--amber)',
+  blue:      'var(--blue)',
+  blueLt:    'var(--blue-light)',
   purple:    '#a78bfa',
 }
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
-const inputS = { width: '100%', padding: '10px 12px', fontSize: 13, border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 8, background: 'rgba(255,255,255,0.02)', color: C.text, outline: 'none', fontFamily: 'inherit' }
+const inputS = { width: '100%', padding: '10px 12px', fontSize: 13, border: `1px solid var(--hairline)`, borderRadius: 8, background: 'var(--tint1)', color: C.text, outline: 'none', fontFamily: 'inherit' }
 const labelS = { fontSize: 10.5, fontWeight: 600, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 6 }
-const btnPrimary = { padding: '8px 16px', fontSize: 12.5, fontWeight: 500, background: C.text, color: '#0a0c10', border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit' }
-const btnGhost = { padding: '7px 13px', fontSize: 12, fontWeight: 500, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.10)', color: C.text2, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrimary = { padding: '8px 16px', fontSize: 12.5, fontWeight: 500, background: C.text, color: 'var(--text-inverse)', border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit' }
+const btnGhost = { padding: '7px 13px', fontSize: 12, fontWeight: 500, background: 'var(--tint1)', border: '1px solid var(--hairline)', color: C.text2, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
 const btnDanger = { padding: '6px 11px', fontSize: 11, fontWeight: 500, background: 'rgba(232,80,74,0.08)', border: '1px solid rgba(232,80,74,0.25)', color: C.red, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
 
 const RULE_CATEGORIES = [
-  { k: 'risk',      lk: 'catRisk',      color: '#e8504a' },
+  { k: 'risk',      lk: 'catRisk',      color: 'var(--red)' },
   { k: 'mindset',   lk: 'catMindset',   color: '#a78bfa' },
-  { k: 'execution', lk: 'catExecution',  color: '#1db87a' },
-  { k: 'other',     lk: 'catOther',     color: '#9098b0' },
+  { k: 'execution', lk: 'catExecution',  color: 'var(--green)' },
+  { k: 'other',     lk: 'catOther',     color: 'var(--text2)' },
 ]
 
 const TABS = [
@@ -339,7 +339,7 @@ function SetupCard({ setup, onEdit, onDelete }) {
         <div style={{ fontSize: 12, color: C.text2, marginBottom: 8, lineHeight: 1.5 }}>{setup.description}</div>
       )}
       {setup.conditions && (
-        <div style={{ fontSize: 11, color: C.text3, whiteSpace: 'pre-wrap', lineHeight: 1.5, marginBottom: 10, padding: 8, background: 'rgba(255,255,255,0.02)', borderRadius: 4, borderLeft: `2px solid ${C.blueLt}` }}>
+        <div style={{ fontSize: 11, color: C.text3, whiteSpace: 'pre-wrap', lineHeight: 1.5, marginBottom: 10, padding: 8, background: 'var(--tint1)', borderRadius: 4, borderLeft: `2px solid ${C.blueLt}` }}>
           {setup.conditions}
         </div>
       )}
@@ -598,7 +598,7 @@ function RulesTab({ user, showToast }) {
                     <div key={r.id} style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '8px 10px',
-                      background: r.active ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.01)',
+                      background: r.active ? 'var(--tint1)' : 'var(--tint1)',
                       borderRadius: 6,
                       opacity: r.active ? 1 : 0.5,
                       borderLeft: `2px solid ${r.active ? cat.color : 'transparent'}`,

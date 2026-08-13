@@ -31,11 +31,11 @@ import { useT } from './LanguageProvider'
 import { useDialog } from './useDialog'
 
 // Styles cosmic dark (cohérents avec JournalPage)
-const card = { background:'var(--surface)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }
-const inputS = { width:'100%', padding:'10px 12px', fontSize:'13px', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'8px', background:'rgba(255,255,255,0.02)', color:'var(--text)', outline:'none', transition:'border-color 0.2s, background 0.2s', fontFamily:'inherit' }
+const card = { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'10px', boxShadow:'0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }
+const inputS = { width:'100%', padding:'10px 12px', fontSize:'13px', border:'1px solid var(--hairline)', borderRadius:'8px', background:'var(--tint1)', color:'var(--text)', outline:'none', transition:'border-color 0.2s, background 0.2s', fontFamily:'inherit' }
 const labelS = { fontSize:'10.5px', fontWeight:'600', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.12em', display:'block', marginBottom:'6px' }
-const btnPrimary = { padding:'9px 18px', fontSize:'12.5px', fontWeight:'500', background:'var(--text)', color:'#0a0c10', border:'1px solid transparent', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em', boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)' }
-const btnGhost = { padding:'8px 14px', fontSize:'12px', fontWeight:'500', background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.10)', color:'var(--text2)', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em' }
+const btnPrimary = { padding:'9px 18px', fontSize:'12.5px', fontWeight:'500', background:'var(--text)', color:'var(--text-inverse)', border:'1px solid transparent', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em', boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)' }
+const btnGhost = { padding:'8px 14px', fontSize:'12px', fontWeight:'500', background:'var(--tint1)', border:'1px solid var(--hairline)', color:'var(--text2)', borderRadius:'8px', cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.005em' }
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
 
@@ -344,7 +344,7 @@ export default function TradeEntryModal({
             if ((comm <= 0 && slip <= 0) || !Number.isFinite(net)) return null
             const gross = net + comm + slip
             return (
-              <div style={{ gridColumn: '1/-1', marginTop: 0, padding: '8px 12px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', fontSize: 11, color: 'var(--text3)' }}>
+              <div style={{ gridColumn: '1/-1', marginTop: 0, padding: '8px 12px', background: 'var(--tint1)', border: '1px solid var(--border)', borderRadius: 6, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', fontSize: 11, color: 'var(--text3)' }}>
                 <span style={{ fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: 9 }}>
                   {t('app.trade.decomposition')}
                 </span>

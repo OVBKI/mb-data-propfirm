@@ -113,21 +113,21 @@ export default async function PublicProfilePage({ params }) {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0d0f14', color: '#f0ede8',
+      minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)',
       padding: '0 0 60px', fontFamily: 'inherit',
     }}>
       {/* Top bar minimal */}
       <header style={{
-        padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)',
+        padding: '16px 24px', borderBottom: '1px solid var(--border)',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <Link href="/" style={{
           fontSize: 13, fontWeight: 700, letterSpacing: '0.12em',
-          color: '#f0ede8', textDecoration: 'none',
+          color: 'var(--text)', textDecoration: 'none',
         }}>QUANTARA</Link>
         <Link href="/app" style={{
           padding: '8px 16px', fontSize: 12, fontWeight: 600,
-          background: 'rgba(45,111,255,0.12)', color: '#4d8fff',
+          background: 'rgba(45,111,255,0.12)', color: 'var(--blue-light)',
           border: '1px solid rgba(45,111,255,0.3)', borderRadius: 8,
           textDecoration: 'none',
         }}>
@@ -141,13 +141,13 @@ export default async function PublicProfilePage({ params }) {
           height: 200,
           backgroundImage: `url(${sanitizeUrl(profile.banner_url)})`,
           backgroundSize: 'cover', backgroundPosition: 'center',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid var(--border)',
         }} />
       ) : (
         <div style={{
           height: 140,
           background: 'linear-gradient(135deg, rgba(45,111,255,0.18), rgba(16,185,129,0.10) 60%, transparent)',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid var(--border)',
         }} />
       )}
 
@@ -177,7 +177,7 @@ export default async function PublicProfilePage({ params }) {
               {displayName}
               {profile.verified && (
                 <span title="Profil vérifié" style={{
-                  fontSize: 14, color: '#4d8fff',
+                  fontSize: 14, color: 'var(--blue-light)',
                   background: 'rgba(45,111,255,0.15)',
                   borderRadius: '50%', width: 22, height: 22,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -186,7 +186,7 @@ export default async function PublicProfilePage({ params }) {
               {flag && <span style={{ fontSize: 20, marginLeft: 4 }}>{flag}</span>}
             </h1>
             <div style={{
-              fontSize: 13, color: '#9098b0', fontFamily: 'monospace', marginTop: 2,
+              fontSize: 13, color: 'var(--text2)', fontFamily: 'monospace', marginTop: 2,
             }}>@{profile.username}</div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default async function PublicProfilePage({ params }) {
         {/* Bio */}
         {profile.bio && (
           <p style={{
-            fontSize: 14, color: '#9098b0', lineHeight: 1.6,
+            fontSize: 14, color: 'var(--text2)', lineHeight: 1.6,
             marginTop: 18, marginBottom: 0,
             maxWidth: 540,
           }}>{profile.bio}</p>
@@ -203,16 +203,16 @@ export default async function PublicProfilePage({ params }) {
         {/* Followers / Following (cliquables vers pages dédiées) */}
         <div style={{
           marginTop: 16, display: 'flex', gap: 20,
-          fontSize: 13, color: '#9098b0', flexWrap: 'wrap',
+          fontSize: 13, color: 'var(--text2)', flexWrap: 'wrap',
         }}>
           <Link href={`/u/${profile.username}/following`} style={statLinkStyle}>
-            <strong style={{ color: '#f0ede8' }}>{profile.following_count || 0}</strong> following
+            <strong style={{ color: 'var(--text)' }}>{profile.following_count || 0}</strong> following
           </Link>
           <Link href={`/u/${profile.username}/followers`} style={statLinkStyle}>
-            <strong style={{ color: '#f0ede8' }}>{profile.followers_count || 0}</strong> followers
+            <strong style={{ color: 'var(--text)' }}>{profile.followers_count || 0}</strong> followers
           </Link>
           {memberSince && (
-            <span style={{ color: '#7b839b' }}>
+            <span style={{ color: 'var(--text3)' }}>
               · Membre depuis {memberSince}
             </span>
           )}
@@ -256,10 +256,10 @@ export default async function PublicProfilePage({ params }) {
         {/* Placeholder pour les phases suivantes (groupes, payouts, leaderboard) */}
         <div style={{
           marginTop: 48, padding: 20,
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px dashed rgba(255,255,255,0.10)',
+          background: 'var(--tint1)',
+          border: '1px dashed var(--hairline)',
           borderRadius: 12, textAlign: 'center',
-          fontSize: 12, color: '#7b839b',
+          fontSize: 12, color: 'var(--text3)',
         }}>
           🚧 D'autres fonctionnalités arrivent : groupes privés, leaderboard, chat.
           <br />
@@ -269,16 +269,16 @@ export default async function PublicProfilePage({ params }) {
         {/* Footer minimal */}
         <footer style={{
           marginTop: 60, paddingTop: 20,
-          borderTop: '1px solid rgba(255,255,255,0.07)',
-          fontSize: 11, color: '#7b839b', textAlign: 'center',
+          borderTop: '1px solid var(--border)',
+          fontSize: 11, color: 'var(--text3)', textAlign: 'center',
         }}>
-          <Link href="/" style={{ color: '#9098b0', textDecoration: 'none' }}>Quantara</Link>
+          <Link href="/" style={{ color: 'var(--text2)', textDecoration: 'none' }}>Quantara</Link>
           {' · '}
-          <Link href="/pricing" style={{ color: '#9098b0', textDecoration: 'none' }}>Tarifs</Link>
+          <Link href="/pricing" style={{ color: 'var(--text2)', textDecoration: 'none' }}>Tarifs</Link>
           {' · '}
-          <Link href="/docs" style={{ color: '#9098b0', textDecoration: 'none' }}>Documentation</Link>
+          <Link href="/docs" style={{ color: 'var(--text2)', textDecoration: 'none' }}>Documentation</Link>
           {' · '}
-          <Link href="/legal/privacy" style={{ color: '#9098b0', textDecoration: 'none' }}>Confidentialité</Link>
+          <Link href="/legal/privacy" style={{ color: 'var(--text2)', textDecoration: 'none' }}>Confidentialité</Link>
         </footer>
       </main>
     </div>
@@ -288,7 +288,7 @@ export default async function PublicProfilePage({ params }) {
 // === Styles partagés ===
 const sectionHeaderStyle = {
   fontSize: 11, fontWeight: 700,
-  color: '#4d8fff',
+  color: 'var(--blue-light)',
   letterSpacing: '0.14em', textTransform: 'uppercase',
   margin: '0 0 12px', padding: 0,
 }
@@ -296,13 +296,13 @@ const sectionHeaderStyle = {
 const tagStyle = {
   display: 'inline-block',
   padding: '6px 14px', fontSize: 12, fontWeight: 500,
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  color: '#f0ede8', borderRadius: 99,
+  background: 'var(--tint2)',
+  border: '1px solid var(--hairline)',
+  color: 'var(--text)', borderRadius: 99,
 }
 
 const statLinkStyle = {
-  color: '#9098b0', textDecoration: 'none',
-  borderBottom: '1px dotted rgba(255,255,255,0.15)',
+  color: 'var(--text2)', textDecoration: 'none',
+  borderBottom: '1px dotted var(--hairline2)',
   paddingBottom: 2,
 }

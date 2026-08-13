@@ -5,18 +5,18 @@ import Reveal from '../../components/Reveal'
 import { useT, useLanguage } from '../../components/LanguageProvider'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
 }
 
 // Sections sécurité — bloc locale-aware (option B) pour le contenu détaillé.
@@ -289,7 +289,7 @@ export default function SecurityClient() {
               <a href="mailto:security@quantara.tech" style={{
                 display: 'inline-block', padding: '11px 24px',
                 fontSize: 13, fontWeight: 500, borderRadius: 8,
-                background: C.text, color: '#0a0c10', textDecoration: 'none',
+                background: C.text, color: 'var(--text-inverse)', textDecoration: 'none',
                 boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
               }}>{t('pages.security.reportCta')}</a>
             </div>

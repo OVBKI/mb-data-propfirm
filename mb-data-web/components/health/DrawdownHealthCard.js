@@ -17,9 +17,9 @@ const C = {
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
   grey: '#565e78',
 }
 
@@ -58,7 +58,7 @@ export default function DrawdownHealthCard({ account, firmName }) {
   const roomPct = hasData ? Math.min(1, Math.max(0, room / maxDD)) : null
   const color = statusColor(roomPct)
   const label = statusLabel(roomPct)
-  const firmColor = FIRM_SUGGESTION_COLORS[firmName] || '#2d6fff'
+  const firmColor = FIRM_SUGGESTION_COLORS[firmName] || 'var(--blue)'
 
   return (
     <div style={{
@@ -107,7 +107,7 @@ export default function DrawdownHealthCard({ account, firmName }) {
         </div>
         <div style={{
           height: 10,
-          background: 'rgba(255,255,255,0.04)',
+          background: 'var(--tint2)',
           borderRadius: 6,
           overflow: 'hidden',
           position: 'relative',

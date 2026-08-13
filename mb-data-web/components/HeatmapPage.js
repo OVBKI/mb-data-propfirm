@@ -352,8 +352,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
                 onClick={() => setPeriod(p.k)}
                 style={{
                   padding: '5px 10px', fontSize: 11, fontWeight: 500,
-                  background: period === p.k ? 'rgba(45,111,255,0.15)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${period === p.k ? 'rgba(45,111,255,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  background: period === p.k ? 'rgba(45,111,255,0.15)' : 'var(--tint1)',
+                  border: `1px solid ${period === p.k ? 'rgba(45,111,255,0.4)' : 'var(--hairline)'}`,
                   color: period === p.k ? C.blueLt : C.text2,
                   borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit',
                 }}
@@ -384,8 +384,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
                   onClick={() => setStatusFilter(s.k)}
                   style={{
                     padding: '5px 10px', fontSize: 11, fontWeight: 500,
-                    background: active ? activeBg : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${active ? activeBorder : 'rgba(255,255,255,0.08)'}`,
+                    background: active ? activeBg : 'var(--tint1)',
+                    border: `1px solid ${active ? activeBorder : 'var(--hairline)'}`,
                     color: active ? col : C.text2,
                     borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit',
                   }}
@@ -456,7 +456,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     width: '80%', height: `${h}px`,
                     background: pnlColor(d.pnl, mag),
                     borderRadius: '4px 4px 0 0',
-                    border: d.count > 0 ? `1px solid ${d.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid rgba(255,255,255,0.05)',
+                    border: d.count > 0 ? `1px solid ${d.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid var(--tint2)',
                     transition: 'all 0.2s',
                   }} title={`${DAYS_LONG[i]} · ${d.count} trade${d.count > 1 ? 's' : ''} · ${fmtMoney(d.pnl)}${d.count > 0 ? ` · WR ${(d.wins / d.count * 100).toFixed(0)}%` : ''}`} />
                   <div style={{ fontSize: 11, color: C.text3, fontWeight: 600 }}>{DAYS_SHORT[i]}</div>
@@ -517,7 +517,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                   width: '90%', height: `${barH}px`,
                   background: pnlColor(h.pnl, mag),
                   borderRadius: '3px 3px 0 0',
-                  border: h.count > 0 ? `1px solid ${h.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid rgba(255,255,255,0.05)',
+                  border: h.count > 0 ? `1px solid ${h.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid var(--tint2)',
                 }} title={`${i}h · ${h.count} trade${h.count > 1 ? 's' : ''} · ${fmtMoney(h.pnl)}${h.count > 0 ? ` · WR ${(h.wins / h.count * 100).toFixed(0)}%` : ''}`} />
                 <div style={{ fontSize: 9, color: C.text3, fontFamily: 'ui-monospace, monospace' }}>
                   {String(i).padStart(2, '0')}
@@ -568,14 +568,14 @@ export default function HeatmapPage({ user, firms, showToast }) {
                         aspectRatio: '1',
                         background: pnlColor(cell.pnl, mag),
                         borderRadius: 3,
-                        border: '1px solid rgba(255,255,255,0.03)',
+                        border: '1px solid var(--tint1)',
                         position: 'relative',
                         cursor: cell.count > 0 ? 'help' : 'default',
                         transition: 'transform 0.15s, border-color 0.15s',
                       }}
                       title={cell.count > 0 ? `${DAYS_LONG[dow]} ${String(h).padStart(2, '0')}h · ${cell.count} trade${cell.count > 1 ? 's' : ''} · ${fmtMoney(cell.pnl)}` : `${DAYS_LONG[dow]} ${String(h).padStart(2, '0')}h · ${t('app.heatmap.noTrade')}`}
                       onMouseEnter={ev => { if (cell.count > 0) { ev.currentTarget.style.transform = 'scale(1.4)'; ev.currentTarget.style.zIndex = '10'; ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)' } }}
-                      onMouseLeave={ev => { ev.currentTarget.style.transform = 'scale(1)'; ev.currentTarget.style.zIndex = '1'; ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.03)' }}
+                      onMouseLeave={ev => { ev.currentTarget.style.transform = 'scale(1)'; ev.currentTarget.style.zIndex = '1'; ev.currentTarget.style.borderColor = 'var(--tint1)' }}
                     >
                       {cell.count > 0 && (
                         <div style={{
@@ -638,7 +638,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     <div style={{ width: 50, fontWeight: 700, color: C.text, fontFamily: 'ui-monospace, monospace' }}>
                       {inst.name}
                     </div>
-                    <div style={{ flex: 1, height: 18, background: 'rgba(255,255,255,0.02)', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: 18, background: 'var(--tint1)', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
                       <div style={{
                         position: 'absolute', inset: 0, width: `${mag * 100}%`,
                         background: pnlColor(inst.pnl, mag),
@@ -672,8 +672,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
               return (
                 <div key={s.k} style={{
                   padding: 12,
-                  background: v.count > 0 ? (v.pnl >= 0 ? 'rgba(29,184,122,0.05)' : 'rgba(232,80,74,0.05)') : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${v.count > 0 ? (v.pnl >= 0 ? 'rgba(29,184,122,0.2)' : 'rgba(232,80,74,0.2)') : 'rgba(255,255,255,0.05)'}`,
+                  background: v.count > 0 ? (v.pnl >= 0 ? 'rgba(29,184,122,0.05)' : 'rgba(232,80,74,0.05)') : 'var(--tint1)',
+                  border: `1px solid ${v.count > 0 ? (v.pnl >= 0 ? 'rgba(29,184,122,0.2)' : 'rgba(232,80,74,0.2)') : 'var(--tint2)'}`,
                   borderRadius: 8,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>

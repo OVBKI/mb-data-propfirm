@@ -7,18 +7,18 @@ import { supabase } from '../lib/supabase'
 import { sanitizeUrl } from '../lib/sanitize'
 
 const C = {
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
-  text: '#f0ede8',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
+  text: 'var(--text)',
 }
 
 const TYPE_STYLES = {
-  info:    { bg: 'rgba(45,111,255,0.10)',  border: '#2d6fff', color: '#4d8fff', icon: 'ℹ️' },
-  success: { bg: 'rgba(29,184,122,0.10)',  border: '#1db87a', color: '#1db87a', icon: '✅' },
-  warn:    { bg: 'rgba(250,199,117,0.10)', border: '#fac775', color: '#fac775', icon: '⚠️' },
+  info:    { bg: 'rgba(45,111,255,0.10)',  border: 'var(--blue)', color: 'var(--blue-light)', icon: 'ℹ️' },
+  success: { bg: 'rgba(29,184,122,0.10)',  border: 'var(--green)', color: 'var(--green)', icon: '✅' },
+  warn:    { bg: 'rgba(250,199,117,0.10)', border: 'var(--amber)', color: 'var(--amber)', icon: '⚠️' },
   promo:   { bg: 'rgba(244,114,182,0.10)', border: '#f472b6', color: '#f472b6', icon: '🎉' },
 }
 

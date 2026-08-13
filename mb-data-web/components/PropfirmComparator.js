@@ -19,22 +19,22 @@ import { supabase } from '../lib/supabase'
 import { getAffiliateLink, AFFILIATE_DISCLAIMER } from '../lib/affiliateLinks'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
   borderHover: 'rgba(45,111,255,0.4)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
   green: '#10b981',
   greenSoft: 'rgba(16,185,129,0.12)',
   red: '#ef4444',
   redSoft: 'rgba(239,68,68,0.12)',
-  amber: '#fac775',
+  amber: 'var(--amber)',
   amberSoft: 'rgba(250,199,117,0.12)',
 }
 
@@ -53,7 +53,7 @@ const C = {
 const FIRM_META = {
   'Topstep': {
     displayName: 'Topstep',
-    color: '#2d6fff',
+    color: 'var(--blue)',
     ddType: 'EOD',
     ddDetail: 'EOD uniquement (Combine + XFA + LFA) · lock starting permanent',
     hasDLL: true,
@@ -67,7 +67,7 @@ const FIRM_META = {
   },
   'Apex Trader Funding': {
     displayName: 'Apex Trader Funding',
-    color: '#e8504a',
+    color: 'var(--red)',
     ddType: 'Mixed',
     ddDetail: 'EOD ou Intraday (choix au checkout)',
     hasDLL: false,
@@ -109,7 +109,7 @@ const FIRM_META = {
   },
   'Take Profit Trader': {
     displayName: 'Take Profit Trader',
-    color: '#fac775',
+    color: 'var(--amber)',
     ddType: 'Mixed',
     ddDetail: 'Test EOD → PRO INTRADAY (⚠ piège) → PRO+ EOD',
     hasDLL: false,
@@ -123,7 +123,7 @@ const FIRM_META = {
   },
   'My Funded Futures': {
     displayName: 'MyFundedFutures',
-    color: '#4d8fff',
+    color: 'var(--blue-light)',
     ddType: 'Mixed',
     ddDetail: 'Rapid INTRADAY 4% · Core/Pro EOD 3% · Flex FIXED 4%',
     hasDLL: false,
@@ -431,7 +431,7 @@ export default function PropfirmComparator({ user }) {
                   {meta.tags.slice(0, 4).map((tag, i) => (
                     <span key={i} style={{
                       fontSize: 10, padding: '3px 8px',
-                      background: 'rgba(255,255,255,0.04)',
+                      background: 'var(--tint2)',
                       border: `1px solid ${C.border}`,
                       borderRadius: 99, color: C.text3,
                       whiteSpace: 'nowrap',

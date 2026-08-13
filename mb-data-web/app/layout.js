@@ -3,6 +3,7 @@ import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { Analytics } from '@vercel/analytics/react'
 import { LanguageProvider } from '../components/LanguageProvider'
+import { ThemeProvider } from '../components/ThemeProvider'
 import ErrorBoundary from '../components/ErrorBoundary'
 import JsonLd, { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA } from '../components/JsonLd'
 import './globals.css'
@@ -116,14 +117,36 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  // Valeur de départ (thème sombre par défaut) ; ThemeProvider réécrit la balise
+  // au runtime quand l'utilisateur bascule en clair.
   themeColor: '#0d0f14',
-  colorScheme: 'dark',
+  // Les deux schémas sont supportés — c'est `color-scheme` posé par [data-theme]
+  // dans globals.css qui tranche, pas cette balise.
+  colorScheme: 'dark light',
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr">
+    <html lang="fr" data-theme="dark">
       <head>
+        {/*
+          Anti-flash de thème. Doit s'exécuter AVANT le premier paint : il pose
+          data-theme sur <html> à partir de localStorage. Le faire depuis un
+          useEffect ferait clignoter l'app en sombre pendant une frame chez les
+          utilisateurs en clair.
+          Le défaut reste 'dark' : sans choix explicite, rien ne change.
+          Le contenu est une constante littérale — aucune donnée externe n'y entre.
+        */}
+        <Script id="theme-init" strategy="beforeInteractive">{`
+          (function () {
+            try {
+              var p = localStorage.getItem('quantara_theme')
+              var sysLight = window.matchMedia('(prefers-color-scheme: light)').matches
+              var t = p === 'light' ? 'light' : p === 'system' ? (sysLight ? 'light' : 'dark') : 'dark'
+              document.documentElement.setAttribute('data-theme', t)
+            } catch (e) {}
+          })()
+        `}</Script>
         <JsonLd data={ORGANIZATION_SCHEMA} />
         <JsonLd data={WEBSITE_SCHEMA} />
       </head>
@@ -138,11 +161,13 @@ export default function RootLayout({ children }) {
         }} className="skip-to-content">
           Skip to content
         </a>
-        <LanguageProvider>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </LanguageProvider>
+        </ThemeProvider>
         {/* Cloudflare Turnstile — anti-bot, doit charger avant l'auth page */}
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"

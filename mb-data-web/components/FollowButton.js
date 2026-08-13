@@ -127,14 +127,14 @@ function btnStyle(size, variant) {
   if (variant === 'filled') {
     return {
       ...base,
-      background: '#2d6fff', color: '#fff',
+      background: 'var(--blue)', color: '#fff',
       border: '1px solid transparent',
     }
   }
   // outline
   return {
     ...base,
-    background: 'transparent', color: '#9098b0',
-    border: '1px solid rgba(255,255,255,0.13)',
+    background: 'transparent', color: 'var(--text2)',
+    border: '1px solid var(--border2)',
   }
 }

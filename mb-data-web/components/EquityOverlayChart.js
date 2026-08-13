@@ -23,13 +23,15 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { accountLabel, planSizeNum } from '../lib/constants'
 import Skeleton from './Skeleton'
+import { chartColors } from '../lib/theme'
+import { useTheme } from './ThemeProvider'
 
 const C = {
   surface:  'rgba(20,23,32,0.65)',
-  border:   'rgba(255,255,255,0.07)',
-  text:     '#f0ede8',
-  text2:    '#9098b0',
-  text3:    '#5a6275',
+  border:   'var(--border)',
+  text:     'var(--text)',
+  text2:    'var(--text2)',
+  text3:    'var(--text3)',
   green:    '#1db87a',
   red:      '#e8504a',
   blue:     '#2d6fff',
@@ -63,6 +65,7 @@ export default function EquityOverlayChart({ firms = [], user }) {
   }, [firms])
 
   // Comptes sélectionnés pour overlay (IDs)
+  const { theme } = useTheme()
   const [selected, setSelected] = useState([])
   const [mode, setMode] = useState('absolute') // 'absolute' = PnL $ | 'percent' = % gain
   const [entriesByAccount, setEntriesByAccount] = useState({}) // { acctId: [entry, ...] }
@@ -190,6 +193,7 @@ export default function EquityOverlayChart({ firms = [], user }) {
       if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null }
       return
     }
+    const CH = chartColors()
     import('chart.js/auto').then(({ Chart }) => {
       if (destroyed || !canvasRef.current) return
       if (chartRef.current) chartRef.current.destroy()
@@ -211,12 +215,12 @@ export default function EquityOverlayChart({ firms = [], user }) {
           scales: {
             x: {
               grid: { display: false },
-              ticks: { color: '#7b839b', font: { size: 10 }, maxTicksLimit: 12 },
+              ticks: { color: CH.tick, font: { size: 10 }, maxTicksLimit: 12 },
             },
             y: {
-              grid: { color: 'rgba(255,255,255,0.04)' },
+              grid: { color: CH.grid },
               ticks: {
-                color: '#7b839b', font: { size: 10 },
+                color: CH.tick, font: { size: 10 },
                 callback: v => mode === 'percent' ? `${v}%` : `${v}$`,
               },
             },
@@ -225,7 +229,9 @@ export default function EquityOverlayChart({ firms = [], user }) {
       })
     })
     return () => { destroyed = true }
-  }, [chartData, mode])
+    // `theme` en dépendance : Chart.js peint dans un canvas et ne résout pas
+    // var(), donc le graphe doit être reconstruit à chaque bascule de thème.
+  }, [chartData, mode, theme])
 
   // Stats par compte sélectionné (synthèse à droite du chart)
   const perAccountStats = useMemo(() => {
@@ -302,7 +308,7 @@ export default function EquityOverlayChart({ firms = [], user }) {
       </div>
 
       {/* Picker comptes — chips groupés par firme */}
-      <div style={{ marginBottom: 14, padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: `1px solid ${C.border}` }}>
+      <div style={{ marginBottom: 14, padding: '10px 12px', background: 'var(--tint1)', borderRadius: 8, border: `1px solid ${C.border}` }}>
         <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: 8 }}>
           Comptes à comparer ({selected.length}/{MAX_ACCOUNTS})
         </div>
@@ -371,7 +377,7 @@ export default function EquityOverlayChart({ firms = [], user }) {
             {perAccountStats.map(s => (
               <div key={s.id} style={{
                 padding: '10px 12px',
-                background: 'rgba(255,255,255,0.02)',
+                background: 'var(--tint1)',
                 border: `1px solid ${C.border}`,
                 borderLeft: `3px solid ${s.color}`,
                 borderRadius: 6,

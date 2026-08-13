@@ -168,7 +168,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
         style={{
           width: '100%', maxWidth: 460,
           background: 'rgba(20,23,32,0.95)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          border: '1px solid var(--hairline)',
           borderRadius: 14, padding: '28px 28px 24px',
           boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
           color: 'var(--text)', fontFamily: 'inherit',
@@ -279,8 +279,8 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
             {/* Privacy first : profil privé par défaut. L'user opt-in explicitement. */}
             <div style={{
               marginBottom: 18, padding: '14px 16px',
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: 'var(--tint1)',
+              border: '1px solid var(--border)',
               borderRadius: 10,
             }}>
               <label style={{
@@ -302,7 +302,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
                     Ton profil sera accessible à <code style={{
-                      background: 'rgba(255,255,255,0.04)', padding: '1px 5px',
+                      background: 'var(--tint2)', padding: '1px 5px',
                       borderRadius: 3, fontSize: 10, fontFamily: 'ui-monospace, monospace',
                     }}>quantara.tech/u/{username || 'ton-pseudo'}</code> pour tous (y compris non connectés).
                     {' '}Pseudo, bio, style de trading visibles · <strong style={{ color: 'var(--text2)' }}>aucun montant de payout</strong> exposé.
@@ -356,8 +356,8 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                 type="button" onClick={onClose}
                 style={{
                   padding: '9px 16px', fontSize: 13, fontWeight: 500,
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  background: 'var(--tint1)',
+                  border: '1px solid var(--hairline)',
                   color: 'var(--text2)', borderRadius: 8,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}>Annuler</button>
@@ -365,7 +365,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                 type="submit" disabled={saving}
                 style={{
                   padding: '9px 18px', fontSize: 13, fontWeight: 500,
-                  background: 'var(--text)', color: '#0a0c10',
+                  background: 'var(--text)', color: 'var(--text-inverse)',
                   border: '1px solid transparent', borderRadius: 8,
                   cursor: saving ? 'wait' : 'pointer',
                   opacity: saving ? 0.6 : 1, fontFamily: 'inherit',
@@ -471,7 +471,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                     }}
                     style={{
                       padding: '9px 18px', fontSize: 13, fontWeight: 600,
-                      background: deleteConfirm === 'SUPPRIMER MON COMPTE' ? '#e8504a' : 'var(--surface3)',
+                      background: deleteConfirm === 'SUPPRIMER MON COMPTE' ? 'var(--red)' : 'var(--surface3)',
                       color: deleteConfirm === 'SUPPRIMER MON COMPTE' ? '#fff' : 'var(--text3)',
                       border: 'none', borderRadius: 8, cursor: deleteConfirm === 'SUPPRIMER MON COMPTE' ? 'pointer' : 'not-allowed',
                       fontFamily: 'inherit', opacity: deleting ? 0.5 : 1,

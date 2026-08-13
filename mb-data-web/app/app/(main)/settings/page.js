@@ -9,6 +9,7 @@ import { C, cardStyle } from '../../../../lib/theme'
 import PushNotificationToggle from '../../../../components/PushNotificationToggle'
 import BillingSection from '../../../../components/BillingSection'
 import LanguageSwitcher from '../../../../components/LanguageSwitcher'
+import ThemeSwitcher from '../../../../components/ThemeSwitcher'
 import Link from 'next/link'
 
 // ── Local storage key for email preferences ──
@@ -68,7 +69,7 @@ function Toggle({ checked, onChange, disabled = false }) {
       disabled={disabled}
       style={{
         width: 44, height: 24, borderRadius: 12,
-        background: checked ? C.blue : 'rgba(255,255,255,0.1)',
+        background: checked ? C.blue : 'var(--hairline)',
         border: `1px solid ${checked ? C.blue : C.border2}`,
         position: 'relative', cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s', padding: 0,
@@ -210,11 +211,17 @@ export default function SettingsPage() {
         </SettingRow>
       </Card>
 
-      {/* ── 4. Langue ── */}
-      <SectionTitle icon="🌐">
-        {t('app.settings.languageSection')}
+      {/* ── 4. Apparence ── */}
+      <SectionTitle icon="🎨">
+        {t('app.settings.appearanceSection')}
       </SectionTitle>
       <Card>
+        <SettingRow
+          label={t('app.settings.themeLabel')}
+          description={t('app.settings.themeDesc')}
+        >
+          <ThemeSwitcher />
+        </SettingRow>
         <SettingRow
           label={t('app.settings.languageLabel')}
           description={t('app.settings.languageDesc')}
@@ -236,7 +243,7 @@ export default function SettingsPage() {
             onClick={() => showToast(t('app.settings.exportSoon'))}
             style={{
               fontSize: 12, fontWeight: 600, color: C.text2,
-              background: 'rgba(255,255,255,0.05)',
+              background: 'var(--tint2)',
               border: `1px solid ${C.border2}`,
               borderRadius: 8, padding: '8px 14px',
               cursor: 'pointer', fontFamily: 'inherit',
@@ -289,7 +296,7 @@ export default function SettingsPage() {
                   onClick={() => setShowDeleteConfirm(false)}
                   style={{
                     fontSize: 12, fontWeight: 600, color: C.text2,
-                    background: 'rgba(255,255,255,0.05)',
+                    background: 'var(--tint2)',
                     border: `1px solid ${C.border2}`,
                     borderRadius: 8, padding: '8px 14px',
                     cursor: 'pointer', fontFamily: 'inherit',
@@ -314,7 +321,7 @@ export default function SettingsPage() {
           <span style={{
             fontSize: 12, color: C.text3,
             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--tint2)',
             padding: '4px 10px', borderRadius: 6,
           }}>
             1.0.0-beta

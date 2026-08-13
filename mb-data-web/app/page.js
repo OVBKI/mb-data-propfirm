@@ -28,7 +28,7 @@ const LandingPage = dynamic(() => import('../components/landing/LandingPage'), {
 function LandingFallback() {
   return (
     <div style={{ minHeight: '100vh', background: '#0d0f14', color: '#f0ede8' }}>
-      <header style={{ padding: '14px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <header style={{ padding: '14px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontWeight: 800, letterSpacing: '0.12em', fontSize: 13 }}>QUANTARA</span>
         <nav style={{ display: 'flex', gap: 18, fontSize: 13 }}>
           <a href="/compare" style={{ color: '#9098b0', textDecoration: 'none' }}>Comparateur</a>
@@ -107,9 +107,15 @@ export default function Page() {
           crawlers). Organization + WebSite sont déjà émis dans layout.js. */}
       <JsonLd data={SOFTWARE_SCHEMA} />
       <JsonLd data={FAQ_SCHEMA} />
-      <Suspense fallback={<LandingFallback />}>
-        <LandingPage />
-      </Suspense>
+      {/* La landing est ÉPINGLÉE en sombre : son star field Three.js, ses dégradés
+          mesh et ses mockups sont dessinés pour du noir — en clair ils deviennent
+          illisibles. data-theme sur ce conteneur redéfinit les jetons pour tout le
+          sous-arbre, quel que soit le choix de l'utilisateur. */}
+      <div data-theme="dark" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+        <Suspense fallback={<LandingFallback />}>
+          <LandingPage />
+        </Suspense>
+      </div>
     </>
   )
 }

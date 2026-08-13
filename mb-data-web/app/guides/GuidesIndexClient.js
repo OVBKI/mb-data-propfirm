@@ -5,21 +5,21 @@ import Footer from '../../components/Footer'
 import { getGuidesOrdered } from '../../lib/guides'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  border: 'rgba(255,255,255,0.07)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  border: 'var(--border)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
 }
 
 const CATEGORY_COLORS = {
   'Risk management': C.blue,
   'Règles': '#a78bfa',
-  'Guide PropFirm': '#fac775',
+  'Guide PropFirm': 'var(--amber)',
   'Payouts': C.green,
   'CFD / Forex': '#22d3ee',
 }

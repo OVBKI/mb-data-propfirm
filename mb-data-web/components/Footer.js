@@ -7,12 +7,12 @@ import QLogoIcon from './QLogoIcon'
 import { useT } from './LanguageProvider'
 
 const C = {
-  surface: '#141720',
-  border: 'rgba(255,255,255,0.07)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blueLight: '#4d8fff',
+  surface: 'var(--surface)',
+  border: 'var(--border)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blueLight: 'var(--blue-light)',
 }
 
 export default function Footer() {
@@ -83,7 +83,7 @@ export default function Footer() {
               display: 'flex', alignItems: 'center', gap: 10,
               textDecoration: 'none', color: C.text, marginBottom: 14,
             }}>
-              <QLogoIcon size={44} color="#4d8fff" />
+              <QLogoIcon size={44} color="var(--blue-light)" />
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1, letterSpacing: '0.08em' }}>QUANTARA</div>
                 <div style={{ fontSize: 9, color: C.text3, marginTop: 3, letterSpacing: '0.05em' }}>TRACK · ANALYZE · GROW</div>
@@ -152,7 +152,7 @@ export default function Footer() {
             <span>🇺🇸 Quantara Technologies LLC · 🇪🇺 {t('pages.footer.bottom.eu')}</span>
             <span>·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#1db87a', boxShadow: '0 0 6px rgba(29,184,122,0.6)' }} />
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px rgba(29,184,122,0.6)' }} />
               {t('pages.footer.bottom.allOk')}
             </span>
           </div>
@@ -164,7 +164,7 @@ export default function Footer() {
           background: 'rgba(250,199,117,0.05)', border: '1px solid rgba(250,199,117,0.15)',
           borderRadius: 8, fontSize: 11, color: C.text3, lineHeight: 1.5,
         }}>
-          <strong style={{ color: '#fac775' }}>{t('pages.footer.disclaimer.title')}</strong> {t('pages.footer.disclaimer.body')}
+          <strong style={{ color: 'var(--amber)' }}>{t('pages.footer.disclaimer.title')}</strong> {t('pages.footer.disclaimer.body')}
         </div>
       </div>
     </footer>

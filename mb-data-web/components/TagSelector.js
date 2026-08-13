@@ -22,13 +22,13 @@ import {
 } from '../lib/tradeTags'
 
 const C = {
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#5a6275',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  surface: 'rgba(255,255,255,0.03)',
-  blue: '#2d6fff',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  surface: 'var(--tint1)',
+  blue: 'var(--blue)',
 }
 
 // Badge cliquable (toggle selected / unselected)
@@ -254,7 +254,7 @@ export function TagDisplay({ tags, compact = false, max = null }) {
         )
       })}
       {hidden > 0 && (
-        <span style={{ fontSize: 9, color: '#5a6275', fontWeight: 600 }}>
+        <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600 }}>
           +{hidden}
         </span>
       )}

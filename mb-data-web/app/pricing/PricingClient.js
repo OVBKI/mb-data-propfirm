@@ -11,18 +11,18 @@ import Reveal from '../../components/Reveal'
 import { useT } from '../../components/LanguageProvider'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
 }
 
 export default function PricingClient() {
@@ -293,7 +293,7 @@ export default function PricingClient() {
                     borderRadius: 8,
                     textAlign: 'center',
                     background: submitResult.type === 'ok' ? 'rgba(29,184,122,0.12)' : 'rgba(232,80,74,0.12)',
-                    color: submitResult.type === 'ok' ? C.green : '#e8504a',
+                    color: submitResult.type === 'ok' ? C.green : 'var(--red)',
                     border: `1px solid ${submitResult.type === 'ok' ? 'rgba(29,184,122,0.3)' : 'rgba(232,80,74,0.3)'}`,
                   }}>
                     {submitResult.msg}
@@ -461,7 +461,7 @@ function ctaPrimaryStyle(variant) {
     fontSize: 13, fontWeight: 600,
     textAlign: 'center',
     background: isLifetime ? `linear-gradient(135deg, ${C.amber}, #f4a460)` : C.blue,
-    color: isLifetime ? '#0a0c10' : '#fff',
+    color: isLifetime ? 'var(--text-inverse)' : '#fff',
     border: 'none',
     borderRadius: 10,
     textDecoration: 'none',

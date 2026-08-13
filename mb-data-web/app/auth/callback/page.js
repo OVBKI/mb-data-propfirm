@@ -30,17 +30,17 @@ function detectInitialType() {
 }
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  red: '#e8504a',
-  amber: '#fac775',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  red: 'var(--red)',
+  amber: 'var(--amber)',
 }
 
 function CallbackInner() {
@@ -225,13 +225,13 @@ function CallbackInner() {
   // === Styles communs ===
   const cardStyle = {
     width: '100%', maxWidth: 480,
-    background: C.surface, border: '1px solid rgba(255,255,255,0.13)',
+    background: C.surface, border: '1px solid var(--border2)',
     borderRadius: 14, padding: 40, textAlign: 'center',
     boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
   }
   const inputStyle = {
     width: '100%', padding: '11px 14px', fontSize: 14,
-    background: C.surface2, border: '1px solid rgba(255,255,255,0.13)',
+    background: C.surface2, border: '1px solid var(--border2)',
     borderRadius: 8, color: C.text, outline: 'none',
     fontFamily: 'inherit', marginTop: 4,
   }
@@ -416,7 +416,7 @@ function CallbackInner() {
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#0d0f14' }} />}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--bg)' }} />}>
       <CallbackInner />
     </Suspense>
   )

@@ -8,9 +8,14 @@
 //   - components/CalendarPage.js (IC, card)
 //   - app/app/page.js            (cardS)
 //
-// Colors use raw values for components that inline them, and CSS variable
-// references (var(--surface), etc.) where the existing code already does.
-// The raw values below match the CSS custom properties defined in globals.css.
+// Toutes les couleurs pointent vers un jeton CSS défini dans app/globals.css.
+// C'est ce qui rend le thème clair possible : `style={{ color: C.text }}` produit
+// `color: var(--text)`, qui suit le `data-theme` posé sur <html>.
+//
+// NE JAMAIS remettre une valeur en dur ici (ni ailleurs dans un style inline) :
+// elle resterait sombre en thème clair. Seule exception documentée : les couleurs
+// passées à Chart.js, qui peint dans un canvas et ne résout pas var() — utiliser
+// chartColors() pour celles-là.
 
 /**
  * Unified color palette.
@@ -20,33 +25,55 @@
  */
 export const C = {
   // Backgrounds / surfaces
-  bg:        'rgba(10,12,16,1)',
-  surface:   'rgba(20,23,32,0.65)',
-  surface2:  'rgba(28,32,48,0.7)',
-  surface3:  'rgba(255,255,255,0.02)',
-  neutral:   'rgba(255,255,255,0.04)',
+  bg:        'var(--bg)',
+  surface:   'var(--surface)',
+  surface2:  'var(--surface2)',
+  surface3:  'var(--tint1)',
+  neutral:   'var(--tint2)',
 
   // Borders
-  border:    'rgba(255,255,255,0.07)',
-  border2:   'rgba(255,255,255,0.13)',
+  border:    'var(--border)',
+  border2:   'var(--border2)',
 
   // Text
-  text:      '#f0ede8',
-  text2:     '#9098b0',
-  text3:     '#5a6275',
+  text:      'var(--text)',
+  text2:     'var(--text2)',
+  text3:     'var(--text3)',
 
   // Accent colors
-  blue:      '#2d6fff',
-  blueLight: '#4d8fff',
-  blueLt:    '#4d8fff',   // alias kept for backward compatibility
+  blue:      'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  blueLt:    'var(--blue-light)',   // alias kept for backward compatibility
 
-  green:     '#1db87a',
-  greenSoft: 'rgba(29,184,122,0.15)',
+  green:     'var(--green)',
+  greenSoft: 'var(--green-bg)',
 
-  red:       '#e8504a',
-  redSoft:   'rgba(232,80,74,0.15)',
+  red:       'var(--red)',
+  redSoft:   'var(--red-bg)',
 
-  amber:     '#fac775',
+  amber:     'var(--amber)',
+}
+
+/**
+ * Couleurs résolues pour un CANVAS (Chart.js).
+ *
+ * Chart.js peint dans un <canvas> : il reçoit des chaînes de couleur brutes et
+ * ne résout PAS `var(--x)`. Passer C.text à un dataset donne un trait invisible.
+ * Cette fonction lit les valeurs calculées sur <html>, donc elle suit le thème.
+ *
+ * À rappeler quand le thème change (les charts doivent être reconstruits).
+ * Renvoie la palette sombre côté serveur, où getComputedStyle n'existe pas.
+ */
+export function chartColors() {
+  const fallback = { grid: 'rgba(255,255,255,0.04)', tick: '#7b839b', text: '#f0ede8' }
+  if (typeof window === 'undefined') return fallback
+  const cs = getComputedStyle(document.documentElement)
+  const read = (name, dflt) => (cs.getPropertyValue(name) || '').trim() || dflt
+  return {
+    grid: read('--chart-grid', fallback.grid),
+    tick: read('--chart-tick', fallback.tick),
+    text: read('--text', fallback.text),
+  }
 }
 
 /**
@@ -57,9 +84,9 @@ export const C = {
  */
 export const cardStyle = {
   background: 'var(--surface)',
-  border:     '1px solid rgba(255,255,255,0.06)',
+  border:     '1px solid var(--border)',
   borderRadius: '10px',
-  boxShadow:  '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)',
+  boxShadow:  'var(--shadow-card)',
 }
 
 /**
@@ -81,13 +108,13 @@ export const btnPrimary = {
   fontSize:      '12.5px',
   fontWeight:    '500',
   background:    'var(--text)',
-  color:         '#0a0c10',
+  color:         'var(--text-inverse)',
   border:        '1px solid transparent',
   borderRadius:  '8px',
   cursor:        'pointer',
   fontFamily:    'inherit',
   letterSpacing: '0.005em',
-  boxShadow:     '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
+  boxShadow:     'var(--shadow-card)',
   transition:    'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s',
 }
 
@@ -99,8 +126,8 @@ export const btnGhost = {
   padding:       '8px 14px',
   fontSize:      '12px',
   fontWeight:    '500',
-  background:    'rgba(255,255,255,0.025)',
-  border:        '1px solid rgba(255,255,255,0.10)',
+  background:    'var(--tint1)',
+  border:        '1px solid var(--hairline)',
   color:         'var(--text2)',
   borderRadius:  '8px',
   cursor:        'pointer',
@@ -117,9 +144,9 @@ export const inputStyle = {
   width:        '100%',
   padding:      '10px 12px',
   fontSize:     '13px',
-  border:       '1px solid rgba(255,255,255,0.08)',
+  border:       '1px solid var(--hairline)',
   borderRadius: '8px',
-  background:   'rgba(255,255,255,0.02)',
+  background:   'var(--tint1)',
   color:        'var(--text)',
   outline:      'none',
   transition:   'border-color 0.2s, background 0.2s',
@@ -133,9 +160,9 @@ export const inputStyle = {
 export const inputStyleCompact = {
   padding:      '7px 10px',
   fontSize:     '12px',
-  border:       '1px solid rgba(255,255,255,0.08)',
+  border:       '1px solid var(--hairline)',
   borderRadius: '6px',
-  background:   'rgba(255,255,255,0.02)',
+  background:   'var(--tint1)',
   color:        C.text,
   outline:      'none',
   fontFamily:   'inherit',
@@ -168,10 +195,10 @@ export function chipBtn(active) {
     fontSize:     '12px',
     cursor:       'pointer',
     borderRadius: '99px',
-    border:       `1px solid ${active ? 'rgba(45,111,255,0.4)' : 'rgba(255,255,255,0.10)'}`,
+    border:       `1px solid ${active ? 'var(--blue-border)' : 'var(--hairline)'}`,
     fontFamily:   'inherit',
     fontWeight:   active ? '600' : '500',
-    background:   active ? 'rgba(45,111,255,0.15)' : 'transparent',
+    background:   active ? 'var(--blue-bg)' : 'transparent',
     color:        active ? 'var(--blue-light)' : 'var(--text2)',
     transition:   'all 0.15s',
   }

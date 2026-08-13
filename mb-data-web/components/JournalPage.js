@@ -12,7 +12,8 @@ import { TooltipIcon } from './Tooltip'
 import TagSelector from './TagSelector'
 import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
 import { fmtMoney, todayISO } from '../lib/format'
-import { cardStyle as card, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn } from '../lib/theme'
+import { cardStyle as card, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
+import { useTheme } from './ThemeProvider'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
@@ -22,6 +23,7 @@ const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
 // Carte avec courbe de balance pour un compte donné
 function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade, addTradeHref=null }){
   const t = useT()
+  const { theme } = useTheme()
   const ref = useRef(null)
   const chart = useRef(null)
 
@@ -182,6 +184,9 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
     if(!ref.current) return
     if(!data.labels.length) return
     let destroyed = false
+    // Chart.js peint dans un canvas : var() n'y est pas résolu, on lit les jetons
+    // calculés. `theme` est en dépendance pour reconstruire à la bascule.
+    const CH = chartColors()
     import('chart.js/auto').then(({default: Chart})=>{
       if(destroyed) return
       if(chart.current){ chart.current.destroy(); chart.current = null }
@@ -232,10 +237,10 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             }
           },
           scales:{
-            x:{grid:{display:false},ticks:{color:'#7b839b',font:{size:10},maxTicksLimit:8}},
+            x:{grid:{display:false},ticks:{color:CH.tick,font:{size:10},maxTicksLimit:8}},
             y:{
-              grid:{color:'rgba(255,255,255,0.04)'},
-              ticks:{color:'#7b839b',font:{size:10},callback:v=>'$'+v.toLocaleString('fr-FR',{maximumFractionDigits:0})},
+              grid:{color:CH.grid},
+              ticks:{color:CH.tick,font:{size:10},callback:v=>'$'+v.toLocaleString('fr-FR',{maximumFractionDigits:0})},
               suggestedMin:minVal,
               suggestedMax:maxVal,
             }
@@ -247,7 +252,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       destroyed = true
       if(chart.current){ chart.current.destroy(); chart.current = null }
     }
-  },[data.labels.join(','), data.balances.join(','), data.ddLine.join(','), planSize, isTrailing, payoutTarget])
+  },[data.labels.join(','), data.balances.join(','), data.ddLine.join(','), planSize, isTrailing, payoutTarget, theme])
 
   const finalNet = data.totalPnl
   const pctFromStart = planSize>0 ? (finalNet/planSize)*100 : 0
@@ -609,7 +614,7 @@ export default function JournalPage({
           ...e,
           _firmId: acc?.firmId,
           _firmName: acc?.firmName || 'Compte supprimé',
-          _firmColor: acc?.firmColor || '#7b839b',
+          _firmColor: acc?.firmColor || 'var(--text3)',
           _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
         }
       })
@@ -1463,7 +1468,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
           </div>
           <button onClick={()=>setLightboxUrl(null)} style={{
             position:'absolute',top:'20px',right:'20px',
-            background:'rgba(255,255,255,0.1)',color:'#fff',border:'1px solid rgba(255,255,255,0.2)',
+            background:'var(--hairline)',color:'#fff',border:'1px solid var(--hairline2)',
             borderRadius:'8px',padding:'8px 16px',fontSize:'13px',cursor:'pointer',fontWeight:'600',
           }}>{t('app.journal.closeLightbox')}</button>
         </div>
@@ -1560,7 +1565,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 if ((comm <= 0 && slip <= 0) || !Number.isFinite(net)) return null
                 const gross = net + comm + slip
                 return (
-                  <div style={{gridColumn:'1/-1',padding:'8px 12px',background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'6px',display:'flex',gap:'14px',flexWrap:'wrap',alignItems:'center',fontSize:'11px',color:'var(--text3)'}}>
+                  <div style={{gridColumn:'1/-1',padding:'8px 12px',background:'var(--tint1)',border:'1px solid var(--border)',borderRadius:'6px',display:'flex',gap:'14px',flexWrap:'wrap',alignItems:'center',fontSize:'11px',color:'var(--text3)'}}>
                     <span style={{fontWeight:'700',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px',fontSize:'9px'}}>💵 Décomposition</span>
                     <span>Gross : <strong style={{color:gross>=0?'var(--green)':'var(--red)'}}>{(gross>=0?'+':'')+gross.toFixed(2)} $</strong></span>
                     {comm > 0 && <span>− Commissions : <strong style={{color:'var(--red)'}}>{comm.toFixed(2)} $</strong></span>}

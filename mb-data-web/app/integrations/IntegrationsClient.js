@@ -7,28 +7,28 @@ import { getAffiliateLink, AFFILIATE_DISCLAIMER } from '../../lib/affiliateLinks
 import { useT, useLanguage } from '../../components/LanguageProvider'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
 }
 
 // Notes par firm (FR/EN) — bloc locale-aware (option B).
 const FIRMS_FR = [
   { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
   { name: 'Apex Trader Funding',    color: '#a78bfa', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic R|Trader Pro' },
-  { name: 'Bulenox',                color: '#e8504a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
-  { name: 'Lucid Trading',          color: '#4d8fff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Import CSV Rithmic — testé en prod' },
-  { name: 'Tradeify',               color: '#1db87a', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
-  { name: 'Take Profit Trader',     color: '#fac775', status: 'manual',       apiVendor: 'TPT (ProjectX)',              note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'Bulenox',                color: 'var(--red)', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
+  { name: 'Lucid Trading',          color: 'var(--blue-light)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Import CSV Rithmic — testé en prod' },
+  { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'Take Profit Trader',     color: 'var(--amber)', status: 'manual',       apiVendor: 'TPT (ProjectX)',              note: 'API ProjectX en roadmap Q3 2026' },
   { name: 'My Funded Futures',      color: '#fb923c', status: 'manual',       apiVendor: 'MFFU (ProjectX)',             note: 'API ProjectX en roadmap Q3 2026' },
   { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
   { name: 'Funded Futures Network', color: '#a86bff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic' },
@@ -39,10 +39,10 @@ const FIRMS_FR = [
 const FIRMS_EN = [
   { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX (ProjectX)',         note: 'ProjectX API on roadmap Q3 2026' },
   { name: 'Apex Trader Funding',    color: '#a78bfa', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Rithmic R|Trader Pro CSV import' },
-  { name: 'Bulenox',                color: '#e8504a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
-  { name: 'Lucid Trading',          color: '#4d8fff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Rithmic CSV import — tested in production' },
-  { name: 'Tradeify',               color: '#1db87a', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'ProjectX API on roadmap Q3 2026' },
-  { name: 'Take Profit Trader',     color: '#fac775', status: 'manual',       apiVendor: 'TPT (ProjectX)',              note: 'ProjectX API on roadmap Q3 2026' },
+  { name: 'Bulenox',                color: 'var(--red)', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
+  { name: 'Lucid Trading',          color: 'var(--blue-light)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Rithmic CSV import — tested in production' },
+  { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'ProjectX API on roadmap Q3 2026' },
+  { name: 'Take Profit Trader',     color: 'var(--amber)', status: 'manual',       apiVendor: 'TPT (ProjectX)',              note: 'ProjectX API on roadmap Q3 2026' },
   { name: 'My Funded Futures',      color: '#fb923c', status: 'manual',       apiVendor: 'MFFU (ProjectX)',             note: 'ProjectX API on roadmap Q3 2026' },
   { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
   { name: 'Funded Futures Network', color: '#a86bff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Rithmic CSV import' },
@@ -76,7 +76,7 @@ function StatusBadge({ status, t }) {
   const config = {
     'csv-rithmic': { label: t('pages.integrations.badge.csvRithmic'), color: C.green, bg: 'rgba(29,184,122,0.10)', border: 'rgba(29,184,122,0.35)' },
     'manual':      { label: t('pages.integrations.badge.manual'),     color: C.amber, bg: 'rgba(250,199,117,0.10)', border: 'rgba(250,199,117,0.35)' },
-    'csv-soon':    { label: t('pages.integrations.badge.csvSoon'),    color: C.text3, bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.10)' },
+    'csv-soon':    { label: t('pages.integrations.badge.csvSoon'),    color: C.text3, bg: 'var(--tint2)', border: 'var(--hairline)' },
   }
   const s = config[status] || config.manual
   return (

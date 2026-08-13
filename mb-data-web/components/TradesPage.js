@@ -28,9 +28,9 @@ import { useDialog } from './useDialog'
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
 // Local variants — differ from shared theme (smaller padding/fontSize/borderRadius, no transitions)
-const inputS = { width: '100%', padding: '8px 10px', fontSize: 12, border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 6, background: 'rgba(255,255,255,0.02)', color: C.text, outline: 'none', fontFamily: 'inherit' }
-const btnGhost = { padding: '7px 12px', fontSize: 11, fontWeight: 500, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.10)', color: C.text2, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
-const btnPrimary = { padding: '8px 16px', fontSize: 12, fontWeight: 500, background: C.text, color: '#0a0c10', border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)' }
+const inputS = { width: '100%', padding: '8px 10px', fontSize: 12, border: `1px solid var(--hairline)`, borderRadius: 6, background: 'var(--tint1)', color: C.text, outline: 'none', fontFamily: 'inherit' }
+const btnGhost = { padding: '7px 12px', fontSize: 11, fontWeight: 500, background: 'var(--tint1)', border: '1px solid var(--hairline)', color: C.text2, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
+const btnPrimary = { padding: '8px 16px', fontSize: 12, fontWeight: 500, background: C.text, color: 'var(--text-inverse)', border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)' }
 
 // Filtres période rapides
 const PERIOD_PRESETS = [
@@ -346,7 +346,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
                   borderRadius: 99,
                   background: period === p.k ? 'rgba(45,111,255,0.15)' : 'transparent',
                   color: period === p.k ? C.blueLt : C.text2,
-                  border: `1px solid ${period === p.k ? 'rgba(45,111,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                  border: `1px solid ${period === p.k ? 'rgba(45,111,255,0.4)' : 'var(--hairline)'}`,
                   cursor: 'pointer',
                 }}
               >
@@ -375,7 +375,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
           <div role="group" aria-label="Vue" style={{
             display: 'flex',
             gap: 0,
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--tint2)',
             border: `1px solid ${C.border}`,
             borderRadius: 8,
             padding: 2,
@@ -568,8 +568,8 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
           </div>
           <button onClick={() => setLightboxUrl(null)} style={{
             position: 'absolute', top: 20, right: 20,
-            background: 'rgba(255,255,255,0.1)', color: '#fff',
-            border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
+            background: 'var(--hairline)', color: '#fff',
+            border: '1px solid var(--hairline2)', borderRadius: 8,
             padding: '8px 16px', fontSize: 13, cursor: 'pointer', fontWeight: 600,
           }}>{t('app.trades.close')}</button>
         </div>
@@ -652,7 +652,7 @@ function TagPills({ tags, max = 2 }) {
       {overflow > 0 && (
         <span style={{
           padding: '2px 6px', borderRadius: 5,
-          background: 'rgba(255,255,255,0.04)', color: C.text3,
+          background: 'var(--tint2)', color: C.text3,
           fontSize: 10, fontWeight: 600,
         }}>+{overflow}</span>
       )}
@@ -811,7 +811,7 @@ function TradeCompactView({ entries, onEdit, C, card }) {
       })}
       <style>{`
         .qt-list-row:hover {
-          background: rgba(255,255,255,0.025);
+          background: var(--tint1);
         }
         .qt-list-row:hover > div:first-child {
           opacity: 1 !important;
@@ -845,7 +845,7 @@ function TradeTableView({ entries, onEdit, C, card }) {
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     fontWeight: 700,
-    background: 'rgba(13,15,20,0.85)',
+    background: 'var(--bar-bg)',
     backdropFilter: 'blur(12px)',
     WebkitBackdropFilter: 'blur(12px)',
     borderBottom: `1px solid ${C.border}`,
@@ -950,7 +950,7 @@ function TradeTableView({ entries, onEdit, C, card }) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                     {/* Inline mini bar — width proportional to |pnl|/maxAbsPnl */}
                     <div style={{
-                      width: 56, height: 6, background: 'rgba(255,255,255,0.04)',
+                      width: 56, height: 6, background: 'var(--tint2)',
                       borderRadius: 3, overflow: 'hidden', position: 'relative',
                     }}>
                       <div style={{
@@ -965,7 +965,7 @@ function TradeTableView({ entries, onEdit, C, card }) {
                       {/* Center divider — separates wins from losses on the same axis */}
                       <div style={{
                         position: 'absolute', left: '50%', top: 0, bottom: 0,
-                        width: 1, background: 'rgba(255,255,255,0.08)',
+                        width: 1, background: 'var(--hairline)',
                       }} />
                     </div>
                     <span style={{
@@ -984,7 +984,7 @@ function TradeTableView({ entries, onEdit, C, card }) {
         </tbody>
       </table>
       <style>{`
-        .qt-table-pro tbody tr:hover { background: rgba(255,255,255,0.025); }
+        .qt-table-pro tbody tr:hover { background: var(--tint1); }
         .qt-table-pro tbody tr:hover .qt-row-accent { transform: scaleY(1) !important; }
       `}</style>
     </div>

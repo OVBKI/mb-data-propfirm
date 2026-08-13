@@ -11,14 +11,14 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 
 const C = {
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
   green: '#10b981',
-  red: '#e8504a',
-  border: 'rgba(255,255,255,0.13)',
+  red: 'var(--red)',
+  border: 'var(--border2)',
 }
 
 export default function GroupActions({ groupId, inviteCode, ownerId, members }) {

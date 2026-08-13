@@ -8,12 +8,14 @@
 
 import { useLanguage } from './LanguageProvider'
 
+// Jetons CSS et non valeurs en dur : sans ça le switcher reste sombre quand
+// l'utilisateur passe l'app en thème clair.
 const C = {
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#5a6275',
-  border: 'rgba(255,255,255,0.10)',
-  active: 'rgba(255,255,255,0.10)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  border: 'var(--hairline)',
+  active: 'var(--tint3)',
 }
 
 export default function LanguageSwitcher({ compact = false }) {
@@ -46,7 +48,7 @@ export default function LanguageSwitcher({ compact = false }) {
         border: `1px solid ${C.border}`,
         borderRadius: 6,
         overflow: 'hidden',
-        background: 'rgba(255,255,255,0.02)',
+        background: 'var(--tint1)',
         verticalAlign: 'middle',
       }}
     >

@@ -21,11 +21,11 @@ const DISMISS_KEY = 'quantara.betaBannerDismissed'
 const TYPES = ['bug', 'idea', 'other']
 
 const S = {
-  card: { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, boxShadow: '0 24px 64px rgba(0,0,0,0.5)' },
-  input: { width: '100%', padding: '10px 12px', fontSize: 13, border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, background: 'rgba(255,255,255,0.02)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
+  card: { background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 12, boxShadow: '0 24px 64px rgba(0,0,0,0.5)' },
+  input: { width: '100%', padding: '10px 12px', fontSize: 13, border: '1px solid var(--hairline)', borderRadius: 8, background: 'var(--tint1)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
   label: { fontSize: 10.5, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.7px', display: 'block', marginBottom: 6 },
-  btnPrimary: { padding: '9px 18px', fontSize: 12.5, fontWeight: 600, background: 'var(--text)', color: '#0a0c10', border: '1px solid transparent', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' },
-  btnGhost: { padding: '8px 14px', fontSize: 12, fontWeight: 500, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.10)', color: 'var(--text2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' },
+  btnPrimary: { padding: '9px 18px', fontSize: 12.5, fontWeight: 600, background: 'var(--text)', color: 'var(--text-inverse)', border: '1px solid transparent', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' },
+  btnGhost: { padding: '8px 14px', fontSize: 12, fontWeight: 500, background: 'var(--tint1)', border: '1px solid var(--hairline)', color: 'var(--text2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' },
 }
 
 export default function BetaFeedback({ user, showToast }) {

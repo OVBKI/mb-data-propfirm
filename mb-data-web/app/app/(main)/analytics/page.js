@@ -6,15 +6,21 @@ import { useEffect, useRef } from 'react'
 import { useApp } from '../AppContext'
 import { useT } from '../../../../components/LanguageProvider'
 import EquityOverlayChart from '../../../../components/EquityOverlayChart'
+import { chartColors } from '../../../../lib/theme'
+import { useTheme } from '../../../../components/ThemeProvider'
 
 // ── AnalyticsCharts (extracted from original page.js) ──
 function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPayout, yNet, mLabels, mSpent, mPayout, mNet }) {
+  const { theme } = useTheme()
   const cRef = useRef(null), yRef = useRef(null), mRef = useRef(null)
   const charts = useRef({})
   const cardS = { background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-lg)' }
 
   useEffect(() => {
     let destroyed = false
+    // Chart.js peint dans un canvas : var() n'y est pas résolu, on lit donc les
+    // jetons calculés. `theme` est en dépendance pour reconstruire à la bascule.
+    const CH = chartColors()
     const destroy = (key) => { if (charts.current[key]) { charts.current[key].destroy(); delete charts.current[key] } }
     import('chart.js/auto').then((mod) => {
       if (destroyed) return
@@ -23,14 +29,14 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(2)} €` } } },
-        scales: { x: { grid: { display: false }, ticks: { color: '#7b839b', font: { size: 10 }, maxTicksLimit: 10 } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7b839b', font: { size: 10 }, callback: v => v + '€' } } }
+        scales: { x: { grid: { display: false }, ticks: { color: CH.tick, font: { size: 10 }, maxTicksLimit: 10 } }, y: { grid: { color: CH.grid }, ticks: { color: CH.tick, font: { size: 10 }, callback: v => v + '€' } } }
       }
       if (cRef.current) { destroy('c'); charts.current.c = new Chart(cRef.current, { type: 'line', data: { labels: cLabels, datasets: [{ label: 'Dépenses (€)', data: cSpent, borderColor: '#e8504a', backgroundColor: 'rgba(232,80,74,0.06)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Payouts (€)', data: cPayout, borderColor: '#1db87a', backgroundColor: 'rgba(29,184,122,0.06)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Net (€)', data: cNet, borderColor: '#2d6fff', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [6, 3] }] }, options: opts }) }
       if (yRef.current) { destroy('y'); charts.current.y = new Chart(yRef.current, { type: 'bar', data: { labels: yLabels, datasets: [{ label: 'Dépenses (€)', data: ySpent, backgroundColor: '#e8504a', borderRadius: 5 }, { label: 'Payouts (€)', data: yPayout, backgroundColor: '#1db87a', borderRadius: 5 }, { label: 'Net (€)', data: yNet, backgroundColor: yNet.map(v => v >= 0 ? 'rgba(45,111,255,0.7)' : 'rgba(232,80,74,0.4)'), borderRadius: 5 }] }, options: opts }) }
       if (mRef.current) { destroy('m'); charts.current.m = new Chart(mRef.current, { type: 'bar', data: { labels: mLabels, datasets: [{ label: 'Dépenses (€)', data: mSpent, backgroundColor: '#e8504a', borderRadius: 4 }, { label: 'Payouts (€)', data: mPayout, backgroundColor: '#1db87a', borderRadius: 4 }, { label: 'Net (€)', data: mNet, backgroundColor: mNet.map(v => v >= 0 ? 'rgba(45,111,255,0.7)' : 'rgba(232,80,74,0.4)'), borderRadius: 4 }] }, options: opts }) }
     }).catch(e => console.error('Chart.js:', e))
     return () => { destroyed = true; Object.values(charts.current).forEach(c => c?.destroy()) }
-  }, [cLabels.join(','), yLabels.join(','), mLabels.join(',')])
+  }, [cLabels.join(','), yLabels.join(','), mLabels.join(','), theme])
 
   const leg = (items) => <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>{items.map(it => <div key={it.l} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text2)' }}><div style={{ width: '10px', height: '3px', borderRadius: '2px', background: it.c }}></div>{it.l}</div>)}</div>
 

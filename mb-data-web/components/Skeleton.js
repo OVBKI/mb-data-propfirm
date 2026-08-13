@@ -10,11 +10,11 @@
 //   <Skeleton.AppShell />                              // shell complet de /app
 
 const C = {
-  surface: '#141720',
-  surface2: '#1c2030',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
   surface3: '#222637',
-  border: 'rgba(255,255,255,0.07)',
-  bg: '#0d0f14',
+  border: 'var(--border)',
+  bg: 'var(--bg)',
 }
 
 // Base skeleton — bloc animé avec gradient shimmer

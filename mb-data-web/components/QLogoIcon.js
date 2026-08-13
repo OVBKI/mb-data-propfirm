@@ -12,7 +12,7 @@
 // descend vers le bas-droit. Le crop précédent était trop serré et coupait la tail.
 const VB = '200 130 620 620'
 
-export default function QLogoIcon({ size = 32, color = '#4d8fff' }) {
+export default function QLogoIcon({ size = 32, color = 'var(--blue-light)' }) {
   const useGradient = color === 'gradient'
   return (
     <svg
@@ -26,8 +26,8 @@ export default function QLogoIcon({ size = 32, color = '#4d8fff' }) {
       {useGradient && (
         <defs>
           <linearGradient id="qIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2d6fff" />
-            <stop offset="50%" stopColor="#4d8fff" />
+            <stop offset="0%" stopColor="var(--blue)" />
+            <stop offset="50%" stopColor="var(--blue-light)" />
             <stop offset="100%" stopColor="#7ba9ff" />
           </linearGradient>
         </defs>

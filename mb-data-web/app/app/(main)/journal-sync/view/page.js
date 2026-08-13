@@ -156,10 +156,10 @@ function TradesHistory({ filteredEntries, allAccounts }) {
 
       <div style={{
         background:'var(--surface)',
-        border:'1px solid rgba(255,255,255,0.06)',
+        border:'1px solid var(--border)',
         borderRadius:'10px',
         overflow:'hidden',
-        boxShadow:'0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)',
+        boxShadow:'0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)',
       }}>
         <div style={{ overflowX:'auto', maxHeight:'600px' }}>
           <table style={{
@@ -170,8 +170,8 @@ function TradesHistory({ filteredEntries, allAccounts }) {
             <thead>
               <tr style={{
                 position:'sticky', top:0,
-                background:'rgba(255,255,255,0.025)',
-                borderBottom:'1px solid rgba(255,255,255,0.06)',
+                background:'var(--tint1)',
+                borderBottom:'1px solid var(--border)',
                 zIndex:1,
               }}>
                 <th style={thStyle}>Date</th>
@@ -195,7 +195,7 @@ function TradesHistory({ filteredEntries, allAccounts }) {
                 const isLong = t.side === 'LONG'
                 return (
                   <tr key={t.id} className="ts-row" style={{
-                    borderTop:'1px solid rgba(255,255,255,0.04)',
+                    borderTop:'1px solid var(--tint2)',
                     transition:'background 0.12s ease',
                   }}>
                     <td style={tdStyle}>{t.date}</td>
@@ -245,7 +245,7 @@ function TradesHistory({ filteredEntries, allAccounts }) {
           <div style={{
             padding:'12px 16px', textAlign:'center', fontSize:11,
             color:'var(--text3)', fontFamily:'ui-monospace,monospace',
-            borderTop:'1px solid rgba(255,255,255,0.06)',
+            borderTop:'1px solid var(--border)',
           }}>
             Affichage des 1000 premiers · {filteredEntries.length - 1000} trades masqués. Affine les filtres pour voir le reste.
           </div>
@@ -253,7 +253,7 @@ function TradesHistory({ filteredEntries, allAccounts }) {
       </div>
 
       {/* Hover effect via style tag */}
-      <style>{`.ts-row:hover { background: rgba(255,255,255,0.025); }`}</style>
+      <style>{`.ts-row:hover { background: var(--tint1); }`}</style>
     </div>
   )
 }

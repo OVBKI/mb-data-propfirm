@@ -28,15 +28,15 @@ import {
 import { getCfdFirmsOrdered, getCfdModelsFromFirm } from '../lib/cfdSlugs'
 import { useManagedCfdFirms } from '../lib/managedFirms'
 
-const FIRM_COLORS_CFD = ['#4d8fff', '#1db87a', '#fac775', '#a78bfa', '#e8504a', '#22d3ee', '#f472b6', '#34d399', '#fb923c']
+const FIRM_COLORS_CFD = ['var(--blue-light)', 'var(--green)', 'var(--amber)', '#a78bfa', 'var(--red)', '#22d3ee', '#f472b6', '#34d399', '#fb923c']
 
 // ── Shared inline styles (mirror layout.js S object + theme.js) ──
 const S = {
-  card: { background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' },
-  input: { width: '100%', padding: '10px 12px', fontSize: '13px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', color: 'var(--text)', outline: 'none', transition: 'border-color 0.2s, background 0.2s', fontFamily: 'inherit', boxSizing: 'border-box' },
+  card: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' },
+  input: { width: '100%', padding: '10px 12px', fontSize: '13px', border: '1px solid var(--hairline)', borderRadius: '8px', background: 'var(--tint1)', color: 'var(--text)', outline: 'none', transition: 'border-color 0.2s, background 0.2s', fontFamily: 'inherit', boxSizing: 'border-box' },
   label: { fontSize: '10.5px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.7px', display: 'block', marginBottom: '6px' },
-  btnPrimary: { padding: '9px 18px', fontSize: '12.5px', fontWeight: '500', background: 'var(--text)', color: '#0a0c10', border: '1px solid transparent', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.005em', boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s' },
-  btnGhost: { padding: '8px 14px', fontSize: '12px', fontWeight: '500', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.10)', color: 'var(--text2)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.005em', transition: 'color 0.2s, border-color 0.2s, background 0.2s' },
+  btnPrimary: { padding: '9px 18px', fontSize: '12.5px', fontWeight: '500', background: 'var(--text)', color: 'var(--text-inverse)', border: '1px solid transparent', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.005em', boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s' },
+  btnGhost: { padding: '8px 14px', fontSize: '12px', fontWeight: '500', background: 'var(--tint1)', border: '1px solid var(--hairline)', color: 'var(--text2)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.005em', transition: 'color 0.2s, border-color 0.2s, background 0.2s' },
 }
 
 // Stored status literals — NEVER translate (these are DB values).
@@ -487,7 +487,7 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
           {/* Funded section — activation date + fee, shown once the account is financé. */}
           {form.status === 'Financé' && (
             <div style={{ gridColumn: '1/-1', background: 'rgba(29,184,122,0.07)', border: '0.5px solid #1db87a55', borderRadius: 8, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#1db87a', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{'✅'} {t('app.cfd.fundedSection')}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{'✅'} {t('app.cfd.fundedSection')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div>
                   <label style={S.label}>{t('app.cfd.activationDate')}</label>

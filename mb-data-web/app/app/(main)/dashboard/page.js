@@ -6,14 +6,20 @@ import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../AppContext'
 import { useT } from '../../../../components/LanguageProvider'
 import { MONTHS_FULL } from '../../../../lib/constants'
+import { chartColors } from '../../../../lib/theme'
+import { useTheme } from '../../../../components/ThemeProvider'
 
 // ── Mini Bar Chart for dashboard ──
 function MiniBarChart({ firms, firmTotalSpent, firmTotalPayouts }) {
+  const { theme } = useTheme()
   const ref = useRef(null)
   const chart = useRef(null)
 
   useEffect(() => {
     if (!ref.current || !firms.length) return
+    // Chart.js peint dans un canvas : var() n'y est pas résolu, on lit les jetons
+    // calculés. `theme` est en dépendance pour reconstruire à la bascule.
+    const CH = chartColors()
     import('chart.js/auto').then(({ default: Chart }) => {
       if (chart.current) { chart.current.destroy(); chart.current = null }
       const labels = firms.map(f => f.name.length > 8 ? f.name.slice(0, 8) + '…' : f.name)
@@ -31,14 +37,14 @@ function MiniBarChart({ firms, firmTotalSpent, firmTotalPayouts }) {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €` } } },
           scales: {
-            x: { grid: { display: false }, ticks: { color: '#7b839b', font: { size: 9 } } },
-            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7b839b', font: { size: 9 }, callback: v => v + '€' } }
+            x: { grid: { display: false }, ticks: { color: CH.tick, font: { size: 9 } } },
+            y: { grid: { color: CH.grid }, ticks: { color: CH.tick, font: { size: 9 }, callback: v => v + '€' } }
           }
         }
       })
     })
     return () => { if (chart.current) { chart.current.destroy(); chart.current = null } }
-  }, [firms.map(f => f.id).join(',')])
+  }, [firms.map(f => f.id).join(','), theme])
 
   return <canvas ref={ref} />
 }
@@ -130,7 +136,7 @@ export default function DashboardPage() {
           <div style={{ fontSize: '13px', color: 'var(--text3)' }}>{rateInfo}</div>
         </div>
         <div className="page-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+          <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: '8px', overflow: 'hidden', background: 'var(--tint1)' }}>
             {['native', 'eur'].map(c => <button key={c} onClick={() => setCurrencyMode(c)} style={{ padding: '7px 14px', fontSize: '12px', border: 'none', background: currency === c ? 'var(--blue)' : 'transparent', color: currency === c ? '#fff' : 'var(--text2)', cursor: 'pointer', fontWeight: '600', letterSpacing: '0.05em' }}>{c === 'native' ? 'USD' : 'EUR'}</button>)}
           </div>
           <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: '180px', width: '100%', minWidth: 0 }} />
@@ -163,14 +169,14 @@ export default function DashboardPage() {
           const payoutCount = al.reduce((s, a) => s + (a.payouts || []).length, 0)
           const activeAccts = al.filter(a => a.status !== 'Échoué')
           return (
-            <div key={firm.id} onClick={() => setFirmDrawer(firm.id)} className="qt-firm-card" style={{ ...S.card, padding: '20px', cursor: 'pointer', transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(45,111,255,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px rgba(45,111,255,0.08)' }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
+            <div key={firm.id} onClick={() => setFirmDrawer(firm.id)} className="qt-firm-card" style={{ ...S.card, padding: '20px', cursor: 'pointer', transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(45,111,255,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px rgba(45,111,255,0.08)' }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>{getFirmLogo(firm.name, firm.color, 36)}<div><div style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.005em' }}>{firm.name}</div><div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>{al.length} compte{al.length > 1 ? 's' : ''} · {payoutCount} payout{payoutCount > 1 ? 's' : ''}</div></div></div>
                 <div style={{ textAlign: 'right' }}><div style={{ fontSize: '19px', fontWeight: '700', color: net >= 0 ? 'var(--green)' : 'var(--red)', letterSpacing: '-0.015em' }}>{currency === 'eur' ? fmtENet(net, 0) : (net >= 0 ? '+' : '') + (net / rates.USD).toFixed(0) + ' $'}</div><div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%</div></div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px', marginBottom: '14px' }}>
                 {[{ l: 'Dépensé', v: currency === 'eur' ? fmtE(ts, 0) : (ts / rates.USD).toFixed(0) + ' $', c: 'var(--red)' }, { l: 'Payouts', v: currency === 'eur' ? fmtE(tp, 0) : (tp / rates.USD).toFixed(0) + ' $', c: 'var(--green)' }, { l: 'Actifs', v: financedCount + challengeCount }].map((s, i) => (
-                  <div key={i} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '7px', padding: '10px 8px', textAlign: 'center' }}><div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px', fontWeight: '600' }}>{s.l}</div><div style={{ fontSize: '14px', fontWeight: '700', color: s.c || 'var(--text)', letterSpacing: '-0.005em' }}>{s.v}</div></div>
+                  <div key={i} style={{ background: 'var(--tint1)', border: '1px solid var(--tint2)', borderRadius: '7px', padding: '10px 8px', textAlign: 'center' }}><div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px', fontWeight: '600' }}>{s.l}</div><div style={{ fontSize: '14px', fontWeight: '700', color: s.c || 'var(--text)', letterSpacing: '-0.005em' }}>{s.v}</div></div>
                 ))}
               </div>
               {activeAccts.slice(0, 3).map(a => {

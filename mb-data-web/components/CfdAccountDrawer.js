@@ -72,8 +72,8 @@ const sectionTitleStyle = {
   letterSpacing: '0.5px',
 }
 
-const btnGhost = { padding: '8px 14px', fontSize: 12, fontWeight: 500, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.10)', color: 'var(--text2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', minHeight: 32 }
-const btnPrimary = { padding: '8px 16px', fontSize: 12, fontWeight: 600, background: 'var(--text)', color: '#0a0c10', border: '1px solid transparent', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', minHeight: 32 }
+const btnGhost = { padding: '8px 14px', fontSize: 12, fontWeight: 500, background: 'var(--tint1)', border: '1px solid var(--hairline)', color: 'var(--text2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', minHeight: 32 }
+const btnPrimary = { padding: '8px 16px', fontSize: 12, fontWeight: 600, background: 'var(--text)', color: 'var(--text-inverse)', border: '1px solid transparent', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', minHeight: 32 }
 
 export default function CfdAccountDrawer({ account, firm, onClose, onChanged, showToast, onEdit }) {
   const t = useT()
@@ -217,7 +217,7 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            {getFirmLogo(firmName, '#4d8fff', 32)}
+            {getFirmLogo(firmName, 'var(--blue-light)', 32)}
             <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -278,7 +278,7 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
               <button
                 onClick={() => { if (confirm(t('app.cfd.confirmFail'))) changeStatus('Échoué') }}
                 disabled={savingStatus}
-                style={{ flex: 1, padding: '10px 14px', background: 'transparent', border: '1px solid rgba(232,80,74,0.4)', color: '#e8504a', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
+                style={{ flex: 1, padding: '10px 14px', background: 'transparent', border: '1px solid rgba(232,80,74,0.4)', color: 'var(--red)', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
               >
                 <span style={{ fontSize: 15 }}>{'💔'}</span>{a.status === 'Challenge' ? t('app.cfd.markFailed') : t('app.cfd.markBlown')}
               </button>
@@ -332,17 +332,17 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface3)', borderRadius: 'var(--radius)', marginBottom: 10 }}>
                 <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t('app.cfd.totalPayouts')}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)' }}>
-                  {fmtAmount(totalPayouts, currency)} · <span style={{ color: net >= 0 ? '#1db87a' : '#e8504a' }}>{t('app.cfd.net')} {fmtAmount(net, currency)}</span>
+                  {fmtAmount(totalPayouts, currency)} · <span style={{ color: net >= 0 ? 'var(--green)' : 'var(--red)' }}>{t('app.cfd.net')} {fmtAmount(net, currency)}</span>
                 </span>
               </div>
               {payouts.slice().sort((x, y) => (y.date || '').localeCompare(x.date || '')).map(p => (
                 <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface2)', borderRadius: 'var(--radius)', marginBottom: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1db87a', flexShrink: 0 }} />
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 500, fontSize: 13 }}>{t('app.cfd.payoutPrefix')} {p.date}</div>
                     {p.note && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.note}</div>}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#1db87a' }}>+{fmtAmount(p.amount, currency)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--green)' }}>+{fmtAmount(p.amount, currency)}</div>
                   <button onClick={() => deletePayout(p.id)} aria-label={'✕'} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: '2px 6px', fontSize: 14 }}>{'✕'}</button>
                 </div>
               ))}
@@ -375,6 +375,6 @@ function statusBadge(status) {
     'Challenge': { bg: 'var(--amber-bg)', color: 'var(--amber-text)' },
     'Échoué': { bg: 'var(--red-bg)', color: 'var(--red-text)' },
   }
-  const c = map[status] || { bg: 'rgba(255,255,255,0.06)', color: 'var(--text2)' }
+  const c = map[status] || { bg: 'var(--border)', color: 'var(--text2)' }
   return { display: 'inline-block', fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 99, letterSpacing: '0.3px', background: c.bg, color: c.color }
 }

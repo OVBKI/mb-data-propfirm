@@ -5,17 +5,17 @@ import Reveal from '../../../components/Reveal'
 import { useT, useLanguage } from '../../../components/LanguageProvider'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
 }
 
 // Mentions légales — bloc locale-aware (option B).
@@ -143,7 +143,7 @@ export default function ImprintClient() {
               }}>
                 <div style={{
                   padding: '14px 22px',
-                  background: 'rgba(255,255,255,0.025)',
+                  background: 'var(--tint1)',
                   borderBottom: `1px solid ${C.border}`,
                 }}>
                   <h2 style={{

@@ -14,21 +14,21 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../../lib/supabase'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
   surface3: '#222637',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
   green: '#10b981',
   greenSoft: 'rgba(16,185,129,0.12)',
-  amber: '#fac775',
-  red: '#e8504a',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
 }
 
 // Génère la liste des 12 derniers mois pour le dropdown (YYYY-MM + label)
@@ -243,7 +243,7 @@ export default function AdminPayoutsPage() {
             onClick={() => setDrillUser(topUser)}
             style={{
               padding: '6px 12px', fontSize: 11, fontWeight: 600,
-              background: C.green, color: '#0a0c10', border: 'none', borderRadius: 6,
+              background: C.green, color: '#fff', border: 'none', borderRadius: 6,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >Voir détail →</button>

@@ -17,12 +17,12 @@ import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
 const TYPES = [
-  { k: 'challenge_passed', l: '🏆 Challenge réussi', color: '#fac775' },
-  { k: 'payout',           l: '💰 Payout reçu',      color: '#1db87a' },
+  { k: 'challenge_passed', l: '🏆 Challenge réussi', color: 'var(--amber)' },
+  { k: 'payout',           l: '💰 Payout reçu',      color: 'var(--green)' },
 ]
 // Pour la rétrocompatibilité : si un cert en DB a un type non listé (ex: 'other', 'certificate'),
 // on retombe sur ce fallback à l'affichage.
-const FALLBACK_TYPE = { k: 'other', l: '📄 Autre', color: '#9098b0' }
+const FALLBACK_TYPE = { k: 'other', l: '📄 Autre', color: 'var(--text2)' }
 
 const labelStyle = {
   display:'block', fontSize:'11px', fontWeight:'600',
@@ -159,7 +159,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
           <div style={{display:'flex', gap:'8px'}}>
             <button onClick={()=>setUploadOpen(o=>!o)} style={{
               padding:'9px 18px', fontSize:'12.5px', fontWeight:'500', cursor:'pointer',
-              borderRadius:'8px', border:'1px solid transparent', background:'var(--text)', color:'#0a0c10',
+              borderRadius:'8px', border:'1px solid transparent', background:'var(--text)', color:'var(--text-inverse)',
               boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
               fontFamily:'inherit', letterSpacing:'0.005em',
             }}>{uploadOpen ? '✕ Annuler' : '+ Ajouter un diplôme'}</button>
@@ -333,7 +333,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
           </div>
           <button onClick={()=>setZoomCert(null)} style={{
             position:'absolute', top:'20px', right:'20px',
-            background:'rgba(255,255,255,0.1)', color:'#fff', border:'1px solid rgba(255,255,255,0.2)',
+            background:'var(--hairline)', color:'#fff', border:'1px solid var(--hairline2)',
             borderRadius:'8px', padding:'8px 16px', fontSize:'13px', cursor:'pointer', fontWeight:'600',
           }}>✕ Fermer</button>
         </div>

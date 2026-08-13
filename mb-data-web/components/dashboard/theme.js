@@ -1,4 +1,7 @@
 // Design system Quantara — tokens partagés pour toutes les pages /app, /admin, etc.
+//
+// Toutes les couleurs pointent vers un jeton CSS (app/globals.css) : c'est ce qui
+// leur permet de suivre le thème clair. Ne jamais remettre une valeur en dur.
 // Importer T (theme) et utiliser dans les inline styles ou les composants partagés.
 //
 // Usage : import { T } from '@/components/dashboard/theme'  → T.color.blue, T.font.mono...
@@ -8,39 +11,39 @@ export const T = {
   // Palette cosmic Quantara : dark + bleus + accents états
   color: {
     // Fond
-    bg:         '#0a0c10',      // fond le plus sombre (page background)
-    bg2:        '#0d0f14',      // alt fond
-    surface:    'rgba(20,23,32,0.65)',     // cards (frosted glass quand sur SpaceBackground)
-    surfaceSolid: '#141720',    // cards opaques (modals, dropdowns)
-    surface2:   'rgba(28,32,48,0.7)',      // cards nested
-    surface2Solid: '#1c2030',
+    bg:         'var(--bg)',           // fond de page
+    bg2:        'var(--bg)',           // alt fond
+    surface:    'var(--surface)',       // cards
+    surfaceSolid: 'var(--surface)',    // cards opaques (modals, dropdowns)
+    surface2:   'var(--surface2)',     // cards nested
+    surface2Solid: 'var(--surface2)',
 
     // Bordures
-    border:     'rgba(255,255,255,0.07)',
-    borderHover: 'rgba(45,111,255,0.35)',
-    borderStrong: 'rgba(255,255,255,0.13)',
+    border:     'var(--border)',
+    borderHover: 'var(--blue-border)',
+    borderStrong: 'var(--border2)',
 
     // Texte
-    text:       '#f0ede8',      // primary (titres, valeurs)
-    text2:      '#9098b0',      // secondary (labels, sous-titres)
-    text3:      '#5a6275',      // tertiary (meta info, placeholders)
+    text:       'var(--text)',         // primary (titres, valeurs)
+    text2:      'var(--text2)',        // secondary (labels, sous-titres)
+    text3:      'var(--text3)',        // tertiary (meta info, placeholders)
 
     // Marque
-    blue:       '#2d6fff',      // bleu Quantara principal
-    blueLight:  '#4d8fff',      // hover / accents
-    blueSoft:   'rgba(45,111,255,0.12)',   // backgrounds hover, badges info
-    blueRing:   'rgba(45,111,255,0.4)',    // focus rings, borders actifs
+    blue:       'var(--blue)',         // bleu Quantara principal
+    blueLight:  'var(--blue-light)',   // hover / accents
+    blueSoft:   'var(--blue-bg)',      // backgrounds hover, badges info
+    blueRing:   'var(--blue-border)',  // focus rings, borders actifs
 
     // États
-    green:      '#10b981',
-    greenSoft:  'rgba(16,185,129,0.15)',
-    red:        '#ef4444',
-    redSoft:    'rgba(239,68,68,0.15)',
-    amber:      '#fac775',
-    amberSoft:  'rgba(250,199,117,0.15)',
+    green:      'var(--green)',
+    greenSoft:  'var(--green-bg)',
+    red:        'var(--red)',
+    redSoft:    'var(--red-bg)',
+    amber:      'var(--amber)',
+    amberSoft:  'var(--amber-bg)',
 
     // Frosted glass effect
-    glassBg:    'rgba(20,23,32,0.55)',
+    glassBg:    'var(--surface)',
     glassBlur:  'blur(20px)',
   },
 

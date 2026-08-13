@@ -31,7 +31,7 @@ const SR_ONLY = {
 
 // === Tokens de thème (cohérents avec globals.css / lib/theme.js) ===
 const C = {
-  bg: '#0d0f14',
+  bg: 'var(--bg)',
   surface: 'var(--surface)',
   surface2: 'var(--surface2)',
   border: 'var(--border)',
@@ -39,9 +39,9 @@ const C = {
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  amber: '#fac775',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  amber: 'var(--amber)',
   green: '#10b981',
 }
 
@@ -193,7 +193,7 @@ export default function FuturesRulesComparator() {
             {firms.map((firm, firmIdx) => {
               const offered = plansForFirm(firm).includes(plan)
               const { models } = getFuturesComparison(firm, plan)
-              const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
+              const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'var(--tint1)'
 
               // Un modèle est « dispo » pour ce plan si au moins une de ses
               // cellules cœur (drawdown challenge/financé) se résout. Sinon les

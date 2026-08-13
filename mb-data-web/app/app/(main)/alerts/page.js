@@ -70,7 +70,7 @@ export default function AlertsPage() {
                   {/* Cartes de la catégorie */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {items.map((alert, i) => (
-                      <div key={alert.key || i} style={{ ...S.card, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', background: alert.type === 'success' ? 'var(--green-bg)' : alert.type === 'warn' ? 'var(--amber-bg)' : 'var(--surface)', borderColor: alert.type === 'success' ? 'var(--green)' : alert.type === 'warn' ? 'var(--amber-text)' : 'rgba(255,255,255,0.07)' }}>
+                      <div key={alert.key || i} style={{ ...S.card, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', background: alert.type === 'success' ? 'var(--green-bg)' : alert.type === 'warn' ? 'var(--amber-bg)' : 'var(--surface)', borderColor: alert.type === 'success' ? 'var(--green)' : alert.type === 'warn' ? 'var(--amber-text)' : 'var(--border)' }}>
                         <div style={{ fontSize: '22px' }}>{alert.icon}</div>
                         <div><div style={{ fontSize: '13px', fontWeight: '600' }}>{alert.title}</div><div style={{ fontSize: '12px', color: 'var(--text2)' }}>{alert.sub}</div></div>
                       </div>

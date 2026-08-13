@@ -10,8 +10,8 @@ export default function NotFoundClient() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0d0f14',
-      color: '#f0ede8',
+      background: 'var(--bg)',
+      color: 'var(--text)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -40,7 +40,7 @@ export default function NotFoundClient() {
         </h1>
 
         <p style={{
-          fontSize: 15, color: '#9098b0', lineHeight: 1.6,
+          fontSize: 15, color: 'var(--text2)', lineHeight: 1.6,
           marginTop: 0, marginBottom: 32,
         }}>
           {t('errorPages.notFoundBody')}
@@ -50,7 +50,7 @@ export default function NotFoundClient() {
           <Link href="/" style={{
             padding: '12px 22px',
             fontSize: 14, fontWeight: 600,
-            background: '#2d6fff', color: 'white',
+            background: 'var(--blue)', color: 'white',
             border: 'none', borderRadius: 8,
             textDecoration: 'none',
             display: 'inline-flex', alignItems: 'center',
@@ -60,8 +60,8 @@ export default function NotFoundClient() {
           <Link href="/app" style={{
             padding: '12px 22px',
             fontSize: 14, fontWeight: 600,
-            background: 'transparent', color: '#9098b0',
-            border: '1px solid rgba(255,255,255,0.13)', borderRadius: 8,
+            background: 'transparent', color: 'var(--text2)',
+            border: '1px solid var(--border2)', borderRadius: 8,
             textDecoration: 'none',
             display: 'inline-flex', alignItems: 'center',
           }}>
@@ -73,18 +73,18 @@ export default function NotFoundClient() {
         <div style={{
           marginTop: 48,
           paddingTop: 24,
-          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderTop: '1px solid var(--border)',
           fontSize: 12,
-          color: '#7b839b',
+          color: 'var(--text3)',
         }}>
           <div style={{ marginBottom: 12, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
             {t('errorPages.popularPages')}
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/pricing" style={{ color: '#9098b0', textDecoration: 'none' }}>{t('errorPages.linkPricing')}</Link>
-            <Link href="/integrations" style={{ color: '#9098b0', textDecoration: 'none' }}>{t('errorPages.linkIntegrations')}</Link>
-            <Link href="/docs" style={{ color: '#9098b0', textDecoration: 'none' }}>{t('errorPages.linkDocs')}</Link>
-            <Link href="/security" style={{ color: '#9098b0', textDecoration: 'none' }}>{t('errorPages.linkSecurity')}</Link>
+            <Link href="/pricing" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkPricing')}</Link>
+            <Link href="/integrations" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkIntegrations')}</Link>
+            <Link href="/docs" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkDocs')}</Link>
+            <Link href="/security" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkSecurity')}</Link>
           </div>
         </div>
       </div>

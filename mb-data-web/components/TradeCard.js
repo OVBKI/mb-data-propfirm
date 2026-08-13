@@ -5,7 +5,7 @@
 //   <TradeCard
 //     entry={entry}
 //     accountLabel="Topstep · PRO 1"
-//     firmColor="#e8504a"
+//     firmColor="var(--red)"
 //     onEdit={() => openEdit(entry)}
 //     onLightbox={url => setLightboxUrl(url)}
 //   />
@@ -39,15 +39,15 @@ function fmtDate(iso) {
 const C = {
   surface:  'rgba(20,23,32,0.65)',
   surface2: 'rgba(28,32,48,0.7)',
-  border:   'rgba(255,255,255,0.07)',
-  text:     '#f0ede8',
-  text2:    '#9098b0',
-  text3:    '#5a6275',
-  green:    '#1db87a',
-  red:      '#e8504a',
-  amber:    '#fac775',
-  blue:     '#2d6fff',
-  blueLt:   '#4d8fff',
+  border:   'var(--border)',
+  text:     'var(--text)',
+  text2:    'var(--text2)',
+  text3:    'var(--text3)',
+  green:    'var(--green)',
+  red:      'var(--red)',
+  amber:    'var(--amber)',
+  blue:     'var(--blue)',
+  blueLt:   'var(--blue-light)',
 }
 
 export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLightbox }) {
@@ -81,11 +81,11 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
       border: `1px solid ${C.border}`,
       borderRadius: 12,
       padding: 16,
-      boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)',
+      boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)',
       position: 'relative',
       transition: 'border-color 0.2s, transform 0.2s',
     }}
-      onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.13)' }}
+      onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'var(--border2)' }}
       onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border }}
     >
       {/* === Header : Date + Instrument + Side + PnL === */}
@@ -124,11 +124,11 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
             title={t('app.trade.modalEditTitle')}
             style={{
               padding: '4px 8px', fontSize: 11,
-              background: 'rgba(255,255,255,0.04)', color: C.text2,
+              background: 'var(--tint2)', color: C.text2,
               border: `1px solid ${C.border}`, borderRadius: 6,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
-            onMouseEnter={ev => { ev.currentTarget.style.color = C.text; ev.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)' }}
+            onMouseEnter={ev => { ev.currentTarget.style.color = C.text; ev.currentTarget.style.borderColor = 'var(--hairline2)' }}
             onMouseLeave={ev => { ev.currentTarget.style.color = C.text2; ev.currentTarget.style.borderColor = C.border }}
           >
             ✏
@@ -176,7 +176,7 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
                 <div key={p.key} style={{
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: '5px 8px',
-                  background: 'rgba(255,255,255,0.02)',
+                  background: 'var(--tint1)',
                   border: `1px solid ${C.border}`,
                   borderRadius: 6,
                   fontSize: 10,

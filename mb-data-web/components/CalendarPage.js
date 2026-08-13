@@ -122,7 +122,7 @@ function Flag({ country, currency, size = 18, style = {} }) {
         borderRadius: 3,
         display: 'inline-block',
         verticalAlign: 'middle',
-        boxShadow: '0 0 0 0.5px rgba(255,255,255,0.18), 0 1px 2px rgba(0,0,0,0.4)',
+        boxShadow: '0 0 0 0.5px var(--hairline2), 0 1px 2px rgba(0,0,0,0.4)',
         flexShrink: 0,
         ...style,
       }}
@@ -132,10 +132,10 @@ function Flag({ country, currency, size = 18, style = {} }) {
 
 // Impact color tokens — vibrant for High, calmer for Medium, muted for Low
 const IC = {
-  High:    { bar: '#e8504a', text: '#ff6b66', bg: 'rgba(232,80,74,0.06)',  glow: 'rgba(232,80,74,0.25)' },
-  Medium:  { bar: '#fac775', text: '#fac775', bg: 'rgba(250,199,117,0.04)', glow: 'rgba(250,199,117,0.15)' },
-  Low:     { bar: '#5a6275', text: '#9098b0', bg: 'transparent',            glow: 'transparent' },
-  Holiday: { bar: '#4d8fff', text: '#7baaff', bg: 'rgba(45,111,255,0.06)',  glow: 'rgba(45,111,255,0.15)' },
+  High:    { bar: 'var(--red)', text: '#ff6b66', bg: 'rgba(232,80,74,0.06)',  glow: 'rgba(232,80,74,0.25)' },
+  Medium:  { bar: 'var(--amber)', text: 'var(--amber)', bg: 'rgba(250,199,117,0.04)', glow: 'rgba(250,199,117,0.15)' },
+  Low:     { bar: 'var(--text3)', text: 'var(--text2)', bg: 'transparent',            glow: 'transparent' },
+  Holiday: { bar: 'var(--blue-light)', text: '#7baaff', bg: 'rgba(45,111,255,0.06)',  glow: 'rgba(45,111,255,0.15)' },
 }
 
 // Traductions des événements ForexFactory (titres anglais → FR/ES)
@@ -269,9 +269,9 @@ function actualDiff(actual, forecast, lang) {
   const a = parseFloat(String(actual).replace(/[^0-9.-]/g, ''))
   const f = parseFloat(String(forecast).replace(/[^0-9.-]/g, ''))
   if (isNaN(a) || isNaN(f)) return null
-  if (a > f) return { color: '#1db87a', bg: 'rgba(29,184,122,0.15)', label: t.beat, sign: '↑' }
-  if (a < f) return { color: '#e8504a', bg: 'rgba(232,80,74,0.15)', label: t.miss, sign: '↓' }
-  return { color: '#fac775', bg: 'rgba(250,199,117,0.15)', label: t.inline, sign: '=' }
+  if (a > f) return { color: 'var(--green)', bg: 'rgba(29,184,122,0.15)', label: t.beat, sign: '↑' }
+  if (a < f) return { color: 'var(--red)', bg: 'rgba(232,80,74,0.15)', label: t.miss, sign: '↓' }
+  return { color: 'var(--amber)', bg: 'rgba(250,199,117,0.15)', label: t.inline, sign: '=' }
 }
 
 function todayFF() {
@@ -388,14 +388,14 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
   // ── STYLES partagés (cohérent thème cosmic Quantara) ──
   const card = {
     background: 'var(--surface)',
-    border: '1px solid rgba(255,255,255,0.06)',
+    border: '1px solid var(--border)',
     borderRadius: 14,
-    boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 32px rgba(0,0,0,0.18)',
+    boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 32px rgba(0,0,0,0.18)',
   }
   const cardElevated = {
     ...card,
     background: 'linear-gradient(180deg, rgba(28,32,48,0.65), rgba(20,23,32,0.7))',
-    border: '1px solid rgba(255,255,255,0.08)',
+    border: '1px solid var(--hairline)',
   }
   const monoFont = "'JetBrains Mono', 'SF Mono', 'Cascadia Mono', Menlo, monospace"
   const serifFont = "'ui-serif', Georgia, 'Times New Roman', Times, serif"
@@ -414,7 +414,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, var(--tint1) 1px, transparent 1px)',
           backgroundSize: '24px 24px',
           backgroundPosition: '0 0',
           pointerEvents: 'none',
@@ -432,12 +432,12 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               fontSize: 10.5, fontFamily: monoFont,
-              color: '#fac775', letterSpacing: '0.18em',
+              color: 'var(--amber)', letterSpacing: '0.18em',
               marginBottom: 14, textTransform: 'uppercase', fontWeight: 600,
             }}>
               <span style={{
                 width: 6, height: 6, borderRadius: '50%',
-                background: '#1db87a',
+                background: 'var(--green)',
                 boxShadow: '0 0 8px rgba(29,184,122,0.6)',
                 animation: 'qt-cal-pulse 2s ease-in-out infinite',
               }} />
@@ -471,7 +471,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{
               display: 'flex',
-              border: '1px solid rgba(255,255,255,0.10)', borderRadius: 99,
+              border: '1px solid var(--hairline)', borderRadius: 99,
               overflow: 'hidden', background: 'rgba(20,23,32,0.5)',
               backdropFilter: 'blur(8px)',
             }}>
@@ -486,7 +486,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             </div>
             <div style={{
               display: 'flex',
-              border: '1px solid rgba(255,255,255,0.10)', borderRadius: 99,
+              border: '1px solid var(--hairline)', borderRadius: 99,
               overflow: 'hidden', background: 'rgba(20,23,32,0.5)',
               backdropFilter: 'blur(8px)',
             }}>
@@ -499,7 +499,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
               style={{
                 ...pillStyle(false, monoFont),
                 background: 'rgba(28,32,48,0.6)',
-                border: '1px solid rgba(255,255,255,0.10)',
+                border: '1px solid var(--hairline)',
                 borderRadius: 99,
                 padding: '9px 16px',
                 display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -521,7 +521,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             label={t.todayKpi}
             value={todayEvents.length}
             sub={`${todayHighCount} high · ${todayEvents.filter(e => e.impact === 'Medium').length} medium`}
-            accent="#4d8fff"
+            accent="var(--blue-light)"
             mono={monoFont}
             serif={serifFont}
           />
@@ -529,7 +529,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             label={t.highKpi}
             value={weekHighCount}
             sub={lang === 'fr' ? 'cette semaine' : lang === 'es' ? 'esta semana' : 'this week'}
-            accent="#e8504a"
+            accent="var(--red)"
             mono={monoFont}
             serif={serifFont}
           />
@@ -537,7 +537,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             label={t.liveKpi}
             value={nowTimeStr || '—'}
             sub={lastUpd ? `${t.lastUpdate} ${lastUpd}` : ''}
-            accent="#1db87a"
+            accent="var(--green)"
             mono={monoFont}
             serif={serifFont}
             isLive
@@ -575,9 +575,9 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
           }}>{t.filterImpact}</span>
           <button onClick={() => setFImpact([])} className="qt-cal-pill" style={pillStyle(fImpact.length === 0, monoFont)}>{t.all}</button>
           {[
-            { k: 'High',   l: t.high,   c: '#e8504a' },
-            { k: 'Medium', l: t.medium, c: '#fac775' },
-            { k: 'Low',    l: t.low,    c: '#9098b0' },
+            { k: 'High',   l: t.high,   c: 'var(--red)' },
+            { k: 'Medium', l: t.medium, c: 'var(--amber)' },
+            { k: 'Low',    l: t.low,    c: 'var(--text2)' },
           ].map(imp => {
             const active = fImpact.includes(imp.k)
             return (
@@ -587,7 +587,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
                 className="qt-cal-pill"
                 style={{
                   ...pillStyle(active, monoFont),
-                  borderColor: active ? imp.c : 'rgba(255,255,255,0.10)',
+                  borderColor: active ? imp.c : 'var(--hairline)',
                   background: active ? `${imp.c}22` : 'transparent',
                   color: active ? imp.c : 'var(--text2)',
                   display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -731,14 +731,14 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
           {source === 'fmp' ? (
             <>
               {lang === 'fr' ? 'Données' : lang === 'es' ? 'Datos' : 'Data'} :{' '}
-              <a href="https://site.financialmodelingprep.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#4d8fff', textDecoration: 'none' }}>Financial Modeling Prep</a>
+              <a href="https://site.financialmodelingprep.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue-light)', textDecoration: 'none' }}>Financial Modeling Prep</a>
               {' · '}
               {lang === 'fr' ? 'Indicatif uniquement.' : lang === 'es' ? 'Indicativo solamente.' : 'Indicative only.'}
             </>
           ) : (
             <>
               {t.sourceLine}{' '}
-              <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" style={{ color: '#4d8fff', textDecoration: 'none' }}>
+              <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue-light)', textDecoration: 'none' }}>
                 forexfactory.com
               </a>
             </>
@@ -766,15 +766,15 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
           0%, 100% { opacity: 0.8; }
           50% { opacity: 0.3; }
         }
-        .qt-cal-pill:hover { background: rgba(255,255,255,0.06) !important; color: var(--text) !important; }
+        .qt-cal-pill:hover { background: var(--border) !important; color: var(--text) !important; }
         .qt-cal-pill[data-active="true"]:hover { background: rgba(45,111,255,0.22) !important; }
         .qt-cal-event-row { transition: background 0.15s, transform 0.15s; }
         .qt-cal-event-row:hover {
-          background: rgba(255,255,255,0.025) !important;
+          background: var(--tint1) !important;
         }
         .qt-cal-event-row:hover .qt-cal-event-time { color: var(--text) !important; }
         .qt-cal-day-chip { transition: background 0.15s, border-color 0.15s, transform 0.15s; }
-        .qt-cal-day-chip:hover { border-color: rgba(255,255,255,0.20) !important; transform: translateY(-1px); }
+        .qt-cal-day-chip:hover { border-color: var(--hairline2) !important; transform: translateY(-1px); }
         @media (max-width: 768px) {
           .qt-cal-kpi-row { grid-template-columns: 1fr !important; }
           .qt-cal-event-row {
@@ -801,7 +801,7 @@ function pillStyle(active, monoFont) {
     letterSpacing: '0.04em',
     cursor: 'pointer',
     borderRadius: 99,
-    border: `1px solid ${active ? 'rgba(45,111,255,0.45)' : 'rgba(255,255,255,0.08)'}`,
+    border: `1px solid ${active ? 'rgba(45,111,255,0.45)' : 'var(--hairline)'}`,
     background: active ? 'rgba(45,111,255,0.18)' : 'transparent',
     color: active ? '#7baaff' : 'var(--text2)',
     transition: 'all 0.15s',
@@ -814,7 +814,7 @@ function KpiCard({ label, value, sub, accent, mono, serif, isLive }) {
   return (
     <div style={{
       background: 'linear-gradient(180deg, rgba(28,32,48,0.5), rgba(20,23,32,0.35))',
-      border: '1px solid rgba(255,255,255,0.07)',
+      border: '1px solid var(--border)',
       borderLeft: `2px solid ${accent}`,
       borderRadius: 12,
       padding: '14px 18px',
@@ -893,7 +893,7 @@ function WeekStrip({ dates, grouped, today, onJump, mono, t, lang }) {
               padding: '12px 14px',
               borderRadius: 12,
               background: isToday ? 'rgba(45,111,255,0.12)' : 'rgba(28,32,48,0.45)',
-              border: `1px solid ${isToday ? 'rgba(45,111,255,0.45)' : 'rgba(255,255,255,0.07)'}`,
+              border: `1px solid ${isToday ? 'rgba(45,111,255,0.45)' : 'var(--border)'}`,
               color: 'var(--text)',
               cursor: 'pointer',
               textAlign: 'left',
@@ -905,7 +905,7 @@ function WeekStrip({ dates, grouped, today, onJump, mono, t, lang }) {
               fontSize: 9.5,
               fontFamily: mono,
               fontWeight: 600,
-              color: isToday ? '#4d8fff' : 'var(--text3)',
+              color: isToday ? 'var(--blue-light)' : 'var(--text3)',
               textTransform: 'uppercase', letterSpacing: '0.12em',
               marginBottom: 4,
             }}>
@@ -925,13 +925,13 @@ function WeekStrip({ dates, grouped, today, onJump, mono, t, lang }) {
             {/* Impact density dots */}
             <div style={{ display: 'flex', gap: 3, marginTop: 8 }}>
               {Array.from({ length: Math.min(hC, 5) }).map((_, i) => (
-                <span key={'h' + i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#e8504a' }} />
+                <span key={'h' + i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--red)' }} />
               ))}
               {Array.from({ length: Math.min(mC, 4) }).map((_, i) => (
-                <span key={'m' + i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#fac775' }} />
+                <span key={'m' + i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--amber)' }} />
               ))}
               {Array.from({ length: Math.min(lC, 3) }).map((_, i) => (
-                <span key={'l' + i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#5a6275' }} />
+                <span key={'l' + i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--text3)' }} />
               ))}
             </div>
             <div style={{
@@ -965,14 +965,14 @@ function DayCard({ date, events, isToday, nowTs, lang, t, mono, serif, cardStyle
         padding: '16px 22px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         gap: 12, flexWrap: 'wrap',
-        background: isToday ? 'rgba(45,111,255,0.06)' : 'rgba(255,255,255,0.015)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: isToday ? 'rgba(45,111,255,0.06)' : 'var(--tint1)',
+        borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
           {isToday && (
             <span style={{
               fontSize: 9.5, fontWeight: 700, padding: '4px 10px',
-              borderRadius: 99, background: '#4d8fff', color: '#0a0c10',
+              borderRadius: 99, background: 'var(--blue)', color: '#fff',
               textTransform: 'uppercase', letterSpacing: '0.14em',
               fontFamily: mono,
             }}>● {t.today}</span>
@@ -1011,7 +1011,7 @@ function DayCard({ date, events, isToday, nowTs, lang, t, mono, serif, cardStyle
               fontFamily: mono, letterSpacing: '0.04em',
               display: 'inline-flex', alignItems: 'center', gap: 5,
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e8504a' }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)' }} />
               {hC} {t.high}
             </span>
           )}
@@ -1019,11 +1019,11 @@ function DayCard({ date, events, isToday, nowTs, lang, t, mono, serif, cardStyle
             <span style={{
               fontSize: 11, fontWeight: 600,
               padding: '4px 10px', borderRadius: 6,
-              background: 'rgba(250,199,117,0.12)', color: '#fac775',
+              background: 'rgba(250,199,117,0.12)', color: 'var(--amber)',
               fontFamily: mono, letterSpacing: '0.04em',
               display: 'inline-flex', alignItems: 'center', gap: 5,
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fac775' }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--amber)' }} />
               {mC} {t.medium}
             </span>
           )}
@@ -1064,7 +1064,7 @@ function EventRow({ event: ev, lang, t, mono, nowTs, isLast }) {
         display: 'grid',
         gridTemplateColumns: '4px 88px 88px minmax(0, 1fr) 280px',
         alignItems: 'center',
-        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)',
+        borderBottom: isLast ? 'none' : '1px solid var(--tint2)',
         background: ic.bg,
         position: 'relative',
       }}
@@ -1224,7 +1224,7 @@ function CalendarSkeleton({ card }) {
             <Skeleton width={180} height={24} />
           </div>
           {Array.from({ length: 4 }).map((_, j) => (
-            <div key={j} style={{ padding: '14px 18px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 16 }}>
+            <div key={j} style={{ padding: '14px 18px', borderTop: '1px solid var(--tint2)', display: 'flex', gap: 16 }}>
               <Skeleton width={70} height={16} />
               <Skeleton width={50} height={16} />
               <Skeleton width="40%" height={16} />
@@ -1253,7 +1253,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
   const cellStyle = (active) => ({
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '11px 13px', borderRadius: 10, cursor: 'pointer',
-    border: `1px solid ${active ? 'rgba(45,111,255,0.5)' : 'rgba(255,255,255,0.07)'}`,
+    border: `1px solid ${active ? 'rgba(45,111,255,0.5)' : 'var(--border)'}`,
     background: active ? 'rgba(45,111,255,0.10)' : 'rgba(28,32,48,0.5)',
     color: active ? 'var(--text)' : 'var(--text2)',
     transition: 'all 0.15s',
@@ -1270,13 +1270,13 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
       <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t.flagFilter} onClick={e => e.stopPropagation()} style={{
         background: 'linear-gradient(180deg, rgba(28,32,48,0.95), rgba(20,23,32,0.95))',
         borderRadius: 14,
-        border: '1px solid rgba(255,255,255,0.10)',
+        border: '1px solid var(--hairline)',
         width: '100%', maxWidth: 640, maxHeight: '85vh',
         display: 'flex', flexDirection: 'column',
         boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
       }}>
         <div style={{
-          padding: '18px 22px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: '18px 22px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div>
@@ -1289,7 +1289,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
           </div>
           <button onClick={onClose} aria-label={'Fermer' /* TODO i18n */} style={{
             width: 32, height: 32, borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid var(--hairline)',
             background: 'transparent', color: 'var(--text2)', cursor: 'pointer', fontSize: 14,
           }}>✕</button>
         </div>
@@ -1298,14 +1298,14 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
           <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
             <button onClick={() => setFCurrencies([])} style={{
               flex: 1, padding: '10px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 8, border: '1px solid var(--hairline)',
               background: fCurrencies.length === 0 ? 'rgba(45,111,255,0.18)' : 'transparent',
               color: fCurrencies.length === 0 ? '#7baaff' : 'var(--text2)',
               fontFamily: mono,
             }}>{t.allCurrencies}</button>
             <button onClick={() => setFCurrencies([...MAJOR_CURRENCIES.filter(c => availableCurrencies.includes(c))])} style={{
               flex: 1, padding: '10px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 8, border: '1px solid var(--hairline)',
               background: 'transparent', color: 'var(--text2)',
               fontFamily: mono,
             }}>{t.majorsOnly}</button>
@@ -1326,7 +1326,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
                     {counts[cur] > 0 && (
                       <span style={{
                         fontSize: 10, color: 'var(--text3)',
-                        background: 'rgba(255,255,255,0.04)',
+                        background: 'var(--tint2)',
                         padding: '2px 6px', borderRadius: 99,
                         fontFamily: mono,
                       }}>{counts[cur]}</span>
@@ -1358,13 +1358,13 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
         </div>
 
         <div style={{
-          padding: '14px 22px', borderTop: '1px solid rgba(255,255,255,0.06)',
+          padding: '14px 22px', borderTop: '1px solid var(--border)',
           display: 'flex', justifyContent: 'flex-end', gap: 8,
         }}>
           <button onClick={onClose} style={{
             padding: '10px 24px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
             borderRadius: 8, border: 'none',
-            background: '#2d6fff', color: '#fff',
+            background: 'var(--blue)', color: '#fff',
             fontFamily: mono, letterSpacing: '0.06em', textTransform: 'uppercase',
           }}>OK</button>
         </div>

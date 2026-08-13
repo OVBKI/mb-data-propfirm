@@ -27,14 +27,14 @@ const SR_ONLY = {
 
 const C = {
   surface: 'var(--surface)',
-  surface2: 'var(--surface2, rgba(255,255,255,0.025))',
+  surface2: 'var(--surface2, var(--tint1))',
   border: 'var(--border)',
-  border2: 'var(--border2, rgba(255,255,255,0.05))',
+  border2: 'var(--border2, var(--tint2))',
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
   blue: 'var(--accent, #2d6fff)',
-  amber: '#fac775',
+  amber: 'var(--amber)',
   green: '#10b981',
 }
 
@@ -288,7 +288,7 @@ export default function CfdComparator() {
               const f = models[selIdx] || firm.flagship || {}
               const slug = firm.slug || cfdFirmToSlug(firm.name)
               const color = CFD_REPUTATION[firm.reputation]?.color || C.blue
-              const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'
+              const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'var(--tint1)'
 
               const consistance = consistencyCell(f)
               const payout = payoutCell(f, t)

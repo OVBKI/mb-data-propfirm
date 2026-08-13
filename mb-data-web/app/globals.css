@@ -1,5 +1,21 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ============================================================================
+   THÈME — jetons de couleur
+   ----------------------------------------------------------------------------
+   Le SOMBRE reste le défaut : `:root` porte la palette dark, et le clair ne
+   s'applique que sur `[data-theme="light"]`. Un utilisateur qui n'a jamais
+   touché au réglage voit donc exactement ce qu'il voyait avant.
+
+   Les deux blocs de thème utilisent un sélecteur d'ATTRIBUT (`[data-theme=…]`),
+   pas `:root[data-theme=…]` : ça permet d'épingler un sous-arbre sur un thème
+   précis. La landing s'en sert (`data-theme="dark"` sur sa racine) pour rester
+   sombre quoi qu'il arrive — son star field Three.js et ses dégradés mesh sont
+   dessinés pour du noir.
+
+   RÈGLE : toute couleur doit passer par un jeton. Une valeur en dur dans un
+   style inline ne suivra pas le thème — c'est la seule façon de casser ça.
+   ============================================================================ */
 :root {
   --bg: #0d0f14;
   --surface: #141720;
@@ -10,18 +26,95 @@
   --text: #f0ede8;
   --text2: #9098b0;
   --text3: #8b93ab;
+  /* Texte posé SUR un aplat de couleur --text (bouton primaire inversé). */
+  --text-inverse: #0a0c10;
   --blue: #2d6fff;
   --blue-light: #4d8fff;
+  --blue-bg: rgba(45,111,255,0.12);
+  --blue-border: rgba(45,111,255,0.28);
   --green: #1db87a;
   --green-bg: rgba(29,184,122,0.12);
   --green-text: #33d695;
   --red: #e8504a;
   --red-bg: rgba(232,80,74,0.12);
   --red-text: #ff7a73;
+  --amber: #fac775;
   --amber-bg: rgba(250,199,117,0.12);
   --amber-text: #fac775;
+
+  /* Aplats translucides — remplacent les rgba(255,255,255,0.0X) en dur, qui
+     deviendraient invisibles (blanc sur blanc) en thème clair. */
+  --tint1: rgba(255,255,255,0.025);
+  --tint2: rgba(255,255,255,0.045);
+  --tint3: rgba(255,255,255,0.075);
+  --hairline: rgba(255,255,255,0.08);
+  --hairline2: rgba(255,255,255,0.14);
+
+  --overlay: rgba(0,0,0,0.55);
+  /* Barres translucides posées par-dessus le contenu (top bar, sticky headers).
+     Doivent rester semi-transparentes pour le backdrop-filter. */
+  --bar-bg: rgba(13,15,20,0.78);
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15);
+  --shadow-pop: 0 12px 32px rgba(0,0,0,0.35);
+
+  /* Chart.js dessine dans un canvas : var() n'y est pas résolu. Ces jetons sont
+     lus via getComputedStyle par lib/theme.js → chartColors(). */
+  --chart-grid: rgba(255,255,255,0.04);
+  --chart-tick: #7b839b;
+
   --radius: 8px;
   --radius-lg: 12px;
+}
+
+/* Sombre explicite — même palette que :root. Sert à ÉPINGLER un sous-arbre
+   (la landing) pour qu'il ignore le choix de l'utilisateur. */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f6f7fa;
+  --surface: #ffffff;
+  --surface2: #eff1f6;
+  --surface3: #e4e8f0;
+  --border: rgba(15,23,42,0.10);
+  --border2: rgba(15,23,42,0.17);
+  --text: #10131a;
+  --text2: #4a5468;
+  --text3: #6d7689;
+  --text-inverse: #ffffff;
+
+  /* Les accents sont assombris : #4d8fff ou #fac775 sur blanc tombent sous le
+     ratio de contraste 4.5:1 et deviennent illisibles. */
+  --blue: #1c5cf0;
+  --blue-light: #1550d8;
+  --blue-bg: rgba(28,92,240,0.09);
+  --blue-border: rgba(28,92,240,0.30);
+  --green: #0d9668;
+  --green-bg: rgba(13,150,104,0.10);
+  --green-text: #07734f;
+  --red: #d3342e;
+  --red-bg: rgba(211,52,46,0.10);
+  --red-text: #b02620;
+  --amber: #b4750a;
+  --amber-bg: rgba(198,140,30,0.14);
+  --amber-text: #91600a;
+
+  --tint1: rgba(15,23,42,0.025);
+  --tint2: rgba(15,23,42,0.045);
+  --tint3: rgba(15,23,42,0.075);
+  --hairline: rgba(15,23,42,0.10);
+  --hairline2: rgba(15,23,42,0.18);
+
+  --overlay: rgba(15,23,42,0.38);
+  --bar-bg: rgba(255,255,255,0.82);
+  --shadow-card: 0 1px 2px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.07);
+  --shadow-pop: 0 12px 32px rgba(15,23,42,0.16);
+
+  --chart-grid: rgba(15,23,42,0.07);
+  --chart-tick: #6d7689;
 }
 
 html, body {
@@ -63,7 +156,8 @@ select option:hover {
 select {
   color: var(--text);
 }
-/* Caret personnalisée pour rester cohérent avec le thème dark */
+/* Caret personnalisée. Le SVG est encodé en data: URI, donc il ne peut pas lire
+   var(--text2) : on redéfinit simplement la variante claire plus bas. */
 select:not([multiple]) {
   appearance: none;
   -webkit-appearance: none;
@@ -72,15 +166,13 @@ select:not([multiple]) {
   background-position: right 10px center;
   padding-right: 30px !important;
 }
-
-/* Inputs date/time : force la palette dark sur la pop-up native (limité mais aide) */
-input[type="date"],
-input[type="datetime-local"],
-input[type="time"] {
-  color-scheme: dark;
+[data-theme="light"] select:not([multiple]) {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%234a5468' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
-/* Idem pour les <select> — color-scheme dark force le picker en sombre */
-select { color-scheme: dark; }
+
+/* Inputs date/time + select : `color-scheme` pilote la pop-up native (calendrier,
+   liste déroulante). Elle est héritée de html[data-theme], donc le picker suit
+   automatiquement le thème choisi — rien à forcer ici. */
 
 /* Burger menu, desktop par défaut: caché */
 .nav-burger {
@@ -137,14 +229,14 @@ select { color-scheme: dark; }
     z-index: 320;
     transform: translateX(-100%);
     transition: transform 0.22s ease-out;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+    box-shadow: 4px 0 24px var(--overlay);
   }
   .app-nav.open { transform: translateX(0); }
   .app-nav.open ~ .nav-backdrop {
     display: block;
     position: fixed;
     top: 48px; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.55);
+    background: var(--overlay);
     z-index: 310;
   }
 
@@ -493,22 +585,24 @@ html, body { overflow-x: hidden; }
 @media (hover: hover) {
   /* Inputs : focus ring subtil bleu */
   input:focus, select:focus, textarea:focus {
-    border-color: rgba(77,143,255,0.45) !important;
-    background: rgba(255,255,255,0.04) !important;
-    box-shadow: 0 0 0 3px rgba(45,111,255,0.10);
+    border-color: var(--blue-border) !important;
+    background: var(--tint2) !important;
+    box-shadow: 0 0 0 3px var(--blue-bg);
   }
-  /* btnPrimary (off-white inverted) — lift + shadow accentuée au hover */
+  /* btnPrimary (aplat inversé) — lift + shadow accentuée au hover */
   button[style*="background: var(--text)"]:not(:disabled):hover,
   button[style*="background:var(--text)"]:not(:disabled):hover {
     transform: translateY(-1px);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 20px rgba(0,0,0,0.35) !important;
+    box-shadow: var(--shadow-pop) !important;
   }
-  /* btnGhost — border et fond plus visibles au hover */
-  button[style*="background: rgba(255,255,255,0.025)"]:not(:disabled):hover,
-  button[style*="background:rgba(255,255,255,0.025)"]:not(:disabled):hover {
+  /* btnGhost — border et fond plus visibles au hover.
+     Le sélecteur matche la valeur littérale posée par lib/theme.js btnGhost :
+     si tu changes `background` là-bas, change-le ici aussi. */
+  button[style*="background: var(--tint1)"]:not(:disabled):hover,
+  button[style*="background:var(--tint1)"]:not(:disabled):hover {
     color: var(--text) !important;
-    border-color: rgba(255,255,255,0.18) !important;
-    background: rgba(255,255,255,0.05) !important;
+    border-color: var(--hairline2) !important;
+    background: var(--tint3) !important;
   }
   /* Active state — léger appui */
   button:not(:disabled):active {
@@ -516,7 +610,7 @@ html, body { overflow-x: hidden; }
   }
   /* Cards firmes — lift + glow plus prononcé au hover (préserve le comportement existant) */
   .firms-grid > div:hover {
-    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 32px rgba(0,0,0,0.30), 0 0 0 1px rgba(77,143,255,0.20) !important;
+    box-shadow: var(--shadow-pop), 0 0 0 1px var(--blue-border) !important;
   }
 }
 

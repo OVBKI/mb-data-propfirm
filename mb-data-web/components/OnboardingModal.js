@@ -23,20 +23,20 @@ import {
 } from '../lib/constants'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
   surface3: '#222637',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
   purple: '#a78bfa',
 }
 
@@ -44,11 +44,11 @@ const C = {
 const FIRM_SUGGESTIONS = [
   { name: 'Topstep',                color: '#ff8c42' },
   { name: 'Apex Trader Funding',    color: '#a78bfa' },
-  { name: 'Lucid Trading',          color: '#4d8fff' },
-  { name: 'Take Profit Trader',     color: '#fac775' },
+  { name: 'Lucid Trading',          color: 'var(--blue-light)' },
+  { name: 'Take Profit Trader',     color: 'var(--amber)' },
   { name: 'My Funded Futures',      color: '#fb923c' },
-  { name: 'Bulenox',                color: '#e8504a' },
-  { name: 'Tradeify',               color: '#1db87a' },
+  { name: 'Bulenox',                color: 'var(--red)' },
+  { name: 'Tradeify',               color: 'var(--green)' },
   { name: 'Phidias Propfirm',       color: '#1e2a4a' },
   { name: 'Funded Futures Network', color: '#a86bff' },
   { name: 'FuturesELites',          color: '#f472b6' },
@@ -245,7 +245,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
               <div key={n} style={{
                 width: n === currentStepNum ? 28 : 8,
                 height: 8, borderRadius: 99,
-                background: n <= currentStepNum ? C.blueLight : 'rgba(255,255,255,0.1)',
+                background: n <= currentStepNum ? C.blueLight : 'var(--hairline)',
                 transition: 'all 0.3s ease',
               }} />
             ))}
@@ -276,7 +276,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
               ].map((vp, i) => (
                 <div key={i} style={{
                   padding: '16px 14px',
-                  background: 'rgba(255,255,255,0.02)',
+                  background: 'var(--tint1)',
                   border: `1px solid ${C.border}`,
                   borderRadius: 10,
                   textAlign: 'center',
@@ -294,7 +294,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                 onClick={() => setStep('profile')}
                 style={{
                   padding: '12px 32px', fontSize: 14, fontWeight: 600,
-                  background: C.text, color: '#0a0c10',
+                  background: C.text, color: 'var(--text-inverse)',
                   border: 'none', borderRadius: 8,
                   cursor: 'pointer', fontFamily: 'inherit',
                   boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 20px rgba(0,0,0,0.3)',
@@ -343,7 +343,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '12px 14px', borderRadius: 8,
-                      background: tradingStyle === s.k ? 'rgba(45,111,255,0.12)' : 'rgba(255,255,255,0.02)',
+                      background: tradingStyle === s.k ? 'rgba(45,111,255,0.12)' : 'var(--tint1)',
                       border: `1px solid ${tradingStyle === s.k ? C.blueLight : C.border}`,
                       color: C.text, cursor: 'pointer', textAlign: 'left',
                       fontFamily: 'inherit', transition: 'all 0.15s',
@@ -380,7 +380,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         gap: 6, padding: '12px 6px', borderRadius: 8,
-                        background: isSelected ? 'rgba(45,111,255,0.1)' : 'rgba(255,255,255,0.02)',
+                        background: isSelected ? 'rgba(45,111,255,0.1)' : 'var(--tint1)',
                         border: `1px solid ${isSelected ? C.blueLight : C.border}`,
                         cursor: 'pointer', fontFamily: 'inherit',
                         transition: 'all 0.15s', position: 'relative',
@@ -434,7 +434,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   onClick={() => setStep('choose')}
                   style={{
                     padding: '10px 24px', fontSize: 13, fontWeight: 600,
-                    background: C.text, color: '#0a0c10',
+                    background: C.text, color: 'var(--text-inverse)',
                     border: 'none', borderRadius: 7,
                     cursor: 'pointer', fontFamily: 'inherit',
                     display: 'flex', alignItems: 'center', gap: 6,
@@ -468,7 +468,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '16px 20px', borderRadius: 11,
                   background: C.text,
-                  border: '1px solid transparent', color: '#0a0c10', cursor: creating ? 'wait' : 'pointer',
+                  border: '1px solid transparent', color: 'var(--text-inverse)', cursor: creating ? 'wait' : 'pointer',
                   textAlign: 'left', fontFamily: 'inherit',
                   boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 8px 20px rgba(0,0,0,0.25)',
                   transition: 'transform 0.15s',

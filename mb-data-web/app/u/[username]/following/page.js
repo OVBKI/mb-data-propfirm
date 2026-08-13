@@ -63,7 +63,7 @@ export default async function FollowingPage({ params }) {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0d0f14', color: '#f0ede8',
+      minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)',
       padding: '0 0 60px', fontFamily: 'inherit',
     }}>
       <header style={headerStyle}>
@@ -76,9 +76,9 @@ export default async function FollowingPage({ params }) {
           fontSize: 22, fontWeight: 700, margin: 0,
           letterSpacing: '-0.01em', marginBottom: 6,
         }}>
-          <span style={{ fontFamily: 'monospace', color: '#4d8fff' }}>@{target.username}</span> suit
+          <span style={{ fontFamily: 'monospace', color: 'var(--blue-light)' }}>@{target.username}</span> suit
         </h1>
-        <p style={{ fontSize: 13, color: '#9098b0', marginTop: 0, marginBottom: 28 }}>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 0, marginBottom: 28 }}>
           {target.following_count || 0} {target.following_count === 1 ? 'trader suivi' : 'traders suivis'}.
         </p>
 
@@ -96,7 +96,7 @@ export default async function FollowingPage({ params }) {
 function FollowList({ items }) {
   return (
     <div style={{
-      background: '#141720', border: '1px solid rgba(255,255,255,0.07)',
+      background: 'var(--surface)', border: '1px solid var(--border)',
       borderRadius: 12, overflow: 'hidden',
     }}>
       {items.map((f, i) => {
@@ -109,7 +109,7 @@ function FollowList({ items }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 14,
             padding: '14px 18px',
-            borderTop: i > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+            borderTop: i > 0 ? '1px solid var(--border)' : 'none',
             transition: 'background 0.1s',
             cursor: isPublic ? 'pointer' : 'default',
           }}>
@@ -117,8 +117,8 @@ function FollowList({ items }) {
               width: 40, height: 40, borderRadius: '50%',
               background: isPublic
                 ? 'linear-gradient(135deg, #2d6fff, #4d8fff)'
-                : 'rgba(255,255,255,0.04)',
-              border: isPublic ? '1px solid rgba(255,255,255,0.10)' : '1px dashed rgba(255,255,255,0.10)',
+                : 'var(--tint2)',
+              border: isPublic ? '1px solid var(--hairline)' : '1px dashed var(--hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 16, fontWeight: 700, color: '#fff',
               flexShrink: 0,
@@ -127,7 +127,7 @@ function FollowList({ items }) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: 14, fontWeight: 600, color: '#f0ede8',
+                fontSize: 14, fontWeight: 600, color: 'var(--text)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
@@ -135,10 +135,10 @@ function FollowList({ items }) {
                   <span title="Profil vérifié" style={verifiedBadgeStyle}>✓</span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#7b839b', fontFamily: 'monospace' }}>{subName}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>{subName}</div>
             </div>
             {isPublic && (
-              <span style={{ fontSize: 11, color: '#4d8fff', fontWeight: 600 }}>Voir →</span>
+              <span style={{ fontSize: 11, color: 'var(--blue-light)', fontWeight: 600 }}>Voir →</span>
             )}
           </div>
         )
@@ -159,8 +159,8 @@ function EmptyState({ message }) {
   return (
     <div style={{
       padding: 60, textAlign: 'center',
-      background: '#141720', border: '1px dashed rgba(255,255,255,0.10)',
-      borderRadius: 12, color: '#7b839b', fontSize: 13,
+      background: 'var(--surface)', border: '1px dashed var(--hairline)',
+      borderRadius: 12, color: 'var(--text3)', fontSize: 13,
     }}>
       {message}
     </div>
@@ -168,21 +168,21 @@ function EmptyState({ message }) {
 }
 
 const headerStyle = {
-  padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)',
+  padding: '16px 24px', borderBottom: '1px solid var(--border)',
   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
 }
 const brandStyle = {
   fontSize: 13, fontWeight: 700, letterSpacing: '0.12em',
-  color: '#f0ede8', textDecoration: 'none',
+  color: 'var(--text)', textDecoration: 'none',
 }
 const backStyle = {
   padding: '8px 16px', fontSize: 12, fontWeight: 600,
-  background: 'transparent', color: '#9098b0',
-  border: '1px solid rgba(255,255,255,0.13)', borderRadius: 8,
+  background: 'transparent', color: 'var(--text2)',
+  border: '1px solid var(--border2)', borderRadius: 8,
   textDecoration: 'none',
 }
 const verifiedBadgeStyle = {
-  fontSize: 9, color: '#4d8fff',
+  fontSize: 9, color: 'var(--blue-light)',
   background: 'rgba(45,111,255,0.15)',
   borderRadius: '50%', width: 14, height: 14,
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

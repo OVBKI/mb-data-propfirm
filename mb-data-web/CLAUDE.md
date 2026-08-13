@@ -700,3 +700,44 @@ les 6 `STRIPE_PRICE_*`, `NEXT_PUBLIC_SITE_URL`.
 - Le palier Lifetime (249€ one-time, 100 places) : c'est un `mode: 'payment'`, pas un
   abonnement — non implémenté.
 - /pricing pointe toujours vers la waitlist (normal tant que les Price IDs n'existent pas).
+
+
+## Thème clair / sombre
+
+Ajouté 2026-08. **Le sombre reste le défaut** : sans choix explicite de
+l'utilisateur, l'app est exactement telle qu'avant.
+
+| Fichier | Rôle |
+|---|---|
+| `app/globals.css` | Les jetons. `:root` = sombre ; `[data-theme="light"]` = clair |
+| `components/ThemeProvider.js` | Contexte + localStorage (`quantara_theme`) + `data-theme` sur `<html>` |
+| `components/ThemeSwitcher.js` | `<ThemeSwitcher />` (Sombre/Clair/Système) + `<ThemeToggle />` (bouton unique) |
+| `app/layout.js` | Script anti-flash `beforeInteractive` — pose `data-theme` AVANT le premier paint |
+| `lib/theme.js` | `C` et les style objects pointent tous vers `var(--…)` ; `chartColors()` pour les canvas |
+| `components/dashboard/theme.js` | `T.color.*` idem |
+
+Où l'utilisateur choisit : `/app/settings` → **Apparence** (3 options), et un
+bouton ☾/☀ dans la top bar de l'app.
+
+### Les 4 règles à ne pas casser
+1. **Aucune couleur en dur dans un style inline.** `color: '#f0ede8'` reste sombre
+   en thème clair. Toujours passer par `C.*`, `T.color.*` ou `var(--…)`.
+2. **Chart.js est une exception** : il peint dans un `<canvas>` et ne résout pas
+   `var()`. Utiliser `chartColors()` (lit les jetons calculés) et mettre `theme`
+   dans les dépendances du `useEffect`, sinon le graphe garde ses couleurs après
+   la bascule. Concerne EquityOverlayChart, JournalPage, dashboard, analytics.
+3. **Les templates e-mail (`app/api/**`) gardent des couleurs en dur** : Gmail et
+   Outlook ne résolvent pas les variables CSS. Ne jamais les migrer.
+4. **`<meta name="theme-color">` exige une couleur littérale** (layout.js viewport
+   + ThemeProvider.applyToDocument) — c'est l'OS qui la lit, pas le moteur CSS.
+
+### Surfaces épinglées en sombre
+La landing (`app/page.js`) porte `data-theme="dark"` sur son conteneur : star
+field Three.js, dégradés mesh et mockups sont dessinés pour du noir. Le sélecteur
+de thème utilise un sélecteur d'ATTRIBUT (pas `:root[data-theme]`) précisément
+pour permettre ce genre d'épinglage par sous-arbre.
+
+### Reste à faire
+- `components/landing/**` non migré (épinglé sombre, ~90 couleurs en dur).
+- Les tuiles de heatmap et quelques dégradés d'accent gardent des valeurs en dur ;
+  lisibles dans les deux thèmes, mais pas parfaitement calibrés en clair.

@@ -24,20 +24,20 @@ async function adminFetch(url, options = {}) {
 }
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
   surface3: '#222637',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
 }
 
 const TYPES = [
@@ -195,7 +195,7 @@ export default function AdminAnnouncementsPage() {
   return (
     <div style={{ padding: '32px 32px' }}>
       <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 11, color: '#e8504a', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>
+        <div style={{ fontSize: 11, color: 'var(--red)', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>
           Admin
         </div>
       </div>
@@ -206,7 +206,7 @@ export default function AdminAnnouncementsPage() {
         <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>Annonces / Bannières</h1>
         <button onClick={openNew} style={{
           padding: '10px 18px', fontSize: 13, fontWeight: 500, borderRadius: 8,
-          background: '#f0ede8', color: '#0a0c10', border: '1px solid transparent', cursor: 'pointer', fontFamily: 'inherit',
+          background: 'var(--text)', color: 'var(--text-inverse)', border: '1px solid transparent', cursor: 'pointer', fontFamily: 'inherit',
           boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
         }}>+ Nouvelle annonce</button>
       </div>

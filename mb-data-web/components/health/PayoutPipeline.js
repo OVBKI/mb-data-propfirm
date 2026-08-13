@@ -20,11 +20,11 @@ const C = {
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
   grey: '#565e78',
 }
 
@@ -149,7 +149,7 @@ export default function PayoutPipeline({ firms, statsByAccount }) {
                 const payoutCount = (item.payouts || []).length
                 return (
                   <div key={item.id} style={{
-                    background: 'rgba(255,255,255,0.03)',
+                    background: 'var(--tint1)',
                     border: `1px solid ${C.border}`,
                     borderRadius: 8,
                     padding: 10,

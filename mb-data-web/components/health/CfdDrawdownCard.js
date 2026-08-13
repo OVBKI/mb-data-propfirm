@@ -24,9 +24,9 @@ const C = {
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
   grey: '#565e78',
 }
 
@@ -108,7 +108,7 @@ function Gauge({ t, label, result, currency }) {
       </div>
       <div style={{
         height: 10,
-        background: 'rgba(255,255,255,0.04)',
+        background: 'var(--tint2)',
         borderRadius: 6,
         overflow: 'hidden',
         position: 'relative',
@@ -158,7 +158,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
   const repKey = repCatalog?.reputation
   const repTier = repKey && CFD_REPUTATION[repKey] ? CFD_REPUTATION[repKey] : null
 
-  const firmColor = FIRM_SUGGESTION_COLORS[firmName] || '#2d6fff'
+  const firmColor = FIRM_SUGGESTION_COLORS[firmName] || 'var(--blue)'
 
   const accountSize = isFiniteNum(a.account_size) ? Number(a.account_size) : null
   const hasBalance = isFiniteNum(a.current_balance)
@@ -275,7 +275,7 @@ export default function CfdDrawdownCard({ account, onSaved, showToast, firmName:
         {a.status && (
           <div style={{
             padding: '4px 10px',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--tint2)',
             border: `1px solid ${C.border}`,
             borderRadius: 6,
             fontSize: 11,

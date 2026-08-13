@@ -412,7 +412,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
         if (!dryRun) {
           const { data, error } = await supabase
             .from('firms')
-            .insert({ user_id: user.id, name: 'Lucid Trading', color: '#2d6fff', market: 'futures' })
+            .insert({ user_id: user.id, name: 'Lucid Trading', color: 'var(--blue)', market: 'futures' })
             .select().single()
           if (error) throw new Error(`Création firme : ${error.message}`)
           lucidFirm = data
@@ -838,7 +838,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
           if (!dryRun) {
             const { data, error } = await supabase
               .from('firms')
-              .insert({ user_id: user.id, name: firmName, color: '#2d6fff', market: 'futures' })
+              .insert({ user_id: user.id, name: firmName, color: 'var(--blue)', market: 'futures' })
               .select().single()
             if (error) throw new Error(`Création firme ${firmName} : ${error.message}`)
             firmRow = data
@@ -1435,7 +1435,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             {/* Info : balance + DD seront set automatiquement depuis le CSV */}
             <div style={{
               marginTop: 8, padding: 10,
-              background: 'rgba(255,255,255,0.025)',
+              background: 'var(--tint1)',
               border: `1px dashed ${T.color.border}`,
               borderRadius: T.radius.md,
               fontSize: 11, color: T.color.text3, fontFamily: T.font.mono, lineHeight: 1.5,
@@ -1449,7 +1449,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
         {mode === 'skip' && (
           <div style={{
             padding: 12,
-            background: 'rgba(255,255,255,0.025)',
+            background: 'var(--tint1)',
             border: `1px solid ${T.color.border}`,
             borderRadius: T.radius.md,
             fontSize: 12, color: T.color.text3, fontFamily: T.font.mono,
@@ -1645,7 +1645,7 @@ function ModeChip({ active, onClick, children, color }) {
     <button type="button" onClick={onClick}
       style={{
         padding: '5px 10px', fontSize: 10,
-        background: active ? `${color}22` : 'rgba(255,255,255,0.04)',
+        background: active ? `${color}22` : 'var(--tint2)',
         color: active ? color : T.color.text3,
         border: `1px solid ${active ? `${color}66` : T.color.border}`,
         borderRadius: T.radius.sm,
@@ -1720,7 +1720,7 @@ function FilterToggle({ showAll, setShowAll, firmName }) {
       onClick={() => setShowAll(!showAll)}
       style={{
         fontSize: 10, padding: '4px 10px',
-        background: showAll ? T.color.blueSoft : 'rgba(255,255,255,0.04)',
+        background: showAll ? T.color.blueSoft : 'var(--tint2)',
         color: showAll ? T.color.blueLight : T.color.text3,
         border: `1px solid ${showAll ? T.color.blueRing : T.color.border}`,
         borderRadius: T.radius.sm, cursor: 'pointer',
@@ -1936,7 +1936,7 @@ function DropZone({ fileName, dragOver, onDrop, onDragOver, onDragLeave, onClick
         border: `2px dashed ${dragOver ? T.color.blueLight : T.color.borderStrong}`,
         borderRadius: T.radius.lg,
         padding: 40, textAlign: 'center', cursor: 'pointer',
-        background: dragOver ? T.color.blueSoft : 'rgba(255,255,255,0.02)',
+        background: dragOver ? T.color.blueSoft : 'var(--tint1)',
         transition: T.transition.base,
       }}
     >

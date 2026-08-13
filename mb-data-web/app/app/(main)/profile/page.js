@@ -407,15 +407,15 @@ function ActivityRow({ activity }) {
 
 const tagStyle = {
   display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99,
-  background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text2)', letterSpacing: '0.02em',
+  background: 'var(--tint2)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text2)', letterSpacing: '0.02em',
 }
 const btnPrimary = {
-  padding: '9px 16px', fontSize: 13, fontWeight: 500, background: 'var(--text)', color: '#0a0c10',
+  padding: '9px 16px', fontSize: 13, fontWeight: 500, background: 'var(--text)', color: 'var(--text-inverse)',
   border: '1px solid transparent', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
 }
 const btnGhost = {
-  padding: '9px 14px', fontSize: 13, fontWeight: 500, background: 'rgba(255,255,255,0.025)',
-  border: '1px solid rgba(255,255,255,0.10)', color: 'var(--text2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+  padding: '9px 14px', fontSize: 13, fontWeight: 500, background: 'var(--tint1)',
+  border: '1px solid var(--hairline)', color: 'var(--text2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
 }
 const inputStyle = {
   width: '100%', padding: '10px 12px', fontSize: 14, background: 'var(--surface2)',
@@ -424,7 +424,7 @@ const inputStyle = {
 function chipStyle(active) {
   return {
     padding: '6px 12px', fontSize: 12, fontWeight: active ? 600 : 500,
-    background: active ? 'rgba(45,111,255,0.15)' : 'rgba(255,255,255,0.025)',
+    background: active ? 'rgba(45,111,255,0.15)' : 'var(--tint1)',
     color: active ? 'var(--blue-light)' : 'var(--text2)',
     border: `1px solid ${active ? 'rgba(45,111,255,0.4)' : 'var(--border)'}`,
     borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',

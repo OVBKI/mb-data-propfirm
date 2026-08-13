@@ -283,7 +283,7 @@ export default function AuthPage({ onAuth, initialMode }) {
         position: 'relative', zIndex: 1,
         width: '100%', maxWidth: '440px',
         background: 'rgba(20,23,32,0.65)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        border: '1px solid var(--border)',
         borderRadius: '14px', padding: '40px 36px',
         boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 40px rgba(45,111,255,0.08)',
       }}>
@@ -298,8 +298,8 @@ export default function AuthPage({ onAuth, initialMode }) {
 
         {/* Tabs — segmented control raffiné */}
         <div style={{
-          display: 'flex', background: 'rgba(255,255,255,0.025)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', background: 'var(--tint1)',
+          border: '1px solid var(--border)',
           borderRadius: '8px', padding: '4px', marginBottom: '26px',
         }}>
           {['login','register'].map(m => (
@@ -332,7 +332,7 @@ export default function AuthPage({ onAuth, initialMode }) {
             marginBottom: 14,
             background: '#fff',
             color: '#1f2937',
-            border: '1px solid rgba(255,255,255,0.15)',
+            border: '1px solid var(--hairline2)',
             borderRadius: 'var(--radius)',
             fontSize: 14,
             fontWeight: 600,
@@ -484,8 +484,8 @@ export default function AuthPage({ onAuth, initialMode }) {
           <button type="submit" disabled={loading}
             style={{
               width: '100%', padding: '13px', fontSize: '14px', fontWeight: '500',
-              background: loading ? 'rgba(255,255,255,0.05)' : 'var(--text)',
-              color: loading ? 'var(--text3)' : '#0a0c10',
+              background: loading ? 'var(--tint2)' : 'var(--text)',
+              color: loading ? 'var(--text3)' : 'var(--text-inverse)',
               border: '1px solid transparent', borderRadius: '8px',
               cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'all 0.15s', fontFamily: 'inherit',

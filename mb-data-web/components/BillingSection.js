@@ -136,7 +136,7 @@ export default function BillingSection({ onError }) {
           <span style={{
             fontSize: 11, fontWeight: 600, padding: '5px 10px', borderRadius: 999,
             color: state.planStatus === 'past_due' ? C.amber : C.text2,
-            background: state.planStatus === 'past_due' ? 'rgba(250,199,117,0.12)' : 'rgba(255,255,255,0.04)',
+            background: state.planStatus === 'past_due' ? 'rgba(250,199,117,0.12)' : 'var(--tint2)',
             border: `1px solid ${state.planStatus === 'past_due' ? 'rgba(250,199,117,0.3)' : C.border}`,
           }}>
             {STATUS_LABEL[state.planStatus] || state.planStatus}
@@ -172,7 +172,7 @@ export default function BillingSection({ onError }) {
 
         {!isPaid && (
           <>
-            <div style={{ display: 'flex', gap: 4, padding: 3, background: 'rgba(255,255,255,0.04)', borderRadius: 8, border: `1px solid ${C.border}` }}>
+            <div style={{ display: 'flex', gap: 4, padding: 3, background: 'var(--tint2)', borderRadius: 8, border: `1px solid ${C.border}` }}>
               {[['month', 'Mensuel'], ['year', 'Annuel −35%']].map(([val, label]) => (
                 <button
                   key={val}

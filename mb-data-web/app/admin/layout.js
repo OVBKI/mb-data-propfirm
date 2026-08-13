@@ -12,17 +12,17 @@ import QLogoIcon from '../../components/QLogoIcon'
 import { isAdmin } from '../../lib/admins'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: '#1c2030',
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  red: '#e8504a',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--surface2)',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  red: 'var(--red)',
 }
 
 // Icônes minimalistes géométriques (style admin pro, pas d'emoji)
@@ -140,7 +140,7 @@ export default function AdminLayout({ children }) {
           padding: '0 20px 20px', textDecoration: 'none', color: C.text,
           borderBottom: `1px solid ${C.border}`, marginBottom: 14,
         }}>
-          <QLogoIcon size={42} color="#e8504a" />
+          <QLogoIcon size={42} color="var(--red)" />
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em' }}>QUANTARA</div>
             <div style={{ fontSize: 9, color: C.red, fontWeight: 700, letterSpacing: '0.14em', marginTop: 2 }}>ADMIN PANEL</div>

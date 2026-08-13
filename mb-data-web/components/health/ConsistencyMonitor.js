@@ -12,9 +12,9 @@ const C = {
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
 }
 
 // Default consistency thresholds per firm (best day ÷ total profit ratio).
@@ -105,7 +105,7 @@ export default function ConsistencyMonitor({ firms, statsByAccount, loading }) {
           : null
         const color = ratioColor(ratio, threshold)
         const label = ratioLabel(ratio, threshold)
-        const firmColor = FIRM_SUGGESTION_COLORS[a.firmName] || '#2d6fff'
+        const firmColor = FIRM_SUGGESTION_COLORS[a.firmName] || 'var(--blue)'
 
         return (
           <div key={a.id} style={{
@@ -146,7 +146,7 @@ export default function ConsistencyMonitor({ firms, statsByAccount, loading }) {
                   <span>Best day ÷ jours gagnants</span>
                   <span style={{ color, fontWeight: 700 }}>{(ratio * 100).toFixed(1)}%</span>
                 </div>
-                <div style={{ height: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 4, overflow: 'hidden', marginBottom: 12, position: 'relative' }}>
+                <div style={{ height: 8, background: 'var(--tint2)', borderRadius: 4, overflow: 'hidden', marginBottom: 12, position: 'relative' }}>
                   <div style={{
                     width: `${Math.min(ratio * 100, 100)}%`,
                     height: '100%',

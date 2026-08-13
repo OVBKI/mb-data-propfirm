@@ -19,10 +19,10 @@ const C = {
   text3: 'var(--text3)',
   surface: 'var(--surface)',
   border: 'var(--border)',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
 }
 
 // Compute per-account derived stats from trades (journal_entries).

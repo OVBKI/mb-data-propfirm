@@ -92,7 +92,7 @@ export default async function GroupPage({ params }) {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0d0f14', color: '#f0ede8',
+      minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)',
       padding: '0 0 60px', fontFamily: 'inherit',
     }}>
       {/* Top bar */}
@@ -105,7 +105,7 @@ export default async function GroupPage({ params }) {
       <div style={{
         height: 120,
         background: 'linear-gradient(135deg, rgba(45,111,255,0.20), rgba(167,139,250,0.10) 60%, transparent)',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        borderBottom: '1px solid var(--border)',
       }} />
 
       <main style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px' }}>
@@ -126,7 +126,7 @@ export default async function GroupPage({ params }) {
               fontSize: 22, fontWeight: 700, margin: 0,
               letterSpacing: '-0.01em',
             }}>{group.name}</h1>
-            <div style={{ fontSize: 12, color: '#9098b0', marginTop: 4, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <span>{group.members_count || 0}/{group.max_members || 50} membres</span>
               <span>· Créé par {ownerDisplay}</span>
               <span>· {fmtMonth(group.created_at)}</span>
@@ -137,7 +137,7 @@ export default async function GroupPage({ params }) {
         {/* Description */}
         {group.description && (
           <p style={{
-            fontSize: 14, color: '#9098b0', lineHeight: 1.6,
+            fontSize: 14, color: 'var(--text2)', lineHeight: 1.6,
             marginTop: 18, marginBottom: 0,
           }}>{group.description}</p>
         )}
@@ -165,10 +165,10 @@ export default async function GroupPage({ params }) {
         {/* Placeholder phases suivantes */}
         <div style={{
           marginTop: 48, padding: 20,
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px dashed rgba(255,255,255,0.10)',
+          background: 'var(--tint1)',
+          border: '1px dashed var(--hairline)',
           borderRadius: 12, textAlign: 'center',
-          fontSize: 12, color: '#7b839b',
+          fontSize: 12, color: 'var(--text3)',
         }}>
           🚧 Bientôt : cumul des payouts du groupe, leaderboard, chat de groupe.
           <br />
@@ -178,12 +178,12 @@ export default async function GroupPage({ params }) {
         {/* Footer */}
         <footer style={{
           marginTop: 60, paddingTop: 20,
-          borderTop: '1px solid rgba(255,255,255,0.07)',
-          fontSize: 11, color: '#7b839b', textAlign: 'center',
+          borderTop: '1px solid var(--border)',
+          fontSize: 11, color: 'var(--text3)', textAlign: 'center',
         }}>
-          <Link href="/" style={{ color: '#9098b0', textDecoration: 'none' }}>Quantara</Link>
+          <Link href="/" style={{ color: 'var(--text2)', textDecoration: 'none' }}>Quantara</Link>
           {' · '}
-          <Link href="/app/groups" style={{ color: '#9098b0', textDecoration: 'none' }}>Mes groupes</Link>
+          <Link href="/app/groups" style={{ color: 'var(--text2)', textDecoration: 'none' }}>Mes groupes</Link>
         </footer>
       </main>
     </div>
@@ -194,7 +194,7 @@ export default async function GroupPage({ params }) {
 function MemberList({ items, ownerId }) {
   return (
     <div style={{
-      background: '#141720', border: '1px solid rgba(255,255,255,0.07)',
+      background: 'var(--surface)', border: '1px solid var(--border)',
       borderRadius: 12, overflow: 'hidden',
     }}>
       {items.map((m, i) => {
@@ -208,7 +208,7 @@ function MemberList({ items, ownerId }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 14,
             padding: '14px 18px',
-            borderTop: i > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+            borderTop: i > 0 ? '1px solid var(--border)' : 'none',
             cursor: isPublic ? 'pointer' : 'default',
             transition: 'background 0.1s',
           }}>
@@ -216,8 +216,8 @@ function MemberList({ items, ownerId }) {
               width: 40, height: 40, borderRadius: '50%',
               background: isPublic
                 ? 'linear-gradient(135deg, #2d6fff, #4d8fff)'
-                : 'rgba(255,255,255,0.04)',
-              border: isPublic ? '1px solid rgba(255,255,255,0.10)' : '1px dashed rgba(255,255,255,0.10)',
+                : 'var(--tint2)',
+              border: isPublic ? '1px solid var(--hairline)' : '1px dashed var(--hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 16, fontWeight: 700, color: '#fff',
               flexShrink: 0,
@@ -226,19 +226,19 @@ function MemberList({ items, ownerId }) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: 14, fontWeight: 600, color: '#f0ede8',
+                fontSize: 14, fontWeight: 600, color: 'var(--text)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
                 {isOwner && (
                   <span style={{
                     fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                    background: 'rgba(250,199,117,0.15)', color: '#fac775', letterSpacing: '0.05em',
+                    background: 'rgba(250,199,117,0.15)', color: 'var(--amber)', letterSpacing: '0.05em',
                   }}>OWNER</span>
                 )}
                 {p?.verified && (
                   <span title="Profil vérifié" style={{
-                    fontSize: 9, color: '#4d8fff',
+                    fontSize: 9, color: 'var(--blue-light)',
                     background: 'rgba(45,111,255,0.15)',
                     borderRadius: '50%', width: 14, height: 14,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -246,7 +246,7 @@ function MemberList({ items, ownerId }) {
                   }}>✓</span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#7b839b', fontFamily: 'monospace' }}>{subName}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>{subName}</div>
             </div>
           </div>
         )
@@ -267,29 +267,29 @@ function EmptyState({ message }) {
   return (
     <div style={{
       padding: 40, textAlign: 'center',
-      background: '#141720', border: '1px dashed rgba(255,255,255,0.10)',
-      borderRadius: 12, color: '#7b839b', fontSize: 13,
+      background: 'var(--surface)', border: '1px dashed var(--hairline)',
+      borderRadius: 12, color: 'var(--text3)', fontSize: 13,
     }}>{message}</div>
   )
 }
 
 // === Styles ===
 const headerStyle = {
-  padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)',
+  padding: '16px 24px', borderBottom: '1px solid var(--border)',
   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
 }
 const brandStyle = {
   fontSize: 13, fontWeight: 700, letterSpacing: '0.12em',
-  color: '#f0ede8', textDecoration: 'none',
+  color: 'var(--text)', textDecoration: 'none',
 }
 const backStyle = {
   padding: '8px 16px', fontSize: 12, fontWeight: 600,
-  background: 'transparent', color: '#9098b0',
-  border: '1px solid rgba(255,255,255,0.13)', borderRadius: 8,
+  background: 'transparent', color: 'var(--text2)',
+  border: '1px solid var(--border2)', borderRadius: 8,
   textDecoration: 'none',
 }
 const sectionHeaderStyle = {
-  fontSize: 11, fontWeight: 700, color: '#4d8fff',
+  fontSize: 11, fontWeight: 700, color: 'var(--blue-light)',
   letterSpacing: '0.14em', textTransform: 'uppercase',
   margin: '0 0 14px', padding: 0,
 }

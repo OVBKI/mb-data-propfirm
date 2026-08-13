@@ -272,20 +272,20 @@ export default function AppSidebar({
 const SIDEBAR_CSS = `
 .app-nav.qt-side{
   width:216px;flex-shrink:0;
-  background:rgba(13,15,20,0.65);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
-  border-right:1px solid rgba(255,255,255,0.05);
+  background:var(--bar-bg);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+  border-right:1px solid var(--tint2);
   padding:14px 10px;position:sticky;top:52px;height:calc(100vh - 52px);
   overflow-y:auto;overflow-x:hidden;
   display:flex;flex-direction:column;gap:1px;
   transition:width .22s ease,padding .22s ease;
 }
-.qt-toggle{align-self:flex-end;width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:6px;transition:all .15s}
+.qt-toggle{align-self:flex-end;width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);background:var(--tint1);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:6px;transition:all .15s}
 .qt-toggle:hover{color:var(--text);border-color:var(--blue-light);background:rgba(45,111,255,0.1)}
 .qt-toggle svg{transition:transform .22s ease}
 .app-nav.qt-side:not(.qt-collapsed) .qt-toggle svg{transform:rotate(180deg)}
 
 /* Bascule marché Futures ⇄ CFD */
-.qt-market{display:flex;gap:3px;padding:3px;margin:2px 0 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:10px}
+.qt-market{display:flex;gap:3px;padding:3px;margin:2px 0 10px;background:var(--tint1);border:1px solid var(--border2);border-radius:10px}
 .qt-market-seg{flex:1;min-width:0;height:30px;padding:0 8px;border:none;background:transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.01em;border-radius:7px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
 .qt-market-seg:hover{color:var(--text)}
 .qt-market-seg.active{background:linear-gradient(135deg,var(--blue),var(--blue-light));color:#fff;box-shadow:0 4px 12px rgba(45,111,255,0.3)}
@@ -295,7 +295,7 @@ const SIDEBAR_CSS = `
 .qt-subhdr{display:flex;align-items:center;gap:11px;padding:7px 12px 4px;font-size:12px;font-weight:600;color:var(--text2)}
 
 .qt-item{position:relative;display:flex;align-items:center;gap:11px;width:100%;height:38px;padding:0 12px;border-radius:10px;color:var(--text2);font-size:13px;font-weight:500;text-decoration:none;font-family:inherit;border:none;background:transparent;cursor:pointer;text-align:left;transition:background .15s,color .15s;white-space:nowrap}
-.qt-item:hover{background:rgba(255,255,255,0.05);color:var(--text)}
+.qt-item:hover{background:var(--tint2);color:var(--text)}
 .qt-item.active{background:linear-gradient(135deg,var(--blue),var(--blue-light));color:#fff;box-shadow:0 6px 16px rgba(45,111,255,0.3)}
 .qt-item.disabled{opacity:.45;cursor:not-allowed}
 .qt-item.disabled:hover{background:transparent;color:var(--text2)}
@@ -321,7 +321,7 @@ const SIDEBAR_CSS = `
 .qt-prof-info{min-width:0;display:flex;flex-direction:column}
 .qt-prof-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qt-prof-mail{font-size:10px;color:var(--text3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.qt-prof-edit{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);background:rgba(255,255,255,0.025);border-radius:8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.qt-prof-edit{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border);background:var(--tint1);border-radius:8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
 .qt-prof-edit:hover{color:var(--text);border-color:var(--blue-light)}
 
 /* === MODE REPLIÉ (rail d'icônes) — desktop uniquement === */

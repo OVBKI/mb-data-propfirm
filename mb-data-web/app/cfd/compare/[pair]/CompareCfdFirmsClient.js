@@ -10,18 +10,18 @@ import {
 } from '../../../../lib/cfdConstants'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: 'rgba(255,255,255,0.025)',
-  border: 'rgba(255,255,255,0.07)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--tint1)',
+  border: 'var(--border)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
 }
 
 const REP_COLOR = { solid: C.green, ok: C.amber, caution: C.red }
@@ -158,7 +158,7 @@ export default function CompareCfdFirmsClient({
 
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
             {/* Table header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 190px) 1fr 1fr', borderBottom: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.025)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 190px) 1fr 1fr', borderBottom: `1px solid ${C.border}`, background: 'var(--tint1)' }}>
               <div style={{ padding: '14px 18px', fontSize: 11, color: C.text3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Critère</div>
               <div style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: colorA, borderLeft: `1px solid ${C.border}` }}>{firmA}</div>
               <div style={{ padding: '14px 18px', fontSize: 13, fontWeight: 700, color: colorB, borderLeft: `1px solid ${C.border}` }}>{firmB}</div>

@@ -22,8 +22,8 @@ export default function GlobalErrorBoundary({ error, reset }) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0d0f14',
-      color: '#f0ede8',
+      background: 'var(--bg)',
+      color: 'var(--text)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -42,21 +42,21 @@ export default function GlobalErrorBoundary({ error, reset }) {
         </h1>
 
         <p style={{
-          fontSize: 15, color: '#9098b0', lineHeight: 1.6,
+          fontSize: 15, color: 'var(--text2)', lineHeight: 1.6,
           marginTop: 0, marginBottom: 28,
         }}>
           {t('errorPages.errorBodyPre')}
           <a href="mailto:support@quantara.tech" style={{
-            color: '#4d8fff', textDecoration: 'none',
+            color: 'var(--blue-light)', textDecoration: 'none',
           }}>support@quantara.tech</a>{t('errorPages.errorBodyPost')}
         </p>
 
         {/* Détail debug — seulement en dev, jamais en prod */}
         {process.env.NODE_ENV !== 'production' && error?.message && (
           <pre style={{
-            background: '#141720', border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 8, padding: 12, fontSize: 11,
-            color: '#fac775', textAlign: 'left',
+            color: 'var(--amber)', textAlign: 'left',
             overflow: 'auto', maxHeight: 200, marginBottom: 24,
             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
           }}>
@@ -72,7 +72,7 @@ export default function GlobalErrorBoundary({ error, reset }) {
             style={{
               padding: '12px 22px',
               fontSize: 14, fontWeight: 600,
-              background: '#2d6fff', color: 'white',
+              background: 'var(--blue)', color: 'white',
               border: 'none', borderRadius: 8,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
@@ -82,8 +82,8 @@ export default function GlobalErrorBoundary({ error, reset }) {
           <Link href="/" style={{
             padding: '12px 22px',
             fontSize: 14, fontWeight: 600,
-            background: 'transparent', color: '#9098b0',
-            border: '1px solid rgba(255,255,255,0.13)', borderRadius: 8,
+            background: 'transparent', color: 'var(--text2)',
+            border: '1px solid var(--border2)', borderRadius: 8,
             textDecoration: 'none',
             display: 'inline-flex', alignItems: 'center',
           }}>

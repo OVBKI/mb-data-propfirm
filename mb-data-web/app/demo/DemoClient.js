@@ -14,7 +14,7 @@ const STATUS_COLORS = {
 
 const DEMO_FIRMS = [
   {
-    id: 1, name: 'Lucid Trading', color: '#2d6fff',
+    id: 1, name: 'Lucid Trading', color: 'var(--blue)',
     accounts: [
       { name: 'PRO 6', status: 'Financé', pnl: 2187, payouts: [{ amount: 2500 }, { amount: 1300 }, { amount: 890 }, { amount: 400 }] },
       { name: 'PRO 7', status: 'Financé', pnl: 2713, payouts: [] },
@@ -23,14 +23,14 @@ const DEMO_FIRMS = [
     failedCount: 10, spent: 1197, totalPayouts: 5090,
   },
   {
-    id: 2, name: 'Take Profit Trader', color: '#fac775',
+    id: 2, name: 'Take Profit Trader', color: 'var(--amber)',
     accounts: [
       { name: 'TPPRO1881087', status: 'Financé', pnl: -119, payouts: [] },
     ],
     failedCount: 0, spent: 119, totalPayouts: 0,
   },
   {
-    id: 3, name: 'FuturesELites', color: '#e8504a',
+    id: 3, name: 'FuturesELites', color: 'var(--red)',
     accounts: [
       { name: 'FE-EVAL-001', status: 'Échoué', pnl: -65, payouts: [] },
       { name: 'FE-EVAL-002', status: 'Échoué', pnl: -65, payouts: [] },
@@ -41,7 +41,7 @@ const DEMO_FIRMS = [
     failedCount: 5, spent: 323, totalPayouts: 0,
   },
   {
-    id: 4, name: 'Alpha Futures', color: '#1db87a',
+    id: 4, name: 'Alpha Futures', color: 'var(--green)',
     accounts: [
       { name: 'challenge-002', status: 'Challenge', pnl: -80, payouts: [] },
       { name: 'challenge-003', status: 'Challenge', pnl: -80, payouts: [] },
@@ -49,7 +49,7 @@ const DEMO_FIRMS = [
     failedCount: 1, spent: 313, totalPayouts: 0,
   },
   {
-    id: 5, name: 'Topstep', color: '#4d8fff',
+    id: 5, name: 'Topstep', color: 'var(--blue-light)',
     accounts: [
       { name: 'challenge-001', status: 'Challenge', pnl: -135, payouts: [] },
       { name: 'challenge-002', status: 'Challenge', pnl: -135, payouts: [] },
@@ -104,7 +104,7 @@ export default function DemoClient() {
       {!dismissed && (
         <div style={{ padding: '10px 24px', background: 'linear-gradient(90deg, rgba(45,111,255,0.95), rgba(77,143,255,0.95))', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{t('demo.banner')}</span>
-          <Link href="/auth?mode=signup" style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, background: '#fff', color: '#2d6fff', textDecoration: 'none' }}>{t('demo.signupCta')}</Link>
+          <Link href="/auth?mode=signup" style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, background: '#fff', color: 'var(--blue)', textDecoration: 'none' }}>{t('demo.signupCta')}</Link>
           <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 16, padding: 4 }} aria-label={t('demo.close')}>×</button>
         </div>
       )}
@@ -113,8 +113,8 @@ export default function DemoClient() {
         {/* ── SIDEBAR (copie exacte de AppSidebar) ── */}
         <aside className="demo-sidebar" style={{
           width: 210, flexShrink: 0,
-          background: 'rgba(13,15,20,0.65)', backdropFilter: 'blur(26px)',
-          borderRight: '1px solid var(--border, rgba(255,255,255,0.06))',
+          background: 'var(--bar-bg)', backdropFilter: 'blur(26px)',
+          borderRight: '1px solid var(--border, var(--border))',
           padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 1,
           overflowY: 'auto', position: 'sticky', top: 52, height: 'calc(100vh - 52px)',
         }}>
@@ -134,7 +134,7 @@ export default function DemoClient() {
 
           <SidebarSection label={t('app.sidebar.sectionPropFirm')} />
           <SidebarItem icon="◊" label={t('app.sidebar.rules')} href="/compare" />
-          <SidebarItem icon="◉" label={t('app.sidebar.alerts')} badge="3" badgeColor="#e8504a" />
+          <SidebarItem icon="◉" label={t('app.sidebar.alerts')} badge="3" badgeColor="var(--red)" />
 
           <SidebarSection label={t('app.sidebar.sectionCommunaute')} />
           <SidebarItem icon="◈" label={t('app.sidebar.groups')} />
@@ -158,7 +158,7 @@ export default function DemoClient() {
               <div style={{ fontSize: 13, color: 'var(--text3)' }}>1 USD ≈ 0.8621 EUR · 1 GBP ≈ 1.1574 EUR — 14:18</div>
             </div>
             <div className="page-header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: 8, overflow: 'hidden', background: 'var(--tint1)' }}>
                 <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'var(--blue)', color: '#fff', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>USD</button>
                 <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text2)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>EUR</button>
               </div>
@@ -176,7 +176,7 @@ export default function DemoClient() {
               { label: t('app.dashboard.statNetResult'), value: `${TOTAL_NET >= 0 ? '+' : ''}${TOTAL_NET.toLocaleString()}.00 $`, color: TOTAL_NET >= 0 ? 'var(--green)' : 'var(--red)' },
               { label: t('app.dashboard.statPayouts'), value: TOTAL_PAYOUT_COUNT },
             ].map((k, i) => (
-              <div key={i} className="qt-stat-card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px', boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
+              <div key={i} className="qt-stat-card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px', boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
                 <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>{k.label}</div>
                 <div style={{ fontSize: k.small ? 15 : 24, fontWeight: 700, color: k.color || 'var(--text)', letterSpacing: '-0.015em' }}>{k.value}</div>
               </div>
@@ -198,10 +198,10 @@ export default function DemoClient() {
                 <div key={firm.id} className="qt-firm-card" style={{
                   background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20,
                   cursor: 'pointer', transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
-                  boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)',
+                  boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)',
                 }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(45,111,255,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px rgba(45,111,255,0.08)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -223,7 +223,7 @@ export default function DemoClient() {
                       { l: t('app.dashboard.miniPayouts'), v: `${firm.totalPayouts} $`, c: 'var(--green)' },
                       { l: t('app.dashboard.miniActive'), v: activeCount },
                     ].map((s, i) => (
-                      <div key={i} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 7, padding: '10px 8px', textAlign: 'center' }}>
+                      <div key={i} style={{ background: 'var(--tint1)', border: '1px solid var(--tint2)', borderRadius: 7, padding: '10px 8px', textAlign: 'center' }}>
                         <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, fontWeight: 600 }}>{s.l}</div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: s.c || 'var(--text)', letterSpacing: '-0.005em' }}>{s.v}</div>
                       </div>
@@ -231,7 +231,7 @@ export default function DemoClient() {
                   </div>
 
                   {al.filter(a => a.status !== 'Échoué').slice(0, 3).map((a, ai) => (
-                    <div key={ai} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderTop: `1px solid rgba(255,255,255,0.03)` }}>
+                    <div key={ai} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderTop: `1px solid var(--tint1)` }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_COLORS[a.status]?.text }} />
                         <span style={{ fontSize: 12, color: 'var(--text2)' }}>{a.name}</span>
@@ -259,7 +259,7 @@ export default function DemoClient() {
           <DemoCalendar calMonth={calMonth} calYear={calYear} sdow={sdow} dim={dim} todayDate={todayDate} t={t} monthNames={monthNames} daysHeader={daysHeader} dateLocale={dateLocale} />
 
           {/* CTA */}
-          <div style={{ padding: 32, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, textAlign: 'center', boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
+          <div style={{ padding: 32, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, textAlign: 'center', boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, marginBottom: 8 }}>{t('demo.ctaTitle')}</h2>
             <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 20, lineHeight: 1.6 }}>{t('demo.ctaSubtitle')}</p>
             <Link href="/auth?mode=signup" style={{ display: 'inline-block', padding: '12px 28px', background: 'var(--blue)', color: '#fff', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{t('demo.ctaButton')}</Link>
@@ -305,7 +305,7 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t, monthNames, 
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 5)
 
-  const card = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15)' }
+  const card = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }
 
   return (
     <div style={{ marginBottom: 24 }}>
@@ -410,15 +410,15 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t, monthNames, 
         <div style={{ ...card, padding: 18 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 10 }}>{t('demo.byFirmUsd')}</div>
           <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#e8504a' }} />{t('app.dashboard.legendSpent')}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: '#1db87a' }} />{t('app.dashboard.legendPayouts')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: 'var(--red)' }} />{t('app.dashboard.legendSpent')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)' }}><div style={{ width: 10, height: 3, borderRadius: 2, background: 'var(--green)' }} />{t('app.dashboard.legendPayouts')}</div>
           </div>
           {DEMO_FIRMS.map(f => (
             <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <div style={{ fontSize: 10, color: 'var(--text3)', width: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name.length > 8 ? f.name.slice(0, 8) + '…' : f.name}</div>
               <div style={{ flex: 1, display: 'flex', gap: 2, height: 8 }}>
-                <div style={{ width: `${(f.spent / 1200) * 100}%`, background: '#e8504a', borderRadius: 2, minWidth: f.spent > 0 ? 4 : 0 }} />
-                <div style={{ width: `${(f.totalPayouts / 5100) * 100}%`, background: '#1db87a', borderRadius: 2, minWidth: f.totalPayouts > 0 ? 4 : 0 }} />
+                <div style={{ width: `${(f.spent / 1200) * 100}%`, background: 'var(--red)', borderRadius: 2, minWidth: f.spent > 0 ? 4 : 0 }} />
+                <div style={{ width: `${(f.totalPayouts / 5100) * 100}%`, background: 'var(--green)', borderRadius: 2, minWidth: f.totalPayouts > 0 ? 4 : 0 }} />
               </div>
             </div>
           ))}
@@ -484,7 +484,7 @@ function SidebarItem({ icon, label, active, header, indent, disabled, badge, bad
     <>
       {icon && <span style={{ fontSize: 13, width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>}
       <span style={{ flex: 1 }}>{label}</span>
-      {badge && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: badgeColor || 'rgba(255,255,255,0.1)', color: badgeColor ? '#fff' : 'var(--text3)', fontWeight: 700 }}>{badge}</span>}
+      {badge && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: badgeColor || 'var(--hairline)', color: badgeColor ? '#fff' : 'var(--text3)', fontWeight: 700 }}>{badge}</span>}
     </>
   )
   if (href) return <Link href={href} style={style}>{inner}</Link>

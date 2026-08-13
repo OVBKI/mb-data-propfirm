@@ -11,8 +11,8 @@ export default function AuthClient({ initialMode }) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0d0f14',
-      color: '#f0ede8',
+      background: 'var(--bg)',
+      color: 'var(--text)',
       display: 'flex',
       flexDirection: 'column',
     }}>

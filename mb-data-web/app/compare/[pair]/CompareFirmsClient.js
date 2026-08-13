@@ -8,18 +8,18 @@ import { FIRM_SUGGESTION_COLORS } from '../../../lib/constants'
 import { COMPARISON_ROWS } from '../../../lib/firmSlugs'
 
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  surface2: 'rgba(255,255,255,0.025)',
-  border: 'rgba(255,255,255,0.07)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
-  green: '#1db87a',
-  amber: '#fac775',
-  red: '#e8504a',
+  bg: 'var(--bg)',
+  surface: 'var(--surface)',
+  surface2: 'var(--tint1)',
+  border: 'var(--border)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
 }
 
 // For each comparison row, resolve the cell value for a given firm+plan.
@@ -106,7 +106,7 @@ export default function CompareFirmsClient({
               display: 'grid',
               gridTemplateColumns: 'minmax(160px, 200px) 1fr 1fr',
               borderBottom: `1px solid ${C.border}`,
-              background: 'rgba(255,255,255,0.025)',
+              background: 'var(--tint1)',
             }}>
               <div style={{ padding: '14px 18px', fontSize: 11, color: C.text3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Critère

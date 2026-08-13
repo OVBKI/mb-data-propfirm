@@ -10,13 +10,13 @@ import LanguageSwitcher from './LanguageSwitcher'
 import { useT } from './LanguageProvider'
 
 const C = {
-  border: 'rgba(255,255,255,0.07)',
-  border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8',
-  text2: '#9098b0',
-  text3: '#7b839b',
-  blue: '#2d6fff',
-  blueLight: '#4d8fff',
+  border: 'var(--border)',
+  border2: 'var(--border2)',
+  text: 'var(--text)',
+  text2: 'var(--text2)',
+  text3: 'var(--text3)',
+  blue: 'var(--blue)',
+  blueLight: 'var(--blue-light)',
 }
 
 export default function PageHeader({ active }) {
@@ -37,7 +37,7 @@ export default function PageHeader({ active }) {
     <>
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(13,15,20,0.85)', backdropFilter: 'blur(12px)',
+        background: 'var(--bar-bg)', backdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${C.border}`,
       }}>
         <div className="lp-nav" style={{
@@ -49,7 +49,7 @@ export default function PageHeader({ active }) {
             display: 'flex', alignItems: 'center', gap: 12,
             textDecoration: 'none', color: C.text, flexShrink: 0,
           }}>
-            <QLogoIcon size={50} color="#4d8fff" />
+            <QLogoIcon size={50} color="var(--blue-light)" />
             <div>
               <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1, letterSpacing: '0.08em' }}>QUANTARA</div>
               <div className="ph-brand-sub" style={{ fontSize: 9, color: C.text3, marginTop: 3, letterSpacing: '0.05em' }}>TRACK · ANALYZE · GROW</div>
@@ -88,7 +88,7 @@ export default function PageHeader({ active }) {
               display: 'inline-block', padding: '8px 16px',
               fontSize: 13, fontWeight: 500, borderRadius: 8,
               textDecoration: 'none',
-              background: C.text, color: '#0a0c10',
+              background: C.text, color: 'var(--text-inverse)',
               boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
               whiteSpace: 'nowrap',
             }}>{t('pages.header.cta')} →</Link>
@@ -102,7 +102,7 @@ export default function PageHeader({ active }) {
                 display: 'none',  // CSS .ph-burger media query force display flex sur mobile
                 alignItems: 'center', justifyContent: 'center',
                 width: 36, height: 36,
-                background: 'rgba(255,255,255,0.03)',
+                background: 'var(--tint1)',
                 border: `1px solid ${C.border2}`,
                 borderRadius: 8, color: C.text,
                 fontSize: 18, cursor: 'pointer', padding: 0,
@@ -116,7 +116,7 @@ export default function PageHeader({ active }) {
         {mobileOpen && (
           <div className="ph-mobile-menu" style={{
             borderTop: `1px solid ${C.border}`,
-            background: 'rgba(13,15,20,0.96)',
+            background: 'var(--surface)',
             backdropFilter: 'blur(20px)',
             padding: '8px 0',
           }}>

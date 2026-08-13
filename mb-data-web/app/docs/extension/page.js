@@ -12,9 +12,9 @@ export const metadata = {
 }
 
 const C = {
-  surface: 'rgba(20,23,32,0.65)', border: 'rgba(255,255,255,0.07)', border2: 'rgba(255,255,255,0.13)',
-  text: '#f0ede8', text2: '#9098b0', text3: '#5a6275',
-  blue: '#2d6fff', blueLt: '#4d8fff', green: '#1db87a', amber: '#d99a3e',
+  surface: 'rgba(20,23,32,0.65)', border: 'var(--border)', border2: 'var(--border2)',
+  text: 'var(--text)', text2: 'var(--text2)', text3: 'var(--text3)',
+  blue: 'var(--blue)', blueLt: 'var(--blue-light)', green: 'var(--green)', amber: '#d99a3e',
 }
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 22, marginBottom: 16 }
