@@ -741,3 +741,54 @@ pour permettre ce genre d'épinglage par sous-arbre.
 - `components/landing/**` non migré (épinglé sombre, ~90 couleurs en dur).
 - Les tuiles de heatmap et quelques dégradés d'accent gardent des valeurs en dur ;
   lisibles dans les deux thèmes, mais pas parfaitement calibrés en clair.
+
+
+## Audit complet — 2026-08
+
+Axes couverts : sécurité, accessibilité, dépendances, bundle, SEO, tests, routes.
+
+### Corrigé pendant l'audit
+1. **CRITIQUE — escalade de privilège sur `profiles`.** La policy
+   `for all using (auth.uid() = user_id)` inclut UPDATE. Les colonnes de
+   facturation vivant sur `profiles`, tout utilisateur connecté pouvait
+   s'attribuer un plan payant depuis le navigateur avec la seule anon key.
+   RLS raisonne par LIGNE, pas par COLONNE. Correctif : `revoke update (…)` colonne
+   par colonne en fin de `supabase-schema.sql`. **SQL À JOUER SUR SUPABASE.**
+2. **Contraste WCAG du thème clair** : 110 violations axe-core → 22 (la baseline
+   du thème sombre est à 26). Causes : `--text3`, `--green`, `--amber`, `--red`
+   trop clairs. Valeurs recalculées pour tenir ≥ 4.5:1 sur les 4 fonds clairs.
+3. **Stripe — updates silencieux.** Un `update()` Supabase qui ne matche aucune
+   ligne ne renvoie pas d'erreur. Sans contrôle, un profil manquant faisait
+   recréer un Customer à chaque paiement (checkout) et perdre un abonnement payé
+   (webhook). Les deux vérifient maintenant les lignes touchées.
+4. **`plan_started_at` à 1970** quand `sub.start_date` est absent → laissé null.
+5. **Tests** : +25 sur `planLimits` et `stripe` (313 → 338). C'est le code qui
+   décide qui a payé ; il n'était pas couvert.
+
+### Constaté, non corrigé
+- **a11y — `nested-interactive`** : 11 occurrences sur `/compare`, un
+  `div role="button"` contenant des liens/boutons. Pré-existant, casse la
+  navigation clavier et les lecteurs d'écran.
+- **a11y — 22 contrastes résiduels** : couleurs en dur hors système de jetons
+  (violet `#a78bfa`, cyan `#06b6d4`, vert `#10b981`) dans des palettes locales.
+- **~50 palettes locales `const C = {…}`** dupliquent le design system et
+  court-circuitent les jetons. Source structurelle des deux points ci-dessus.
+- **Dépendances** : 8 vulns (5 high) — postcss, next, nanoid, brace-expansion,
+  fast-uri. Toutes DoS ou spécifiques au self-hosting ; le correctif impose
+  next@16 (breaking). Faible urgence sur Vercel, mais à planifier.
+- **Gating serveur non branché** : `planLimits.isAtLimit()` / `planLimitError()`
+  existent mais aucune route de création ne les appelle. Tant que Stripe n'est
+  pas en live c'est sans effet ; le jour du lancement payant, c'est bloquant.
+- **Canonical manquant** sur `/auth`, `/g/[code]`, `/u/[username]*` (hors sitemap,
+  impact faible).
+
+### Sain, vérifié
+- 32 routes API : les 4 sans `verifyAuth` sont protégées autrement (signature
+  Stripe, rate-limit IP, données publiques). Aucun trou.
+- RLS active sur les 16 tables, policies `auth.uid() = user_id`.
+- Aucun secret dans le code suivi ; `.env*` bien ignoré.
+- XSS : `dangerouslySetInnerHTML` uniquement sur du contenu i18n interne.
+- CSP sans `unsafe-eval` en prod.
+- Sitemap : 136 URLs, généré dynamiquement, aucune page orpheline.
+- Bundle : 201–291 kB First Load JS. 195 pages statiques générées.
+- Toutes les routes publiques testées renvoient 200.

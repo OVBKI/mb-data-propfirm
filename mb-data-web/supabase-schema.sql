@@ -632,6 +632,38 @@ alter table stripe_events enable row level security;
 
 create index if not exists stripe_events_received_at_idx on stripe_events(received_at desc);
 
+-- ⚠️ ESCALADE DE PRIVILÈGE — CORRECTIF OBLIGATOIRE
+-- ----------------------------------------------------------------------------
+-- La policy "Users manage own profile" est `for all using (auth.uid() = user_id)`,
+-- ce qui inclut UPDATE. Les colonnes de facturation vivant sur `profiles`, un
+-- utilisateur authentifié pouvait s'auto-attribuer n'importe quel plan payant
+-- depuis le navigateur, avec la simple anon key :
+--
+--   supabase.from('profiles')
+--     .update({ plan: 'elite', plan_status: 'active', plan_expires_at: '2099-01-01' })
+--     .eq('user_id', monId)                     -- RLS l'autorise : c'est SA ligne
+--
+-- RLS raisonne par LIGNE, pas par COLONNE : elle ne peut pas distinguer
+-- « modifier son pseudo » de « se donner un abonnement ». On révoque donc le
+-- droit UPDATE colonne par colonne. Le webhook Stripe passe par la service_role,
+-- qui ignore RLS et les grants : il continue d'écrire normalement.
+--
+-- Les colonnes que le client édite légitimement (username, display_name, bio,
+-- avatar_url, country, is_public, trading_styles) ne sont PAS touchées.
+revoke update (
+  plan, plan_status, plan_interval, plan_started_at, plan_expires_at,
+  plan_cancel_at_period_end, stripe_customer_id, stripe_subscription_id,
+  beta_grandfather, last_invoice_status, last_invoice_at
+) on table profiles from authenticated, anon;
+
+-- ⚠️ Un futur `grant all on profiles to authenticated` ré-ouvrirait la faille.
+-- Rejouer ce revoke après toute modification des grants sur `profiles`.
+--
+-- Vérification (doit renvoyer 0 ligne) :
+--   select column_name from information_schema.column_privileges
+--   where table_name = 'profiles' and privilege_type = 'UPDATE'
+--     and grantee = 'authenticated' and column_name like 'plan%';
+
 -- GRANDFATHER DES BÊTA-TESTEURS — à jouer LE JOUR du lancement payant, une
 -- seule fois, en remplaçant la date par celle du lancement :
 --   update profiles set beta_grandfather = true

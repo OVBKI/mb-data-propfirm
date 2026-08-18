@@ -159,10 +159,22 @@ async function applySubscription(supabase, sub, fallbackUserId) {
     stripe_subscription_id: sub.id,
     stripe_customer_id: customerId || undefined,
   }
-  if (active && plan) patch.plan_started_at = new Date((sub.start_date || 0) * 1000).toISOString()
+  // `start_date` absent → laisser null. Sans ce garde, `new Date(0)` écrivait
+  // 1970-01-01 et l'ancienneté affichée à l'utilisateur devenait absurde.
+  if (active && plan && sub.start_date) {
+    patch.plan_started_at = new Date(sub.start_date * 1000).toISOString()
+  }
 
-  const { error } = await supabase.from('profiles').update(patch).eq('user_id', userId)
+  // `select('user_id')` pour compter les lignes touchées : un update Supabase qui
+  // ne matche AUCUNE ligne ne renvoie pas d'erreur. Sans ce contrôle, un profil
+  // manquant faisait silencieusement disparaître un abonnement payé.
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(patch)
+    .eq('user_id', userId)
+    .select('user_id')
   if (error) throw new Error(`profiles update failed: ${error.message}`)
+  if (!data?.length) throw new Error(`no profile row for user ${userId}`)
 }
 
 async function userIdFromCustomer(supabase, customerId) {

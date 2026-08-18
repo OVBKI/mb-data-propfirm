@@ -78,10 +78,19 @@ export async function POST(request) {
       metadata: { supabase_user_id: auth.user.id },
     })
     customerId = customer.id
-    await supabase
+    // On vérifie que la ligne a bien été mise à jour : un update Supabase qui ne
+    // matche aucune ligne ne renvoie PAS d'erreur. Sans ce contrôle, un profil
+    // manquant faisait recréer un Customer Stripe à chaque tentative de paiement,
+    // et le webhook n'avait plus de quoi rattacher l'abonnement.
+    const { data: saved, error: saveErr } = await supabase
       .from('profiles')
       .update({ stripe_customer_id: customerId })
       .eq('user_id', auth.user.id)
+      .select('user_id')
+    if (saveErr || !saved?.length) {
+      console.error('[stripe-checkout] cannot persist customer', customerId, saveErr?.message)
+      return Response.json({ error: 'Profile not found' }, { status: 500 })
+    }
   }
 
   // ── Checkout Session ────────────────────────────────────────────────────────

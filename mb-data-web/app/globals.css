@@ -83,24 +83,26 @@
   --border2: rgba(15,23,42,0.17);
   --text: #10131a;
   --text2: #4a5468;
-  --text3: #6d7689;
+  --text3: #5b6374;
   --text-inverse: #ffffff;
 
-  /* Les accents sont assombris : #4d8fff ou #fac775 sur blanc tombent sous le
-     ratio de contraste 4.5:1 et deviennent illisibles. */
+  /* Les accents sont assombris. Valeurs CALIBRÉES : chacune tient >= 4.5:1
+     (WCAG AA) contre les 4 fonds clairs du thème — #ffffff, --bg, --surface2 et
+     le blanc cassé des cartes. Vérifié avec axe-core. Ne pas les ré-éclaircir
+     sans revérifier le contraste : c'est ce qui rend le texte lisible. */
   --blue: #1c5cf0;
   --blue-light: #1550d8;
   --blue-bg: rgba(28,92,240,0.09);
   --blue-border: rgba(28,92,240,0.30);
-  --green: #0d9668;
+  --green: #0a7550;
   --green-bg: rgba(13,150,104,0.10);
-  --green-text: #07734f;
-  --red: #d3342e;
+  --green-text: #076246;
+  --red: #c22a24;
   --red-bg: rgba(211,52,46,0.10);
   --red-text: #b02620;
-  --amber: #b4750a;
+  --amber: #8a5a06;
   --amber-bg: rgba(198,140,30,0.14);
-  --amber-text: #91600a;
+  --amber-text: #7d5205;
 
   --tint1: rgba(15,23,42,0.025);
   --tint2: rgba(15,23,42,0.045);
@@ -114,7 +116,7 @@
   --shadow-pop: 0 12px 32px rgba(15,23,42,0.16);
 
   --chart-grid: rgba(15,23,42,0.07);
-  --chart-tick: #6d7689;
+  --chart-tick: #5b6374;
 }
 
 html, body {
