@@ -11,6 +11,9 @@ import {
   useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, EquityWidget, HealthWidget,
 } from '../../../../components/dashboard/widgets'
 import { useDashboardLayout } from '../../../../lib/hooks/useDashboardLayout'
+import { SECTIONS, SECTION_LABELS } from '../../../../lib/dashboardLayout'
+import Link from 'next/link'
+import { ThemeToggle } from '../../../../components/ThemeSwitcher'
 import { chartColors } from '../../../../lib/theme'
 import { useTheme } from '../../../../components/ThemeProvider'
 
@@ -66,6 +69,7 @@ export default function DashboardPage() {
     setShowOnboarding,
     getFirmLogo, STATUS_COLORS, accountLabel, MONTHS_FR,
     marketMode, openCfdAdd,
+    openSearch, alertsBadgeCount,
   } = useApp()
 
   // Mode-gated add-PropFirm trigger: in CFD mode open the reusable CFD account
@@ -322,28 +326,57 @@ export default function DashboardPage() {
 
   return (
     <div className="page-pad" style={{ maxWidth: '1160px', margin: '0 auto', padding: '32px 24px 60px' }}>
-      {/* Pas de gros titre de page : la maquette entre directement dans les
-          cartes, et la navigation de section vit dans la barre du haut. Les
-          commandes propres au dashboard tiennent sur une ligne au-dessus de la
-          grille — c'est aussi là que se trouve « Personnaliser ». */}
-      <div className="page-header-actions" style={{
-        display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
-        justifyContent: 'flex-end', marginBottom: 20,
-      }}>
-        <span style={{ marginRight: 'auto', fontSize: 13, color: 'var(--text3)' }}>{rateInfo}</span>
-        <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--tint1)' }}>
-          {['native', 'eur'].map(c => (
-            <button key={c} onClick={() => setCurrencyMode(c)} style={{
-              padding: '7px 14px', fontSize: 12, border: 'none',
-              background: currency === c ? 'var(--blue)' : 'transparent',
-              color: currency === c ? 'var(--text-inverse)' : 'var(--text2)',
-              cursor: 'pointer', fontWeight: 600, letterSpacing: '0.05em',
-            }}>{c === 'native' ? 'USD' : 'EUR'}</button>
+      {/* La barre du dashboard — reprise de la maquette. Les onglets sont des
+          SOUS-SECTIONS de cette page, pas de la navigation d'application : ils
+          rejouent les mêmes données sous un autre angle, et chacun garde sa
+          propre disposition de widgets. */}
+      <div className="qt-page-top">
+        <nav className="qt-tabs" aria-label={t('app.dashSections.label')}>
+          {SECTIONS.map(sec => (
+            <button
+              key={sec}
+              onClick={() => dash.setSection(sec)}
+              className={dash.section === sec ? 'qt-tab qt-tab-on' : 'qt-tab'}
+              aria-current={dash.section === sec ? 'true' : undefined}
+            >{t(SECTION_LABELS[sec])}</button>
           ))}
+        </nav>
+
+        <div className="qt-page-actions">
+          <button onClick={openSearch} className="qt-topsearch" aria-label={t('app.topbar.search')}>
+            <span aria-hidden="true">⌕</span>
+            <span className="qt-topsearch-label">{t('app.topbar.search')}</span>
+            <kbd>⌘K</kbd>
+          </button>
+          <ThemeToggle />
+          <Link href="/app/alerts" className="qt-topbell" aria-label={t('app.topbar.alerts')}>
+            <span aria-hidden="true">▲</span>
+            {alertsBadgeCount > 0 && <em>{alertsBadgeCount}</em>}
+          </Link>
+          <span className="qt-page-sep" aria-hidden="true" />
+          <input
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            placeholder={t('app.dashboard.searchPlaceholder')}
+            style={{ ...S.input, maxWidth: 190, width: '100%', minWidth: 0 }}
+          />
+          <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--tint1)', flexShrink: 0 }}>
+            {['native', 'eur'].map(c => (
+              <button key={c} onClick={() => setCurrencyMode(c)} style={{
+                padding: '7px 13px', fontSize: 12, border: 'none',
+                background: currency === c ? 'var(--blue)' : 'transparent',
+                color: currency === c ? 'var(--text-inverse)' : 'var(--text2)',
+                cursor: 'pointer', fontWeight: 600, letterSpacing: '0.05em',
+              }}>{c === 'native' ? 'USD' : 'EUR'}</button>
+            ))}
+          </div>
+          <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={{ ...S.btnPrimary, flexShrink: 0 }}>
+            {t('app.dashboard.btnAddPropfirm')}
+          </button>
         </div>
-        <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: 180, width: '100%', minWidth: 0 }} />
-        <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
       </div>
+
+      <div style={{ fontSize: 12.5, color: 'var(--text3)', marginBottom: 18 }}>{rateInfo}</div>
 
       {/* « Vue d'ensemble » est entièrement composable : chaque bloc ci-dessous est
           un widget que l'utilisateur peut masquer, déplacer et redimensionner.

@@ -5,8 +5,9 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  DEFAULT_LAYOUT, WIDGETS, GRID_COLUMNS,
-  normalizeLayout, isDefaultLayout, moveWidget, setWidgetWidth, setWidgetVisible,
+  DEFAULT_LAYOUT, WIDGETS, GRID_COLUMNS, SECTIONS, DEFAULT_SECTION, SECTION_LABELS,
+  normalizeLayout, normalizeLayoutFor, normalizeAll, defaultLayoutFor,
+  isDefaultLayout, moveWidget, setWidgetWidth, setWidgetVisible,
 } from './dashboardLayout'
 
 describe('normalizeLayout', () => {
@@ -162,5 +163,79 @@ describe('catalogue', () => {
       expect(spec.defaultW, id).toBeGreaterThanOrEqual(spec.minW)
       expect(spec.defaultW, id).toBeLessThanOrEqual(GRID_COLUMNS)
     }
+  })
+})
+
+describe('sous-sections', () => {
+  // Le dashboard a quatre vues du même jeu de données. Chacune garde SA
+  // disposition : personnaliser « Payouts » ne doit rien changer ailleurs.
+
+  it('déclare une disposition par défaut pour chaque section', () => {
+    for (const sec of SECTIONS) {
+      expect(defaultLayoutFor(sec), sec).toBeInstanceOf(Array)
+      expect(defaultLayoutFor(sec).length, sec).toBeGreaterThan(0)
+      expect(SECTION_LABELS[sec], sec).toBeTruthy()
+    }
+  })
+
+  it('chaque section connaît TOUS les widgets, visibles ou non', () => {
+    // Un widget absent d'une section doit rester disponible dans son tiroir :
+    // on ne l'interdit pas, on ne le propose simplement pas d'emblée.
+    for (const sec of SECTIONS) {
+      const ids = normalizeLayoutFor(sec, null).map(w => w.id).sort()
+      expect(ids, sec).toEqual(Object.keys(WIDGETS).sort())
+    }
+  })
+
+  it('chaque section affiche au moins un widget par défaut', () => {
+    for (const sec of SECTIONS) {
+      expect(normalizeLayoutFor(sec, null).some(w => w.visible), sec).toBe(true)
+    }
+  })
+
+  it('les sections ne montrent pas toutes la même chose', () => {
+    // Sinon les onglets n'auraient aucun intérêt.
+    const shown = SECTIONS.map(sec =>
+      normalizeLayoutFor(sec, null).filter(w => w.visible).map(w => w.id).join(','))
+    expect(new Set(shown).size).toBe(SECTIONS.length)
+  })
+
+  it('normalizeAll produit les quatre sections', () => {
+    const all = normalizeAll(null)
+    expect(Object.keys(all).sort()).toEqual([...SECTIONS].sort())
+  })
+
+  it('reprend une ancienne disposition (tableau nu) comme Vue d ensemble', () => {
+    // Avant les sous-sections, la colonne stockait un simple tableau. Personne
+    // ne doit perdre son écran au passage.
+    const all = normalizeAll([{ id: 'equity', w: 4, visible: true }])
+    expect(all[DEFAULT_SECTION][0].id).toBe('equity')
+    expect(all[DEFAULT_SECTION][0].w).toBe(4)
+    // Les autres sections repartent de LEUR défaut, pas de celui-là.
+    expect(all.performance.filter(w => w.visible).map(w => w.id))
+      .toEqual(defaultLayoutFor('performance').filter(w => w.visible).map(w => w.id))
+  })
+
+  it('isole les sections les unes des autres', () => {
+    const all = normalizeAll(null)
+    const touched = { ...all, payouts: setWidgetVisible(all.payouts, 'calendar', false) }
+    expect(touched.payouts.find(w => w.id === 'calendar').visible).toBe(false)
+    expect(touched.overview.find(w => w.id === 'calendar').visible).toBe(true)
+  })
+
+  it('ignore une section inconnue dans les données stockées', () => {
+    const all = normalizeAll({ overview: [{ id: 'equity' }], ghostSection: [{ id: 'equity' }] })
+    expect(Object.keys(all).sort()).toEqual([...SECTIONS].sort())
+  })
+
+  it('isDefaultLayout compare au défaut de SA section', () => {
+    // La disposition par défaut de « Performance » n'est PAS celle de « Vue
+    // d'ensemble » : les comparer sans préciser la section serait faux.
+    expect(isDefaultLayout(defaultLayoutFor('performance'), 'performance')).toBe(true)
+    expect(isDefaultLayout(defaultLayoutFor('performance'), 'overview')).toBe(false)
+  })
+
+  it('normalizeLayout sans section reste sur Vue d ensemble', () => {
+    expect(normalizeLayout(DEFAULT_LAYOUT)).toEqual(normalizeLayoutFor(DEFAULT_SECTION, DEFAULT_LAYOUT))
   })
 })

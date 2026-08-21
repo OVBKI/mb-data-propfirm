@@ -193,11 +193,29 @@ table, .qt-mono, [data-numeric] {
   -webkit-backdrop-filter: blur(22px);
 }
 
-/* ── Barre du haut : onglets de section, recherche, cloche ─────────────────── */
+/* ── Barre de PAGE : onglets de sous-section + actions ─────────────────────── */
+/* La maquette n'a pas de barre globale : le rail fait toute la hauteur et chaque
+   page porte sa propre barre. Les onglets appartiennent donc au dashboard. */
+.qt-page-top {
+  display: flex; align-items: center; gap: 18px;
+  flex-wrap: wrap; margin-bottom: 6px;
+}
+.qt-page-actions {
+  display: flex; align-items: center; gap: 8px;
+  margin-left: auto; flex-wrap: wrap;
+}
+/* Le burger n'a plus de barre où vivre : il flotte en haut à gauche du contenu. */
+.qt-burger-float { position: fixed; top: 12px; left: 12px; z-index: 330; }
+/* Sépare le trio applicatif (recherche, thème, alertes) des commandes propres
+   à la page — sinon la barre lit comme une seule rangée de boutons. */
+.qt-page-sep { width: 1px; height: 24px; background: var(--border2); flex-shrink: 0; }
+
+/* ── Onglets, recherche, cloche ────────────────────────────────────────────── */
 .qt-tabs { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; }
 .qt-tab {
-  padding: 7px 14px; border-radius: var(--radius); font-size: 14px; font-weight: 500;
+  padding: 8px 15px; border-radius: var(--radius); font-size: 15px; font-weight: 500;
   color: var(--text2); white-space: nowrap; text-decoration: none;
+  background: transparent; border: none; font-family: inherit; cursor: pointer;
   transition: color .15s, background .15s;
 }
 .qt-tab:hover { color: var(--text); background: var(--tint1); }

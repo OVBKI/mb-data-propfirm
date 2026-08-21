@@ -985,3 +985,48 @@ dessous. La maquette n'a pas ces contrôles — c'est une maquette, pas une app.
 Sous 900px la barre perd le libellé de recherche, le raccourci et l'export CSV ;
 les onglets et la cloche restent. Le rail replié ne garde que le sigle de la
 marque.
+
+
+## Ossature reprise de la maquette — 2026-08 (correction)
+
+J'avais mis les onglets dans une barre GLOBALE, en navigation d'application.
+C'était faux. Dans la maquette :
+
+```
+.app { grid-template-columns: 262px 1fr }   ← rail pleine hauteur
+aside { … }                                  ← pas de barre au-dessus
+main  { .top { onglets | recherche | ☾ | 🔔 } … }   ← la barre est DANS la page
+```
+
+Il n'y a **aucune barre globale**. Le rail fait toute la hauteur et chaque page
+porte sa propre barre. Les onglets sont des **sous-sections du dashboard**, pas
+des routes.
+
+### Ce qui a changé
+- `(main)/layout.js` : la `.top-bar` est supprimée. Le rail passe en
+  `top: 0; height: 100vh`. Seul le burger mobile survit, en flottant.
+- Export CSV et Déconnexion vivaient dans cette barre → descendus au pied du
+  rail (`.qt-acct`), sous l'identité à laquelle ils s'appliquent.
+- `openSearch` et `alertsBadgeCount` passent par AppContext : la barre de page
+  en a besoin et la barre globale n'existe plus.
+
+### Les quatre sous-sections
+`SECTIONS = ['overview', 'performance', 'payouts', 'risk']` — quatre vues du même
+jeu de données, chacune avec **sa propre disposition de widgets**, personnalisable
+indépendamment. Personnaliser « Payouts » ne touche pas « Vue d'ensemble ».
+
+Chaque section connaît TOUS les widgets : ceux qui ne sont pas dans sa vue par
+défaut restent disponibles dans son tiroir. On ne les interdit pas, on ne les
+propose simplement pas d'emblée.
+
+### Reprise des dispositions existantes
+`profiles.dashboard_layout` stockait un simple tableau. `normalizeAll()` le
+reprend comme disposition de « Vue d'ensemble » et laisse les trois autres
+sections sur leur défaut — personne ne perd son écran au passage. Un test fige
+ce comportement.
+
+### Ce que la maquette ne montre pas
+Elle n'a ni sélecteur de devise, ni recherche de firme, ni bouton « Ajouter une
+PropFirm ». Ce sont des commandes dont une vraie app a besoin : elles occupent la
+droite de la barre de page, séparées du trio applicatif (recherche, thème,
+alertes) par un filet vertical.

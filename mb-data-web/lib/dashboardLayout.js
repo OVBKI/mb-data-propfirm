@@ -44,6 +44,84 @@ export const DEFAULT_LAYOUT = [
   { id: 'ranking',  w: 1, visible: true },
 ]
 
+// ============================================================================
+// SOUS-SECTIONS
+// ============================================================================
+// Le dashboard n'est pas une page unique : ce sont quatre vues du même jeu de
+// données, et les onglets en haut du contenu passent de l'une à l'autre.
+// Chacune a sa propre disposition, personnalisable indépendamment.
+export const SECTIONS = ['overview', 'performance', 'payouts', 'risk']
+export const DEFAULT_SECTION = 'overview'
+
+export const SECTION_LABELS = {
+  overview:    'app.dashSections.overview',
+  performance: 'app.dashSections.performance',
+  payouts:     'app.dashSections.payouts',
+  risk:        'app.dashSections.risk',
+}
+
+// Quels widgets composent chaque vue au départ. Un widget absent d'une section
+// y reste disponible dans le tiroir — on ne l'interdit pas, on ne le propose
+// simplement pas d'emblée.
+export const DEFAULT_LAYOUTS = {
+  overview: DEFAULT_LAYOUT,
+  performance: [
+    { id: 'equity',   w: 4, visible: true },
+    { id: 'byFirm',   w: 2, visible: true },
+    { id: 'stats',    w: 1, visible: true },
+    { id: 'ranking',  w: 1, visible: true },
+    { id: 'insight',  w: 2, visible: false },
+    { id: 'payouts',  w: 1, visible: false },
+    { id: 'spent',    w: 1, visible: false },
+    { id: 'health',   w: 2, visible: false },
+    { id: 'firms',    w: 4, visible: false },
+    { id: 'calendar', w: 4, visible: false },
+  ],
+  payouts: [
+    { id: 'payouts',  w: 2, visible: true },
+    { id: 'spent',    w: 2, visible: true },
+    { id: 'calendar', w: 4, visible: true },
+    { id: 'ranking',  w: 2, visible: true },
+    { id: 'byFirm',   w: 2, visible: true },
+    { id: 'insight',  w: 2, visible: false },
+    { id: 'equity',   w: 2, visible: false },
+    { id: 'health',   w: 2, visible: false },
+    { id: 'firms',    w: 4, visible: false },
+    { id: 'stats',    w: 1, visible: false },
+  ],
+  risk: [
+    { id: 'insight',  w: 2, visible: true },
+    { id: 'health',   w: 2, visible: true },
+    { id: 'firms',    w: 4, visible: true },
+    { id: 'payouts',  w: 1, visible: false },
+    { id: 'spent',    w: 1, visible: false },
+    { id: 'equity',   w: 2, visible: false },
+    { id: 'calendar', w: 4, visible: false },
+    { id: 'byFirm',   w: 2, visible: false },
+    { id: 'stats',    w: 1, visible: false },
+    { id: 'ranking',  w: 1, visible: false },
+  ],
+}
+
+export function defaultLayoutFor(section) {
+  return DEFAULT_LAYOUTS[section] || DEFAULT_LAYOUT
+}
+
+// Une disposition par section. Les anciennes valeurs (un simple tableau, avant
+// l'arrivée des sous-sections) sont reprises comme disposition de « Vue
+// d'ensemble » : personne ne perd son écran au passage.
+export function normalizeAll(raw) {
+  const out = {}
+  const legacyArray = Array.isArray(raw) ? raw : null
+  for (const sec of SECTIONS) {
+    const src = legacyArray && sec === DEFAULT_SECTION
+      ? legacyArray
+      : (raw && !Array.isArray(raw) ? raw[sec] : null)
+    out[sec] = normalizeLayoutFor(sec, src)
+  }
+  return out
+}
+
 export const STORAGE_KEY = 'quantara_dashboard_layout'
 
 // Remet une disposition d'affilée : largeurs bornées, doublons écartés, widgets
@@ -53,6 +131,13 @@ export const STORAGE_KEY = 'quantara_dashboard_layout'
 // déjà enregistrées : un widget ajouté après coup n'écrase rien, il attend dans
 // le tiroir. Et un widget supprimé du code disparaît sans laisser de trou.
 export function normalizeLayout(raw) {
+  return normalizeLayoutFor(DEFAULT_SECTION, raw)
+}
+
+// Même normalisation, mais avec le défaut de la SECTION visée : un widget jamais
+// vu rejoint la disposition avec la visibilité prévue pour cette vue-là.
+export function normalizeLayoutFor(section, raw) {
+  const base = defaultLayoutFor(section)
   const out = []
   const seen = new Set()
   // Décidé UNE FOIS, avant la boucle. Le tester à l'intérieur via `out.length`
@@ -68,7 +153,7 @@ export function normalizeLayout(raw) {
     const w = Math.min(GRID_COLUMNS, Math.max(spec.minW, Number(item.w) || spec.defaultW))
     out.push({ id, w, visible: item.visible !== false })
   }
-  for (const d of DEFAULT_LAYOUT) {
+  for (const d of base) {
     if (seen.has(d.id)) continue
     // Un widget jamais vu par cet utilisateur : masqué s'il rejoint une
     // disposition déjà personnalisée, visible si l'on part de zéro.
@@ -77,9 +162,9 @@ export function normalizeLayout(raw) {
   return out
 }
 
-export function isDefaultLayout(layout) {
-  const a = normalizeLayout(layout)
-  const b = normalizeLayout(DEFAULT_LAYOUT)
+export function isDefaultLayout(layout, section = DEFAULT_SECTION) {
+  const a = normalizeLayoutFor(section, layout)
+  const b = normalizeLayoutFor(section, defaultLayoutFor(section))
   if (a.length !== b.length) return false
   return a.every((x, i) => x.id === b[i].id && x.w === b[i].w && x.visible === b[i].visible)
 }

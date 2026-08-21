@@ -803,6 +803,13 @@ const FR = {
       actTutorialDesc: '5 min guidées',
       closeExplore: 'Fermer et explorer librement',
     },
+    dashSections: {
+      label: 'Sous-sections du dashboard',
+      overview: "Vue d'ensemble",
+      performance: 'Performance',
+      payouts: 'Payouts',
+      risk: 'Risque',
+    },
     widgets: {
       customize: '⚙ Personnaliser',
       done: '✓ Terminé',
@@ -2694,6 +2701,13 @@ const EN = {
       actTutorialTitle: 'Tutorial',
       actTutorialDesc: '5 min guided',
       closeExplore: 'Close and explore freely',
+    },
+    dashSections: {
+      label: 'Dashboard sub-sections',
+      overview: 'Overview',
+      performance: 'Performance',
+      payouts: 'Payouts',
+      risk: 'Risk',
     },
     widgets: {
       customize: '⚙ Customise',

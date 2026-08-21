@@ -55,6 +55,8 @@ const LOCK = <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"
 export default function AppSidebar({
   user,
   profile,
+  onExportCsv,
+  onSignOut,
   alertsBadgeCount = 0,
   currentPage,
   currentHref,
@@ -274,6 +276,26 @@ export default function AppSidebar({
           </button>
         )}
       </div>
+
+      {/* Actions de compte. Elles vivaient dans la barre globale ; celle-ci a
+          disparu (la maquette n'en a pas), et le pied du rail est leur place
+          naturelle — juste sous l'identité à laquelle elles s'appliquent. */}
+      {(onExportCsv || onSignOut) && (
+        <div className="qt-acct">
+          {onExportCsv && (
+            <button onClick={onExportCsv} className="qt-acct-btn">
+              <span className="qt-acct-ic" aria-hidden="true">↓</span>
+              <span className="qt-acct-lbl">{t('app.topbar.csvExport')}</span>
+            </button>
+          )}
+          {onSignOut && (
+            <button onClick={onSignOut} className="qt-acct-btn">
+              <span className="qt-acct-ic" aria-hidden="true">⏻</span>
+              <span className="qt-acct-lbl">{t('app.topbar.logout')}</span>
+            </button>
+          )}
+        </div>
+      )}
     </nav>
   )
 }
@@ -295,7 +317,7 @@ const SIDEBAR_CSS = `
   width:248px;flex-shrink:0;
   background:var(--bar-bg);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
   border-right:1px solid var(--tint2);
-  padding:16px 12px;position:sticky;top:52px;height:calc(100vh - 52px);
+  padding:16px 12px;position:sticky;top:0;height:100vh;
   overflow-y:auto;overflow-x:hidden;
   display:flex;flex-direction:column;gap:2px;
   transition:width .22s ease,padding .22s ease;
@@ -334,6 +356,19 @@ const SIDEBAR_CSS = `
 .qt-badge{margin-left:auto;background:var(--red-bg);color:var(--red);font-family:var(--font-mono),monospace;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:99px;min-width:20px;text-align:center}
 .qt-lock{margin-left:auto;color:var(--text3);display:flex;align-items:center}
 .qt-sep{height:1px;background:var(--border);margin:8px 6px}
+
+.qt-acct{display:flex;gap:6px;padding-top:8px}
+.qt-acct-btn{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);
+  border:1px solid var(--border);background:var(--tint1);color:var(--text3);font-family:inherit;font-size:12px;
+  cursor:pointer;transition:color .15s,border-color .15s}
+.qt-acct-btn:hover{color:var(--text2);border-color:var(--border2)}
+.qt-acct-ic{flex-shrink:0;font-size:12px}
+.qt-acct-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:1025px){
+  .app-nav.qt-side.qt-collapsed .qt-acct{flex-direction:column}
+  .app-nav.qt-side.qt-collapsed .qt-acct-lbl{display:none}
+  .app-nav.qt-side.qt-collapsed .qt-acct-btn{justify-content:center;padding:8px 0}
+}
 
 .qt-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px}
 .qt-prof{flex:1;min-width:0;display:flex;align-items:center;gap:11px;padding:9px;border-radius:var(--radius);text-decoration:none;color:var(--text);transition:background .15s}

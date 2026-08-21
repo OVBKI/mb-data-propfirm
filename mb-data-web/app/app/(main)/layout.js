@@ -570,16 +570,19 @@ export default function AppLayout({ children }) {
     })
   }, [alerts])
 
+  // ── Context value ──
   const alertsBadgeCount = useMemo(() => {
     const seen = new Set(alertsSeen)
     return alerts.filter(a => a.type !== 'ok' && !seen.has(a.key)).length
   }, [alerts, alertsSeen])
 
-  // ── Context value ──
   const contextValue = useMemo(() => ({
     user, firms, rates, profile, showToast, reload: loadFirms, getFirmLogo,
     currency, setCurrencyMode, searchQ, setSearchQ, rateInfo,
     navigateTo,
+    // La barre de page (dashboard) porte la recherche globale et le compteur
+    // d'alertes : la barre globale n'existe plus, ils passent par le contexte.
+    openSearch: () => setSearchOpen(true), alertsBadgeCount,
     // Market mode (Futures ⇄ CFD)
     marketMode, setMarketMode, openCfdAdd,
     // Helpers
@@ -618,53 +621,22 @@ export default function AppLayout({ children }) {
         <SpaceBackground />
         <div style={{ height: '2px', background: 'linear-gradient(90deg,var(--blue) 0%,transparent 100%)', position: 'relative', zIndex: 1 }} />
         <AnnouncementBanner />
-        <div className="top-bar" style={{ height: '52px', background: 'var(--bar-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 200 }}>
-          {/* La marque vit dans le rail (comme la maquette) : la barre du haut
-              porte la NAVIGATION DE SECTION, pas l'identité. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
-            <button className="nav-burger" aria-label={t('app.topbar.menu')} onClick={() => setMobileNavOpen(o => !o)}>&#x2630;</button>
-            <nav className="qt-tabs" aria-label={t('app.topbar.sections')}>
-              {[
-                ['/app/dashboard', t('app.topbar.tabOverview')],
-                ['/app/analytics', t('app.topbar.tabPerformance')],
-                ['/app/health',    t('app.topbar.tabPayouts')],
-                ['/app/alerts',    t('app.topbar.tabRisk')],
-              ].map(([href, label]) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={pathname === href ? 'qt-tab qt-tab-on' : 'qt-tab'}
-                  aria-current={pathname === href ? 'page' : undefined}
-                >{label}</Link>
-              ))}
-            </nav>
-          </div>
-          <div className="top-bar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="qt-topsearch"
-              aria-label={t('app.topbar.search')}
-            >
-              <span aria-hidden="true">⌕</span>
-              <span className="qt-topsearch-label">{t('app.topbar.search')}</span>
-              <kbd>⌘K</kbd>
-            </button>
-            {/* Bascule rapide sombre/clair — le réglage complet (dont « Système »)
-                est dans /app/settings → Apparence. */}
-            <ThemeToggle />
-            <Link href="/app/alerts" className="qt-topbell" aria-label={t('app.topbar.alerts')}>
-              <span aria-hidden="true">▲</span>
-              {alertsBadgeCount > 0 && <em>{alertsBadgeCount}</em>}
-            </Link>
-            <button onClick={exportCSV} className="qt-topcsv" style={{ ...S.btnGhost, fontSize: '12px', padding: '7px 14px' }}>{t('app.topbar.csvExport')}</button>
-            <button onClick={signOut} style={{ ...S.btnGhost, fontSize: '12px', padding: '7px 14px' }}>{t('app.topbar.logout')}</button>
-          </div>
-        </div>
+        {/* Pas de barre globale : dans la maquette Abyss le rail fait toute la
+            hauteur et c'est la PAGE qui porte sa barre (onglets, recherche,
+            actions). Seul le burger reste ici — une fois le rail masqué sur
+            mobile, il n'a nulle part ailleurs où vivre. */}
+        <button
+          className="nav-burger qt-burger-float"
+          aria-label={t('app.topbar.menu')}
+          onClick={() => setMobileNavOpen(o => !o)}
+        >&#x2630;</button>
 
-        <div style={{ display: 'flex', minHeight: 'calc(100vh - 50px)' }}>
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
           <AppSidebar
             user={user}
             profile={profile}
+            onExportCsv={exportCSV}
+            onSignOut={signOut}
             alertsBadgeCount={alertsBadgeCount}
             currentPage={currentPage}
             currentHref={pathname}
