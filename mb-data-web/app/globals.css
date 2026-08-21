@@ -260,9 +260,11 @@ select:not([multiple]) {
 @media (max-width: 1024px) {
   /* Bloc héros du dashboard : la carte d'insight et ses deux compteurs passent
      en colonne avant que le texte ne devienne illisible. */
-  .qt-hero-row  { grid-template-columns: 1fr !important; }
-  .qt-hero-row2 { grid-template-columns: 1fr !important; }
-  .qt-hero-art  { display: none; }
+  /* Grille de widgets : 4 colonnes → 2 sur tablette. Un widget réglé sur 3 ou 4
+     colonnes déborderait, d'où le span forcé. */
+  .qt-widget-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .qt-widget      { grid-column: span 2 !important; }
+  .qt-hero-art    { display: none; }
   .grid-1-340  { grid-template-columns: 1fr !important; }
   .grid-1-320  { grid-template-columns: 1fr !important; }
   .grid-1-280  { grid-template-columns: 1fr !important; }
@@ -285,6 +287,10 @@ select:not([multiple]) {
 
 /* Mobile (≤ 768px) */
 @media (max-width: 768px) {
+  /* Mobile : une seule colonne, quelle que soit la largeur choisie. */
+  .qt-widget-grid { grid-template-columns: 1fr !important; }
+  .qt-widget      { grid-column: span 1 !important; }
+
   body { font-size: 13px; }
 
   /* Sidebar -> drawer overlay */

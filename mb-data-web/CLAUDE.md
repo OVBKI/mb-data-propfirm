@@ -890,3 +890,62 @@ bascule.
 `components/landing/**` reste épinglé en sombre sur l'ancienne palette (star field
 Three.js et dégradés mesh dessinés pour du noir). À reprendre si la landing doit
 suivre.
+
+
+## « Vue d'ensemble » personnalisable — 2026-08
+
+Le dashboard n'est plus une page figée : c'est une grille de widgets que
+l'utilisateur compose lui-même.
+
+| Fichier | Rôle |
+|---|---|
+| `lib/dashboardLayout.js` | Catalogue des widgets, disposition par défaut, normalisation, opérations pures |
+| `lib/hooks/useDashboardLayout.js` | Chargement, application, persistance |
+| `components/dashboard/DashboardGrid.js` | La grille + le mode édition |
+| `components/dashboard/widgets.js` | Les widgets + `useOverviewData()`, le calcul partagé |
+| `app/app/(main)/dashboard/page.js` | Fournit le rendu par identifiant via `render(id)` |
+
+### Ce que l'utilisateur peut faire
+Bouton **⚙ Personnaliser** → chaque widget gagne une barre d'outils : poignée de
+glissé-déposé, flèches ‹ ›, largeur 1–4 colonnes, ✕ pour masquer. Les widgets
+masqués attendent dans un tiroir en bas, un clic les remet. **Réinitialiser**
+restaure la disposition d'origine.
+
+### Persistance en deux temps
+1. **localStorage** à chaque geste — le dashboard s'affiche déjà personnalisé
+   avant que Supabase ait répondu.
+2. **`profiles.dashboard_layout` (jsonb)** avec un délai de 900 ms — pour
+   retrouver sa disposition sur un autre appareil. Réordonner en glissé-déposé
+   produit une rafale d'états ; sans délai ce serait une requête par image.
+
+Au chargement le **serveur gagne** : c'est la source partagée, le cache local
+n'est qu'une avance d'affichage. Un drapeau `dirty` empêche une réponse serveur
+tardive d'écraser un geste que l'utilisateur vient de faire.
+
+⚠️ `dashboard_layout` reste **inscriptible par le client**, contrairement aux
+colonnes de facturation : c'est une préférence d'affichage lui appartenant, pas
+un droit d'accès. Elle n'est donc pas dans le `revoke update`.
+
+### Ajouter un widget
+Une entrée dans `WIDGETS` + une dans `DEFAULT_LAYOUT` + un `case` dans le
+`render` de la page + deux clés i18n. `normalizeLayout()` fait le reste : il
+apparaît **masqué** chez les utilisateurs qui ont déjà personnalisé leur écran,
+visible chez les nouveaux. Un widget retiré du code disparaît sans laisser de
+trou.
+
+### Deux pièges tenus par les tests
+- **Une disposition vide ne doit pas replier l'écran.** La condition d'ajout des
+  nouveaux widgets se décide UNE FOIS avant la boucle ; testée à l'intérieur via
+  `out.length`, elle n'était vraie que pour le premier — un utilisateur sans
+  disposition enregistrée se serait retrouvé avec un seul widget. Attrapé par
+  `dashboardLayout.test.js`.
+- **`visible: undefined` vaut visible.** Seul un `false` explicite masque, sinon
+  une disposition ancienne sans le champ ferait disparaître la moitié de l'écran.
+
+### Responsive
+4 colonnes → 2 sur tablette (≤1024px) → 1 sur mobile (≤768px), avec un
+`grid-column: span` forcé : un widget réglé sur 3 ou 4 déborderait sinon.
+
+Le glissé-déposé utilise l'API HTML5 native, qui **ne fonctionne pas au doigt**
+sur mobile. Les flèches ‹ › font le même travail au clic et servent aussi de
+chemin clavier accessible.

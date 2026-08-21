@@ -637,6 +637,12 @@ alter table stripe_events enable row level security;
 
 create index if not exists stripe_events_received_at_idx on stripe_events(received_at desc);
 
+-- DASHBOARD_LAYOUT — disposition personnalisée de « Vue d'ensemble ».
+-- Volontairement laissée inscriptible par le client : c'est une préférence
+-- d'affichage appartenant à l'utilisateur, pas un droit d'accès. Elle n'est
+-- donc PAS dans la liste des colonnes révoquées ci-dessous.
+alter table profiles add column if not exists dashboard_layout jsonb;
+
 -- ⚠️ ESCALADE DE PRIVILÈGE — CORRECTIF OBLIGATOIRE
 -- ----------------------------------------------------------------------------
 -- La policy "Users manage own profile" est `for all using (auth.uid() = user_id)`,

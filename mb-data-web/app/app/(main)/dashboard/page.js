@@ -6,7 +6,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../AppContext'
 import { useT } from '../../../../components/LanguageProvider'
 import { MONTHS_FULL } from '../../../../lib/constants'
-import DashboardHero from '../../../../components/dashboard/DashboardHero'
+import DashboardGrid from '../../../../components/dashboard/DashboardGrid'
+import {
+  useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, EquityWidget, HealthWidget,
+} from '../../../../components/dashboard/widgets'
+import { useDashboardLayout } from '../../../../lib/hooks/useDashboardLayout'
 import { chartColors } from '../../../../lib/theme'
 import { useTheme } from '../../../../components/ThemeProvider'
 
@@ -124,38 +128,14 @@ export default function DashboardPage() {
     if (dt.getFullYear() === calYear && dt.getMonth() === calMonth) evts.forEach(e => { if (e.type === 'buy') msSpent += toEUR(e.amount, e.currency, rates); else msPayout += toEUR(e.amount, e.currency, rates) })
   })
 
-  return (
-    <div className="page-pad" style={{ maxWidth: '1160px', margin: '0 auto', padding: '32px 24px 60px' }}>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', gap: '24px', flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontSize: '11px', color: 'var(--blue-light)', letterSpacing: '0.16em', marginBottom: '10px', textTransform: 'uppercase', fontWeight: '600' }}>
-            {t('app.dashboard.eyebrow')}
-          </div>
-          <h1 style={{ fontSize: '30px', fontWeight: '700', letterSpacing: '-0.025em', margin: 0, marginBottom: '6px', lineHeight: 1.1 }}>
-            {t('app.dashboard.greeting').replace('{name}', profile?.display_name || profile?.username || user?.email?.split('@')[0] || t('app.dashboard.defaultName'))}
-          </h1>
-          <div style={{ fontSize: '13px', color: 'var(--text3)' }}>{rateInfo}</div>
-        </div>
-        <div className="page-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: '8px', overflow: 'hidden', background: 'var(--tint1)' }}>
-            {['native', 'eur'].map(c => <button key={c} onClick={() => setCurrencyMode(c)} style={{ padding: '7px 14px', fontSize: '12px', border: 'none', background: currency === c ? 'var(--blue)' : 'transparent', color: currency === c ? '#fff' : 'var(--text2)', cursor: 'pointer', fontWeight: '600', letterSpacing: '0.05em' }}>{c === 'native' ? 'USD' : 'EUR'}</button>)}
-          </div>
-          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: '180px', width: '100%', minWidth: 0 }} />
-          <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
-        </div>
-      </div>
+  // Disposition personnalisable de « Vue d'ensemble » : ordre, largeur et
+  // visibilité de chaque widget, persistés par utilisateur.
+  const dash = useDashboardLayout(user?.id)
+  const overview = useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, totalSpentForAccount })
+  const money = (eur) => currency === 'eur' ? fmtE(eur) : `${(eur / rates.USD).toFixed(2)} $`
 
-      <div data-tour="stats-cards">
-        <DashboardHero
-          firms={firms} accts={accts} rates={rates} toEUR={toEUR}
-          fmtE={fmtE} fmtENet={fmtENet} currency={currency}
-          totalSpentEUR={totalSpentEUR} totalPayoutsEUR2={totalPayoutsEUR2}
-          totalNet={totalNet} totalPayoutCount={totalPayoutCount}
-          totalPayoutsEUR={totalPayoutsEUR} totalSpentForAccount={totalSpentForAccount}
-          getFirmLogo={getFirmLogo} setFirmDrawer={setFirmDrawer} S={S}
-        />
-      </div>
-
+  function renderFirms() {
+    return (
       <div className="firms-grid" data-tour="firms-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: '16px', marginBottom: '24px' }}>
         {firms.filter(f => f.name.toLowerCase().includes(searchQ.toLowerCase())).map(firm => {
           const ts = firmTotalSpent(firm), tp = firmTotalPayouts(firm), net = tp - ts, roi = ts > 0 ? net / ts * 100 : 0
@@ -211,11 +191,12 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+    )
+  }
 
-      {/* Content grid: Calendar (full width) */}
-      <div className="grid-1-340" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '72px', alignItems: 'start' }}>
-        <div>
-          <div>
+  function renderCalendar() {
+    return (
+      <div style={{ ...S.card, padding: '20px 22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
               <div style={{ fontSize: '15px', fontWeight: '600' }}>Calendrier des transactions</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -270,12 +251,12 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+      </div>
+    )
+  }
 
-        {/* SIDEBAR (sous le calendrier) : Bar chart + Stats + Par firme — 3 colonnes */}
-        <div className="dash-sidebar-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px', alignItems: 'start' }}>
-          {/* Bar chart par firme */}
+  function renderByFirm() {
+    return (
           <div style={{ ...S.card, padding: '18px' }}>
             <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '10px' }}>Par firme (EUR)</div>
             <div style={{ display: 'flex', gap: '14px', marginBottom: '10px' }}>
@@ -284,8 +265,11 @@ export default function DashboardPage() {
             </div>
             <div style={{ position: 'relative', height: '180px' }}><MiniBarChart firms={firms} firmTotalSpent={firmTotalSpent} firmTotalPayouts={firmTotalPayouts} /></div>
           </div>
+    )
+  }
 
-          {/* Statistiques */}
+  function renderStats() {
+    return (
           <div style={{ ...S.card, padding: '18px' }}>
             <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '14px' }}>Statistiques</div>
             {(() => {
@@ -311,8 +295,11 @@ export default function DashboardPage() {
               </>
             })()}
           </div>
+    )
+  }
 
-          {/* Par firme ranking */}
+  function renderRanking() {
+    return (
           <div style={{ ...S.card, padding: '18px' }}>
             <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '14px' }}>Par firme</div>
             {firms.slice().sort((a, b) => (firmTotalPayouts(b) - firmTotalSpent(b)) - (firmTotalPayouts(a) - firmTotalSpent(a))).map(f => {
@@ -330,7 +317,60 @@ export default function DashboardPage() {
             })}
             {!firms.length && <div style={{ fontSize: '12px', color: 'var(--text3)' }}>Aucune donnée</div>}
           </div>
+    )
+  }
+
+  return (
+    <div className="page-pad" style={{ maxWidth: '1160px', margin: '0 auto', padding: '32px 24px 60px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', gap: '24px', flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: '11px', color: 'var(--blue-light)', letterSpacing: '0.16em', marginBottom: '10px', textTransform: 'uppercase', fontWeight: '600' }}>
+            {t('app.dashboard.eyebrow')}
+          </div>
+          <h1 style={{ fontSize: '30px', fontWeight: '700', letterSpacing: '-0.025em', margin: 0, marginBottom: '6px', lineHeight: 1.1 }}>
+            {t('app.dashboard.greeting').replace('{name}', profile?.display_name || profile?.username || user?.email?.split('@')[0] || t('app.dashboard.defaultName'))}
+          </h1>
+          <div style={{ fontSize: '13px', color: 'var(--text3)' }}>{rateInfo}</div>
         </div>
+        <div className="page-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: '8px', overflow: 'hidden', background: 'var(--tint1)' }}>
+            {['native', 'eur'].map(c => <button key={c} onClick={() => setCurrencyMode(c)} style={{ padding: '7px 14px', fontSize: '12px', border: 'none', background: currency === c ? 'var(--blue)' : 'transparent', color: currency === c ? '#fff' : 'var(--text2)', cursor: 'pointer', fontWeight: '600', letterSpacing: '0.05em' }}>{c === 'native' ? 'USD' : 'EUR'}</button>)}
+          </div>
+          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: '180px', width: '100%', minWidth: 0 }} />
+          <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
+        </div>
+      </div>
+
+      {/* « Vue d'ensemble » est entièrement composable : chaque bloc ci-dessous est
+          un widget que l'utilisateur peut masquer, déplacer et redimensionner.
+          DashboardGrid demande le rendu par identifiant, il ne connaît pas le
+          contenu — ajouter un widget se fait dans lib/dashboardLayout.js puis ici. */}
+      <div data-tour="stats-cards">
+        <DashboardGrid
+          layout={dash.layout} editing={dash.editing} setEditing={dash.setEditing}
+          move={dash.move} resize={dash.resize} toggle={dash.toggle} reset={dash.reset}
+          S={S}
+          render={(id) => {
+            switch (id) {
+              case 'insight':
+                return <InsightWidget insight={overview.insight} setFirmDrawer={setFirmDrawer} S={S} />
+              case 'payouts':
+                return <PayoutsWidget series={overview.series} money={money} totalPayoutsEUR2={totalPayoutsEUR2} totalPayoutCount={totalPayoutCount} S={S} />
+              case 'spent':
+                return <SpentWidget series={overview.series} money={money} totalSpentEUR={totalSpentEUR} firms={firms} accts={accts} S={S} />
+              case 'equity':
+                return <EquityWidget series={overview.series} S={S} />
+              case 'health':
+                return <HealthWidget health={overview.health} totalNet={totalNet} currency={currency} fmtENet={fmtENet} rates={rates} getFirmLogo={getFirmLogo} setFirmDrawer={setFirmDrawer} S={S} />
+              case 'firms':    return renderFirms()
+              case 'calendar': return renderCalendar()
+              case 'byFirm':   return renderByFirm()
+              case 'stats':    return renderStats()
+              case 'ranking':  return renderRanking()
+              default:         return null
+            }
+          }}
+        />
       </div>
     </div>
   )
