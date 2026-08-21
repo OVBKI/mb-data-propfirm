@@ -949,3 +949,39 @@ trou.
 Le glissé-déposé utilise l'API HTML5 native, qui **ne fonctionne pas au doigt**
 sur mobile. Les flèches ‹ › font le même travail au clic et servent aussi de
 chemin clavier accessible.
+
+
+## Shell aligné sur la maquette Abyss — 2026-08
+
+La palette et la grille de widgets étaient en place, mais l'ossature de l'app ne
+ressemblait toujours pas à la maquette. Trois écarts corrigés :
+
+| | Avant | Maintenant |
+|---|---|---|
+| Barre du haut | Marque QUANTARA + actions | **Onglets de section** + recherche ⌘K + thème + cloche |
+| Marque | Barre du haut | **En tête du rail** (`.qt-brand`), comme la maquette |
+| Dashboard | Gros « Bonjour X » + eyebrow | **Pas de titre** — on entre dans les cartes |
+
+Les onglets pointent vers de vraies pages : Vue d'ensemble → `/app/dashboard`,
+Performance → `/app/analytics`, Payouts → `/app/health`, Risque → `/app/alerts`.
+
+### Recherche globale — `components/CommandPalette.js`
+⌘K / Ctrl+K depuis n'importe où. Cherche dans les firmes, les comptes et les
+pages ; ↑ ↓ Entrée, Échap pour fermer. Choisir une firme ouvre son tiroir, un
+compte ouvre le sien, une page navigue.
+
+Le raccourci vit DANS le composant, pas dans le layout : on le monte, le
+raccourci existe. Et la liste des pages réutilise les libellés `app.sidebar.*`
+plutôt que d'en dupliquer un second jeu — deux listes de traductions finiraient
+par diverger.
+
+### Commandes du dashboard
+Le gros en-tête est parti, mais ses commandes restent nécessaires (devise,
+recherche de firme, ajouter une PropFirm). Elles tiennent sur une ligne au-dessus
+de la grille, avec le taux de change à gauche et « Personnaliser » juste en
+dessous. La maquette n'a pas ces contrôles — c'est une maquette, pas une app.
+
+### Responsive
+Sous 900px la barre perd le libellé de recherche, le raccourci et l'export CSV ;
+les onglets et la cloche restent. Le rail replié ne garde que le sigle de la
+marque.

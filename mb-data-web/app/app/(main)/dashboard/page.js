@@ -322,23 +322,27 @@ export default function DashboardPage() {
 
   return (
     <div className="page-pad" style={{ maxWidth: '1160px', margin: '0 auto', padding: '32px 24px 60px' }}>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', gap: '24px', flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontSize: '11px', color: 'var(--blue-light)', letterSpacing: '0.16em', marginBottom: '10px', textTransform: 'uppercase', fontWeight: '600' }}>
-            {t('app.dashboard.eyebrow')}
-          </div>
-          <h1 style={{ fontSize: '30px', fontWeight: '700', letterSpacing: '-0.025em', margin: 0, marginBottom: '6px', lineHeight: 1.1 }}>
-            {t('app.dashboard.greeting').replace('{name}', profile?.display_name || profile?.username || user?.email?.split('@')[0] || t('app.dashboard.defaultName'))}
-          </h1>
-          <div style={{ fontSize: '13px', color: 'var(--text3)' }}>{rateInfo}</div>
+      {/* Pas de gros titre de page : la maquette entre directement dans les
+          cartes, et la navigation de section vit dans la barre du haut. Les
+          commandes propres au dashboard tiennent sur une ligne au-dessus de la
+          grille — c'est aussi là que se trouve « Personnaliser ». */}
+      <div className="page-header-actions" style={{
+        display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
+        justifyContent: 'flex-end', marginBottom: 20,
+      }}>
+        <span style={{ marginRight: 'auto', fontSize: 13, color: 'var(--text3)' }}>{rateInfo}</span>
+        <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--tint1)' }}>
+          {['native', 'eur'].map(c => (
+            <button key={c} onClick={() => setCurrencyMode(c)} style={{
+              padding: '7px 14px', fontSize: 12, border: 'none',
+              background: currency === c ? 'var(--blue)' : 'transparent',
+              color: currency === c ? 'var(--text-inverse)' : 'var(--text2)',
+              cursor: 'pointer', fontWeight: 600, letterSpacing: '0.05em',
+            }}>{c === 'native' ? 'USD' : 'EUR'}</button>
+          ))}
         </div>
-        <div className="page-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: '8px', overflow: 'hidden', background: 'var(--tint1)' }}>
-            {['native', 'eur'].map(c => <button key={c} onClick={() => setCurrencyMode(c)} style={{ padding: '7px 14px', fontSize: '12px', border: 'none', background: currency === c ? 'var(--blue)' : 'transparent', color: currency === c ? '#fff' : 'var(--text2)', cursor: 'pointer', fontWeight: '600', letterSpacing: '0.05em' }}>{c === 'native' ? 'USD' : 'EUR'}</button>)}
-          </div>
-          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: '180px', width: '100%', minWidth: 0 }} />
-          <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
-        </div>
+        <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ ...S.input, maxWidth: 180, width: '100%', minWidth: 0 }} />
+        <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={S.btnPrimary}>{t('app.dashboard.btnAddPropfirm')}</button>
       </div>
 
       {/* « Vue d'ensemble » est entièrement composable : chaque bloc ci-dessous est

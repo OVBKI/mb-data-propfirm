@@ -5,6 +5,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import CommandPalette from '../../../components/CommandPalette'
 import { supabase } from '../../../lib/supabase'
 import AuthPage from '../../../components/AuthPage'
 import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS, STATUS_COLORS, PX_FIRMS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, defaultProfitSplit as defaultProfitSplitFromRules, registerCustomFuturesFirms } from '../../../lib/constants'
@@ -118,6 +120,8 @@ export default function AppLayout({ children }) {
   const [promoteForm, setPromoteForm] = useState({ activationDate: '', activationFee: '', payoutTarget: '', minTradingDays: '', minDailyProfit: '', profitSplit: '90', newName: '' })
   const [failModal, setFailModal] = useState(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  // Recherche globale (⌘K) — ouverte depuis la barre du haut ou au clavier.
+  const [searchOpen, setSearchOpen] = useState(false)
   // ── Market mode toggle (Futures ⇄ CFD) ──
   // Re-contexts the whole app: loadFirms scopes `firms` to the selected market.
   // Persisted in localStorage; default 'futures'. Only 'futures'|'cfd' are valid.
@@ -615,19 +619,44 @@ export default function AppLayout({ children }) {
         <div style={{ height: '2px', background: 'linear-gradient(90deg,var(--blue) 0%,transparent 100%)', position: 'relative', zIndex: 1 }} />
         <AnnouncementBanner />
         <div className="top-bar" style={{ height: '52px', background: 'var(--bar-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 200 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {/* La marque vit dans le rail (comme la maquette) : la barre du haut
+              porte la NAVIGATION DE SECTION, pas l'identité. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
             <button className="nav-burger" aria-label={t('app.topbar.menu')} onClick={() => setMobileNavOpen(o => !o)}>&#x2630;</button>
-            <QLogoIcon size={44} color="var(--blue-light)" />
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-              <div style={{ fontWeight: '700', fontSize: '14px', letterSpacing: '0.14em', color: 'var(--text)' }}>QUANTARA</div>
-              <span className="top-bar-brand-sub" style={{ fontSize: '10px', color: 'var(--text3)', letterSpacing: '0.18em' }}>TRACK &middot; ANALYZE &middot; GROW</span>
-            </div>
+            <nav className="qt-tabs" aria-label={t('app.topbar.sections')}>
+              {[
+                ['/app/dashboard', t('app.topbar.tabOverview')],
+                ['/app/analytics', t('app.topbar.tabPerformance')],
+                ['/app/health',    t('app.topbar.tabPayouts')],
+                ['/app/alerts',    t('app.topbar.tabRisk')],
+              ].map(([href, label]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={pathname === href ? 'qt-tab qt-tab-on' : 'qt-tab'}
+                  aria-current={pathname === href ? 'page' : undefined}
+                >{label}</Link>
+              ))}
+            </nav>
           </div>
           <div className="top-bar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="qt-topsearch"
+              aria-label={t('app.topbar.search')}
+            >
+              <span aria-hidden="true">⌕</span>
+              <span className="qt-topsearch-label">{t('app.topbar.search')}</span>
+              <kbd>⌘K</kbd>
+            </button>
             {/* Bascule rapide sombre/clair — le réglage complet (dont « Système »)
                 est dans /app/settings → Apparence. */}
             <ThemeToggle />
-            <button onClick={exportCSV} style={{ ...S.btnGhost, fontSize: '12px', padding: '7px 14px' }}>{t('app.topbar.csvExport')}</button>
+            <Link href="/app/alerts" className="qt-topbell" aria-label={t('app.topbar.alerts')}>
+              <span aria-hidden="true">▲</span>
+              {alertsBadgeCount > 0 && <em>{alertsBadgeCount}</em>}
+            </Link>
+            <button onClick={exportCSV} className="qt-topcsv" style={{ ...S.btnGhost, fontSize: '12px', padding: '7px 14px' }}>{t('app.topbar.csvExport')}</button>
             <button onClick={signOut} style={{ ...S.btnGhost, fontSize: '12px', padding: '7px 14px' }}>{t('app.topbar.logout')}</button>
           </div>
         </div>
@@ -753,6 +782,17 @@ export default function AppLayout({ children }) {
                 )}</div><div style={{gridColumn:'1/-1'}}><label style={S.label}>{t('app.acctModal.ddType')}<TooltipIcon text={t('app.acctModal.ddTypeTip')} maxWidth={360} /></label><select value={acctForm.ddType} onChange={e=>setAcctForm(p=>({...p,ddType:e.target.value}))} style={S.input}><option value="static">{t('app.acctModal.ddStatic')}</option><option value="eod">{t('app.acctModal.ddEod')}</option><option value="trailing">{t('app.acctModal.ddTrailing')}</option></select></div>{acctForm.status==='Financé'&&<><div><label style={S.label}>{t('app.acctModal.payoutTarget')}</label><input type="number" step="0.01" value={acctForm.payoutTarget} onChange={e=>setAcctForm(p=>({...p,payoutTarget:e.target.value}))} placeholder={t('app.acctModal.payoutTargetPlaceholder')} style={S.input} /></div><div><label style={S.label}>{t('app.acctModal.minTradingDays')}</label><input type="number" min="0" value={acctForm.minTradingDays} onChange={e=>setAcctForm(p=>({...p,minTradingDays:e.target.value}))} placeholder={t('app.acctModal.minTradingDaysPlaceholder')} style={S.input} /></div><div><label style={S.label}>{t('app.acctModal.profitSplit')}<TooltipIcon text={t('app.acctModal.profitSplitTip')} maxWidth={340} /></label><select value={acctForm.profitSplit} onChange={e=>setAcctForm(p=>({...p,profitSplit:e.target.value}))} style={S.input}><option value="100">{t('app.acctModal.split100')}</option><option value="90">{t('app.acctModal.split90')}</option><option value="80">{t('app.acctModal.split80')}</option><option value="70">{t('app.acctModal.split70')}</option></select></div><div><label style={S.label}>{t('app.acctModal.minDailyProfit')}<TooltipIcon text={t('app.acctModal.minDailyProfitTip')} /></label><input type="number" min="0" step="1" value={acctForm.minDailyProfit} onChange={e=>setAcctForm(p=>({...p,minDailyProfit:e.target.value}))} placeholder={t('app.acctModal.minDailyProfitPlaceholder')} style={S.input} /></div></>}{acctForm.status==='Challenge'&&<div style={{gridColumn:'1/-1',padding:'12px',background:'var(--blue-bg)',border:'0.5px solid var(--blue-border)',borderRadius:'var(--radius)',fontSize:'12px',color:'var(--text2)',lineHeight:1.5}}>{'💡'} {t('app.acctModal.challengeNotePrefix')} <strong>{t('app.acctModal.challengeNoteStrong')}</strong> {t('app.acctModal.challengeNoteSuffix')}</div>}<div style={{gridColumn:'1/-1'}}><label style={S.label}>{t('app.acctModal.notes')}</label><input value={acctForm.notes} onChange={e=>setAcctForm(p=>({...p,notes:e.target.value}))} placeholder={t('app.acctModal.notesPlaceholder')} style={S.input} /></div></div><div style={{display:'flex',gap:'8px',justifyContent:'flex-end',marginTop:'20px'}}><button onClick={()=>setAcctModal(null)} style={S.btnGhost}>{t('app.acctModal.cancel')}</button><button onClick={saveAccount} style={S.btnPrimary}>{t('app.acctModal.save')}</button></div></div></div>}
 
         {/* ── Firm Drawer ── */}
+        <CommandPalette
+          open={searchOpen}
+          onOpen={() => setSearchOpen(true)}
+          onClose={() => setSearchOpen(false)}
+          firms={firms}
+          accountLabel={accountLabel}
+          onPickFirm={(id) => { setSearchOpen(false); setFirmDrawer(id) }}
+          onPickAccount={(firmId, acctId) => { setSearchOpen(false); setAcctDrawer({ firmId, acctId }) }}
+          onNavigate={(href) => { setSearchOpen(false); router.push(href) }}
+        />
+
         {firmDrawer&&currentFirm&&<div onClick={()=>setFirmDrawer(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:400,display:'flex',alignItems:'flex-start',justifyContent:'flex-end'}}><div ref={firmDrawerRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={currentFirm?.name || t('app.firmDrawer.accountsPrefix')} className="drawer" onClick={e=>e.stopPropagation()} style={{width:'520px',maxWidth:'95vw',height:'100vh',background:'var(--surface)',borderLeft:'0.5px solid var(--border2)',overflowY:'auto',padding:'28px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}}><div style={{display:'flex',alignItems:'center',gap:'10px'}}>{getFirmLogo(currentFirm.name,currentFirm.color,32)}<div style={{fontSize:'18px',fontWeight:'600'}}>{currentFirm.name}</div></div><div style={{display:'flex',gap:'8px'}}><button onClick={()=>renameFirm(currentFirm.id)} style={S.btnGhost}>{'✏'} {t('app.firmDrawer.rename')}</button><button onClick={()=>setFirmDrawer(null)} aria-label={t('app.acctDrawer.close')} style={S.btnGhost}>{'✕'}</button></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'20px'}}>{[[t('app.firmDrawer.totalAccounts'),(currentFirm.accounts||[]).length],[t('app.firmDrawer.totalSpent'),<span key="s" style={{color:'var(--red)'}}>{ fmtMoney(firmTotalSpent(currentFirm))}</span>],[t('app.firmDrawer.totalPayouts'),<span key="p" style={{color:'var(--green)'}}>{fmtMoney(firmTotalPayouts(currentFirm))}</span>],[t('app.firmDrawer.net'),<span key="n" style={{color:(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))}</span>]].map(([l,v],i)=>(<div key={i} style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'12px 14px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'5px'}}>{l}</div><div style={{fontSize:'16px',fontWeight:'600'}}>{v}</div></div>))}</div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}><div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px'}}>{t('app.firmDrawer.accountsPrefix')} ({(currentFirm.accounts||[]).length})</div><button onClick={()=>{if(marketMode==='cfd'){openCfdAdd();return;}setAcctModal({firmId:currentFirm.id});(()=>{const fn=firms.find(f=>f.id===(acctModal?.firmId||currentFirm?.id))?.name;const tg=defaultPayoutTarget(fn,'50k');const md=defaultMinTradingDays(fn,'50k');const pr=defaultChallengePrice(fn,'50k');const mdp=defaultMinDailyProfit(fn,'50k');const ps=suggestProfitSplit(fn,'50k');setAcctForm({buyDate:new Date().toISOString().slice(0,10),currency:'USD',spent:pr!==null?String(pr):'',activationFee:'',activationDate:'',status:'Challenge',notes:'',planSize:'50k',name:'',ddType:defaultDdType(fn),payoutTarget:tg!==null?String(tg):'',minTradingDays:md!==null?String(md):'',minDailyProfit:mdp!==null?String(mdp):'',profitSplit:String(ps),paymentMode:'monthly',quantity:'1'})})()}} style={S.btnPrimary}>{t('app.firmDrawer.addAccount')}</button></div>{(currentFirm.accounts||[]).slice().sort((a,b)=>{const o={'Financé':0,'Challenge':1,'Échoué':2};return (o[a.status]??3)-(o[b.status]??3)}).map(a=>{const tp=totalPayoutsEUR(a),net=tp-totalSpentForAccount(a);const isFailed=a.status==='Échoué';return<div key={a.id} onClick={()=>setAcctDrawer({firmId:currentFirm.id,acctId:a.id})} style={{padding:'12px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'8px',cursor:'pointer',opacity:isFailed?0.55:1,filter:isFailed?'grayscale(0.4)':'none',transition:'opacity 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='var(--surface3)';e.currentTarget.style.opacity=1}} onMouseLeave={e=>{e.currentTarget.style.background='var(--surface2)';e.currentTarget.style.opacity=isFailed?0.55:1}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'8px'}}><div style={{display:'flex',alignItems:'center',gap:'8px',flex:1,minWidth:0}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:STATUS_COLORS[a.status],flexShrink:0}} /><span style={{fontWeight:'600',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{accountLabel(a)}</span><button onClick={(e)=>{e.stopPropagation();renameAccount(a.id, a.name, a.buy_date)}} title={t('app.firmDrawer.rename')} style={{background:'transparent',border:'none',color:'var(--text3)',cursor:'pointer',padding:'2px 6px',fontSize:'13px',flexShrink:0}}>{'✏'}</button></div><span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><span style={S.badge(a.status)}>{a.status}</span>{a.liquidated_at&&<span title={`${t('app.firmDrawer.autoLiquidatedPrefix')} ${new Date(a.liquidated_at).toLocaleString('fr-FR')} ${t('app.firmDrawer.autoLiquidatedSuffix')}`} style={{fontSize:'12px',cursor:'help'}}>{'🔥'}</span>}</span></div><div style={{display:'flex',justifyContent:'space-between',fontSize:'12px'}}><span style={{color:'var(--green)'}}>{t('app.firmDrawer.payoutsLabel')} {fmtMoney(tp)}</span><span style={{color:net>=0?'var(--green)':'var(--red)'}}>{t('app.firmDrawer.netLabel')} {fmtMoneyNet(net)}</span><span style={{color:'var(--text3)'}}>{(a.payouts||[]).length} {(a.payouts||[]).length>1?t('app.firmDrawer.payoutWordPlural'):t('app.firmDrawer.payoutWord')}</span></div></div>})}<div style={{marginTop:'28px',paddingTop:'20px',borderTop:'0.5px solid var(--border)'}}><button onClick={()=>deleteFirm(currentFirm.id)} style={{background:'var(--red-bg)',color:'var(--red-text)',border:'0.5px solid var(--red-bg)',padding:'8px 16px',borderRadius:'var(--radius)',fontSize:'13px',cursor:'pointer',fontWeight:'500'}}>{t('app.firmDrawer.deleteFirm')}</button></div></div></div>}
 
         {/* ── Account Drawer ── */}

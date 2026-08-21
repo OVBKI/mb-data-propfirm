@@ -186,6 +186,15 @@ export default function AppSidebar({
       <style>{SIDEBAR_CSS}</style>
 
       {/* Toggle repli/dépli (caché sur mobile via CSS) */}
+            {/* Marque en tête du rail — la barre du haut porte la navigation de
+          section, pas l'identité (cf. maquette Abyss). */}
+      <div className="qt-brand">
+        <span className="qt-brand-mark" aria-hidden="true">Q</span>
+        <span className="qt-brand-text">
+          <b>Quantara</b>
+          <em>PropFirm Dashboard</em>
+        </span>
+      </div>
       <button className="qt-toggle" onClick={toggle} aria-label={collapsed ? 'Déplier le menu' : 'Réduire le menu'} title={collapsed ? 'Déplier' : 'Réduire'}>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
       </button>
@@ -270,6 +279,18 @@ export default function AppSidebar({
 }
 
 const SIDEBAR_CSS = `
+/* Marque du rail. Le rail replié n'en garde que le sigle. */
+.qt-brand{display:flex;align-items:center;gap:12px;padding:4px 8px 20px}
+.qt-brand-mark{width:42px;height:42px;flex-shrink:0;border-radius:13px;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--blue),var(--green));color:var(--bg);font-size:20px;font-weight:700}
+.qt-brand-text{min-width:0;display:flex;flex-direction:column}
+.qt-brand-text b{font-size:18px;font-weight:600;letter-spacing:-.01em;line-height:1.15;color:var(--text)}
+.qt-brand-text em{font-style:normal;font-size:12.5px;color:var(--text3);white-space:nowrap}
+@media(min-width:1025px){
+  .app-nav.qt-side.qt-collapsed .qt-brand{justify-content:center;padding:4px 0 16px}
+  .app-nav.qt-side.qt-collapsed .qt-brand-text{display:none}
+}
+
 .app-nav.qt-side{
   width:248px;flex-shrink:0;
   background:var(--bar-bg);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
