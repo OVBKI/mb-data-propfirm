@@ -90,7 +90,7 @@ function Toggle({ checked, onChange, disabled = false }) {
 
 export default function SettingsPage() {
   const t = useT()
-  const { user, profile, currency, setCurrencyMode, rateInfo } = useApp()
+  const { user, profile, currency, setCurrencyMode, rateInfo, marketMode, setMarketMode } = useApp()
 
   // Email preference: monthly recap opt-in (localStorage for now)
   const [monthlyRecap, setMonthlyRecap] = useState(true)
@@ -227,6 +227,28 @@ export default function SettingsPage() {
           description={t('app.settings.languageDesc')}
         >
           <LanguageSwitcher />
+        </SettingRow>
+        {/* Le marché vivait dans le rail, que la maquette veut réduit à de la
+            navigation. C'est une préférence d'affichage : sa place est ici. */}
+        <SettingRow
+          label={t('app.settings.marketLabel')}
+          description={t('app.settings.marketDesc')}
+        >
+          <div style={{ display: 'inline-flex', border: `1px solid ${C.border2}`, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--tint1)' }}>
+            {[['futures', 'Futures'], ['cfd', 'CFD']].map(([mode, label]) => (
+              <button
+                key={mode}
+                onClick={() => setMarketMode(mode)}
+                aria-pressed={marketMode === mode}
+                style={{
+                  padding: '7px 14px', fontSize: 12, border: 'none', minHeight: 32,
+                  background: marketMode === mode ? C.blue : 'transparent',
+                  color: marketMode === mode ? 'var(--text-inverse)' : C.text2,
+                  cursor: 'pointer', fontWeight: 600, letterSpacing: '0.05em', fontFamily: 'inherit',
+                }}
+              >{label}</button>
+            ))}
+          </div>
         </SettingRow>
         <SettingRow
           label={t('app.settings.currencyLabel')}
