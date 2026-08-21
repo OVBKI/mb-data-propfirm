@@ -375,21 +375,23 @@ export default function DashboardPage() {
           contenu — ajouter un widget se fait dans lib/dashboardLayout.js puis ici. */}
       <div data-tour="stats-cards">
         <DashboardGrid
-          layout={dash.layout} editing={dash.editing} setEditing={dash.setEditing}
-          move={dash.move} resize={dash.resize} toggle={dash.toggle} reset={dash.reset}
+          dash={dash}
           S={S}
-          render={(id) => {
-            switch (id) {
+          render={(w) => {
+            // `w` est l'INSTANCE : elle porte ses options et son titre, ce qui
+            // permet à deux copies du même widget d'afficher des périodes
+            // différentes.
+            switch (w.id) {
               case 'insight':
                 return <InsightWidget insight={overview.insight} setFirmDrawer={setFirmDrawer} S={S} />
               case 'payouts':
-                return <PayoutsWidget series={overview.series} money={money} totalPayoutsEUR2={totalPayoutsEUR2} totalPayoutCount={totalPayoutCount} S={S} />
+                return <PayoutsWidget instance={w} series={overview.series} money={money} totalPayoutsEUR2={totalPayoutsEUR2} totalPayoutCount={totalPayoutCount} S={S} />
               case 'spent':
-                return <SpentWidget series={overview.series} money={money} totalSpentEUR={totalSpentEUR} firms={firms} accts={accts} S={S} />
+                return <SpentWidget instance={w} series={overview.series} money={money} totalSpentEUR={totalSpentEUR} firms={firms} accts={accts} S={S} />
               case 'equity':
-                return <EquityWidget series={overview.series} S={S} />
+                return <EquityWidget instance={w} series={overview.series} S={S} />
               case 'health':
-                return <HealthWidget health={overview.health} totalNet={totalNet} currency={currency} fmtENet={fmtENet} rates={rates} getFirmLogo={getFirmLogo} setFirmDrawer={setFirmDrawer} S={S} />
+                return <HealthWidget instance={w} health={overview.health} totalNet={totalNet} currency={currency} fmtENet={fmtENet} rates={rates} getFirmLogo={getFirmLogo} setFirmDrawer={setFirmDrawer} S={S} />
               case 'firms':    return renderFirms()
               case 'calendar': return renderCalendar()
               case 'byFirm':   return renderByFirm()

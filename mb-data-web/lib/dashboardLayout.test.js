@@ -1,241 +1,415 @@
-// lib/dashboardLayout.test.js — la disposition personnalisée du dashboard.
+// lib/dashboardLayout.test.js — le modèle de personnalisation du dashboard.
 //
 // L'enjeu : une disposition enregistrée doit survivre aux évolutions du produit.
 // Un widget ajouté, retiré ou renommé ne doit jamais casser l'écran de quelqu'un.
+// Et depuis le passage aux INSTANCES, deux copies d'un même widget doivent
+// pouvoir cohabiter avec des réglages différents.
 
 import { describe, it, expect } from 'vitest'
 import {
-  DEFAULT_LAYOUT, WIDGETS, GRID_COLUMNS, SECTIONS, DEFAULT_SECTION, SECTION_LABELS,
-  normalizeLayout, normalizeLayoutFor, normalizeAll, defaultLayoutFor,
-  isDefaultLayout, moveWidget, setWidgetWidth, setWidgetVisible,
+  DEFAULT_LAYOUT, WIDGETS, GRID_COLUMNS, MAX_ROWS,
+  SECTIONS, DEFAULT_SECTION, SECTION_LABELS, PRESETS, LAYOUT_VERSION,
+  normalizeLayout, normalizeLayoutFor, normalizeAll, normalizeOptions,
+  defaultLayoutFor, defaultOptions, makeInstance, applyPreset, serializeAll,
+  isDefaultLayout, moveWidget, setWidgetWidth, setWidgetHeight, setWidgetVisible,
+  setWidgetTitle, setWidgetOption, duplicateWidget, removeWidget,
+  exportLayout, importLayout,
 } from './dashboardLayout'
 
-describe('normalizeLayout', () => {
-  it('accepte la disposition par défaut sans la modifier', () => {
-    expect(normalizeLayout(DEFAULT_LAYOUT)).toEqual(DEFAULT_LAYOUT)
+const ids = (l) => l.map(x => x.id)
+const keys = (l) => l.map(x => x.i)
+const find = (l, key) => l.find(x => x.i === key)
+
+describe('normalizeLayoutFor — reprise et réparation', () => {
+  it('accepte une disposition par défaut sans la modifier', () => {
+    for (const sec of SECTIONS) {
+      expect(normalizeLayoutFor(sec, defaultLayoutFor(sec)), sec)
+        .toEqual(defaultLayoutFor(sec))
+    }
   })
 
-  it('reconstruit une disposition à partir de rien', () => {
+  it('reconstruit une disposition à partir de n importe quoi', () => {
     // Entrées possibles : première visite, localStorage corrompu, colonne vide.
     for (const junk of [null, undefined, [], 'nope', 42, {}]) {
       const out = normalizeLayout(junk)
       expect(out).toHaveLength(DEFAULT_LAYOUT.length)
-      expect(out.map(w => w.id).sort()).toEqual(Object.keys(WIDGETS).sort())
+      expect([...ids(out)].sort()).toEqual(Object.keys(WIDGETS).sort())
     }
   })
 
-  it('écarte les widgets inconnus', () => {
-    // Un widget retiré du code ne doit pas laisser un trou dans la grille.
+  it('écarte les widgets inconnus sans laisser de trou', () => {
     const out = normalizeLayout([{ id: 'ghost', w: 2 }, { id: 'equity', w: 2 }])
-    expect(out.some(w => w.id === 'ghost')).toBe(false)
+    expect(ids(out)).not.toContain('ghost')
     expect(out[0].id).toBe('equity')
   })
 
-  it('écarte les doublons en gardant le premier', () => {
+  it('GARDE deux instances du même widget, avec des clés distinctes', () => {
+    // C'est ce que la duplication produit. L'ancien modèle les fusionnait.
     const out = normalizeLayout([{ id: 'equity', w: 4 }, { id: 'equity', w: 2 }])
-    expect(out.filter(w => w.id === 'equity')).toHaveLength(1)
-    expect(out[0].w).toBe(4)
+    const equities = out.filter(x => x.id === 'equity')
+    expect(equities).toHaveLength(2)
+    expect(equities[0].w).toBe(4)
+    expect(equities[1].w).toBe(2)
+    expect(new Set(keys(out)).size).toBe(out.length)
+  })
+
+  it('forge une clé neuve quand deux instances la partagent', () => {
+    // Des clés en double casseraient les clés React et le glisser-déposer.
+    const out = normalizeLayout([
+      { i: 'dup', id: 'equity' }, { i: 'dup', id: 'payouts' },
+    ])
+    expect(new Set(keys(out)).size).toBe(out.length)
   })
 
   it('ajoute un widget inédit à la fin, masqué', () => {
-    // C'est ce qui permet d'enrichir le catalogue sans réorganiser l'écran des
-    // utilisateurs existants : le nouveau attend dans le tiroir.
-    const out = normalizeLayout([{ id: 'equity', w: 2, visible: true }])
-    const added = out.find(w => w.id === 'health')
+    // Enrichir le catalogue ne doit pas réorganiser l'écran des utilisateurs.
+    const out = normalizeLayout([{ id: 'equity', visible: true }])
+    const added = out.find(x => x.id === 'health')
     expect(added).toBeDefined()
     expect(added.visible).toBe(false)
     expect(out[0].id).toBe('equity')
   })
 
-  it('borne les largeurs entre le minimum du widget et le nombre de colonnes', () => {
+  it('borne largeur et hauteur entre le minimum du widget et la grille', () => {
     const out = normalizeLayout([
-      { id: 'insight', w: 1 },     // minW = 2
-      { id: 'payouts', w: 99 },    // au-delà de la grille
-      { id: 'equity', w: -5 },
+      { id: 'insight', w: 1, h: 9 },     // minW = 2
+      { id: 'payouts', w: 99, h: 0 },
+      { id: 'equity', w: -5, h: -1 },
     ])
-    const at = (id) => out.find(w => w.id === id).w
-    expect(at('insight')).toBe(WIDGETS.insight.minW)
-    expect(at('payouts')).toBe(GRID_COLUMNS)
-    expect(at('equity')).toBe(WIDGETS.equity.minW)
+    const at = (id) => out.find(x => x.id === id)
+    expect(at('insight').w).toBe(WIDGETS.insight.minW)
+    expect(at('insight').h).toBe(MAX_ROWS)
+    expect(at('payouts').w).toBe(GRID_COLUMNS)
+    expect(at('payouts').h).toBe(WIDGETS.payouts.defaultH)
+    expect(at('equity').w).toBe(WIDGETS.equity.minW)
   })
 
-  it('traite une largeur non numérique comme la largeur par défaut', () => {
-    const out = normalizeLayout([{ id: 'equity', w: 'large' }])
+  it('traite une taille non numérique comme la taille par défaut', () => {
+    const out = normalizeLayout([{ id: 'equity', w: 'large', h: 'tall' }])
     expect(out[0].w).toBe(WIDGETS.equity.defaultW)
+    expect(out[0].h).toBe(WIDGETS.equity.defaultH)
   })
 
-  it('ne masque un widget que sur `visible: false` explicite', () => {
+  it('ne masque que sur `visible: false` explicite', () => {
     // `undefined` doit rester visible : une disposition ancienne sans le champ
     // ne doit pas faire disparaître la moitié de l'écran.
     expect(normalizeLayout([{ id: 'equity' }])[0].visible).toBe(true)
     expect(normalizeLayout([{ id: 'equity', visible: false }])[0].visible).toBe(false)
   })
 
+  it('nettoie et borne les titres personnalisés', () => {
+    expect(normalizeLayout([{ id: 'equity', title: '  Ma courbe  ' }])[0].title).toBe('Ma courbe')
+    expect(normalizeLayout([{ id: 'equity', title: '   ' }])[0].title).toBeNull()
+    expect(normalizeLayout([{ id: 'equity', title: 42 }])[0].title).toBeNull()
+    expect(normalizeLayout([{ id: 'equity', title: 'x'.repeat(80) }])[0].title).toHaveLength(40)
+  })
+
   it('est idempotente', () => {
-    const once = normalizeLayout([{ id: 'stats', w: 9 }, { id: 'zzz' }])
+    const once = normalizeLayout([{ id: 'stats', w: 9 }, { id: 'zzz' }, { id: 'equity', title: ' A ' }])
     expect(normalizeLayout(once)).toEqual(once)
   })
 })
 
-describe('isDefaultLayout', () => {
-  it('reconnaît la disposition par défaut', () => {
-    expect(isDefaultLayout(DEFAULT_LAYOUT)).toBe(true)
-    expect(isDefaultLayout(null)).toBe(true) // null se normalise vers le défaut
+describe('options', () => {
+  it('remplit les défauts déclarés au catalogue', () => {
+    expect(defaultOptions('equity')).toEqual({ range: '7m', cumulative: true })
+    expect(defaultOptions('insight')).toEqual({})
+    expect(defaultOptions('ghost')).toEqual({})
   })
 
-  it('détecte une personnalisation', () => {
-    expect(isDefaultLayout(setWidgetWidth(DEFAULT_LAYOUT, 'equity', 4))).toBe(false)
-    expect(isDefaultLayout(setWidgetVisible(DEFAULT_LAYOUT, 'stats', false))).toBe(false)
-    expect(isDefaultLayout(moveWidget(DEFAULT_LAYOUT, 'stats', 'insight'))).toBe(false)
-  })
-})
-
-describe('moveWidget', () => {
-  it('insère le widget déplacé à la position de la cible', () => {
-    const out = moveWidget(DEFAULT_LAYOUT, 'stats', 'insight')
-    expect(out[0].id).toBe('stats')
-    expect(out).toHaveLength(DEFAULT_LAYOUT.length)
+  it('rejette une valeur hors liste au profit du défaut', () => {
+    // Une valeur que le widget ne sait pas interpréter contaminerait son rendu.
+    expect(normalizeOptions('equity', { range: 'centuries' }).range).toBe('7m')
+    expect(normalizeOptions('health', { sort: 'random' }).sort).toBe('risk')
+    expect(normalizeOptions('health', { limit: 999 }).limit).toBe(4)
   })
 
-  it('ne perd aucun widget, quel que soit le sens du déplacement', () => {
-    const ids = (l) => l.map(w => w.id).sort()
-    expect(ids(moveWidget(DEFAULT_LAYOUT, 'insight', 'ranking'))).toEqual(ids(DEFAULT_LAYOUT))
-    expect(ids(moveWidget(DEFAULT_LAYOUT, 'ranking', 'insight'))).toEqual(ids(DEFAULT_LAYOUT))
+  it('exige un vrai booléen pour un interrupteur', () => {
+    expect(normalizeOptions('equity', { cumulative: 'yes' }).cumulative).toBe(true)
+    expect(normalizeOptions('equity', { cumulative: false }).cumulative).toBe(false)
   })
 
-  it('ignore un déplacement sur soi-même ou vers un identifiant inconnu', () => {
-    expect(moveWidget(DEFAULT_LAYOUT, 'equity', 'equity')).toBe(DEFAULT_LAYOUT)
-    expect(moveWidget(DEFAULT_LAYOUT, 'equity', 'ghost')).toBe(DEFAULT_LAYOUT)
-    expect(moveWidget(DEFAULT_LAYOUT, 'ghost', 'equity')).toBe(DEFAULT_LAYOUT)
+  it('ignore les options non déclarées', () => {
+    const out = normalizeOptions('equity', { range: '3m', bogus: 1 })
+    expect(out).toEqual({ range: '3m', cumulative: true })
+  })
+
+  it('setWidgetOption valide la valeur au passage', () => {
+    const l = normalizeLayout(null)
+    expect(find(setWidgetOption(l, 'equity', 'range', '12m'), 'equity').options.range).toBe('12m')
+    expect(find(setWidgetOption(l, 'equity', 'range', 'nope'), 'equity').options.range).toBe('7m')
   })
 })
 
-describe('setWidgetWidth', () => {
-  it('applique une largeur valide', () => {
-    const out = setWidgetWidth(DEFAULT_LAYOUT, 'payouts', 3)
-    expect(out.find(w => w.id === 'payouts').w).toBe(3)
+describe('duplication', () => {
+  it('insère la copie juste après l originale', () => {
+    const l = normalizeLayout(null)
+    const out = duplicateWidget(l, 'equity')
+    const at = out.findIndex(x => x.i === 'equity')
+    expect(out[at + 1].id).toBe('equity')
+    expect(out[at + 1].i).not.toBe('equity')
+    expect(out).toHaveLength(l.length + 1)
   })
 
-  it('refuse de descendre sous la largeur minimale du widget', () => {
-    // La carte d'insight contient un titre et un paragraphe : sur une colonne
-    // elle serait illisible.
-    const out = setWidgetWidth(DEFAULT_LAYOUT, 'insight', 1)
-    expect(out.find(w => w.id === 'insight').w).toBe(WIDGETS.insight.minW)
+  it('donne à la copie ses propres options', () => {
+    // Deux courbes sur deux périodes : c'est tout l'intérêt de la duplication.
+    let l = duplicateWidget(normalizeLayout(null), 'equity')
+    const copyKey = l.filter(x => x.id === 'equity')[1].i
+    l = setWidgetOption(l, copyKey, 'range', '12m')
+    expect(find(l, 'equity').options.range).toBe('7m')
+    expect(find(l, copyKey).options.range).toBe('12m')
   })
 
-  it('plafonne à la largeur de la grille', () => {
-    const out = setWidgetWidth(DEFAULT_LAYOUT, 'stats', 12)
-    expect(out.find(w => w.id === 'stats').w).toBe(GRID_COLUMNS)
+  it('refuse de dupliquer un widget marqué non duplicable', () => {
+    // Deux « à faire maintenant » côte à côte diraient la même chose deux fois.
+    const l = normalizeLayout(null)
+    expect(duplicateWidget(l, 'insight')).toBe(l)
+    expect(duplicateWidget(l, 'firms')).toBe(l)
   })
 
-  it('ignore un widget inconnu', () => {
-    expect(setWidgetWidth(DEFAULT_LAYOUT, 'ghost', 2)).toBe(DEFAULT_LAYOUT)
-  })
-})
-
-describe('setWidgetVisible', () => {
-  it('masque et réaffiche sans changer l ordre', () => {
-    const hidden = setWidgetVisible(DEFAULT_LAYOUT, 'calendar', false)
-    expect(hidden.find(w => w.id === 'calendar').visible).toBe(false)
-    expect(hidden.map(w => w.id)).toEqual(DEFAULT_LAYOUT.map(w => w.id))
-
-    const back = setWidgetVisible(hidden, 'calendar', true)
-    expect(back.find(w => w.id === 'calendar').visible).toBe(true)
-    expect(back.map(w => w.id)).toEqual(DEFAULT_LAYOUT.map(w => w.id))
+  it('ignore une clé inconnue', () => {
+    const l = normalizeLayout(null)
+    expect(duplicateWidget(l, 'ghost')).toBe(l)
   })
 
-  it('permet de tout masquer sans casser la normalisation', () => {
-    // Un écran vide est un choix valide de l'utilisateur, pas une erreur.
-    let l = DEFAULT_LAYOUT
-    for (const w of DEFAULT_LAYOUT) l = setWidgetVisible(l, w.id, false)
-    expect(l.every(w => !w.visible)).toBe(true)
-    expect(normalizeLayout(l)).toHaveLength(DEFAULT_LAYOUT.length)
+  it('ne réutilise jamais une clé déjà prise', () => {
+    let l = normalizeLayout(null)
+    for (let n = 0; n < 4; n++) l = duplicateWidget(l, 'equity')
+    expect(new Set(keys(l)).size).toBe(l.length)
   })
 })
 
-describe('catalogue', () => {
-  it('chaque widget du défaut existe, et réciproquement', () => {
-    expect(DEFAULT_LAYOUT.map(w => w.id).sort()).toEqual(Object.keys(WIDGETS).sort())
+describe('removeWidget', () => {
+  it('supprime une copie', () => {
+    const l = duplicateWidget(normalizeLayout(null), 'equity')
+    const copyKey = l.filter(x => x.id === 'equity')[1].i
+    const out = removeWidget(l, copyKey)
+    expect(out.filter(x => x.id === 'equity')).toHaveLength(1)
   })
 
-  it('chaque largeur par défaut respecte son propre minimum', () => {
-    for (const [id, spec] of Object.entries(WIDGETS)) {
-      expect(spec.defaultW, id).toBeGreaterThanOrEqual(spec.minW)
-      expect(spec.defaultW, id).toBeLessThanOrEqual(GRID_COLUMNS)
-    }
+  it('MASQUE la dernière instance au lieu de la supprimer', () => {
+    // Sinon le widget disparaîtrait du tiroir et deviendrait irrécupérable.
+    const l = normalizeLayout(null)
+    const out = removeWidget(l, 'equity')
+    expect(out).toHaveLength(l.length)
+    expect(find(out, 'equity').visible).toBe(false)
+  })
+
+  it('ignore une clé inconnue', () => {
+    const l = normalizeLayout(null)
+    expect(removeWidget(l, 'ghost')).toBe(l)
+  })
+})
+
+describe('opérations de taille et d ordre', () => {
+  it('applique une largeur et une hauteur valides', () => {
+    const l = normalizeLayout(null)
+    expect(find(setWidgetWidth(l, 'payouts', 3), 'payouts').w).toBe(3)
+    expect(find(setWidgetHeight(l, 'payouts', 2), 'payouts').h).toBe(2)
+  })
+
+  it('refuse de descendre sous le minimum du widget', () => {
+    // La carte d'insight porte un titre et un paragraphe : sur une colonne elle
+    // serait illisible.
+    const l = normalizeLayout(null)
+    expect(find(setWidgetWidth(l, 'insight', 1), 'insight').w).toBe(WIDGETS.insight.minW)
+  })
+
+  it('plafonne à la grille', () => {
+    const l = normalizeLayout(null)
+    expect(find(setWidgetWidth(l, 'stats', 12), 'stats').w).toBe(GRID_COLUMNS)
+    expect(find(setWidgetHeight(l, 'stats', 12), 'stats').h).toBe(MAX_ROWS)
+  })
+
+  it('rend la MÊME disposition quand rien ne change', () => {
+    // Une nouvelle référence ferait re-rendre la grille pour rien et remplirait
+    // l'historique d'annulation d'étapes vides.
+    const l = normalizeLayout(null)
+    expect(setWidgetWidth(l, 'ghost', 2)).toBe(l)
+    expect(setWidgetVisible(l, 'ghost', false)).toBe(l)
+    expect(setWidgetTitle(l, 'ghost', 'x')).toBe(l)
+    expect(moveWidget(l, 'equity', 'equity')).toBe(l)
+    expect(moveWidget(l, 'equity', 'ghost')).toBe(l)
+  })
+
+  it('déplace sans perdre d instance, dans les deux sens', () => {
+    const l = normalizeLayout(null)
+    const first = l[0].i, last = l[l.length - 1].i
+    expect([...keys(moveWidget(l, first, last))].sort()).toEqual([...keys(l)].sort())
+    expect([...keys(moveWidget(l, last, first))].sort()).toEqual([...keys(l)].sort())
+    expect(moveWidget(l, last, first)[0].i).toBe(last)
+  })
+})
+
+describe('setWidgetTitle', () => {
+  it('enregistre un titre et revient au défaut sur un vide', () => {
+    const l = normalizeLayout(null)
+    expect(find(setWidgetTitle(l, 'equity', ' Ma courbe '), 'equity').title).toBe('Ma courbe')
+    expect(find(setWidgetTitle(l, 'equity', '   '), 'equity').title).toBeNull()
   })
 })
 
 describe('sous-sections', () => {
-  // Le dashboard a quatre vues du même jeu de données. Chacune garde SA
-  // disposition : personnaliser « Payouts » ne doit rien changer ailleurs.
-
-  it('déclare une disposition par défaut pour chaque section', () => {
+  it('déclare une disposition et un libellé pour chaque section', () => {
     for (const sec of SECTIONS) {
-      expect(defaultLayoutFor(sec), sec).toBeInstanceOf(Array)
       expect(defaultLayoutFor(sec).length, sec).toBeGreaterThan(0)
       expect(SECTION_LABELS[sec], sec).toBeTruthy()
     }
   })
 
   it('chaque section connaît TOUS les widgets, visibles ou non', () => {
-    // Un widget absent d'une section doit rester disponible dans son tiroir :
-    // on ne l'interdit pas, on ne le propose simplement pas d'emblée.
     for (const sec of SECTIONS) {
-      const ids = normalizeLayoutFor(sec, null).map(w => w.id).sort()
-      expect(ids, sec).toEqual(Object.keys(WIDGETS).sort())
-    }
-  })
-
-  it('chaque section affiche au moins un widget par défaut', () => {
-    for (const sec of SECTIONS) {
-      expect(normalizeLayoutFor(sec, null).some(w => w.visible), sec).toBe(true)
+      expect([...new Set(ids(normalizeLayoutFor(sec, null)))].sort(), sec)
+        .toEqual(Object.keys(WIDGETS).sort())
     }
   })
 
   it('les sections ne montrent pas toutes la même chose', () => {
-    // Sinon les onglets n'auraient aucun intérêt.
     const shown = SECTIONS.map(sec =>
-      normalizeLayoutFor(sec, null).filter(w => w.visible).map(w => w.id).join(','))
+      normalizeLayoutFor(sec, null).filter(x => x.visible).map(x => x.id).join(','))
     expect(new Set(shown).size).toBe(SECTIONS.length)
   })
 
-  it('normalizeAll produit les quatre sections', () => {
-    const all = normalizeAll(null)
-    expect(Object.keys(all).sort()).toEqual([...SECTIONS].sort())
-  })
-
   it('reprend une ancienne disposition (tableau nu) comme Vue d ensemble', () => {
-    // Avant les sous-sections, la colonne stockait un simple tableau. Personne
-    // ne doit perdre son écran au passage.
     const all = normalizeAll([{ id: 'equity', w: 4, visible: true }])
     expect(all[DEFAULT_SECTION][0].id).toBe('equity')
     expect(all[DEFAULT_SECTION][0].w).toBe(4)
-    // Les autres sections repartent de LEUR défaut, pas de celui-là.
-    expect(all.performance.filter(w => w.visible).map(w => w.id))
-      .toEqual(defaultLayoutFor('performance').filter(w => w.visible).map(w => w.id))
+    expect(all.performance.filter(x => x.visible).map(x => x.id))
+      .toEqual(defaultLayoutFor('performance').filter(x => x.visible).map(x => x.id))
+  })
+
+  it('accepte la forme versionnée comme la forme nue', () => {
+    const bare = normalizeAll({ overview: [{ id: 'equity' }] })
+    const wrapped = normalizeAll({ version: LAYOUT_VERSION, sections: { overview: [{ id: 'equity' }] } })
+    expect(wrapped).toEqual(bare)
   })
 
   it('isole les sections les unes des autres', () => {
     const all = normalizeAll(null)
     const touched = { ...all, payouts: setWidgetVisible(all.payouts, 'calendar', false) }
-    expect(touched.payouts.find(w => w.id === 'calendar').visible).toBe(false)
-    expect(touched.overview.find(w => w.id === 'calendar').visible).toBe(true)
+    expect(find(touched.payouts, 'calendar').visible).toBe(false)
+    expect(find(touched.overview, 'calendar').visible).toBe(true)
   })
 
-  it('ignore une section inconnue dans les données stockées', () => {
+  it('ignore une section inconnue', () => {
     const all = normalizeAll({ overview: [{ id: 'equity' }], ghostSection: [{ id: 'equity' }] })
     expect(Object.keys(all).sort()).toEqual([...SECTIONS].sort())
   })
+})
 
-  it('isDefaultLayout compare au défaut de SA section', () => {
-    // La disposition par défaut de « Performance » n'est PAS celle de « Vue
-    // d'ensemble » : les comparer sans préciser la section serait faux.
+describe('presets', () => {
+  it('ne garde visible que ce que le preset énumère', () => {
+    for (const [key, preset] of Object.entries(PRESETS)) {
+      const out = applyPreset('overview', key)
+      if (!preset.keep) continue
+      expect(out.filter(x => x.visible).map(x => x.id).sort(), key)
+        .toEqual([...preset.keep].sort())
+    }
+  })
+
+  it('« complet » rend la disposition par défaut de la section', () => {
+    expect(isDefaultLayout(applyPreset('overview', 'full'), 'overview')).toBe(true)
+    expect(isDefaultLayout(applyPreset('risk', 'full'), 'risk')).toBe(true)
+  })
+
+  it('garde TOUS les widgets dans la disposition, même masqués', () => {
+    // Un preset restreint la vue, il n'ampute pas le tiroir.
+    const out = applyPreset('overview', 'minimal')
+    expect([...new Set(ids(out))].sort()).toEqual(Object.keys(WIDGETS).sort())
+  })
+
+  it('ignore un preset inconnu', () => {
+    expect(isDefaultLayout(applyPreset('overview', 'ghost'), 'overview')).toBe(true)
+  })
+})
+
+describe('isDefaultLayout', () => {
+  it('reconnaît le défaut de sa propre section', () => {
     expect(isDefaultLayout(defaultLayoutFor('performance'), 'performance')).toBe(true)
     expect(isDefaultLayout(defaultLayoutFor('performance'), 'overview')).toBe(false)
   })
 
-  it('normalizeLayout sans section reste sur Vue d ensemble', () => {
-    expect(normalizeLayout(DEFAULT_LAYOUT)).toEqual(normalizeLayoutFor(DEFAULT_SECTION, DEFAULT_LAYOUT))
+  it('détecte chaque forme de personnalisation', () => {
+    const l = normalizeLayout(null)
+    expect(isDefaultLayout(setWidgetWidth(l, 'equity', 4))).toBe(false)
+    expect(isDefaultLayout(setWidgetHeight(l, 'equity', 1))).toBe(false)
+    expect(isDefaultLayout(setWidgetVisible(l, 'stats', false))).toBe(false)
+    expect(isDefaultLayout(setWidgetTitle(l, 'equity', 'Perso'))).toBe(false)
+    expect(isDefaultLayout(setWidgetOption(l, 'equity', 'range', '12m'))).toBe(false)
+    expect(isDefaultLayout(duplicateWidget(l, 'equity'))).toBe(false)
+  })
+})
+
+describe('import / export', () => {
+  it('fait l aller-retour sans rien perdre', () => {
+    let all = normalizeAll(null)
+    all = { ...all, overview: setWidgetTitle(all.overview, 'equity', 'Ma courbe') }
+    const res = importLayout(exportLayout(all))
+    expect(res.ok).toBe(true)
+    expect(res.value).toEqual(all)
+  })
+
+  it('produit un JSON versionné', () => {
+    const parsed = JSON.parse(exportLayout(normalizeAll(null)))
+    expect(parsed.version).toBe(LAYOUT_VERSION)
+    expect(Object.keys(parsed.sections).sort()).toEqual([...SECTIONS].sort())
+  })
+
+  it('signale un JSON invalide sans lever', () => {
+    // L'appelant affiche l'erreur à l'utilisateur ; il ne gère pas une exception.
+    expect(importLayout('pas du json')).toEqual({ ok: false, error: 'parse' })
+    expect(importLayout('')).toEqual({ ok: false, error: 'parse' })
+  })
+
+  it('refuse un JSON valide mais étranger', () => {
+    expect(importLayout('{"hello":"world"}').ok).toBe(false)
+    expect(importLayout('null').ok).toBe(false)
+    expect(importLayout('"texte"').ok).toBe(false)
+  })
+
+  it('répare une disposition importée abîmée', () => {
+    const res = importLayout(JSON.stringify({
+      version: 2,
+      sections: { overview: [{ id: 'equity', w: 99 }, { id: 'ghost' }] },
+    }))
+    expect(res.ok).toBe(true)
+    expect(find(res.value.overview, 'equity').w).toBe(GRID_COLUMNS)
+    expect(ids(res.value.overview)).not.toContain('ghost')
+  })
+})
+
+describe('catalogue', () => {
+  it('chaque widget du défaut existe, et réciproquement', () => {
+    expect([...new Set(ids(DEFAULT_LAYOUT))].sort()).toEqual(Object.keys(WIDGETS).sort())
+  })
+
+  it('chaque taille par défaut respecte son propre minimum', () => {
+    for (const [id, spec] of Object.entries(WIDGETS)) {
+      expect(spec.defaultW, id).toBeGreaterThanOrEqual(spec.minW)
+      expect(spec.defaultW, id).toBeLessThanOrEqual(GRID_COLUMNS)
+      expect(spec.defaultH, id).toBeGreaterThanOrEqual(spec.minH)
+      expect(spec.defaultH, id).toBeLessThanOrEqual(MAX_ROWS)
+    }
+  })
+
+  it('chaque option déclare un défaut admis par ses propres valeurs', () => {
+    for (const [id, spec] of Object.entries(WIDGETS)) {
+      for (const [key, o] of Object.entries(spec.options || {})) {
+        if (o.type === 'select') expect(o.values, `${id}.${key}`).toContain(o.default)
+        if (o.type === 'toggle') expect(typeof o.default, `${id}.${key}`).toBe('boolean')
+        expect(o.labelKey, `${id}.${key}`).toBeTruthy()
+      }
+    }
+  })
+
+  it('makeInstance produit une instance complète et valide', () => {
+    const x = makeInstance('equity')
+    expect(x).toMatchObject({ i: 'equity', id: 'equity', visible: true, title: null })
+    expect(x.options).toEqual(defaultOptions('equity'))
+    expect(makeInstance('ghost')).toBeNull()
+  })
+
+  it('serializeAll enveloppe avec la version courante', () => {
+    expect(serializeAll({ a: 1 })).toEqual({ version: LAYOUT_VERSION, sections: { a: 1 } })
   })
 })

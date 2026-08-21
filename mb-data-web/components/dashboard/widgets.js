@@ -14,7 +14,10 @@ import { useMemo } from 'react'
 import { useT, useLanguage } from '../LanguageProvider'
 import { maxDrawdown } from '../../lib/constants'
 
-const MONTHS_BACK = 7
+// Nombre de mois couverts par chaque valeur de l'option « période ». `all` est
+// borné : au-delà, l'axe devient illisible et la requête ne rapporte plus rien.
+const RANGE_MONTHS = { '3m': 3, '7m': 7, '12m': 12, all: 36 }
+const DEFAULT_RANGE = '7m'
 
 // Marge de drawdown restante d'un compte, en fraction de son allowance.
 // Renvoie null quand la balance ou le plancher manquent — on ne devine pas.
@@ -36,10 +39,10 @@ function roomTone(pct) {
 }
 
 // Série mensuelle dépenses / payouts sur les N derniers mois, en EUR.
-function monthlySeries(firms, toEUR, rates) {
+function monthlySeries(firms, toEUR, rates, months = RANGE_MONTHS[DEFAULT_RANGE]) {
   const now = new Date()
   const buckets = []
-  for (let i = MONTHS_BACK - 1; i >= 0; i--) {
+  for (let i = months - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     buckets.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, month: d, spent: 0, payout: 0 })
   }
@@ -90,7 +93,16 @@ function smoothPath(values, w, h, pad = 2) {
 export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, totalSpentForAccount }) {
   const t = useT()
 
-  const series = useMemo(() => monthlySeries(firms, toEUR, rates), [firms, toEUR, rates])
+  // Une série par période disponible. Les calculer toutes ici coûte un seul
+  // parcours firms → accounts → payouts ; les calculer dans chaque instance en
+  // referait un par widget affiché.
+  const series = useMemo(() => {
+    const out = {}
+    for (const [key, months] of Object.entries(RANGE_MONTHS)) {
+      out[key] = monthlySeries(firms, toEUR, rates, months)
+    }
+    return out
+  }, [firms, toEUR, rates])
 
   // Santé : les comptes dont on connaît réellement la marge, du plus exposé au
   // plus sûr. Un compte sans balance saisie n'apparaît pas — mieux vaut ne rien
@@ -105,7 +117,9 @@ export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, t
         rows.push({ id: a.id, firmId: f.id, firm: f.name, account: a, pct })
       }
     }
-    return rows.sort((x, y) => x.pct - y.pct).slice(0, 4)
+    // On ne tronque pas ici : l'instance décide combien de lignes afficher et
+    // dans quel ordre. Trier par risque reste le défaut le plus utile.
+    return rows.sort((x, y) => x.pct - y.pct)
   }, [firms])
 
   // Ce que l'utilisateur devrait faire maintenant, classé par urgence : un compte
@@ -150,10 +164,28 @@ export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, t
 
 const cardOf = (S) => ({ ...S.card, padding: '22px 24px', minWidth: 0, height: '100%' })
 
+// Lit une option d'instance, avec repli sur le défaut. Une instance venue d'un
+// import ancien peut ne pas porter toutes les options du catalogue.
+function opt(instance, key, fallback) {
+  const v = instance?.options?.[key]
+  return v === undefined ? fallback : v
+}
+
+// Titre affiché : celui que l'utilisateur a saisi, sinon le libellé du catalogue.
+function titleOf(t, instance, defaultKey) {
+  return instance?.title || t(defaultKey)
+}
+
+// La série correspondant à la période choisie par l'instance.
+function seriesOf(series, instance) {
+  const range = opt(instance, 'range', DEFAULT_RANGE)
+  return series[range] || series[DEFAULT_RANGE] || []
+}
+
 // ============================================================================
 // Widgets
 // ============================================================================
-export function InsightWidget({ insight, setFirmDrawer, S }) {
+export function InsightWidget({ instance, insight, setFirmDrawer, S }) {
   return (
     <div style={{
       ...cardOf(S),
@@ -181,12 +213,12 @@ export function InsightWidget({ insight, setFirmDrawer, S }) {
   )
 }
 
-export function PayoutsWidget({ series, money, totalPayoutsEUR2, totalPayoutCount, S }) {
+export function PayoutsWidget({ instance, series, money, totalPayoutsEUR2, totalPayoutCount, S }) {
   const t = useT()
-  const vals = series.map(b => b.payout)
+  const vals = seriesOf(series, instance).map(b => b.payout)
   return (
     <div style={cardOf(S)}>
-      <div style={{ fontSize: 13, color: 'var(--text3)' }}>{t('app.dashboard.statTotalPayouts')}</div>
+      <div style={{ fontSize: 13, color: 'var(--text3)' }}>{titleOf(t, instance, 'app.dashboard.statTotalPayouts')}</div>
       <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
         {money(totalPayoutsEUR2)}
       </div>
@@ -195,25 +227,25 @@ export function PayoutsWidget({ series, money, totalPayoutsEUR2, totalPayoutCoun
       </div>
       <svg viewBox="0 0 200 62" style={{ display: 'block', width: '100%', height: 'auto', marginTop: 16 }} aria-hidden="true">
         <defs>
-          <linearGradient id="qtPayGrad" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`qtPayGrad-${instance?.i || "x"}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--green)" stopOpacity="0.32" />
             <stop offset="100%" stopColor="var(--green)" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={`${smoothPath(vals, 200, 62)} L200,62 L0,62 Z`} fill="url(#qtPayGrad)" />
+        <path d={`${smoothPath(vals, 200, 62)} L200,62 L0,62 Z`} fill={`url(#qtPayGrad-${instance?.i || "x"})`} />
         <path d={smoothPath(vals, 200, 62)} fill="none" stroke="var(--green)" strokeWidth="2.2" strokeLinecap="round" />
       </svg>
     </div>
   )
 }
 
-export function SpentWidget({ series, money, totalSpentEUR, firms, accts, S }) {
+export function SpentWidget({ instance, series, money, totalSpentEUR, firms, accts, S }) {
   const t = useT()
-  const vals = series.map(b => b.spent)
+  const vals = seriesOf(series, instance).map(b => b.spent)
   const max = Math.max(...vals, 1)
   return (
     <div style={cardOf(S)}>
-      <div style={{ fontSize: 13, color: 'var(--text3)' }}>{t('app.dashboard.statTotalSpent')}</div>
+      <div style={{ fontSize: 13, color: 'var(--text3)' }}>{titleOf(t, instance, 'app.dashboard.statTotalSpent')}</div>
       <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
         {money(totalSpentEUR)}
       </div>
@@ -232,28 +264,34 @@ export function SpentWidget({ series, money, totalSpentEUR, firms, accts, S }) {
   )
 }
 
-export function EquityWidget({ series, S }) {
+export function EquityWidget({ instance, series, S }) {
   const t = useT()
   const { locale } = useLanguage()
+  const rows = seriesOf(series, instance)
+  // Option « cumuler » : la courbe cumulée montre la trajectoire, la courbe brute
+  // montre le rythme mois par mois. Les deux lectures sont légitimes.
+  const cumulative = opt(instance, 'cumulative', true)
   let cp = 0, cs = 0
-  const cumPayout = series.map(b => (cp += b.payout))
-  const cumSpent = series.map(b => (cs += b.spent))
+  const cumPayout = rows.map(b => cumulative ? (cp += b.payout) : b.payout)
+  const cumSpent = rows.map(b => cumulative ? (cs += b.spent) : b.spent)
   const cumMax = Math.max(...cumPayout, ...cumSpent, 1)
   // PAD_X réserve la place des libellés d'extrémité, sinon le premier et le
   // dernier mois débordent du viewBox et sont rognés.
   const PAD_X = 26
   const W = 560 - PAD_X * 2
   const curve = (vals) => smoothPath(vals.map(v => v / cumMax * 100), W, 180, 8)
-  const monthX = (i) => PAD_X + (series.length > 1 ? (i * W) / (series.length - 1) : W / 2)
+  const monthX = (i) => PAD_X + (rows.length > 1 ? (i * W) / (rows.length - 1) : W / 2)
 
   return (
     <div style={cardOf(S)}>
-      <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{t('app.hero.equityTitle')}</h2>
-      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>{t('app.hero.equitySub')}</div>
+      <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{titleOf(t, instance, 'app.hero.equityTitle')}</h2>
+      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
+        {t(cumulative ? 'app.hero.equitySub' : 'app.hero.equitySubRaw')}
+      </div>
       <svg viewBox="0 0 560 210" style={{ display: 'block', width: '100%', height: 'auto', marginTop: 18 }}
            role="img" aria-label={t('app.hero.equityTitle')}>
         <defs>
-          <linearGradient id="qtEqGrad" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`qtEqGrad-${instance?.i || "x"}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--blue)" stopOpacity="0.30" />
             <stop offset="100%" stopColor="var(--blue)" stopOpacity="0.02" />
           </linearGradient>
@@ -262,12 +300,12 @@ export function EquityWidget({ series, S }) {
           {[20, 70, 120, 170].map(y => <line key={y} x1={PAD_X} y1={y} x2={560 - PAD_X} y2={y} />)}
         </g>
         <g transform={`translate(${PAD_X},0)`}>
-          <path d={`${curve(cumPayout)} L${W},180 L0,180 Z`} fill="url(#qtEqGrad)" />
+          <path d={`${curve(cumPayout)} L${W},180 L0,180 Z`} fill={`url(#qtEqGrad-${instance?.i || "x"})`} />
           <path d={curve(cumPayout)} fill="none" stroke="var(--blue)" strokeWidth="2.6" strokeLinecap="round" />
           <path d={curve(cumSpent)} fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" strokeDasharray="6 4" />
         </g>
         <g fontSize="10" fill="var(--text3)" textAnchor="middle" fontFamily="var(--font-mono), monospace">
-          {series.map((b, i) => (
+          {rows.map((b, i) => (
             <text key={b.key} x={monthX(i)} y="202">
               {b.month.toLocaleDateString(locale === 'en' ? 'en-GB' : 'fr-FR', { month: 'short' })}
             </text>
@@ -286,11 +324,19 @@ export function EquityWidget({ series, S }) {
   )
 }
 
-export function HealthWidget({ health, totalNet, currency, fmtENet, rates, getFirmLogo, setFirmDrawer, S }) {
+export function HealthWidget({ instance, health, totalNet, currency, fmtENet, rates, getFirmLogo, setFirmDrawer, S }) {
   const t = useT()
+  const limit = opt(instance, 'limit', 4)
+  const sort = opt(instance, 'sort', 'risk')
+  // `health` arrive trié par risque ; on ne re-trie que si l'instance demande
+  // l'ordre alphabétique.
+  const rows = (sort === 'name'
+    ? [...health].sort((a, b) => a.firm.localeCompare(b.firm))
+    : health
+  ).slice(0, limit)
   return (
     <div style={cardOf(S)}>
-      <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{t('app.hero.healthTitle')}</h2>
+      <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{titleOf(t, instance, 'app.hero.healthTitle')}</h2>
       <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>{t('app.hero.healthSub')}</div>
       <div style={{
         fontSize: 38, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 16,
@@ -301,13 +347,13 @@ export function HealthWidget({ health, totalNet, currency, fmtENet, rates, getFi
       </div>
       <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>{t('app.dashboard.statNetResult')}</div>
 
-      {health.length === 0 ? (
+      {rows.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.55, margin: 0 }}>
           {t('app.hero.healthEmpty')}
         </p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {health.map(row => {
+          {rows.map(row => {
             const tone = roomTone(row.pct)
             return (
               <button

@@ -1056,3 +1056,59 @@ il agit, pas dans une barre qui parle de tout le dashboard.
 **Règle qui en ressort** : une commande se place là où elle agit. Un filtre de
 liste appartient à la liste ; un réglage d'affichage appartient aux réglages ; la
 barre de page ne porte que ce qui concerne la page entière.
+
+
+## Personnalisation des widgets — v2 par INSTANCES (2026-08)
+
+Le modèle est passé de « un widget = une entrée » à « un widget = N instances ».
+C'est ce changement qui débloque tout le reste : sans lui, l'identifiant du
+widget servait de clé et un widget ne pouvait exister qu'une fois par section.
+
+```
+WIDGET    une entrée du catalogue : ce qu'un bloc sait faire
+INSTANCE  un widget POSÉ, avec sa taille, son titre et ses options
+SECTION   un onglet, avec sa propre liste d'instances
+```
+
+### Ce que l'utilisateur peut faire maintenant
+| | |
+|---|---|
+| **Dupliquer** un widget | deux courbes d'equity sur deux périodes différentes |
+| **Hauteur** 1–3 rangées | en plus de la largeur 1–4 colonnes |
+| **Titre personnalisé** | 40 caractères, vide = libellé par défaut |
+| **Options par instance** | période, cumul, tri, nombre de lignes |
+| **Annuler / Rétablir** | 40 étapes, sur les quatre sections |
+| **Presets** | Complet · Surveillance · Chiffres · Minimal |
+| **Import / export** | JSON versionné, pour sauvegarder ou partager |
+
+### Les options se déclarent, l'éditeur les rend
+Une option ajoutée dans `WIDGETS[x].options` apparaît toute seule dans le
+panneau de réglages — aucune UI à écrire. Types : `select` (valeurs + défaut) et
+`toggle`. `normalizeOptions()` rejette toute valeur hors liste au profit du
+défaut : une valeur que le widget ne sait pas interpréter contaminerait son rendu.
+
+### Cinq décisions qui portent le système
+1. **`duplicable: false`** sur insight, firms, calendar, stats. Deux « à faire
+   maintenant » côte à côte diraient la même chose deux fois.
+2. **Supprimer la DERNIÈRE instance la masque** au lieu de l'effacer. Sinon le
+   widget disparaîtrait du tiroir et deviendrait irrécupérable.
+3. **Une opération sans effet rend la MÊME référence.** Un nouveau tableau
+   ferait re-rendre la grille pour rien et remplirait l'historique d'étapes
+   vides. Un test le fige.
+4. **Les identifiants de dégradé SVG portent la clé d'instance.** Deux copies
+   d'un widget partageraient sinon le même `<linearGradient>` et l'une écraserait
+   l'autre.
+5. **`useOverviewData` calcule toutes les périodes d'un coup.** Un seul parcours
+   firms → accounts → payouts, au lieu d'un par instance affichée.
+
+### Reprise des dispositions existantes
+`normalizeAll()` accepte trois formes : le tableau nu d'avant les sous-sections,
+l'objet de sections, et l'enveloppe versionnée `{ version, sections }`. Une clé
+d'instance en double est refabriquée plutôt que l'instance écartée. Un widget
+retiré du code disparaît sans laisser de trou ; un widget ajouté rejoint le
+tiroir sans réorganiser l'écran.
+
+### Tests
+`lib/dashboardLayout.test.js` — 398 tests au total dans le projet. Couvre la
+duplication, les options, l'identité des références, les presets, l'aller-retour
+d'import/export et la réparation d'une disposition abîmée.
