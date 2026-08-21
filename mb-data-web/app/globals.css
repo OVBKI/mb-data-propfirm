@@ -462,7 +462,6 @@ select:not([multiple]) {
 /* Très petit (≤ 420px) : ajustements supplémentaires */
 @media (max-width: 420px) {
   .stats-5, .stats-4, .stats-3 { grid-template-columns: 1fr !important; }
-  .nav-section-label { font-size: 9px !important; }
   .top-bar-brand-sub { display: none; }
   .cal-cell { min-height: 48px !important; }
   .filter-row .label-min { display: none; }

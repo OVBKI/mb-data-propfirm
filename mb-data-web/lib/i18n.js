@@ -549,6 +549,11 @@ const FR = {
       adminPanel:    '🔧 Admin Panel',
       definePseudo:  '⊕ Définir un pseudo',
       quickEdit:     'Édition rapide (pseudo, bio)',
+      expand:        'Déplier le menu',
+      collapse:      'Réduire le menu',
+      market:        'Marché',
+      planLine:      'Plan {plan} · {n} comptes',
+      planLineOne:   'Plan {plan} · {n} compte',
     },
     // ── Feedback beta (components/BetaFeedback.js) ──
     beta: {
@@ -2493,6 +2498,11 @@ const EN = {
       adminPanel:    '🔧 Admin Panel',
       definePseudo:  '⊕ Set a username',
       quickEdit:     'Quick edit (username, bio)',
+      expand:        'Expand the menu',
+      collapse:      'Collapse the menu',
+      market:        'Market',
+      planLine:      '{plan} plan · {n} accounts',
+      planLineOne:   '{plan} plan · {n} account',
     },
     // ── Beta feedback (components/BetaFeedback.js) ──
     beta: {
