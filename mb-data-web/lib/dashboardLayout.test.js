@@ -70,6 +70,28 @@ describe('normalizeLayoutFor — reprise et réparation', () => {
     expect(out[0].id).toBe('equity')
   })
 
+  it('pose « résultat net » derrière « santé des comptes », visible comme lui', () => {
+    // Le chiffre s'affichait DANS le widget santé. Le poser masqué le ferait
+    // disparaître d'un écran où l'utilisateur le voyait déjà.
+    const out = normalizeLayout([{ id: 'health', visible: true }])
+    const at = out.findIndex(x => x.id === 'net')
+    expect(out[at - 1].id).toBe('health')
+    expect(out[at].visible).toBe(true)
+  })
+
+  it('ne rend pas « résultat net » visible si « santé » était masqué', () => {
+    const out = normalizeLayout([{ id: 'health', visible: false }])
+    expect(out.find(x => x.id === 'net').visible).toBe(false)
+  })
+
+  it('laisse « résultat net » en place quand la disposition le porte déjà', () => {
+    // La reprise est à usage unique : elle ne doit pas rejouer à chaque montage.
+    const once = normalizeLayout([{ id: 'health', visible: true }])
+    const twice = normalizeLayout(once)
+    expect(twice.filter(x => x.id === 'net')).toHaveLength(1)
+    expect(ids(twice)).toEqual(ids(once))
+  })
+
   it('borne largeur et hauteur entre le minimum du widget et la grille', () => {
     const out = normalizeLayout([
       { id: 'insight', w: 1, h: 9 },     // minW = 2

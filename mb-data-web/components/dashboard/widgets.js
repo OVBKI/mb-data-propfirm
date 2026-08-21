@@ -264,6 +264,80 @@ export function SpentWidget({ instance, series, money, totalSpentEUR, firms, acc
   )
 }
 
+// Ce qui reste une fois les challenges payés. C'est le chiffre qui dit si
+// l'activité est rentable — il vivait par erreur au milieu de « Santé des
+// comptes », qui ne parle que de marge de drawdown.
+export function NetWidget({ instance, series, totalPayoutsEUR2, totalSpentEUR, fmtMoney, fmtMoneyNet, S }) {
+  const t = useT()
+  const range = opt(instance, 'range', 'total')
+  const breakdown = opt(instance, 'breakdown', true)
+
+  // `total` prend les totaux réels ; une fenêtre somme ses mois. Les deux
+  // lectures sont utiles : « est-ce rentable depuis le début » n'est pas la même
+  // question que « est-ce rentable en ce moment ».
+  const { payout, spent } = useMemo(() => {
+    if (range === 'total') return { payout: totalPayoutsEUR2, spent: totalSpentEUR }
+    const rows = series[range] || []
+    return rows.reduce(
+      (acc, b) => ({ payout: acc.payout + b.payout, spent: acc.spent + b.spent }),
+      { payout: 0, spent: 0 },
+    )
+  }, [range, series, totalPayoutsEUR2, totalSpentEUR])
+
+  const net = payout - spent
+  const tone = net >= 0 ? 'var(--green)' : 'var(--red)'
+  const sum = payout + spent
+  // Sans mouvement, une barre à 50/50 mentirait moins qu'une barre pleine :
+  // on n'affiche simplement rien.
+  const payoutShare = sum > 0 ? (payout / sum) * 100 : null
+  const roi = spent > 0 ? (net / spent) * 100 : null
+
+  return (
+    <div style={{ ...cardOf(S), display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ fontSize: 13, color: 'var(--text3)' }}>{titleOf(t, instance, 'app.dashboard.statNetResult')}</div>
+        <div style={{ fontSize: 11.5, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+          {t(`app.widgets.val.range.${range}`)}
+        </div>
+      </div>
+
+      <div style={{
+        fontSize: 34, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 6,
+        fontVariantNumeric: 'tabular-nums', color: tone,
+      }}>
+        {fmtMoneyNet(net)}
+      </div>
+
+      <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+        {roi === null ? t('app.widgets.netNoSpend') : `${t('app.widgets.netRoi')} ${roi >= 0 ? '+' : ''}${roi.toFixed(1)} %`}
+      </div>
+
+      {breakdown && (
+        <div style={{ marginTop: 'auto', paddingTop: 18 }}>
+          {payoutShare !== null && (
+            <div style={{ display: 'flex', height: 8, borderRadius: 99, overflow: 'hidden', background: 'var(--tint2)' }}>
+              <i style={{ width: `${payoutShare}%`, background: 'var(--green)' }} />
+              <i style={{ width: `${100 - payoutShare}%`, background: 'var(--red)' }} />
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 10, fontSize: 12.5 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+              <i style={{ width: 8, height: 8, borderRadius: 3, background: 'var(--green)', flexShrink: 0 }} />
+              <span style={{ color: 'var(--text3)' }}>{t('app.widgets.payouts')}</span>
+              <strong style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fmtMoney(payout)}</strong>
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+              <i style={{ width: 8, height: 8, borderRadius: 3, background: 'var(--red)', flexShrink: 0 }} />
+              <span style={{ color: 'var(--text3)' }}>{t('app.widgets.spent')}</span>
+              <strong style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fmtMoney(spent)}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function EquityWidget({ instance, series, S }) {
   const t = useT()
   const { locale } = useLanguage()
@@ -324,7 +398,10 @@ export function EquityWidget({ instance, series, S }) {
   )
 }
 
-export function HealthWidget({ instance, health, totalNet, currency, fmtENet, rates, getFirmLogo, setFirmDrawer, S }) {
+// Uniquement la marge de drawdown restante, compte par compte. Le résultat net
+// qui trônait ici est parti dans son propre widget : une jauge de risque et un
+// solde comptable ne répondent pas à la même question.
+export function HealthWidget({ instance, health, getFirmLogo, setFirmDrawer, S }) {
   const t = useT()
   const limit = opt(instance, 'limit', 4)
   const sort = opt(instance, 'sort', 'risk')
@@ -337,15 +414,7 @@ export function HealthWidget({ instance, health, totalNet, currency, fmtENet, ra
   return (
     <div style={cardOf(S)}>
       <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{titleOf(t, instance, 'app.hero.healthTitle')}</h2>
-      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>{t('app.hero.healthSub')}</div>
-      <div style={{
-        fontSize: 38, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 16,
-        fontVariantNumeric: 'tabular-nums',
-        color: totalNet >= 0 ? 'var(--green)' : 'var(--red)',
-      }}>
-        {currency === 'eur' ? fmtENet(totalNet) : `${totalNet >= 0 ? '+' : ''}${(totalNet / rates.USD).toFixed(2)} $`}
-      </div>
-      <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>{t('app.dashboard.statNetResult')}</div>
+      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4, marginBottom: 20 }}>{t('app.hero.healthSub')}</div>
 
       {rows.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.55, margin: 0 }}>

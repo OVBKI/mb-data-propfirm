@@ -55,6 +55,19 @@ export const WIDGETS = {
       range: { type: 'select', values: RANGE_VALUES, default: '7m', labelKey: 'app.widgets.optRange' },
     },
   },
+  // Payouts moins dépenses. `total` reprend les totaux réels de tout l'historique ;
+  // les autres valeurs somment la fenêtre choisie. C'est une période à part de
+  // RANGE_VALUES : `all` y est plafonné à 36 mois, ce qui pour un chiffre de tête
+  // donnerait un total faux dès la quatrième année.
+  net: {
+    titleKey: 'app.widgets.net',
+    minW: 1, defaultW: 2, minH: 1, defaultH: 1,
+    duplicable: true,
+    options: {
+      range: { type: 'select', values: ['total', '3m', '7m', '12m'], default: 'total', labelKey: 'app.widgets.optRange' },
+      breakdown: { type: 'toggle', default: true, labelKey: 'app.widgets.optBreakdown' },
+    },
+  },
   equity: {
     titleKey: 'app.widgets.equity',
     minW: 2, defaultW: 2, minH: 1, defaultH: 2,
@@ -152,25 +165,26 @@ const inst = (id, w, h, visible = true) => makeInstance(id, { w, h, visible })
 export const DEFAULT_LAYOUTS = {
   overview: [
     inst('insight', 2, 1), inst('payouts', 1, 1), inst('spent', 1, 1),
-    inst('equity', 2, 2), inst('health', 2, 2),
+    inst('net', 2, 1), inst('equity', 2, 2), inst('health', 2, 2),
     inst('firms', 4, 2), inst('calendar', 4, 2),
     inst('byFirm', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
   ],
   performance: [
-    inst('equity', 4, 2), inst('byFirm', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
+    inst('equity', 4, 2), inst('net', 2, 1), inst('byFirm', 2, 1),
+    inst('stats', 1, 1), inst('ranking', 1, 1),
     inst('insight', 2, 1, false), inst('payouts', 1, 1, false), inst('spent', 1, 1, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('calendar', 4, 2, false),
   ],
   payouts: [
-    inst('payouts', 2, 1), inst('spent', 2, 1), inst('calendar', 4, 2),
+    inst('payouts', 2, 1), inst('spent', 2, 1), inst('net', 4, 1), inst('calendar', 4, 2),
     inst('ranking', 2, 1), inst('byFirm', 2, 1),
     inst('insight', 2, 1, false), inst('equity', 2, 2, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('stats', 1, 1, false),
   ],
   risk: [
     inst('insight', 2, 1), inst('health', 2, 2), inst('firms', 4, 2),
-    inst('payouts', 1, 1, false), inst('spent', 1, 1, false), inst('equity', 2, 2, false),
-    inst('calendar', 4, 2, false), inst('byFirm', 2, 1, false),
+    inst('payouts', 1, 1, false), inst('spent', 1, 1, false), inst('net', 2, 1, false),
+    inst('equity', 2, 2, false), inst('calendar', 4, 2, false), inst('byFirm', 2, 1, false),
     inst('stats', 1, 1, false), inst('ranking', 1, 1, false),
   ],
 }
@@ -191,8 +205,8 @@ export function defaultLayoutFor(section) {
 export const PRESETS = {
   full:    { labelKey: 'app.widgets.presetFull',    keep: null },
   focus:   { labelKey: 'app.widgets.presetFocus',   keep: ['insight', 'health', 'firms'] },
-  numbers: { labelKey: 'app.widgets.presetNumbers', keep: ['payouts', 'spent', 'equity', 'stats', 'ranking'] },
-  minimal: { labelKey: 'app.widgets.presetMinimal', keep: ['insight', 'equity'] },
+  numbers: { labelKey: 'app.widgets.presetNumbers', keep: ['payouts', 'spent', 'net', 'equity', 'stats', 'ranking'] },
+  minimal: { labelKey: 'app.widgets.presetMinimal', keep: ['insight', 'net', 'equity'] },
 }
 
 export function applyPreset(section, presetKey) {
@@ -252,14 +266,29 @@ export function normalizeLayoutFor(section, raw) {
 
   for (const d of base) {
     if (seenWidgets.has(d.id)) continue
-    // Un widget jamais vu par cet utilisateur : masqué s'il rejoint une
-    // disposition déjà personnalisée, visible si l'on part de zéro.
     const key = usedKeys.has(d.i) ? `${d.id}-new` : d.i
     usedKeys.add(key)
+
+    // Un widget qui REPREND une information d'un autre se pose juste derrière
+    // lui, avec sa visibilité. Le masquer ferait disparaître de la vue un chiffre
+    // que l'utilisateur voyait déjà — ce n'est pas un ajout, c'est un déménagement.
+    const from = fromScratch ? -1 : out.findIndex(x => x.id === ADOPTED_FROM[d.id])
+    if (from >= 0) {
+      out.splice(from + 1, 0, { ...d, i: key, visible: out[from].visible })
+      continue
+    }
+
+    // Sinon : un widget jamais vu par cet utilisateur. Masqué s'il rejoint une
+    // disposition déjà personnalisée, visible si l'on part de zéro.
     out.push({ ...d, i: key, visible: fromScratch ? d.visible : false })
   }
   return out
 }
+
+// « Résultat net » était affiché en gros au milieu de « Santé des comptes », qui
+// parle de marge de drawdown. Deux sujets, deux widgets : le chiffre déménage et
+// suit son ancien hôte dans les dispositions déjà enregistrées.
+const ADOPTED_FROM = { net: 'health' }
 
 function clamp(value, min, max, fallback) {
   const n = Number(value)

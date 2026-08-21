@@ -8,7 +8,7 @@ import { useT } from '../../../../components/LanguageProvider'
 import { MONTHS_FULL } from '../../../../lib/constants'
 import DashboardGrid from '../../../../components/dashboard/DashboardGrid'
 import {
-  useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, EquityWidget, HealthWidget,
+  useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, NetWidget, EquityWidget, HealthWidget,
 } from '../../../../components/dashboard/widgets'
 import { useDashboardLayout } from '../../../../lib/hooks/useDashboardLayout'
 import { SECTIONS, SECTION_LABELS } from '../../../../lib/dashboardLayout'
@@ -388,10 +388,12 @@ export default function DashboardPage() {
                 return <PayoutsWidget instance={w} series={overview.series} money={money} totalPayoutsEUR2={totalPayoutsEUR2} totalPayoutCount={totalPayoutCount} S={S} />
               case 'spent':
                 return <SpentWidget instance={w} series={overview.series} money={money} totalSpentEUR={totalSpentEUR} firms={firms} accts={accts} S={S} />
+              case 'net':
+                return <NetWidget instance={w} series={overview.series} totalPayoutsEUR2={totalPayoutsEUR2} totalSpentEUR={totalSpentEUR} fmtMoney={fmtMoney} fmtMoneyNet={fmtMoneyNet} S={S} />
               case 'equity':
                 return <EquityWidget instance={w} series={overview.series} S={S} />
               case 'health':
-                return <HealthWidget instance={w} health={overview.health} totalNet={totalNet} currency={currency} fmtENet={fmtENet} rates={rates} getFirmLogo={getFirmLogo} setFirmDrawer={setFirmDrawer} S={S} />
+                return <HealthWidget instance={w} health={overview.health} getFirmLogo={getFirmLogo} setFirmDrawer={setFirmDrawer} S={S} />
               case 'firms':    return renderFirms()
               case 'calendar': return renderCalendar()
               case 'byFirm':   return renderByFirm()
