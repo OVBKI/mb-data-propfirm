@@ -258,6 +258,11 @@ select:not([multiple]) {
 
 /* Tablette / mobile (≤ 1024px) : grilles à 2 col -> stack */
 @media (max-width: 1024px) {
+  /* Bloc héros du dashboard : la carte d'insight et ses deux compteurs passent
+     en colonne avant que le texte ne devienne illisible. */
+  .qt-hero-row  { grid-template-columns: 1fr !important; }
+  .qt-hero-row2 { grid-template-columns: 1fr !important; }
+  .qt-hero-art  { display: none; }
   .grid-1-340  { grid-template-columns: 1fr !important; }
   .grid-1-320  { grid-template-columns: 1fr !important; }
   .grid-1-280  { grid-template-columns: 1fr !important; }

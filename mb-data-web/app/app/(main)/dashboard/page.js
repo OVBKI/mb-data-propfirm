@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../AppContext'
 import { useT } from '../../../../components/LanguageProvider'
 import { MONTHS_FULL } from '../../../../lib/constants'
+import DashboardHero from '../../../../components/dashboard/DashboardHero'
 import { chartColors } from '../../../../lib/theme'
 import { useTheme } from '../../../../components/ThemeProvider'
 
@@ -144,19 +145,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="stats-5" data-tour="stats-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '12px', marginBottom: '28px' }}>
-        {[
-          { label: t('app.dashboard.statPropfirms'), value: `${firms.length} · ${accts.length} ${t('app.dashboard.accountsLabel')}`, small: true },
-          { label: t('app.dashboard.statTotalSpent'), value: currency === 'eur' ? fmtE(totalSpentEUR) : (totalSpentEUR / rates.USD).toFixed(2) + ' $', color: 'var(--red)' },
-          { label: t('app.dashboard.statTotalPayouts'), value: currency === 'eur' ? fmtE(totalPayoutsEUR2) : (totalPayoutsEUR2 / rates.USD).toFixed(2) + ' $', color: 'var(--green)' },
-          { label: t('app.dashboard.statNetResult'), value: currency === 'eur' ? fmtENet(totalNet) : (totalNet >= 0 ? '+' : '') + (totalNet / rates.USD).toFixed(2) + ' $', color: totalNet >= 0 ? 'var(--green)' : 'var(--red)' },
-          { label: t('app.dashboard.statPayouts'), value: totalPayoutCount },
-        ].map((k, i) => (
-          <div key={i} className="qt-stat-card" style={{ ...S.card, padding: '18px 18px', transition: 'border-color 0.2s, transform 0.2s' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '12px', fontWeight: '600' }}>{k.label}</div>
-            <div style={{ fontSize: k.small ? '15px' : '24px', fontWeight: '700', color: k.color || 'var(--text)', letterSpacing: '-0.015em' }}>{k.value}</div>
-          </div>
-        ))}
+      <div data-tour="stats-cards">
+        <DashboardHero
+          firms={firms} accts={accts} rates={rates} toEUR={toEUR}
+          fmtE={fmtE} fmtENet={fmtENet} currency={currency}
+          totalSpentEUR={totalSpentEUR} totalPayoutsEUR2={totalPayoutsEUR2}
+          totalNet={totalNet} totalPayoutCount={totalPayoutCount}
+          totalPayoutsEUR={totalPayoutsEUR} totalSpentForAccount={totalSpentForAccount}
+          getFirmLogo={getFirmLogo} setFirmDrawer={setFirmDrawer} S={S}
+        />
       </div>
 
       <div className="firms-grid" data-tour="firms-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: '16px', marginBottom: '24px' }}>
