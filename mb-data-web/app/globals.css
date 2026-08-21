@@ -219,7 +219,7 @@ table, .qt-mono, [data-numeric] {
   transition: color .15s, background .15s;
 }
 .qt-tab:hover { color: var(--text); background: var(--tint1); }
-.qt-tab-on { color: var(--text); font-weight: 600; background: var(--tint3); }
+.qt-tab-on { color: var(--text); font-weight: 600; }
 
 .qt-topsearch {
   display: flex; align-items: center; gap: 10px;
@@ -233,6 +233,15 @@ table, .qt-mono, [data-numeric] {
   margin-left: auto; font-family: var(--font-mono), monospace; font-size: 11px;
   background: var(--tint2); padding: 2px 6px; border-radius: 5px;
 }
+
+.qt-topbtn {
+  width: 32px; height: 32px; flex-shrink: 0;
+  display: grid; place-items: center; border-radius: var(--radius);
+  background: var(--tint1); border: 1px solid var(--border2);
+  color: var(--text2); font-size: 14px; font-weight: 600; font-family: inherit;
+  cursor: pointer;
+}
+.qt-topbtn:hover { color: var(--text); border-color: var(--blue-border); }
 
 .qt-topbell {
   position: relative; width: 32px; height: 32px; flex-shrink: 0;

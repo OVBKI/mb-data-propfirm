@@ -140,7 +140,18 @@ export default function DashboardPage() {
 
   function renderFirms() {
     return (
-      <div className="firms-grid" data-tour="firms-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: '16px', marginBottom: '24px' }}>
+      <div>
+        {/* En-tête du widget : le filtre et l'ajout agissent sur CETTE liste,
+            leur place est ici et pas dans la barre de page. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>
+            {t('app.widgets.firms')}
+          </h2>
+          <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={{ ...S.btnPrimary, flexShrink: 0, marginLeft: 'auto' }}>
+            {t('app.dashboard.btnAddPropfirm')}
+          </button>
+        </div>
+      <div className="firms-grid" data-tour="firms-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: '16px' }}>
         {firms.filter(f => f.name.toLowerCase().includes(searchQ.toLowerCase())).map(firm => {
           const ts = firmTotalSpent(firm), tp = firmTotalPayouts(firm), net = tp - ts, roi = ts > 0 ? net / ts * 100 : 0
           const al = firm.accounts || []
@@ -194,6 +205,7 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     )
   }
@@ -326,10 +338,11 @@ export default function DashboardPage() {
 
   return (
     <div className="page-pad" style={{ maxWidth: '1160px', margin: '0 auto', padding: '32px 24px 60px' }}>
-      {/* La barre du dashboard — reprise de la maquette. Les onglets sont des
-          SOUS-SECTIONS de cette page, pas de la navigation d'application : ils
-          rejouent les mêmes données sous un autre angle, et chacun garde sa
-          propre disposition de widgets. */}
+      {/* La barre du dashboard — reprise de la maquette, à l'identique :
+          onglets à gauche, puis recherche, devise, thème, alertes. Rien d'autre.
+          Le filtre de firmes et « Ajouter » vivaient ici en double emploi avec
+          la recherche globale ; ils sont descendus dans le widget PropFirms, là
+          où ils agissent. */}
       <div className="qt-page-top">
         <nav className="qt-tabs" aria-label={t('app.dashSections.label')}>
           {SECTIONS.map(sec => (
@@ -345,7 +358,7 @@ export default function DashboardPage() {
         <div className="qt-page-actions">
           <button onClick={openSearch} className="qt-topsearch" aria-label={t('app.topbar.search')}>
             <span aria-hidden="true">⌕</span>
-            <span className="qt-topsearch-label">{t('app.topbar.search')}</span>
+            <span className="qt-topsearch-label">{t('app.topbar.searchShort')}</span>
             <kbd>⌘K</kbd>
           </button>
           <ThemeToggle />
@@ -353,30 +366,8 @@ export default function DashboardPage() {
             <span aria-hidden="true">▲</span>
             {alertsBadgeCount > 0 && <em>{alertsBadgeCount}</em>}
           </Link>
-          <span className="qt-page-sep" aria-hidden="true" />
-          <input
-            value={searchQ}
-            onChange={e => setSearchQ(e.target.value)}
-            placeholder={t('app.dashboard.searchPlaceholder')}
-            style={{ ...S.input, maxWidth: 190, width: '100%', minWidth: 0 }}
-          />
-          <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--tint1)', flexShrink: 0 }}>
-            {['native', 'eur'].map(c => (
-              <button key={c} onClick={() => setCurrencyMode(c)} style={{
-                padding: '7px 13px', fontSize: 12, border: 'none',
-                background: currency === c ? 'var(--blue)' : 'transparent',
-                color: currency === c ? 'var(--text-inverse)' : 'var(--text2)',
-                cursor: 'pointer', fontWeight: 600, letterSpacing: '0.05em',
-              }}>{c === 'native' ? 'USD' : 'EUR'}</button>
-            ))}
-          </div>
-          <button data-tour="add-firm-btn" onClick={handleAddPropfirm} style={{ ...S.btnPrimary, flexShrink: 0 }}>
-            {t('app.dashboard.btnAddPropfirm')}
-          </button>
         </div>
       </div>
-
-      <div style={{ fontSize: 12.5, color: 'var(--text3)', marginBottom: 18 }}>{rateInfo}</div>
 
       {/* « Vue d'ensemble » est entièrement composable : chaque bloc ci-dessous est
           un widget que l'utilisateur peut masquer, déplacer et redimensionner.

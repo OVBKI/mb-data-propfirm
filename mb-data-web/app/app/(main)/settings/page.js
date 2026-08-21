@@ -90,7 +90,7 @@ function Toggle({ checked, onChange, disabled = false }) {
 
 export default function SettingsPage() {
   const t = useT()
-  const { user, profile } = useApp()
+  const { user, profile, currency, setCurrencyMode, rateInfo } = useApp()
 
   // Email preference: monthly recap opt-in (localStorage for now)
   const [monthlyRecap, setMonthlyRecap] = useState(true)
@@ -227,6 +227,26 @@ export default function SettingsPage() {
           description={t('app.settings.languageDesc')}
         >
           <LanguageSwitcher />
+        </SettingRow>
+        <SettingRow
+          label={t('app.settings.currencyLabel')}
+          description={rateInfo || t('app.settings.currencyDesc')}
+        >
+          <div style={{ display: 'inline-flex', border: `1px solid ${C.border2}`, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--tint1)' }}>
+            {[['native', 'USD'], ['eur', 'EUR']].map(([mode, label]) => (
+              <button
+                key={mode}
+                onClick={() => setCurrencyMode(mode)}
+                aria-pressed={currency === mode}
+                style={{
+                  padding: '7px 14px', fontSize: 12, border: 'none', minHeight: 32,
+                  background: currency === mode ? C.blue : 'transparent',
+                  color: currency === mode ? 'var(--text-inverse)' : C.text2,
+                  cursor: 'pointer', fontWeight: 600, letterSpacing: '0.05em', fontFamily: 'inherit',
+                }}
+              >{label}</button>
+            ))}
+          </div>
         </SettingRow>
       </Card>
 

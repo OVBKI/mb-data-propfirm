@@ -1030,3 +1030,29 @@ Elle n'a ni sélecteur de devise, ni recherche de firme, ni bouton « Ajouter un
 PropFirm ». Ce sont des commandes dont une vraie app a besoin : elles occupent la
 droite de la barre de page, séparées du trio applicatif (recherche, thème,
 alertes) par un filet vertical.
+
+
+## Barre du dashboard — dédoublonnage (2026-08)
+
+En comparant l'app et la maquette côte à côte, la barre portait trois choses de
+trop :
+
+| | Constat | Correctif |
+|---|---|---|
+| **Deux recherches** | La globale ⌘K ET un filtre de firmes | Le filtre est retiré : ⌘K trouve déjà une firme et l'ouvre |
+| **Le taux de change** | Une ligne de texte sous la barre | Supprimé de la barre ; il vit dans la description du réglage Devise |
+| **Le sélecteur de devise** | Absent de la maquette | Descendu dans Réglages → Apparence, sa vraie place |
+| **Onglet actif** | Pilule à fond plein | Gras + blanc, sans fond — comme la maquette |
+
+La barre est maintenant **exactement** celle de la maquette :
+
+```
+Vue d'ensemble  Performance  Payouts  Risque … [⌕ Rechercher un compte… ⌘K] [☾] [▲3]
+```
+
+« Ajouter une PropFirm » reste, mais dans l'en-tête du widget PropFirms — là où
+il agit, pas dans une barre qui parle de tout le dashboard.
+
+**Règle qui en ressort** : une commande se place là où elle agit. Un filtre de
+liste appartient à la liste ; un réglage d'affichage appartient aux réglages ; la
+barre de page ne porte que ce qui concerne la page entière.
