@@ -112,3 +112,48 @@ export function planLimitError(key, limit) {
     { status: 402 }
   )
 }
+
+// ============================================================================
+// Refus venant de la BASE
+// ============================================================================
+// La création de firmes / comptes / trades part du navigateur en direct vers
+// Supabase : il n'y a pas de route API à intercepter, et les plafonds sont donc
+// appliqués par des triggers Postgres (voir supabase-schema.sql, section
+// « QUOTAS PAR PALIER »). Ils lèvent :
+//     PLAN_LIMIT_REACHED:<clé>:<plafond>
+// Ces deux helpers traduisent ça en quelque chose de lisible.
+//
+// ⚠️ Les plafonds de PLAN_LIMITS ci-dessus doivent refléter ceux du SQL. En cas
+// de divergence, c'est la base qui tranche — et elle échoue FERMÉ.
+
+const DB_LIMIT_RE = /PLAN_LIMIT_REACHED:(\w+):(\d+)/
+
+// Renvoie { key, limit } si l'erreur est un refus de quota, sinon null.
+export function parsePlanLimitError(error) {
+  const raw = typeof error === 'string' ? error : (error?.message || '')
+  const m = raw.match(DB_LIMIT_RE)
+  if (!m) return null
+  return { key: m[1], limit: Number(m[2]) }
+}
+
+const LIMIT_LABEL = {
+  fr: {
+    maxFirms: (n) => `Le plan Free est limité à ${n} PropFirm. Passe à Pro pour en ajouter d'autres.`,
+    maxAccounts: (n) => `Le plan Free est limité à ${n} comptes. Passe à Pro pour en ajouter d'autres.`,
+    maxTradesPerMonth: (n) => `Le plan Free est limité à ${n} trades par mois. Passe à Pro pour continuer.`,
+  },
+  en: {
+    maxFirms: (n) => `The Free plan is limited to ${n} PropFirm. Upgrade to Pro to add more.`,
+    maxAccounts: (n) => `The Free plan is limited to ${n} accounts. Upgrade to Pro to add more.`,
+    maxTradesPerMonth: (n) => `The Free plan is limited to ${n} trades per month. Upgrade to Pro to continue.`,
+  },
+}
+
+// Message prêt à afficher, ou null si l'erreur n'est pas un quota.
+export function planLimitMessage(error, locale = 'fr') {
+  const hit = parsePlanLimitError(error)
+  if (!hit) return null
+  const table = LIMIT_LABEL[locale] || LIMIT_LABEL.fr
+  const fn = table[hit.key]
+  return fn ? fn(hit.limit) : (locale === 'en' ? 'Plan limit reached.' : 'Limite du plan atteinte.')
+}

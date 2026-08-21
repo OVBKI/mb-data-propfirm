@@ -792,3 +792,60 @@ Axes couverts : sécurité, accessibilité, dépendances, bundle, SEO, tests, ro
 - Sitemap : 136 URLs, généré dynamiquement, aucune page orpheline.
 - Bundle : 201–291 kB First Load JS. 195 pages statiques générées.
 - Toutes les routes publiques testées renvoient 200.
+
+
+## Suites de l'audit — 2026-08 (session autonome)
+
+### Quotas de palier — appliqués par la BASE, pas par l'app
+Toute la création (firmes, comptes, trades) part du navigateur en direct vers
+Supabase : **il n'y a aucune route API à protéger**, et un contrôle en JavaScript
+ne serait qu'un affichage. L'enforcement vit donc dans des triggers Postgres
+(`supabase-schema.sql`, section « QUOTAS PAR PALIER ») :
+
+- `plan_limit_for(user_id, key)` — miroir SQL de `effectivePlan()` : beta illimité,
+  paliers payants illimités en `active`/`trialing`/`past_due`, tout le reste Free.
+- Triggers `BEFORE INSERT` sur `firms`, `accounts`, `journal_entries`.
+- Le quota trades porte sur le **mois de la date du trade**, pas la date de saisie —
+  sinon un import d'historique consommerait le quota du mois courant.
+
+⚠️ **Les chiffres du SQL dupliquent `lib/planLimits.js`** (un trigger ne peut pas
+importer du JS). En cas de divergence c'est la base qui gagne, et elle échoue
+FERMÉ. Un test fige les valeurs côté application pour rendre l'écart visible.
+Côté client, `planLimitMessage(error, locale)` traduit le `PLAN_LIMIT_REACHED:…`
+brut en phrase utile — branché dans layout (firmes + comptes), CfdAccountModal,
+TradeEntryModal et JournalPage.
+
+### Accessibilité — mesures finales (axe-core, WCAG 2 AA, 4 pages publiques)
+| | avant | après |
+|---|---|---|
+| contrastes · thème clair | 110 | **10** |
+| contrastes · thème sombre | 26 | **22** |
+| `nested-interactive` | 11 | **0** |
+
+- `/compare` : la carte de firme n'est plus un `role="button"` contenant un lien.
+  Le point d'entrée clavier est un vrai `<button>` dont le nom accessible porte le
+  nom de la firme (sinon vingt fois « voir les règles » indistinguables).
+- `/auth` gardait un panneau **`rgba(20,23,32,0.65)` en dur** — carte sombre sur
+  fond clair. Nouveaux jetons `--glass`, `--glass-2`, `--glass-solid` pour les
+  panneaux en verre dépoli (translucides, donc distincts de `--surface` qui est
+  opaque). 23 panneaux migrés dans 9 fichiers.
+- Accents secondaires promus en jetons : `--violet`, `--cyan` (ils vivaient en dur
+  dans des palettes locales et rataient le contraste sur fond clair).
+- `opacity` sur du texte le fait passer sous le seuil de contraste : la mention
+  LLC du footer utilise `--text3` au lieu de `opacity: 0.7`.
+
+Les 10 restants sont des éléments **volontairement désactivés** (badges « Soon »,
+bouton de démo, item de sidebar verrouillé) — WCAG 1.4.3 exempte les contrôles
+inactifs.
+
+### Webhook Stripe — cycle de vie de la réservation
+`stripe_events.status` : `processing` → `done` (ou `failed`). Seul `done` fait
+qu'un rejeu est classé doublon. Une réservation `processing` de plus de 5 min est
+reprise (instance tuée en cours de traitement), une `failed` est reprise
+immédiatement. Avant, un échec du nettoyage rendait l'événement définitivement
+perdu.
+
+### SEO
+Canonique ajoutée sur `/auth` (variantes `?mode=signup`) et `/u/[username]`
+(pseudo casse-insensible). `/g/[code]` et les pages follow étaient déjà en
+`noindex` — le constat de l'audit était un faux positif.

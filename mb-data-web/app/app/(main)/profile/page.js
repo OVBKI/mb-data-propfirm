@@ -191,7 +191,7 @@ export default function ProfilePage() {
 
         {/* === HERO === */}
         <div className="qt-profile-hero" style={{
-          background: 'rgba(20,23,32,0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          background: 'var(--glass)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid var(--border)', borderRadius: 14, padding: 28, marginBottom: 24, position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, rgba(45,111,255,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -252,7 +252,7 @@ export default function ProfilePage() {
 
         {/* === PARAMÈTRES AVANCÉS === */}
         {editing && (
-          <div style={{ background: 'rgba(20,23,32,0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, marginBottom: 24 }}>
+          <div style={{ background: 'var(--glass)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, marginBottom: 24 }}>
             <SectionTitle>Paramètres avancés</SectionTitle>
 
             <div style={{ marginBottom: 18 }}>
@@ -329,7 +329,7 @@ export default function ProfilePage() {
         {/* === ACTIVITÉS RÉCENTES === */}
         <div style={{ marginBottom: 24 }}>
           <SectionTitle>Activités récentes</SectionTitle>
-          <div style={{ background: 'rgba(20,23,32,0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--glass)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
             {activities.length === 0 ? (
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>Aucune activité pour l&apos;instant. Importe ton premier CSV ou enregistre un payout.</div>
             ) : (
@@ -344,7 +344,7 @@ export default function ProfilePage() {
             Mur
             <span style={{ marginLeft: 8, fontSize: 9, padding: '3px 8px', borderRadius: 99, background: 'rgba(45,111,255,0.15)', color: 'var(--blue-light)', fontWeight: 700, letterSpacing: '0.08em', verticalAlign: 'middle' }}>BIENTÔT</span>
           </SectionTitle>
-          <div style={{ background: 'rgba(20,23,32,0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px dashed var(--border2)', borderRadius: 12, padding: 40, textAlign: 'center' }}>
+          <div style={{ background: 'var(--glass)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px dashed var(--border2)', borderRadius: 12, padding: 40, textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.5 }}>{'\u{1F4AC}'}</div>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Le mini-réseau social arrive bientôt</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6, maxWidth: 420, margin: '0 auto' }}>
@@ -376,7 +376,7 @@ function MicroLabel({ children }) {
 
 function KpiCard({ label, value, sub, color }) {
   return (
-    <div style={{ padding: '14px 16px', background: 'rgba(20,23,32,0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 10 }}>
+    <div style={{ padding: '14px 16px', background: 'var(--glass)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 10 }}>
       <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'ui-monospace, monospace', letterSpacing: '-0.01em', color: color || 'var(--text)', lineHeight: 1.1 }}>{value}</div>
       {sub && <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'ui-monospace, monospace', marginTop: 6, letterSpacing: '0.04em' }}>{sub}</div>}

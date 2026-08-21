@@ -167,7 +167,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 460,
-          background: 'rgba(20,23,32,0.95)',
+          background: 'var(--glass-solid)',
           border: '1px solid var(--hairline)',
           borderRadius: 14, padding: '28px 28px 24px',
           boxShadow: '0 24px 64px rgba(0,0,0,0.6)',

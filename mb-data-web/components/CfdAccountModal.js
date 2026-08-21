@@ -17,8 +17,9 @@
 // Props: { open, onClose, onSaved, user, showToast }
 
 import { useMemo, useState } from 'react'
-import { useT } from './LanguageProvider'
+import { useT, useLanguage } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
+import { planLimitMessage } from '../lib/planLimits'
 import { C as THEME } from '../lib/theme'
 import {
   CFD_REPUTATION,
@@ -28,7 +29,7 @@ import {
 import { getCfdFirmsOrdered, getCfdModelsFromFirm } from '../lib/cfdSlugs'
 import { useManagedCfdFirms } from '../lib/managedFirms'
 
-const FIRM_COLORS_CFD = ['var(--blue-light)', 'var(--green)', 'var(--amber)', '#a78bfa', 'var(--red)', '#22d3ee', '#f472b6', '#34d399', '#fb923c']
+const FIRM_COLORS_CFD = ['var(--blue-light)', 'var(--green)', 'var(--amber)', 'var(--violet)', 'var(--red)', '#22d3ee', '#f472b6', '#34d399', '#fb923c']
 
 // ── Shared inline styles (mirror layout.js S object + theme.js) ──
 const S = {
@@ -179,6 +180,7 @@ function buildFormFromAccount(a) {
 function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
   const isEdit = !!account
   const t = useT()
+  const { locale } = useLanguage()
   // Static catalog + admin-managed custom firms (loaded async; merged reactively).
   const managed = useManagedCfdFirms()
   const staticCatalog = useMemo(() => getCfdFirmsOrdered(), [])
@@ -331,7 +333,11 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
       } else {
         acctErr = (await supabase.from('accounts').insert(base)).error
       }
-      if (acctErr) { showToast(t('app.cfd.toastAccountFailed') + (acctErr.message || t('app.cfd.toastUnknownError'))); setSaving(false); return }
+      if (acctErr) {
+        const quota = planLimitMessage(acctErr, locale)
+        showToast(quota || t('app.cfd.toastAccountFailed') + (acctErr.message || t('app.cfd.toastUnknownError')))
+        setSaving(false); return
+      }
 
       showToast(qty > 1 ? t('app.cfd.toastAccountsAdded').replace('{n}', qty) : t('app.cfd.toastAccountAdded'))
       onClose()

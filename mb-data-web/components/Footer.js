@@ -146,7 +146,7 @@ export default function Footer() {
         }}>
           <div>
             © {new Date().getFullYear()} <strong style={{ color: C.text2 }}>Quantara Technologies LLC</strong> {t('pages.footer.bottom.copyrightSuffix')}
-            <span style={{ marginLeft: 8, opacity: 0.7 }}>{t('pages.footer.bottom.texas')}</span>
+            <span style={{ marginLeft: 8, color: 'var(--text3)' }}>{t('pages.footer.bottom.texas')}</span>
           </div>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
             <span>🇺🇸 Quantara Technologies LLC · 🇪🇺 {t('pages.footer.bottom.eu')}</span>

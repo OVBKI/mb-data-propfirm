@@ -19,8 +19,8 @@ import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
 const C = {
-  surface:   'rgba(20,23,32,0.65)',
-  surface2:  'rgba(28,32,48,0.7)',
+  surface:   'var(--glass)',
+  surface2:  'var(--glass-2)',
   border:    'var(--border)',
   border2:   'var(--border2)',
   text:      'var(--text)',
@@ -31,7 +31,7 @@ const C = {
   amber:     'var(--amber)',
   blue:      'var(--blue)',
   blueLt:    'var(--blue-light)',
-  purple:    '#a78bfa',
+  purple:    'var(--violet)',
 }
 
 const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
@@ -43,7 +43,7 @@ const btnDanger = { padding: '6px 11px', fontSize: 11, fontWeight: 500, backgrou
 
 const RULE_CATEGORIES = [
   { k: 'risk',      lk: 'catRisk',      color: 'var(--red)' },
-  { k: 'mindset',   lk: 'catMindset',   color: '#a78bfa' },
+  { k: 'mindset',   lk: 'catMindset',   color: 'var(--violet)' },
   { k: 'execution', lk: 'catExecution',  color: 'var(--green)' },
   { k: 'other',     lk: 'catOther',     color: 'var(--text2)' },
 ]

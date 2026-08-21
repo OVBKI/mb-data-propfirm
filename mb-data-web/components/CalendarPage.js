@@ -394,7 +394,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
   }
   const cardElevated = {
     ...card,
-    background: 'linear-gradient(180deg, rgba(28,32,48,0.65), rgba(20,23,32,0.7))',
+    background: 'linear-gradient(180deg, var(--glass-2), var(--glass-2))',
     border: '1px solid var(--hairline)',
   }
   const monoFont = "'JetBrains Mono', 'SF Mono', 'Cascadia Mono', Menlo, monospace"
@@ -472,7 +472,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             <div style={{
               display: 'flex',
               border: '1px solid var(--hairline)', borderRadius: 99,
-              overflow: 'hidden', background: 'rgba(20,23,32,0.5)',
+              overflow: 'hidden', background: 'var(--glass)',
               backdropFilter: 'blur(8px)',
             }}>
               {[{ c: 'fr', l: 'FR' }, { c: 'en', l: 'EN' }, { c: 'es', l: 'ES' }].map(x => (
@@ -487,7 +487,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             <div style={{
               display: 'flex',
               border: '1px solid var(--hairline)', borderRadius: 99,
-              overflow: 'hidden', background: 'rgba(20,23,32,0.5)',
+              overflow: 'hidden', background: 'var(--glass)',
               backdropFilter: 'blur(8px)',
             }}>
               <button onClick={() => setWeek('this')} className="qt-cal-pill" style={pillStyle(week === 'this', monoFont)}>{t.thisWeek}</button>
@@ -498,7 +498,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
               className="qt-cal-pill"
               style={{
                 ...pillStyle(false, monoFont),
-                background: 'rgba(28,32,48,0.6)',
+                background: 'var(--glass-2)',
                 border: '1px solid var(--hairline)',
                 borderRadius: 99,
                 padding: '9px 16px',
@@ -813,7 +813,7 @@ function pillStyle(active, monoFont) {
 function KpiCard({ label, value, sub, accent, mono, serif, isLive }) {
   return (
     <div style={{
-      background: 'linear-gradient(180deg, rgba(28,32,48,0.5), rgba(20,23,32,0.35))',
+      background: 'linear-gradient(180deg, var(--glass-2), var(--glass))',
       border: '1px solid var(--border)',
       borderLeft: `2px solid ${accent}`,
       borderRadius: 12,
@@ -892,7 +892,7 @@ function WeekStrip({ dates, grouped, today, onJump, mono, t, lang }) {
               minWidth: 130,
               padding: '12px 14px',
               borderRadius: 12,
-              background: isToday ? 'rgba(45,111,255,0.12)' : 'rgba(28,32,48,0.45)',
+              background: isToday ? 'rgba(45,111,255,0.12)' : 'var(--glass-2)',
               border: `1px solid ${isToday ? 'rgba(45,111,255,0.45)' : 'var(--border)'}`,
               color: 'var(--text)',
               cursor: 'pointer',
@@ -1254,7 +1254,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '11px 13px', borderRadius: 10, cursor: 'pointer',
     border: `1px solid ${active ? 'rgba(45,111,255,0.5)' : 'var(--border)'}`,
-    background: active ? 'rgba(45,111,255,0.10)' : 'rgba(28,32,48,0.5)',
+    background: active ? 'rgba(45,111,255,0.10)' : 'var(--glass-2)',
     color: active ? 'var(--text)' : 'var(--text2)',
     transition: 'all 0.15s',
     fontSize: 13, fontWeight: active ? 700 : 500,
@@ -1268,7 +1268,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
       <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t.flagFilter} onClick={e => e.stopPropagation()} style={{
-        background: 'linear-gradient(180deg, rgba(28,32,48,0.95), rgba(20,23,32,0.95))',
+        background: 'linear-gradient(180deg, var(--glass-solid), var(--glass-solid))',
         borderRadius: 14,
         border: '1px solid var(--hairline)',
         width: '100%', maxWidth: 640, maxHeight: '85vh',

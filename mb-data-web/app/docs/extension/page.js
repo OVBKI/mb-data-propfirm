@@ -12,7 +12,7 @@ export const metadata = {
 }
 
 const C = {
-  surface: 'rgba(20,23,32,0.65)', border: 'var(--border)', border2: 'var(--border2)',
+  surface: 'var(--glass)', border: 'var(--border)', border2: 'var(--border2)',
   text: 'var(--text)', text2: 'var(--text2)', text3: 'var(--text3)',
   blue: 'var(--blue)', blueLt: 'var(--blue-light)', green: 'var(--green)', amber: '#d99a3e',
 }

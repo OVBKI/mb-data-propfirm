@@ -41,6 +41,12 @@
   --amber: #fac775;
   --amber-bg: rgba(250,199,117,0.12);
   --amber-text: #fac775;
+  /* Accents secondaires : badges de firmes, cartes de tarifs. Ils vivaient en dur
+     dans des palettes locales — promus en jetons pour qu'ils suivent le thème. */
+  --violet: #a78bfa;
+  --violet-bg: rgba(167,139,250,0.14);
+  --cyan: #06b6d4;
+  --cyan-bg: rgba(6,182,212,0.14);
 
   /* Aplats translucides — remplacent les rgba(255,255,255,0.0X) en dur, qui
      deviendraient invisibles (blanc sur blanc) en thème clair. */
@@ -54,6 +60,12 @@
   /* Barres translucides posées par-dessus le contenu (top bar, sticky headers).
      Doivent rester semi-transparentes pour le backdrop-filter. */
   --bar-bg: rgba(13,15,20,0.78);
+  /* Panneaux « verre dépoli » posés sur un fond dégradé : carte de connexion,
+     modales, drawers. Doivent rester translucides pour le backdrop-filter — d'où
+     un jeton distinct de --surface, qui lui est opaque. */
+  --glass: rgba(20,23,32,0.65);
+  --glass-2: rgba(28,32,48,0.7);
+  --glass-solid: rgba(20,23,32,0.95);
   --shadow-card: 0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15);
   --shadow-pop: 0 12px 32px rgba(0,0,0,0.35);
 
@@ -103,6 +115,10 @@
   --amber: #8a5a06;
   --amber-bg: rgba(198,140,30,0.14);
   --amber-text: #7d5205;
+  --violet: #6d3fd4;
+  --violet-bg: rgba(109,63,212,0.10);
+  --cyan: #0e7490;
+  --cyan-bg: rgba(14,116,144,0.10);
 
   --tint1: rgba(15,23,42,0.025);
   --tint2: rgba(15,23,42,0.045);
@@ -112,6 +128,9 @@
 
   --overlay: rgba(15,23,42,0.38);
   --bar-bg: rgba(255,255,255,0.82);
+  --glass: rgba(255,255,255,0.80);
+  --glass-2: rgba(239,241,246,0.86);
+  --glass-solid: rgba(255,255,255,0.97);
   --shadow-card: 0 1px 2px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.07);
   --shadow-pop: 0 12px 32px rgba(15,23,42,0.16);
 

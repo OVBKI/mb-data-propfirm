@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { useT } from './LanguageProvider'
+import { useT, useLanguage } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { uploadFile } from '../lib/uploadFile'
@@ -14,6 +14,7 @@ import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR }
 import { fmtMoney, todayISO } from '../lib/format'
 import { cardStyle as card, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
 import { useTheme } from './ThemeProvider'
+import { planLimitMessage } from '../lib/planLimits'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
@@ -504,6 +505,7 @@ export default function JournalPage({
   renderExtraSection = null,  // (ctx) => JSX — appelé avant le footer. ctx = { filteredEntries, decoratedEntries, allAccounts, firms }
 }){
   const t = useT()
+  const { locale } = useLanguage()
   const MONTHS = t('app.journal.monthNames')
   const DAYS = t('app.journal.dayNames')
   const _eyebrow = pageEyebrow || t('app.journal.defaultEyebrow')
@@ -806,9 +808,11 @@ export default function JournalPage({
     if(res.error){
       console.error('[journal save]', res.error)
       // Affiche le vrai message Supabase pour diagnostiquer (table manquante, RLS, etc.)
-      const msg = res.error.code==='42P01' || /does not exist/i.test(res.error.message||'')
-        ? '⚠ Table journal_entries manquante dans Supabase'
-        : (res.error.message || 'Erreur enregistrement')
+      // Quota de palier refusé par le trigger Postgres → phrase lisible.
+      const msg = planLimitMessage(res.error, locale)
+        || (res.error.code==='42P01' || /does not exist/i.test(res.error.message||'')
+          ? '⚠ Table journal_entries manquante dans Supabase'
+          : (res.error.message || 'Erreur enregistrement'))
       showToast?.(msg)
       return
     }

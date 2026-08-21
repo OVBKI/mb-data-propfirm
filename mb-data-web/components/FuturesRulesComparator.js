@@ -42,7 +42,7 @@ const C = {
   blue: 'var(--blue)',
   blueLight: 'var(--blue-light)',
   amber: 'var(--amber)',
-  green: '#10b981',
+  green: 'var(--green)',
 }
 
 // Colonnes : clé i18n du libellé (app.futuresComparator.*) + kind appliqué.

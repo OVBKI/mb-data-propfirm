@@ -27,7 +27,7 @@ import { chartColors } from '../lib/theme'
 import { useTheme } from './ThemeProvider'
 
 const C = {
-  surface:  'rgba(20,23,32,0.65)',
+  surface:  'var(--glass)',
   border:   'var(--border)',
   text:     'var(--text)',
   text2:    'var(--text2)',

@@ -23,11 +23,12 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { supabase } from '../lib/supabase'
+import { planLimitMessage } from '../lib/planLimits'
 import { uploadFile } from '../lib/uploadFile'
 import { accountLabel } from '../lib/constants'
 import { computeRMultiple, computeRiskReward, formatR, formatRR } from '../lib/tradeMath'
 import TagSelector from './TagSelector'
-import { useT } from './LanguageProvider'
+import { useT, useLanguage } from './LanguageProvider'
 import { useDialog } from './useDialog'
 
 // Styles cosmic dark (cohérents avec JournalPage)
@@ -100,6 +101,7 @@ export default function TradeEntryModal({
   showToast,
 }) {
   const t = useT()
+  const { locale } = useLanguage()
   const dialogRef = useDialog({ open, onClose })
   const [form, setForm] = useState(EMPTY_FORM)
   const [uploadingScreen, setUploadingScreen] = useState(false)
@@ -175,9 +177,11 @@ export default function TradeEntryModal({
     setSaving(false)
     if (res.error) {
       console.error('[trade save]', res.error)
-      const msg = res.error.code === '42P01' || /does not exist/i.test(res.error.message || '')
-        ? t('app.trade.toastTableMissing')
-        : (res.error.message || t('app.trade.toastSaveError'))
+      // Quota de palier refusé par le trigger Postgres → phrase lisible.
+      const msg = planLimitMessage(res.error, locale)
+        || (res.error.code === '42P01' || /does not exist/i.test(res.error.message || '')
+          ? t('app.trade.toastTableMissing')
+          : (res.error.message || t('app.trade.toastSaveError')))
       showToast?.(msg)
       return
     }

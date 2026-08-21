@@ -27,6 +27,12 @@ function getSupabase() {
   )
 }
 
+// Au-delà de ce délai, une réservation restée en `processing` est considérée
+// comme abandonnée (instance tuée mid-traitement) et peut être reprise. Plus long
+// que le timeout d'une fonction serverless, plus court que l'intervalle de rejeu
+// de Stripe.
+const STALE_CLAIM_MS = 5 * 60 * 1000
+
 const RELEVANT = new Set([
   'checkout.session.completed',
   'customer.subscription.created',
@@ -62,16 +68,53 @@ export async function POST(request) {
   const supabase = getSupabase()
 
   // ── Idempotence ─────────────────────────────────────────────────────────────
-  // insert sur une PK = event.id : le doublon renvoie une erreur 23505 qu'on
-  // traite comme "déjà traité". Plus fiable qu'un select-puis-insert (course).
+  // On RÉSERVE l'event.id par un insert sur la PK : un doublon simultané se
+  // heurte au 23505, ce qui est plus fiable qu'un select-puis-insert (course).
+  //
+  // La réservation est marquée `processing`, et passe à `done` seulement après
+  // un traitement réussi. C'est ce qui distingue « déjà traité » de « traitement
+  // interrompu » : une réservation restée en `processing` (crash, timeout, échec
+  // de nettoyage) est reprise par le rejeu Stripe au lieu d'être classée doublon
+  // et perdue définitivement.
+  const claimedAt = new Date().toISOString()
   const { error: dupErr } = await supabase
     .from('stripe_events')
-    .insert({ id: event.id, type: event.type })
+    .insert({ id: event.id, type: event.type, status: 'processing', received_at: claimedAt })
+
   if (dupErr) {
-    if (dupErr.code === '23505') return Response.json({ received: true, duplicate: true })
-    // La table manque (migration pas encore jouée) : on continue quand même,
-    // mieux vaut un traitement non-dédoublonné qu'un abonnement jamais activé.
-    console.error('[stripe-webhook] stripe_events insert failed:', dupErr.message)
+    if (dupErr.code === '23505') {
+      const { data: prior } = await supabase
+        .from('stripe_events')
+        .select('status, received_at')
+        .eq('id', event.id)
+        .maybeSingle()
+
+      // Traitement abouti : c'est un vrai doublon, on l'acquitte.
+      if (!prior || prior.status === 'done') {
+        return Response.json({ received: true, duplicate: true })
+      }
+
+      // Réservation `processing` encore fraîche : une autre instance est
+      // probablement en train de traiter le même event, on la laisse finir.
+      // Le délai ne s'applique QU'À `processing` : un `failed` a déjà rendu la
+      // main, l'attendre ferait perdre cinq minutes au rejeu pour rien.
+      const age = Date.now() - new Date(prior.received_at || 0).getTime()
+      if (prior.status === 'processing' && age < STALE_CLAIM_MS) {
+        return Response.json({ received: true, inFlight: true })
+      }
+
+      // Réservation périmée : le traitement précédent n'a jamais abouti. On la
+      // reprend à notre compte et on rejoue.
+      await supabase
+        .from('stripe_events')
+        .update({ status: 'processing', received_at: claimedAt })
+        .eq('id', event.id)
+      console.warn('[stripe-webhook] reprise d une réservation périmée:', event.id)
+    } else {
+      // La table manque (migration pas encore jouée) : on continue quand même,
+      // mieux vaut un traitement non-dédoublonné qu'un abonnement jamais activé.
+      console.error('[stripe-webhook] stripe_events insert failed:', dupErr.message)
+    }
   }
 
   try {
@@ -113,11 +156,21 @@ export async function POST(request) {
     }
   } catch (err) {
     console.error('[stripe-webhook] handler error:', event.type, err.message)
-    // 500 → Stripe rejoue. L'idempotence ci-dessus a déjà consommé l'event.id,
-    // donc on le libère pour que le rejeu soit réellement traité.
-    await supabase.from('stripe_events').delete().eq('id', event.id)
+    // 500 → Stripe rejoue. On repasse la réservation en `failed` pour que le
+    // rejeu la reprenne. Si même cette écriture échoue, la réservation reste en
+    // `processing` et la règle de péremption ci-dessus la rattrape : dans aucun
+    // cas l'événement n'est classé doublon et perdu.
+    const { error: releaseErr } = await supabase
+      .from('stripe_events')
+      .update({ status: 'failed' })
+      .eq('id', event.id)
+    if (releaseErr) console.error('[stripe-webhook] release failed:', releaseErr.message)
     return Response.json({ error: 'Handler failed' }, { status: 500 })
   }
+
+  // Traitement abouti : c'est cette marque qui fait qu'un rejeu sera reconnu
+  // comme doublon.
+  await supabase.from('stripe_events').update({ status: 'done' }).eq('id', event.id)
 
   return Response.json({ received: true })
 }

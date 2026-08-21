@@ -30,9 +30,9 @@ const C = {
   text3: 'var(--text3)',
   blue: 'var(--blue)',
   blueLight: 'var(--blue-light)',
-  green: '#10b981',
+  green: 'var(--green)',
   greenSoft: 'rgba(16,185,129,0.12)',
-  red: '#ef4444',
+  red: 'var(--red)',
   redSoft: 'rgba(239,68,68,0.12)',
   amber: 'var(--amber)',
   amberSoft: 'rgba(250,199,117,0.12)',
@@ -81,7 +81,7 @@ const FIRM_META = {
   },
   'Lucid Trading': {
     displayName: 'Lucid Trading',
-    color: '#a78bfa',
+    color: 'var(--violet)',
     ddType: 'EOD',
     ddDetail: 'EOD trailing sur toutes familles',
     hasDLL: true,
@@ -95,7 +95,7 @@ const FIRM_META = {
   },
   'Tradeify': {
     displayName: 'Tradeify',
-    color: '#10b981',
+    color: 'var(--green)',
     ddType: 'EOD',
     ddDetail: 'EOD trailing · lock à +$100 au-dessus starting',
     hasDLL: true,
@@ -353,9 +353,6 @@ export default function PropfirmComparator({ user }) {
             <div
               key={firmName}
               onClick={() => setDrawerFirm(firmName)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawerFirm(firmName) } }}
               className="qt-firm-card qt-card-hover"
               style={{
                 textAlign: 'left',
@@ -448,9 +445,19 @@ export default function PropfirmComparator({ user }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 gap: 10,
               }}>
-                <span style={{ fontSize: 12, color: C.blueLight, fontWeight: 500 }}>
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); setDrawerFirm(firmName) }}
+                  aria-label={`${t('app.comparator.viewRules')} — ${firmName}`}
+                  style={{
+                    fontSize: 12, color: C.blueLight, fontWeight: 500,
+                    background: 'none', border: 'none', padding: '6px 0',
+                    minHeight: 32, cursor: 'pointer', fontFamily: 'inherit',
+                    textAlign: 'left',
+                  }}
+                >
                   {t('app.comparator.viewRules')}
-                </span>
+                </button>
                 {affLink && (
                   <a
                     href={affLink}

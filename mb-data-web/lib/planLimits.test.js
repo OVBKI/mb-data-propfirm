@@ -4,7 +4,7 @@
 // un faux positif donne le produit gratuitement : les deux sens comptent.
 
 import { describe, it, expect } from 'vitest'
-import { effectivePlan, getPlanLimits, hasFeature, isAtLimit, PLAN_LIMITS } from './planLimits'
+import { effectivePlan, getPlanLimits, hasFeature, isAtLimit, PLAN_LIMITS, parsePlanLimitError, planLimitMessage } from './planLimits'
 
 const paid = (plan, status = 'active') => ({ plan, plan_status: status })
 
@@ -108,5 +108,58 @@ describe('isAtLimit', () => {
 
   it('bloque un abonnement resilie comme un free', () => {
     expect(isAtLimit(paid('elite', 'canceled'), 'maxFirms', 1)).toBe(true)
+  })
+})
+
+describe('refus venant de la base', () => {
+  // Les plafonds sont appliqués par des triggers Postgres : la création part du
+  // navigateur en direct, il n'y a pas de route API à intercepter. Le trigger
+  // lève `PLAN_LIMIT_REACHED:<clé>:<plafond>` et le client doit le traduire.
+  const dbError = (key, n) => ({
+    message: `PLAN_LIMIT_REACHED:${key}:${n}`,
+    code: '23514',
+  })
+
+  it('extrait la clé et le plafond du message Postgres', () => {
+    expect(parsePlanLimitError(dbError('maxFirms', 1))).toEqual({ key: 'maxFirms', limit: 1 })
+    expect(parsePlanLimitError(dbError('maxTradesPerMonth', 20)))
+      .toEqual({ key: 'maxTradesPerMonth', limit: 20 })
+  })
+
+  it('lit aussi bien un objet erreur qu une chaîne brute', () => {
+    expect(parsePlanLimitError('PLAN_LIMIT_REACHED:maxAccounts:3'))
+      .toEqual({ key: 'maxAccounts', limit: 3 })
+  })
+
+  it('ignore les erreurs qui ne sont pas des quotas', () => {
+    // Sans ça, une panne réseau s'afficherait comme une invitation à payer.
+    expect(parsePlanLimitError({ message: 'network error' })).toBeNull()
+    expect(parsePlanLimitError({ message: 'duplicate key value' })).toBeNull()
+    expect(parsePlanLimitError(null)).toBeNull()
+    expect(parsePlanLimitError(undefined)).toBeNull()
+    expect(parsePlanLimitError({})).toBeNull()
+  })
+
+  it('rend un message citant le vrai plafond, dans les deux langues', () => {
+    expect(planLimitMessage(dbError('maxFirms', 1), 'fr')).toContain('1 PropFirm')
+    expect(planLimitMessage(dbError('maxTradesPerMonth', 20), 'fr')).toContain('20 trades')
+    expect(planLimitMessage(dbError('maxAccounts', 3), 'en')).toContain('3 accounts')
+  })
+
+  it('renvoie null quand ce n est pas un quota — l appelant garde son message', () => {
+    expect(planLimitMessage({ message: 'boom' })).toBeNull()
+  })
+
+  it('dégrade proprement sur une clé de quota inconnue', () => {
+    expect(planLimitMessage(dbError('maxWidgets', 5), 'fr')).toBeTruthy()
+  })
+
+  it('les plafonds annoncés par la base correspondent à PLAN_LIMITS', () => {
+    // Le SQL duplique nécessairement ces chiffres (les triggers ne peuvent pas
+    // importer le JS). Ce test fige la valeur côté application : si quelqu'un la
+    // change ici sans toucher supabase-schema.sql, il le voit tout de suite.
+    expect(PLAN_LIMITS.free.maxFirms).toBe(1)
+    expect(PLAN_LIMITS.free.maxAccounts).toBe(3)
+    expect(PLAN_LIMITS.free.maxTradesPerMonth).toBe(20)
   })
 })

@@ -35,7 +35,7 @@ const C = {
   text3: 'var(--text3)',
   blue: 'var(--accent, #2d6fff)',
   amber: 'var(--amber)',
-  green: '#10b981',
+  green: 'var(--green)',
 }
 
 // Simple initial avatar (no CFD logos available — same approach as the public page).

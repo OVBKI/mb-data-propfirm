@@ -24,7 +24,7 @@ const C = {
 // Notes par firm (FR/EN) — bloc locale-aware (option B).
 const FIRMS_FR = [
   { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
-  { name: 'Apex Trader Funding',    color: '#a78bfa', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic R|Trader Pro' },
+  { name: 'Apex Trader Funding',    color: 'var(--violet)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic R|Trader Pro' },
   { name: 'Bulenox',                color: 'var(--red)', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
   { name: 'Lucid Trading',          color: 'var(--blue-light)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Import CSV Rithmic — testé en prod' },
   { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
@@ -38,7 +38,7 @@ const FIRMS_FR = [
 
 const FIRMS_EN = [
   { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX (ProjectX)',         note: 'ProjectX API on roadmap Q3 2026' },
-  { name: 'Apex Trader Funding',    color: '#a78bfa', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Rithmic R|Trader Pro CSV import' },
+  { name: 'Apex Trader Funding',    color: 'var(--violet)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Rithmic R|Trader Pro CSV import' },
   { name: 'Bulenox',                color: 'var(--red)', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
   { name: 'Lucid Trading',          color: 'var(--blue-light)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Rithmic CSV import — tested in production' },
   { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'ProjectX API on roadmap Q3 2026' },

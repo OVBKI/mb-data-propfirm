@@ -37,13 +37,13 @@ const C = {
   green: 'var(--green)',
   amber: 'var(--amber)',
   red: 'var(--red)',
-  purple: '#a78bfa',
+  purple: 'var(--violet)',
 }
 
 // Liste des firmes pour la sélection step 2 (alimente le grid clickable)
 const FIRM_SUGGESTIONS = [
   { name: 'Topstep',                color: '#ff8c42' },
-  { name: 'Apex Trader Funding',    color: '#a78bfa' },
+  { name: 'Apex Trader Funding',    color: 'var(--violet)' },
   { name: 'Lucid Trading',          color: 'var(--blue-light)' },
   { name: 'Take Profit Trader',     color: 'var(--amber)' },
   { name: 'My Funded Futures',      color: '#fb923c' },

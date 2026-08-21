@@ -625,8 +625,13 @@ create unique index if not exists profiles_stripe_customer_id_uniq
 create table if not exists stripe_events (
   id           text primary key,         -- event.id Stripe (evt_…)
   type         text not null,
+  -- processing : réservé, traitement en cours
+  -- done       : traité — c'est CE statut qui fait qu'un rejeu est un doublon
+  -- failed     : le handler a échoué, le rejeu doit reprendre immédiatement
+  status       text default 'processing',
   received_at  timestamptz default now()
 );
+alter table stripe_events add column if not exists status text default 'processing';
 alter table stripe_events enable row level security;
 -- Aucune policy : service role uniquement (le webhook). Personne d'autre ne lit.
 
@@ -663,6 +668,122 @@ revoke update (
 --   select column_name from information_schema.column_privileges
 --   where table_name = 'profiles' and privilege_type = 'UPDATE'
 --     and grantee = 'authenticated' and column_name like 'plan%';
+
+-- ============================================================================
+-- QUOTAS PAR PALIER — application côté BASE (pas côté application)
+-- ============================================================================
+-- Toute la création (firmes, comptes, trades) part du navigateur en direct vers
+-- Supabase avec la clé anon : il n'y a AUCUNE route API à protéger. Une
+-- vérification en JavaScript ne serait qu'un affichage — l'utilisateur ouvre la
+-- console et insère quand même. L'enforcement doit donc vivre ici.
+--
+-- ⚠️ CES CHIFFRES DOIVENT REFLÉTER lib/planLimits.js (PLAN_LIMITS).
+-- En cas de divergence c'est la BASE qui gagne, et elle échoue FERMÉ : au pire
+-- l'utilisateur est bloqué trop tôt, jamais servi gratuitement. Modifier l'un
+-- sans l'autre est un bug — les deux fichiers se citent mutuellement.
+--
+-- Le service_role n'est pas concerné (il ne passe pas par ces triggers en
+-- pratique : imports admin et crons écrivent avec des droits élevés).
+
+create or replace function public.plan_limit_for(p_user_id uuid, p_key text)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_plan text; v_status text; v_beta boolean;
+begin
+  select plan, plan_status, coalesce(beta_grandfather, false)
+    into v_plan, v_status, v_beta
+    from profiles where user_id = p_user_id;
+
+  -- Bêta-testeur historique : déplafonné à vie (miroir de effectivePlan()).
+  if v_beta then return null; end if;
+
+  -- past_due garde l'accès : la relance Stripe tourne encore. Couper au premier
+  -- échec de paiement transforme une carte expirée en churn définitif.
+  if v_plan in ('pro','elite','business')
+     and v_status in ('active','trialing','past_due') then
+    return null;                     -- illimité
+  end if;
+
+  -- Tout le reste retombe sur Free.
+  return case p_key
+    when 'maxFirms'           then 1
+    when 'maxAccounts'        then 3
+    when 'maxTradesPerMonth'  then 20
+    else null
+  end;
+end $$;
+
+-- ── Firmes ───────────────────────────────────────────────────────────────────
+create or replace function public.enforce_firm_quota()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_max int; v_count int;
+begin
+  v_max := public.plan_limit_for(new.user_id, 'maxFirms');
+  if v_max is null then return new; end if;
+  select count(*) into v_count from firms where user_id = new.user_id;
+  if v_count >= v_max then
+    raise exception 'PLAN_LIMIT_REACHED:maxFirms:%', v_max
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists firms_quota on firms;
+create trigger firms_quota before insert on firms
+  for each row execute function public.enforce_firm_quota();
+
+-- ── Comptes ──────────────────────────────────────────────────────────────────
+create or replace function public.enforce_account_quota()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_max int; v_count int;
+begin
+  v_max := public.plan_limit_for(new.user_id, 'maxAccounts');
+  if v_max is null then return new; end if;
+  select count(*) into v_count from accounts where user_id = new.user_id;
+  if v_count >= v_max then
+    raise exception 'PLAN_LIMIT_REACHED:maxAccounts:%', v_max
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists accounts_quota on accounts;
+create trigger accounts_quota before insert on accounts
+  for each row execute function public.enforce_account_quota();
+
+-- ── Trades ───────────────────────────────────────────────────────────────────
+-- Le plafond porte sur le MOIS CALENDAIRE de la date du trade, pas sur la date
+-- de saisie : sinon un import d'historique consommerait le quota du mois courant.
+create or replace function public.enforce_trade_quota()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_max int; v_count int;
+begin
+  v_max := public.plan_limit_for(new.user_id, 'maxTradesPerMonth');
+  if v_max is null then return new; end if;
+  select count(*) into v_count from journal_entries
+    where user_id = new.user_id
+      and date >= date_trunc('month', new.date)::date
+      and date <  (date_trunc('month', new.date) + interval '1 month')::date;
+  if v_count >= v_max then
+    raise exception 'PLAN_LIMIT_REACHED:maxTradesPerMonth:%', v_max
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists journal_entries_quota on journal_entries;
+create trigger journal_entries_quota before insert on journal_entries
+  for each row execute function public.enforce_trade_quota();
+
+-- Index de comptage : sans lui, chaque insert de trade scanne la table.
+create index if not exists journal_entries_user_month_idx
+  on journal_entries(user_id, date);
+
+-- ============================================================================
 
 -- GRANDFATHER DES BÊTA-TESTEURS — à jouer LE JOUR du lancement payant, une
 -- seule fois, en remplaçant la date par celle du lancement :

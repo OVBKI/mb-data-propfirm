@@ -23,10 +23,11 @@ import CfdAccountModal from '../../../components/CfdAccountModal'
 import CfdAccountDrawer from '../../../components/CfdAccountDrawer'
 import BetaFeedback from '../../../components/BetaFeedback'
 import { FIRM_LOGOS, getFirmLogo } from '../../../lib/firmLogos'
-import { useT } from '../../../components/LanguageProvider'
+import { useT, useLanguage } from '../../../components/LanguageProvider'
 import { useDialog } from '../../../components/useDialog'
 import { AppContext } from './AppContext'
 import { ThemeToggle } from '../../../components/ThemeSwitcher'
+import { planLimitMessage } from '../../../lib/planLimits'
 
 // ── Helpers ──
 
@@ -87,6 +88,7 @@ const S = {
 
 export default function AppLayout({ children }) {
   const t = useT()
+  const { locale } = useLanguage()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -303,7 +305,13 @@ export default function AppLayout({ children }) {
     const color = FIRM_COLORS[firms.length % FIRM_COLORS.length]
     // `market` scelle la firme dans le marché courant (Futures ⇄ CFD) — loadFirms filtre dessus.
     const { data, error } = await supabase.from('firms').insert({ name: newFirmName.trim(), color, user_id: user.id, market: marketMode === 'cfd' ? 'cfd' : 'futures' }).select().single()
-    if (error || !data) { showToast(t('app.toasts.errorPrefix') + (error?.message || t('app.toasts.firmCreationFailed'))); return }
+    if (error || !data) {
+      // Les quotas de palier sont appliqués par un trigger Postgres (la création
+      // part du client en direct) : on traduit son message brut en phrase utile.
+      const quota = planLimitMessage(error, locale)
+      showToast(quota || t('app.toasts.errorPrefix') + (error?.message || t('app.toasts.firmCreationFailed')))
+      return
+    }
     setFirmModal(false); setNewFirmName('')
     await loadFirms(); showToast(t('app.toasts.propfirmAdded'))
     setAcctModal({ firmId: data.id })
@@ -362,7 +370,11 @@ export default function AppLayout({ children }) {
     } else {
       res = await supabase.from('accounts').insert({ ...basePayload, name: (acctForm.name || '').trim() })
     }
-    if (res?.error) { showToast(t('app.toasts.errorPrefix') + (res.error.message || t('app.toasts.saveFailed'))); return }
+    if (res?.error) {
+      const quota = planLimitMessage(res.error, locale)
+      showToast(quota || t('app.toasts.errorPrefix') + (res.error.message || t('app.toasts.saveFailed')))
+      return
+    }
     setAcctModal(null); await loadFirms()
     showToast(
       quantity > 1
@@ -676,9 +688,9 @@ export default function AppLayout({ children }) {
                 {(() => {
                   const isCustom = newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName) && !customFutures.some(f => f.name === newFirmName)
                   return (
-                    <button type="button" onClick={() => { const input = document.getElementById('firm-custom-input'); if (input) input.focus() }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '14px 8px', borderRadius: '10px', background: isCustom ? 'rgba(167,139,250,0.12)' : 'var(--surface2)', border: `1px dashed ${isCustom ? '#a78bfa' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#a78bfa', fontWeight: 700 }}>+</div>
-                      <div style={{ fontSize: '11px', fontWeight: isCustom ? 700 : 500, color: isCustom ? '#a78bfa' : 'var(--text2)', textAlign: 'center', lineHeight: 1.2 }}>{t('app.firmModal.other')}</div>
+                    <button type="button" onClick={() => { const input = document.getElementById('firm-custom-input'); if (input) input.focus() }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '14px 8px', borderRadius: '10px', background: isCustom ? 'rgba(167,139,250,0.12)' : 'var(--surface2)', border: `1px dashed ${isCustom ? 'var(--violet)' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--violet)', fontWeight: 700 }}>+</div>
+                      <div style={{ fontSize: '11px', fontWeight: isCustom ? 700 : 500, color: isCustom ? 'var(--violet)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.2 }}>{t('app.firmModal.other')}</div>
                     </button>
                   )
                 })()}
@@ -687,7 +699,7 @@ export default function AppLayout({ children }) {
                 <label style={S.label}>
                   {t('app.firmModal.firmNameLabel')}
                   {newFirmName && !FIRM_SUGGESTIONS.includes(newFirmName) && !customFutures.some(f => f.name === newFirmName) && (
-                    <span style={{ marginLeft: 8, fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>{t('app.firmModal.customBadge')}</span>
+                    <span style={{ marginLeft: 8, fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(167,139,250,0.15)', color: 'var(--violet)' }}>{t('app.firmModal.customBadge')}</span>
                   )}
                 </label>
                 <input id="firm-custom-input" value={newFirmName} onChange={e => setNewFirmName(e.target.value)} placeholder={t('app.firmModal.namePlaceholder')} style={S.input} onKeyDown={e => e.key === 'Enter' && createFirm()} />

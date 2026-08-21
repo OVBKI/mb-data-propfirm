@@ -37,8 +37,8 @@ function fmtDate(iso) {
 }
 
 const C = {
-  surface:  'rgba(20,23,32,0.65)',
-  surface2: 'rgba(28,32,48,0.7)',
+  surface:  'var(--glass)',
+  surface2: 'var(--glass-2)',
   border:   'var(--border)',
   text:     'var(--text)',
   text2:    'var(--text2)',

@@ -25,7 +25,7 @@ const C = {
   text3: 'var(--text3)',
   blue: 'var(--blue)',
   blueLight: 'var(--blue-light)',
-  green: '#10b981',
+  green: 'var(--green)',
   greenSoft: 'rgba(16,185,129,0.12)',
   amber: 'var(--amber)',
   red: 'var(--red)',

@@ -18,7 +18,7 @@ const C = {
 
 const CATEGORY_COLORS = {
   'Risk management': C.blue,
-  'Règles': '#a78bfa',
+  'Règles': 'var(--violet)',
   'Guide PropFirm': 'var(--amber)',
   'Payouts': C.green,
   'CFD / Forex': '#22d3ee',

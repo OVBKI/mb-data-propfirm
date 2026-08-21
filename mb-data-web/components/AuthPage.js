@@ -282,7 +282,7 @@ export default function AuthPage({ onAuth, initialMode }) {
       <div style={{
         position: 'relative', zIndex: 1,
         width: '100%', maxWidth: '440px',
-        background: 'rgba(20,23,32,0.65)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        background: 'var(--glass)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid var(--border)',
         borderRadius: '14px', padding: '40px 36px',
         boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 40px rgba(45,111,255,0.08)',

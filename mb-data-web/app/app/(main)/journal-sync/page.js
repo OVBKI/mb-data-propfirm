@@ -11,7 +11,7 @@ import { supabase } from '../../../../lib/supabase'
 import { useApp } from '../AppContext'
 
 const C = {
-  surface: 'rgba(20,23,32,0.65)', border: 'var(--border)', border2: 'var(--border2)',
+  surface: 'var(--glass)', border: 'var(--border)', border2: 'var(--border2)',
   text: 'var(--text)', text2: 'var(--text2)', text3: 'var(--text3)', green: 'var(--green)', blue: 'var(--blue)', blueLt: 'var(--blue-light)',
 }
 

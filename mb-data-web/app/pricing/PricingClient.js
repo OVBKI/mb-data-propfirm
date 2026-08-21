@@ -165,7 +165,7 @@ export default function PricingClient() {
               {/* ELITE */}
               <PricingCard
                 badge={t('pages.pricing.planElite.badge')}
-                badgeColor="#a78bfa"
+                badgeColor="var(--violet)"
                 title={t('pages.pricing.planElite.name')}
                 price={t('pages.pricing.planElite.price')}
                 priceSub={t('pages.pricing.planElite.priceSub')}
@@ -181,7 +181,7 @@ export default function PricingClient() {
               {/* BUSINESS */}
               <PricingCard
                 badge={t('pages.pricing.planBusiness.badge')}
-                badgeColor="#06b6d4"
+                badgeColor="var(--cyan)"
                 title={t('pages.pricing.planBusiness.name')}
                 price={t('pages.pricing.planBusiness.price')}
                 priceSub={t('pages.pricing.planBusiness.priceSub')}
@@ -230,7 +230,7 @@ export default function PricingClient() {
                     sub="39€/mois — early access"
                     checked={waitlistPlan === 'elite'}
                     onChange={() => setWaitlistPlan('elite')}
-                    color="#a78bfa"
+                    color="var(--violet)"
                   />
                   <PlanRadio
                     value="business"
@@ -238,7 +238,7 @@ export default function PricingClient() {
                     sub="129€/mo — 10 seats"
                     checked={waitlistPlan === 'business'}
                     onChange={() => setWaitlistPlan('business')}
-                    color="#06b6d4"
+                    color="var(--cyan)"
                   />
                 </div>
 

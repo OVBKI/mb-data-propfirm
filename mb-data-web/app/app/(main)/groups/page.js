@@ -19,7 +19,7 @@ const C = {
   surface: 'var(--surface)', surface2: 'var(--surface2)',
   border: 'var(--border)', border2: 'var(--border2)',
   text: 'var(--text)', text2: 'var(--text2)', text3: 'var(--text3)',
-  blue: 'var(--blue)', blueLight: 'var(--blue-light)', green: '#10b981', amber: 'var(--amber)', red: 'var(--red)',
+  blue: 'var(--blue)', blueLight: 'var(--blue-light)', green: 'var(--green)', amber: 'var(--amber)', red: 'var(--red)',
 }
 
 function CommunityComingSoon() {

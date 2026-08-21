@@ -66,6 +66,9 @@ export async function generateMetadata({ params }) {
   return {
     title: `${name} (@${profile.username})`,
     description: desc,
+    // Le pseudo est casse-insensible côté résolution : /u/Omar et /u/omar rendent
+    // la même page. La canonique désigne la forme stockée.
+    alternates: { canonical: `https://quantara.tech/u/${profile.username}` },
     openGraph: {
       title: `${name} (@${profile.username}) · Quantara`,
       description: desc,
