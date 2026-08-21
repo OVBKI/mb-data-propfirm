@@ -191,7 +191,7 @@ export default function AdminActivityPage() {
           </label>
           <button onClick={load} disabled={loading} style={{
             padding: '8px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8,
-            background: C.blue, color: '#fff', border: 'none',
+            background: C.blue, color: 'var(--text-inverse)', border: 'none',
             cursor: loading ? 'wait' : 'pointer', fontFamily: 'inherit',
           }}>{loading ? '⏳' : '↻'} Actualiser</button>
         </div>
@@ -218,7 +218,7 @@ export default function AdminActivityPage() {
 
       {error && (
         <div style={{
-          padding: 16, marginBottom: 20, background: 'rgba(232,80,74,0.08)',
+          padding: 16, marginBottom: 20, background: 'var(--red-bg)',
           border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 13, color: C.red,
         }}>⚠ {error}</div>
       )}

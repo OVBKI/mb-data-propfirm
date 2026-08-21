@@ -276,7 +276,7 @@ export default function AuthPage({ onAuth, initialMode }) {
       <div style={{
         position: 'absolute', top: '-200px', left: '50%', transform: 'translateX(-50%)',
         width: 'min(900px, 60vmax)', height: 'min(900px, 60vmax)',
-        background: 'radial-gradient(circle, rgba(45,111,255,0.15) 0%, rgba(45,111,255,0.06) 30%, transparent 65%)',
+        background: 'radial-gradient(circle, var(--blue-bg) 0%, var(--blue-bg) 30%, transparent 65%)',
         pointerEvents: 'none', filter: 'blur(40px)',
       }} />
       <div style={{
@@ -285,7 +285,7 @@ export default function AuthPage({ onAuth, initialMode }) {
         background: 'var(--glass)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid var(--border)',
         borderRadius: '14px', padding: '40px 36px',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 40px rgba(45,111,255,0.08)',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 40px var(--blue-bg)',
       }}>
         {/* Logo SVG Q + wordmark texte */}
         <div style={{ textAlign: 'center', marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -307,7 +307,7 @@ export default function AuthPage({ onAuth, initialMode }) {
               style={{
                 flex: 1, padding: '9px', fontSize: '13px', fontWeight: mode===m?'600':'500',
                 borderRadius: '6px', border: 'none', cursor: 'pointer',
-                background: mode === m ? 'rgba(45,111,255,0.15)' : 'transparent',
+                background: mode === m ? 'var(--blue-bg)' : 'transparent',
                 color: mode === m ? 'var(--blue-light)' : 'var(--text2)',
                 transition: 'all 0.15s', fontFamily: 'inherit',
               }}>

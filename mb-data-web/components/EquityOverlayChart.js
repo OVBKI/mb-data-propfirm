@@ -43,10 +43,10 @@ const card = { background: C.surface, border: `1px solid ${C.border}`, borderRad
 
 // Palette de couleurs distinctes pour chaque ligne (jusqu'à 5 comptes)
 const LINE_COLORS = [
-  { stroke: '#2d6fff', fill: 'rgba(45,111,255,0.08)' },   // blue
-  { stroke: '#1db87a', fill: 'rgba(29,184,122,0.08)' },   // green
-  { stroke: '#fac775', fill: 'rgba(250,199,117,0.08)' },  // amber
-  { stroke: '#e8504a', fill: 'rgba(232,80,74,0.08)' },    // red
+  { stroke: '#2d6fff', fill: 'var(--blue-bg)' },   // blue
+  { stroke: '#1db87a', fill: 'var(--green-bg)' },   // green
+  { stroke: '#fac775', fill: 'var(--amber-bg)' },  // amber
+  { stroke: '#e8504a', fill: 'var(--red-bg)' },    // red
   { stroke: '#a76ef5', fill: 'rgba(167,110,245,0.08)' },  // purple
 ]
 

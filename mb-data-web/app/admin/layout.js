@@ -89,7 +89,7 @@ export default function AdminLayout({ children }) {
           </p>
           <Link href="/app" style={{
             display: 'inline-block', padding: '10px 22px', fontSize: 13, fontWeight: 600,
-            borderRadius: 99, background: C.blue, color: '#fff', textDecoration: 'none',
+            borderRadius: 99, background: C.blue, color: 'var(--text-inverse)', textDecoration: 'none',
           }}>← Page de connexion</Link>
         </div>
       </div>
@@ -117,7 +117,7 @@ export default function AdminLayout({ children }) {
           </p>
           <Link href="/app" style={{
             display: 'inline-block', padding: '10px 22px', fontSize: 13, fontWeight: 600,
-            borderRadius: 99, background: C.blue, color: '#fff', textDecoration: 'none',
+            borderRadius: 99, background: C.blue, color: 'var(--text-inverse)', textDecoration: 'none',
           }}>← Retour à l'app</Link>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function AdminLayout({ children }) {
                 padding: '10px 12px', borderRadius: 8, marginBottom: 4,
                 fontSize: 13, fontWeight: active ? 600 : 500,
                 color: active ? C.text : C.text2,
-                background: active ? 'rgba(45,111,255,0.10)' : 'transparent',
+                background: active ? 'var(--blue-bg)' : 'transparent',
                 borderLeft: active ? `2px solid ${C.blue}` : '2px solid transparent',
                 textDecoration: 'none', transition: 'background 0.15s',
               }}>

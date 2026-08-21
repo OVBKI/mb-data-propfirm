@@ -270,7 +270,7 @@ export default function AdminPropfirmsPage() {
                   <input value={o.name} onChange={e => setOther(i, 'name', e.target.value)} style={input} placeholder="Nom du modèle" />
                   <input type="number" value={o.steps} onChange={e => setOther(i, 'steps', e.target.value)} style={input} placeholder="Étapes" />
                   <input value={o.profitTargets} onChange={e => setOther(i, 'profitTargets', e.target.value)} style={input} placeholder="Targets % (,)" />
-                  <button onClick={() => setForm(p => ({ ...p, otherModels: p.otherModels.filter((_, idx) => idx !== i) }))} style={{ ...ghost, color: C.red, borderColor: 'rgba(232,80,74,0.4)' }}>Retirer</button>
+                  <button onClick={() => setForm(p => ({ ...p, otherModels: p.otherModels.filter((_, idx) => idx !== i) }))} style={{ ...ghost, color: C.red, borderColor: 'var(--red)' }}>Retirer</button>
                   <input value={o.dailyPct} onChange={e => setOther(i, 'dailyPct', e.target.value)} style={input} placeholder="Daily %" />
                   <select value={o.dailyBasis} onChange={e => setOther(i, 'dailyBasis', e.target.value)} style={input}><option value="">Base daily…</option>{DAILY_BASES.map(b => <option key={b.v} value={b.v}>{b.label}</option>)}</select>
                   <input value={o.maxPct} onChange={e => setOther(i, 'maxPct', e.target.value)} style={input} placeholder="Max %" />
@@ -296,7 +296,7 @@ export default function AdminPropfirmsPage() {
                   <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-end' }}>
                     <div style={{ flex: 1 }}><label style={label}>Nom du programme</label><input value={prog.name} onChange={e => setProg('name', e.target.value)} style={input} placeholder="Ex : FLEX" /></div>
                     <div style={{ flex: 2 }}><label style={label}>Plans / tailles (,)</label><input value={prog.plans} onChange={e => setProg('plans', e.target.value)} style={input} placeholder="25k, 50k, 100k, 150k" /></div>
-                    {form.programs.length > 1 && <button onClick={() => setForm(p => ({ ...p, programs: p.programs.filter((_, idx) => idx !== pi) }))} style={{ ...ghost, color: C.red, borderColor: 'rgba(232,80,74,0.4)' }}>Retirer</button>}
+                    {form.programs.length > 1 && <button onClick={() => setForm(p => ({ ...p, programs: p.programs.filter((_, idx) => idx !== pi) }))} style={{ ...ghost, color: C.red, borderColor: 'var(--red)' }}>Retirer</button>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 8px' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Règles ({prog.rules.length})</span>
@@ -313,7 +313,7 @@ export default function AdminPropfirmsPage() {
                               <tr key={ri}>
                                 <td style={tdStyle}><input value={r.label} onChange={e => setRuleField(ri, x => ({ ...x, label: e.target.value }))} style={{ ...input, background: C.surface2 }} placeholder="Ex : Drawdown trailing max" /></td>
                                 {plans.map(pl => <td key={pl} style={tdStyle}><input value={r.values[pl] || ''} onChange={e => setRuleField(ri, x => ({ ...x, values: { ...x.values, [pl]: e.target.value } }))} style={{ ...input, background: C.surface2 }} placeholder="—" /></td>)}
-                                <td style={tdStyle}><button onClick={() => setProg('rules', prog.rules.filter((_, j) => j !== ri))} style={{ ...ghost, color: C.red, borderColor: 'rgba(232,80,74,0.4)', padding: '6px 10px' }}>✕</button></td>
+                                <td style={tdStyle}><button onClick={() => setProg('rules', prog.rules.filter((_, j) => j !== ri))} style={{ ...ghost, color: C.red, borderColor: 'var(--red)', padding: '6px 10px' }}>✕</button></td>
                               </tr>
                             ))}
                           </tbody>
@@ -357,7 +357,7 @@ export default function AdminPropfirmsPage() {
       <p style={{ fontSize: 13, color: C.text3, marginBottom: 22 }}>Ajoute de nouvelles firmes ou <b>édite une firme du catalogue</b> (crée un override prioritaire). Visibles in-app une fois actives.</p>
 
       {err && (
-        <div style={{ padding: '12px 16px', background: 'rgba(232,80,74,0.08)', border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 12.5, color: C.red, marginBottom: 20, whiteSpace: 'pre-wrap' }}>
+        <div style={{ padding: '12px 16px', background: 'var(--red-bg)', border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 12.5, color: C.red, marginBottom: 20, whiteSpace: 'pre-wrap' }}>
           ⚠ {err}
           {/not.*exist|relation|table/i.test(err) && <div style={{ color: C.text2, marginTop: 6 }}>La table <code>custom_propfirms</code> n’existe pas encore — lance le SQL (voir CLAUDE.md).</div>}
         </div>
@@ -378,7 +378,7 @@ export default function AdminPropfirmsPage() {
                     </div>
                     {f.reputation && <span style={{ fontSize: 11, color: C.text3 }}>{f.reputation}</span>}
                     <button onClick={() => setForm(parseForm(f))} style={ghost}>Modifier</button>
-                    <button onClick={() => remove(f)} style={{ ...ghost, color: C.red, borderColor: 'rgba(232,80,74,0.4)' }}>Supprimer</button>
+                    <button onClick={() => remove(f)} style={{ ...ghost, color: C.red, borderColor: 'var(--red)' }}>Supprimer</button>
                   </div>
                 ))}
               </div>

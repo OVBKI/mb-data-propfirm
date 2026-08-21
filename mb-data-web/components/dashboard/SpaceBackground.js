@@ -118,7 +118,7 @@ export default function SpaceBackground() {
           left: 60%;
           width: 600px;
           height: 600px;
-          background: radial-gradient(circle, rgba(45,111,255,0.18) 0%, rgba(45,111,255,0.08) 35%, transparent 70%);
+          background: radial-gradient(circle, var(--blue-bg) 0%, var(--blue-bg) 35%, transparent 70%);
           animation: dashBlobFloat1 50s ease-in-out infinite;
         }
         .dash-blob-2 {
@@ -126,7 +126,7 @@ export default function SpaceBackground() {
           left: -10%;
           width: 700px;
           height: 700px;
-          background: radial-gradient(circle, rgba(77,143,255,0.10) 0%, rgba(77,143,255,0.04) 40%, transparent 70%);
+          background: radial-gradient(circle, var(--blue-bg) 0%, var(--blue-bg) 40%, transparent 70%);
           animation: dashBlobFloat2 65s ease-in-out infinite;
         }
         @keyframes dashBlobFloat1 {

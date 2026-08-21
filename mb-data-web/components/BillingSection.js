@@ -136,8 +136,8 @@ export default function BillingSection({ onError }) {
           <span style={{
             fontSize: 11, fontWeight: 600, padding: '5px 10px', borderRadius: 999,
             color: state.planStatus === 'past_due' ? C.amber : C.text2,
-            background: state.planStatus === 'past_due' ? 'rgba(250,199,117,0.12)' : 'var(--tint2)',
-            border: `1px solid ${state.planStatus === 'past_due' ? 'rgba(250,199,117,0.3)' : C.border}`,
+            background: state.planStatus === 'past_due' ? 'var(--amber-bg)' : 'var(--tint2)',
+            border: `1px solid ${state.planStatus === 'past_due' ? 'var(--amber)' : C.border}`,
           }}>
             {STATUS_LABEL[state.planStatus] || state.planStatus}
           </span>
@@ -243,9 +243,9 @@ function btn(primary, disabled) {
     fontSize: 12, fontWeight: 600, padding: '9px 16px', borderRadius: 8,
     minHeight: 32, cursor: disabled ? 'default' : 'pointer',
     opacity: disabled ? 0.6 : 1,
-    background: primary ? C.blue : 'rgba(45,111,255,0.08)',
+    background: primary ? C.blue : 'var(--blue-bg)',
     color: primary ? '#fff' : C.blueLight,
-    border: primary ? 'none' : '1px solid rgba(45,111,255,0.22)',
+    border: primary ? 'none' : '1px solid var(--blue-border)',
     transition: 'all 0.15s',
   }
 }

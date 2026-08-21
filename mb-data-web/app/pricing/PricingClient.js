@@ -102,7 +102,7 @@ export default function PricingClient() {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: '8px 18px', borderRadius: 20,
-              background: 'rgba(45,111,255,0.06)', border: `1px solid rgba(45,111,255,0.18)`,
+              background: 'var(--blue-bg)', border: `1px solid var(--blue-bg)`,
               fontSize: 12, color: C.text2, fontWeight: 500,
             }}>
               <span style={{ fontSize: 14 }}>💰</span>
@@ -112,7 +112,7 @@ export default function PricingClient() {
               <span style={{
                 display: 'inline-block', padding: '6px 16px', borderRadius: 20,
                 fontSize: 12, fontWeight: 600, color: C.green,
-                background: 'rgba(29,184,122,0.08)', border: `1px solid rgba(29,184,122,0.25)`,
+                background: 'var(--green-bg)', border: `1px solid var(--green)`,
               }}>
                 {t('pages.pricing.guaranteeBadge')}
               </span>
@@ -277,7 +277,7 @@ export default function PricingClient() {
                     borderRadius: 10,
                     cursor: submitting ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
-                    boxShadow: '0 4px 12px rgba(45,111,255,0.3)',
+                    boxShadow: '0 4px 12px var(--blue-bg)',
                     transition: 'opacity 0.15s',
                     opacity: (!email || submitting) ? 0.7 : 1,
                   }}
@@ -292,9 +292,9 @@ export default function PricingClient() {
                     fontSize: 13,
                     borderRadius: 8,
                     textAlign: 'center',
-                    background: submitResult.type === 'ok' ? 'rgba(29,184,122,0.12)' : 'rgba(232,80,74,0.12)',
+                    background: submitResult.type === 'ok' ? 'var(--green-bg)' : 'var(--red-bg)',
                     color: submitResult.type === 'ok' ? C.green : 'var(--red)',
-                    border: `1px solid ${submitResult.type === 'ok' ? 'rgba(29,184,122,0.3)' : 'rgba(232,80,74,0.3)'}`,
+                    border: `1px solid ${submitResult.type === 'ok' ? 'var(--green)' : 'var(--red)'}`,
                   }}>
                     {submitResult.msg}
                   </div>
@@ -362,13 +362,13 @@ function PricingCard({ badge, badgeColor, highlighted, title, price, priceSub, d
   let boxShadow = '0 4px 12px rgba(0,0,0,0.18)'
 
   if (isBlue) {
-    borderColor = 'rgba(45,111,255,0.4)'
-    background = `linear-gradient(180deg, rgba(45,111,255,0.08), ${C.surface} 60%)`
-    boxShadow = '0 12px 32px rgba(0,0,0,0.32), 0 0 32px rgba(45,111,255,0.12)'
+    borderColor = 'var(--blue-border)'
+    background = `linear-gradient(180deg, var(--blue-bg), ${C.surface} 60%)`
+    boxShadow = '0 12px 32px rgba(0,0,0,0.32), 0 0 32px var(--blue-bg)'
   } else if (isLifetime) {
-    borderColor = 'rgba(250,199,117,0.35)'
-    background = `linear-gradient(180deg, rgba(250,199,117,0.07), ${C.surface} 60%)`
-    boxShadow = '0 12px 32px rgba(0,0,0,0.32), 0 0 32px rgba(250,199,117,0.10)'
+    borderColor = 'var(--amber)'
+    background = `linear-gradient(180deg, var(--amber-bg), ${C.surface} 60%)`
+    boxShadow = '0 12px 32px rgba(0,0,0,0.32), 0 0 32px var(--amber-bg)'
   }
 
   return (
@@ -467,7 +467,7 @@ function ctaPrimaryStyle(variant) {
     textDecoration: 'none',
     cursor: 'pointer',
     fontFamily: 'inherit',
-    boxShadow: isLifetime ? '0 4px 12px rgba(250,199,117,0.3)' : '0 4px 12px rgba(45,111,255,0.3)',
+    boxShadow: isLifetime ? '0 4px 12px var(--amber)' : '0 4px 12px var(--blue-border)',
     boxSizing: 'border-box',
   }
 }

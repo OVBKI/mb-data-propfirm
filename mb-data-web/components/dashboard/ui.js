@@ -166,9 +166,9 @@ export function Stat({ label, value, trend, trendColor, color, mono = true }) {
 // ============================================================================
 export function Badge({ tone = 'neutral', children, dot = false, mono = true, style = {} }) {
   const tones = {
-    green:   { color: T.color.green,    bg: T.color.greenSoft,  border: 'rgba(16,185,129,0.4)' },
+    green:   { color: T.color.green,    bg: T.color.greenSoft,  border: 'var(--green)' },
     red:     { color: T.color.red,      bg: T.color.redSoft,    border: 'rgba(239,68,68,0.4)' },
-    amber:   { color: T.color.amber,    bg: T.color.amberSoft,  border: 'rgba(250,199,117,0.4)' },
+    amber:   { color: T.color.amber,    bg: T.color.amberSoft,  border: 'var(--amber)' },
     blue:    { color: T.color.blueLight, bg: T.color.blueSoft,  border: T.color.blueRing },
     neutral: { color: T.color.text2,    bg: 'var(--tint2)', border: T.color.border },
   }

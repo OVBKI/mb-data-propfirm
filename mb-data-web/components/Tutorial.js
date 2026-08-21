@@ -360,8 +360,8 @@ export default function Tutorial({ onClose, onPageChange, state }) {
         borderRadius: 14,
         padding: 22,
         boxShadow: isAction
-          ? '0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(45,111,255,0.2)'
-          : '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(45,111,255,0.2)',
+          ? '0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--blue-border)'
+          : '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px var(--blue-border)',
         zIndex: 10000,
         color: C.text,
         fontFamily: 'inherit',
@@ -380,7 +380,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
             {stepBadge && (
               <span style={{
                 padding:'2px 8px', borderRadius: 99,
-                background:'rgba(45,111,255,0.16)', color: C.blueLight,
+                background:'var(--blue-bg)', color: C.blueLight,
                 fontSize: 9, fontWeight: 700,
               }}>{stepBadge}</span>
             )}
@@ -416,8 +416,8 @@ export default function Tutorial({ onClose, onPageChange, state }) {
         {isAction && (
           <div style={{
             padding: '10px 12px',
-            background: actionValidated ? 'rgba(29,184,122,0.12)' : 'rgba(250,199,117,0.08)',
-            border: `1px solid ${actionValidated ? C.green : 'rgba(250,199,117,0.3)'}`,
+            background: actionValidated ? 'var(--green-bg)' : 'var(--amber-bg)',
+            border: `1px solid ${actionValidated ? C.green : 'var(--amber)'}`,
             borderRadius: 8,
             fontSize: 12, fontWeight: 600,
             color: actionValidated ? C.green : C.amber,
@@ -491,7 +491,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
                   transition: 'transform 0.15s, box-shadow 0.15s',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.5) inset, 0 8px 20px rgba(0,0,0,0.3)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(45,111,255,0.4)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 18px var(--blue-border)' }}
               >
                 {isLast ? (stepCta || t('tutorial.finishDefault')) : (stepCta || t('tutorial.next'))}
                 {!isLast && <span style={{ fontSize: 14 }}>→</span>}
@@ -505,18 +505,18 @@ export default function Tutorial({ onClose, onPageChange, state }) {
       <style>{`
         @keyframes qtPulse {
           0%, 100% {
-            box-shadow: 0 0 0 0 rgba(77,143,255,0.55), 0 0 20px rgba(77,143,255,0.4);
+            box-shadow: 0 0 0 0 var(--blue-border), 0 0 20px var(--blue-border);
             border-color: ${C.blueLight};
           }
           50% {
-            box-shadow: 0 0 0 16px rgba(77,143,255,0), 0 0 30px rgba(77,143,255,0.2);
+            box-shadow: 0 0 0 16px var(--blue-bg), 0 0 30px var(--blue-border);
             border-color: ${C.blue};
           }
         }
         @keyframes qtSuccess {
-          0% { box-shadow: 0 0 0 0 rgba(29,184,122,0.6), 0 0 20px rgba(29,184,122,0.5); transform: scale(1); }
-          50% { box-shadow: 0 0 0 24px rgba(29,184,122,0), 0 0 40px rgba(29,184,122,0.3); transform: scale(1.02); }
-          100% { box-shadow: 0 0 0 0 rgba(29,184,122,0), 0 0 20px rgba(29,184,122,0.4); transform: scale(1); }
+          0% { box-shadow: 0 0 0 0 var(--green), 0 0 20px var(--green); transform: scale(1); }
+          50% { box-shadow: 0 0 0 24px var(--green-bg), 0 0 40px var(--green); transform: scale(1.02); }
+          100% { box-shadow: 0 0 0 0 var(--green-bg), 0 0 20px var(--green); transform: scale(1); }
         }
         @keyframes qtBlink {
           0%, 100% { opacity: 1; }

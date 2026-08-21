@@ -96,8 +96,8 @@ export default function GuidePageClient({ guide, slug, relatedGuides }) {
               {guide.relatedFirms.map((firm) => (
                 <Link key={firm} href={guide.market === 'cfd' ? `/cfd/${cfdFirmToSlug(firm)}` : `/firms/${firmToSlug(firm)}`} style={{
                   padding: '6px 12px',
-                  background: 'rgba(45,111,255,0.08)',
-                  border: '1px solid rgba(45,111,255,0.18)',
+                  background: 'var(--blue-bg)',
+                  border: '1px solid var(--blue-bg)',
                   borderRadius: 6,
                   fontSize: 12.5,
                   color: C.blueLight,
@@ -143,7 +143,7 @@ export default function GuidePageClient({ guide, slug, relatedGuides }) {
             <Link href="/auth?mode=signup" style={{
               padding: '12px 26px',
               background: C.blue,
-              color: '#fff',
+              color: 'var(--text-inverse)',
               borderRadius: 8,
               fontSize: 14,
               fontWeight: 600,

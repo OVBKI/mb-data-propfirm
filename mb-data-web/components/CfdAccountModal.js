@@ -368,7 +368,7 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
                 const rep = CFD_REPUTATION[f.reputation]
                 const selected = f.name === firmName
                 return (
-                  <button type="button" key={f.name} onClick={() => onPickFirm(f.name)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '10px 10px', borderRadius: 8, background: selected ? 'rgba(45,111,255,0.12)' : 'var(--surface2)', border: `1px solid ${selected ? 'var(--blue-light)' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <button type="button" key={f.name} onClick={() => onPickFirm(f.name)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '10px 10px', borderRadius: 8, background: selected ? 'var(--blue-bg)' : 'var(--surface2)', border: `1px solid ${selected ? 'var(--blue-light)' : 'var(--border2)'}`, cursor: 'pointer', fontFamily: 'inherit' }}>
                     <span style={{ fontSize: 12, fontWeight: selected ? 700 : 500, color: selected ? 'var(--blue-light)' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
                     {rep && <span style={{ width: 8, height: 8, borderRadius: '50%', background: rep.color, flexShrink: 0 }} title={repTierLabel(t, f.reputation, rep)} />}
                   </button>
@@ -392,7 +392,7 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
             <div style={{
               gridColumn: '1/-1',
               padding: '10px 12px',
-              background: 'rgba(250,199,117,0.08)',
+              background: 'var(--amber-bg)',
               border: `1px solid ${THEME.amber}55`,
               borderRadius: 8,
               fontSize: 12,
@@ -492,7 +492,7 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
 
           {/* Funded section — activation date + fee, shown once the account is financé. */}
           {form.status === 'Financé' && (
-            <div style={{ gridColumn: '1/-1', background: 'rgba(29,184,122,0.07)', border: '0.5px solid #1db87a55', borderRadius: 8, padding: 12 }}>
+            <div style={{ gridColumn: '1/-1', background: 'var(--green-bg)', border: '0.5px solid #1db87a55', borderRadius: 8, padding: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{'✅'} {t('app.cfd.fundedSection')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div>

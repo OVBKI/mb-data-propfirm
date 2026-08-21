@@ -148,7 +148,7 @@ export default function AdminSystemPage() {
         </div>
         <button onClick={loadHealth} disabled={loading} style={{
           padding: '8px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8,
-          background: C.blue, color: '#fff', border: 'none',
+          background: C.blue, color: 'var(--text-inverse)', border: 'none',
           cursor: loading ? 'wait' : 'pointer', fontFamily: 'inherit',
         }}>{loading ? '⏳' : '↻'} Rafraîchir</button>
       </div>
@@ -159,7 +159,7 @@ export default function AdminSystemPage() {
       {/* === Status global === */}
       <div style={{
         padding: '14px 18px', marginBottom: 24,
-        background: hasErrors ? 'rgba(232,80,74,0.08)' : 'rgba(29,184,122,0.08)',
+        background: hasErrors ? 'var(--red-bg)' : 'var(--green-bg)',
         border: `1px solid ${hasErrors ? C.red : C.green}`,
         borderRadius: 12, display: 'flex', alignItems: 'center', gap: 14,
       }}>
@@ -212,7 +212,7 @@ export default function AdminSystemPage() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={() => sendNotifTest('email')} disabled={!!notifBusy} style={{
                   padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8,
-                  background: C.blue, color: '#fff', border: 'none', cursor: notifBusy ? 'wait' : 'pointer',
+                  background: C.blue, color: 'var(--text-inverse)', border: 'none', cursor: notifBusy ? 'wait' : 'pointer',
                   fontFamily: 'inherit', opacity: notifBusy ? 0.6 : 1,
                 }}>{notifBusy === 'email' ? '⏳' : '📧'} M&apos;envoyer un email de test</button>
                 <button onClick={() => sendNotifTest('push')} disabled={!!notifBusy} style={{
@@ -409,7 +409,7 @@ export default function AdminSystemPage() {
         <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 12 }}>📨 Diagnostic récap mensuel (dry-run — aucun email envoyé)</div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button onClick={runRecapDiag} disabled={recapDiag === 'loading'} style={{ padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: C.blue, color: '#fff', border: 'none', cursor: recapDiag === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={runRecapDiag} disabled={recapDiag === 'loading'} style={{ padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: C.blue, color: 'var(--text-inverse)', border: 'none', cursor: recapDiag === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
               {recapDiag === 'loading' ? '⏳ Analyse…' : '▶ Lancer le diagnostic (mois précédent)'}
             </button>
             <button onClick={runRecapTest} disabled={recapTest === 'loading'} style={{ padding: '9px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: 'transparent', color: C.amber, border: `1px solid ${C.amber}`, cursor: recapTest === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit' }}>

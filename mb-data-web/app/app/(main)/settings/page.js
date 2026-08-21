@@ -172,8 +172,8 @@ export default function SettingsPage() {
               display: 'inline-flex', alignItems: 'center', gap: 6,
               fontSize: 12, fontWeight: 600, color: C.blueLight,
               textDecoration: 'none', padding: '8px 14px',
-              background: 'rgba(45,111,255,0.08)',
-              border: `1px solid rgba(45,111,255,0.22)`,
+              background: 'var(--blue-bg)',
+              border: `1px solid var(--blue-border)`,
               borderRadius: 8, transition: 'all 0.15s',
             }}
           >
@@ -270,8 +270,8 @@ export default function SettingsPage() {
             </button>
           ) : (
             <div style={{
-              background: 'rgba(232,80,74,0.06)',
-              border: `1px solid rgba(232,80,74,0.25)`,
+              background: 'var(--red-bg)',
+              border: `1px solid var(--red)`,
               borderRadius: 10, padding: '16px 18px',
             }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.red, marginBottom: 6 }}>

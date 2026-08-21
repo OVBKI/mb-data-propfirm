@@ -102,7 +102,7 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
           {e.side && (
             <span style={{
               fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
-              background: e.side === 'Long' ? 'rgba(29,184,122,0.15)' : 'rgba(232,80,74,0.15)',
+              background: e.side === 'Long' ? 'var(--green-bg)' : 'var(--red-bg)',
               color: e.side === 'Long' ? C.green : C.red,
               letterSpacing: '0.05em', textTransform: 'uppercase',
             }}>
@@ -204,8 +204,8 @@ export default function TradeCard({ entry, accountLabel, firmColor, onEdit, onLi
               <div style={{
                 display: 'flex', flexWrap: 'wrap', gap: 8,
                 padding: '6px 10px', marginBottom: 8,
-                background: 'rgba(45,111,255,0.04)',
-                border: '1px solid rgba(45,111,255,0.15)',
+                background: 'var(--blue-bg)',
+                border: '1px solid var(--blue-bg)',
                 borderRadius: 6,
               }}>
                 {r != null && (

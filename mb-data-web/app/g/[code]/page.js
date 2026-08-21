@@ -104,7 +104,7 @@ export default async function GroupPage({ params }) {
       {/* Banner gradient */}
       <div style={{
         height: 120,
-        background: 'linear-gradient(135deg, rgba(45,111,255,0.20), rgba(167,139,250,0.10) 60%, transparent)',
+        background: 'linear-gradient(135deg, var(--blue-border), var(--violet-bg) 60%, transparent)',
         borderBottom: '1px solid var(--border)',
       }} />
 
@@ -113,7 +113,7 @@ export default async function GroupPage({ params }) {
         <div style={{ marginTop: -40, display: 'flex', alignItems: 'flex-end', gap: 20 }}>
           <div style={{
             width: 80, height: 80, borderRadius: 14,
-            background: 'linear-gradient(135deg, #2d6fff, #4d8fff)',
+            background: 'linear-gradient(135deg, var(--blue), #4d8fff)',
             border: '4px solid #0d0f14',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 32, fontWeight: 800, color: '#fff',
@@ -215,7 +215,7 @@ function MemberList({ items, ownerId }) {
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
               background: isPublic
-                ? 'linear-gradient(135deg, #2d6fff, #4d8fff)'
+                ? 'linear-gradient(135deg, var(--blue), #4d8fff)'
                 : 'var(--tint2)',
               border: isPublic ? '1px solid var(--hairline)' : '1px dashed var(--hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -233,13 +233,13 @@ function MemberList({ items, ownerId }) {
                 {isOwner && (
                   <span style={{
                     fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                    background: 'rgba(250,199,117,0.15)', color: 'var(--amber)', letterSpacing: '0.05em',
+                    background: 'var(--amber-bg)', color: 'var(--amber)', letterSpacing: '0.05em',
                   }}>OWNER</span>
                 )}
                 {p?.verified && (
                   <span title="Profil vérifié" style={{
                     fontSize: 9, color: 'var(--blue-light)',
-                    background: 'rgba(45,111,255,0.15)',
+                    background: 'var(--blue-bg)',
                     borderRadius: '50%', width: 14, height: 14,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,

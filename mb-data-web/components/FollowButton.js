@@ -127,7 +127,7 @@ function btnStyle(size, variant) {
   if (variant === 'filled') {
     return {
       ...base,
-      background: 'var(--blue)', color: '#fff',
+      background: 'var(--blue)', color: 'var(--text-inverse)',
       border: '1px solid transparent',
     }
   }

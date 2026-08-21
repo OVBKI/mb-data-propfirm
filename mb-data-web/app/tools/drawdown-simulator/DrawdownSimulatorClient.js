@@ -226,7 +226,7 @@ export default function DrawdownSimulatorClient() {
               </p>
               <Link href="/auth?mode=signup" style={{
                 display: 'inline-block', padding: '10px 24px',
-                background: C.blue, color: '#fff', borderRadius: 8,
+                background: C.blue, color: 'var(--text-inverse)', borderRadius: 8,
                 fontSize: 13, fontWeight: 600, textDecoration: 'none',
               }}>{t('tools.ddSim.ctaButton')}</Link>
             </div>

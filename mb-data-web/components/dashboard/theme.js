@@ -80,7 +80,7 @@ export const T = {
     sm: '0 1px 2px rgba(0,0,0,0.2)',
     md: '0 4px 12px rgba(0,0,0,0.25)',
     lg: '0 12px 32px rgba(0,0,0,0.4)',
-    glow: '0 0 32px rgba(45,111,255,0.15)',
+    glow: '0 0 32px var(--blue-bg)',
   },
 
   // === TRANSITIONS ===

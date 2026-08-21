@@ -7,9 +7,9 @@ import Footer from '../../components/Footer'
 import { getFirmLogo } from '../../lib/firmLogos'
 
 const STATUS_COLORS = {
-  Challenge: { bg: 'var(--amber-bg, rgba(250,199,117,0.12))', text: 'var(--amber-text, #fac775)' },
-  'Financé': { bg: 'var(--green-bg, rgba(29,184,122,0.12))', text: 'var(--green-text, #1db87a)' },
-  'Échoué': { bg: 'var(--red-bg, rgba(232,80,74,0.12))', text: 'var(--red-text, #e8504a)' },
+  Challenge: { bg: 'var(--amber-bg, var(--amber-bg))', text: 'var(--amber-text, #fac775)' },
+  'Financé': { bg: 'var(--green-bg, var(--green-bg))', text: 'var(--green-text, #1db87a)' },
+  'Échoué': { bg: 'var(--red-bg, var(--red-bg))', text: 'var(--red-text, #e8504a)' },
 }
 
 const DEMO_FIRMS = [
@@ -102,7 +102,7 @@ export default function DemoClient() {
       <PageHeader />
 
       {!dismissed && (
-        <div style={{ padding: '10px 24px', background: 'linear-gradient(90deg, rgba(45,111,255,0.95), rgba(77,143,255,0.95))', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ padding: '10px 24px', background: 'linear-gradient(90deg, var(--blue-border), var(--blue-border))', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{t('demo.banner')}</span>
           <Link href="/auth?mode=signup" style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, background: '#fff', color: 'var(--blue)', textDecoration: 'none' }}>{t('demo.signupCta')}</Link>
           <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 16, padding: 4 }} aria-label={t('demo.close')}>×</button>
@@ -159,11 +159,11 @@ export default function DemoClient() {
             </div>
             <div className="page-header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: 8, overflow: 'hidden', background: 'var(--tint1)' }}>
-                <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'var(--blue)', color: '#fff', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>USD</button>
+                <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'var(--blue)', color: 'var(--text-inverse)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>USD</button>
                 <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text2)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>EUR</button>
               </div>
               <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ maxWidth: 180, width: '100%', padding: '8px 12px', fontSize: 13, background: 'var(--surface, #141720)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'inherit', outline: 'none' }} />
-              <button style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'default', opacity: 0.5 }}>{t('app.dashboard.btnAddPropfirm')}</button>
+              <button style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, background: 'var(--blue)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, cursor: 'default', opacity: 0.5 }}>{t('app.dashboard.btnAddPropfirm')}</button>
             </div>
           </div>
 
@@ -200,7 +200,7 @@ export default function DemoClient() {
                   cursor: 'pointer', transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
                   boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)',
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(45,111,255,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px rgba(45,111,255,0.08)' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--blue-border)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px var(--blue-bg)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -245,10 +245,10 @@ export default function DemoClient() {
                   )}
 
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
-                    {challengeCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--amber-bg, rgba(250,199,117,0.12))', color: 'var(--amber-text, #fac775)', fontWeight: 600, letterSpacing: '0.3px' }}>{challengeCount} {statusLabel(t, 'Challenge', challengeCount > 1)}</span>}
-                    {fundedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--green-bg, rgba(29,184,122,0.12))', color: 'var(--green-text, #1db87a)', fontWeight: 600, letterSpacing: '0.3px' }}>{fundedCount} {statusLabel(t, 'Financé', fundedCount > 1)}</span>}
-                    {firm.failedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--red-bg, rgba(232,80,74,0.12))', color: 'var(--red-text, #e8504a)', fontWeight: 600, letterSpacing: '0.3px' }}>{firm.failedCount} {statusLabel(t, 'Échoué', firm.failedCount > 1)}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 11, padding: '3px 9px', borderRadius: 99, background: 'rgba(45,111,255,0.10)', border: '1px solid rgba(45,111,255,0.30)', color: 'var(--blue-light, #4d8fff)', fontWeight: 600, cursor: 'pointer' }}>{t('app.dashboard.diplomas')}</span>
+                    {challengeCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--amber-bg, var(--amber-bg))', color: 'var(--amber-text, #fac775)', fontWeight: 600, letterSpacing: '0.3px' }}>{challengeCount} {statusLabel(t, 'Challenge', challengeCount > 1)}</span>}
+                    {fundedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--green-bg, var(--green-bg))', color: 'var(--green-text, #1db87a)', fontWeight: 600, letterSpacing: '0.3px' }}>{fundedCount} {statusLabel(t, 'Financé', fundedCount > 1)}</span>}
+                    {firm.failedCount > 0 && <span style={{ display: 'inline-block', fontSize: 10.5, padding: '3px 9px', borderRadius: 99, background: 'var(--red-bg, var(--red-bg))', color: 'var(--red-text, #e8504a)', fontWeight: 600, letterSpacing: '0.3px' }}>{firm.failedCount} {statusLabel(t, 'Échoué', firm.failedCount > 1)}</span>}
+                    <span style={{ marginLeft: 'auto', fontSize: 11, padding: '3px 9px', borderRadius: 99, background: 'var(--blue-bg)', border: '1px solid var(--blue-border)', color: 'var(--blue-light, #4d8fff)', fontWeight: 600, cursor: 'pointer' }}>{t('app.dashboard.diplomas')}</span>
                   </div>
                 </div>
               )
@@ -262,7 +262,7 @@ export default function DemoClient() {
           <div style={{ padding: 32, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, textAlign: 'center', boxShadow: '0 1px 0 var(--tint1) inset, 0 8px 24px rgba(0,0,0,0.15)' }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, marginBottom: 8 }}>{t('demo.ctaTitle')}</h2>
             <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 20, lineHeight: 1.6 }}>{t('demo.ctaSubtitle')}</p>
-            <Link href="/auth?mode=signup" style={{ display: 'inline-block', padding: '12px 28px', background: 'var(--blue)', color: '#fff', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{t('demo.ctaButton')}</Link>
+            <Link href="/auth?mode=signup" style={{ display: 'inline-block', padding: '12px 28px', background: 'var(--blue)', color: 'var(--text-inverse)', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{t('demo.ctaButton')}</Link>
           </div>
         </main>
       </div>
@@ -358,12 +358,12 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t, monthNames, 
                   minHeight: 108, padding: 10, cursor: 'pointer',
                   borderRight: (cellIdx + 1) % 7 === 0 ? 'none' : '0.5px solid var(--border)',
                   borderBottom: '0.5px solid var(--border)',
-                  background: isSelected ? 'rgba(45,111,255,0.08)' : 'transparent',
+                  background: isSelected ? 'var(--blue-bg)' : 'transparent',
                   outline: isSelected ? '2px solid var(--blue)' : 'none', outlineOffset: -2,
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'var(--blue)' : 'transparent', color: isToday ? '#fff' : 'var(--text2)', marginBottom: 5 }}>{day}</div>
-                  {buyT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--red-bg, rgba(232,80,74,0.12))', color: 'var(--red-text, #e8504a)', marginBottom: 3, display: 'inline-block' }}>-{buyT} $</div>}
-                  {payT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--green-bg, rgba(29,184,122,0.12))', color: 'var(--green-text, #1db87a)', display: 'inline-block' }}>+{payT} $</div>}
+                  {buyT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--red-bg, var(--red-bg))', color: 'var(--red-text, #e8504a)', marginBottom: 3, display: 'inline-block' }}>-{buyT} $</div>}
+                  {payT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--green-bg, var(--green-bg))', color: 'var(--green-text, #1db87a)', display: 'inline-block' }}>+{payT} $</div>}
                 </div>
               )
             })}
@@ -472,7 +472,7 @@ function SidebarItem({ icon, label, active, header, indent, disabled, badge, bad
     padding: indent ? '6px 10px 6px 32px' : '8px 10px',
     borderRadius: 7, fontSize: 13,
     color: disabled ? 'var(--text3)' : active ? 'var(--text)' : 'var(--text2)',
-    background: active ? 'rgba(45,111,255,0.1)' : 'transparent',
+    background: active ? 'var(--blue-bg)' : 'transparent',
     borderLeft: active ? '2px solid var(--blue)' : '2px solid transparent',
     fontWeight: active ? 600 : header ? 600 : 400,
     display: 'flex', alignItems: 'center', gap: 8,

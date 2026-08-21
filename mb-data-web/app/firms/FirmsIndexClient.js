@@ -91,8 +91,8 @@ export default function FirmsIndexClient() {
                   {plans.slice(0, 4).map((p) => (
                     <span key={p} style={{
                       padding: '3px 8px',
-                      background: 'rgba(45,111,255,0.08)',
-                      border: '1px solid rgba(45,111,255,0.18)',
+                      background: 'var(--blue-bg)',
+                      border: '1px solid var(--blue-bg)',
                       borderRadius: 6,
                       fontSize: 11,
                       fontWeight: 600,
@@ -146,7 +146,7 @@ export default function FirmsIndexClient() {
             <Link href="/auth?mode=signup" style={{
               padding: '12px 28px',
               background: C.blue,
-              color: '#fff',
+              color: 'var(--text-inverse)',
               borderRadius: 8,
               fontSize: 14,
               fontWeight: 600,

@@ -246,7 +246,7 @@ export default function AdminStatsPage() {
         <div style={{ fontSize: 11, color: 'var(--red)', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>Admin</div>
         <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 6 }}>Statistiques</h1>
         <div style={{
-          padding: 16, background: 'rgba(232,80,74,0.08)',
+          padding: 16, background: 'var(--red-bg)',
           border: `1px solid ${C.red}`, borderRadius: 10, color: C.red,
         }}>⚠ {error || 'Aucune donnée'}</div>
       </div>

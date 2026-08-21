@@ -194,7 +194,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       const datasets = [
         {
           label:'Balance', data:data.balances,
-          borderColor:'#1db87a', backgroundColor:'rgba(29,184,122,0.10)',
+          borderColor:'#1db87a', backgroundColor:'var(--green-bg)',
           fill:true, tension:0.25, pointRadius:data.labels.length>30?0:3, borderWidth:2,
         },
       ]
@@ -300,7 +300,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
               title="Importer un CSV pour ajouter des trades"
               style={{
                 fontSize:'11px',padding:'7px 11px',borderRadius:'8px',
-                background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
+                background:'var(--blue-bg)',border:'1px solid var(--blue-border)',
                 color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',whiteSpace:'nowrap',
                 textDecoration:'none',display:'inline-block',
               }}
@@ -311,7 +311,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
               title="Ajouter un trade pour ce compte"
               style={{
                 fontSize:'11px',padding:'7px 11px',borderRadius:'8px',
-                background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
+                background:'var(--blue-bg)',border:'1px solid var(--blue-border)',
                 color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',whiteSpace:'nowrap',
               }}
             >+ Trade</button>
@@ -337,7 +337,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
         <div style={{
           display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',
           padding:'8px 12px',marginBottom:'12px',
-          background:'rgba(45,111,255,0.08)',border:'1px solid rgba(45,111,255,0.25)',
+          background:'var(--blue-bg)',border:'1px solid var(--blue-border)',
           borderRadius:'var(--radius)',fontSize:'11px',
         }}>
           <span style={{color:'var(--text2)'}}>
@@ -359,7 +359,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
         <div style={{marginBottom:'12px',display:'flex',alignItems:'center',gap:'8px'}}>
           <button onClick={handleResetClick} title="Repart la balance à 0 depuis une date donnée — utile au passage Challenge → Financé pour ne pas mélanger les trades des 2 phases" style={{
             fontSize:'11px',padding:'6px 12px',borderRadius:'6px',
-            background:'rgba(45,111,255,0.10)',border:'1px solid rgba(45,111,255,0.35)',
+            background:'var(--blue-bg)',border:'1px solid var(--blue-border)',
             color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',
           }}>{t('app.journal.resetBalance')}</button>
           <TooltipIcon text="Quand tu passes Challenge → Financé, ton compte simulé repart à 0 (les trades de la phase challenge sont conservés mais masqués du calcul de balance Financé). Click pour définir manuellement la date du reset." maxWidth={320} />
@@ -392,7 +392,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
                 </div>
                 {/* Mini barre de progression */}
                 <div style={{height:'4px',background:'var(--surface3)',borderRadius:'99px',marginTop:'6px',overflow:'hidden'}}>
-                  <div style={{height:'100%',width:progress+'%',background:reached?'var(--green)':'linear-gradient(90deg,#1db87a,#fac775)',transition:'width 0.3s'}} />
+                  <div style={{height:'100%',width:progress+'%',background:reached?'var(--green)':'linear-gradient(90deg,var(--green),#fac775)',transition:'width 0.3s'}} />
                 </div>
               </div>
             )
@@ -921,8 +921,8 @@ export default function JournalPage({
           <a href="/app/trades" style={{
             ...btnGhost,
             textDecoration:'none',display:'inline-flex',alignItems:'center',gap:'5px',
-            background:'rgba(45,111,255,0.08)',
-            borderColor:'rgba(45,111,255,0.25)',
+            background:'var(--blue-bg)',
+            borderColor:'var(--blue-border)',
             color:'var(--blue-light)',
           }}>
             {t('app.journal.tradeLogLink')}
@@ -960,9 +960,9 @@ export default function JournalPage({
               : `Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.`}
           </div>
           {onlyRithmicEntries ? (
-            <a href="/app/import-lab" style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>→ Aller à l'Import Lab</a>
+            <a href="/app/import-lab" style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'var(--text-inverse)',borderRadius:'var(--radius)',textDecoration:'none'}}>→ Aller à l'Import Lab</a>
           ) : (
-            <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'#fff',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
+            <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'var(--text-inverse)',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
           )}
         </div>
       )}
@@ -1173,9 +1173,9 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   const pnl = v?.pnl || 0
                   const isSel = day.dateStr === selDay
                   let bg = 'transparent'
-                  if(v && pnl > 0) bg = 'rgba(29,184,122,0.10)'
-                  else if(v && pnl < 0) bg = 'rgba(232,80,74,0.10)'
-                  if(isSel) bg = 'rgba(45,111,255,0.12)'
+                  if(v && pnl > 0) bg = 'var(--green-bg)'
+                  else if(v && pnl < 0) bg = 'var(--red-bg)'
+                  if(isSel) bg = 'var(--blue-bg)'
                   return (
                     <div key={i}
                       className="cal-cell"
@@ -1285,7 +1285,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                                   title="Voir le screenshot"
                                   style={{
                                     fontSize:'10px',padding:'1px 6px',borderRadius:'99px',
-                                    background:'rgba(45,111,255,0.15)',color:'var(--blue-light)',
+                                    background:'var(--blue-bg)',color:'var(--blue-light)',
                                     border:'none',cursor:'pointer',fontWeight:'600',
                                   }}
                                 >📷</button>
@@ -1472,7 +1472,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
           </div>
           <button onClick={()=>setLightboxUrl(null)} style={{
             position:'absolute',top:'20px',right:'20px',
-            background:'var(--hairline)',color:'#fff',border:'1px solid var(--hairline2)',
+            background:'var(--tint3)',color:'var(--text)',border:'1px solid var(--hairline2)',
             borderRadius:'8px',padding:'8px 16px',fontSize:'13px',cursor:'pointer',fontWeight:'600',
           }}>{t('app.journal.closeLightbox')}</button>
         </div>
@@ -1591,7 +1591,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 })
                 if (r == null && rr == null) return null
                 return (
-                  <div style={{gridColumn:'1/-1',marginTop:'4px',padding:'10px 14px',background:'rgba(45,111,255,0.06)',border:'1px solid rgba(45,111,255,0.20)',borderRadius:'8px',display:'flex',gap:'18px',flexWrap:'wrap',alignItems:'center',fontSize:'12px'}}>
+                  <div style={{gridColumn:'1/-1',marginTop:'4px',padding:'10px 14px',background:'var(--blue-bg)',border:'1px solid var(--blue-border)',borderRadius:'8px',display:'flex',gap:'18px',flexWrap:'wrap',alignItems:'center',fontSize:'12px'}}>
                     <span style={{fontWeight:'700',color:'var(--blue-light)',fontSize:'10px',letterSpacing:'0.5px',textTransform:'uppercase'}}>
                       📐 Aperçu
                     </span>

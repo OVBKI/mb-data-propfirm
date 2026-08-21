@@ -267,7 +267,7 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
                 <button
                   onClick={promote}
                   disabled={savingStatus}
-                  style={{ flex: 1, padding: '10px 14px', background: 'linear-gradient(135deg, #1db87a 0%, #2ed694 100%)', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
+                  style={{ flex: 1, padding: '10px 14px', background: 'linear-gradient(135deg, var(--green) 0%, #2ed694 100%)', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
                 >
                   <span style={{ fontSize: 15 }}>{'🚀'}</span>
                   {isFinalPhase
@@ -278,7 +278,7 @@ export default function CfdAccountDrawer({ account, firm, onClose, onChanged, sh
               <button
                 onClick={() => { if (confirm(t('app.cfd.confirmFail'))) changeStatus('Échoué') }}
                 disabled={savingStatus}
-                style={{ flex: 1, padding: '10px 14px', background: 'transparent', border: '1px solid rgba(232,80,74,0.4)', color: 'var(--red)', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
+                style={{ flex: 1, padding: '10px 14px', background: 'transparent', border: '1px solid var(--red)', color: 'var(--red)', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: savingStatus ? 0.6 : 1 }}
               >
                 <span style={{ fontSize: 15 }}>{'💔'}</span>{a.status === 'Challenge' ? t('app.cfd.markFailed') : t('app.cfd.markBlown')}
               </button>

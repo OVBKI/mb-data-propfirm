@@ -74,8 +74,8 @@ const PLATFORMS_EN = [
 
 function StatusBadge({ status, t }) {
   const config = {
-    'csv-rithmic': { label: t('pages.integrations.badge.csvRithmic'), color: C.green, bg: 'rgba(29,184,122,0.10)', border: 'rgba(29,184,122,0.35)' },
-    'manual':      { label: t('pages.integrations.badge.manual'),     color: C.amber, bg: 'rgba(250,199,117,0.10)', border: 'rgba(250,199,117,0.35)' },
+    'csv-rithmic': { label: t('pages.integrations.badge.csvRithmic'), color: C.green, bg: 'var(--green-bg)', border: 'var(--green)' },
+    'manual':      { label: t('pages.integrations.badge.manual'),     color: C.amber, bg: 'var(--amber-bg)', border: 'var(--amber)' },
     'csv-soon':    { label: t('pages.integrations.badge.csvSoon'),    color: C.text3, bg: 'var(--tint2)', border: 'var(--hairline)' },
   }
   const s = config[status] || config.manual
@@ -187,8 +187,8 @@ export default function IntegrationsClient() {
                         textAlign: 'center',
                         textDecoration: 'none',
                         color: C.blueLight,
-                        background: 'rgba(45,111,255,0.08)',
-                        border: `1px solid rgba(45,111,255,0.25)`,
+                        background: 'var(--blue-bg)',
+                        border: `1px solid var(--blue-border)`,
                         borderRadius: 8,
                       }}
                     >{t('pages.integrations.openAccount')}</a>
@@ -247,8 +247,8 @@ export default function IntegrationsClient() {
             <a href="mailto:contact@quantara.tech?subject=Suggestion%20PropFirm" style={{
               display: 'inline-block', padding: '11px 24px',
               fontSize: 13, fontWeight: 500, borderRadius: 8,
-              background: C.blue, color: '#fff', textDecoration: 'none',
-              boxShadow: '0 4px 12px rgba(45,111,255,0.3)',
+              background: C.blue, color: 'var(--text-inverse)', textDecoration: 'none',
+              boxShadow: '0 4px 12px var(--blue-bg)',
             }}>{t('pages.integrations.missingCta')}</a>
           </Reveal>
         </section>

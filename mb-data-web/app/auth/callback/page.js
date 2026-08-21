@@ -245,7 +245,7 @@ function CallbackInner() {
     fontSize: 14, fontWeight: 600, borderRadius: 99,
     background: `linear-gradient(135deg, ${C.blue}, ${C.blueLight})`,
     color: '#fff', textDecoration: 'none', border: 'none', cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
+    boxShadow: '0 4px 14px var(--blue-bg)',
     fontFamily: 'inherit',
   }
 
@@ -273,7 +273,7 @@ function CallbackInner() {
           <>
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
-              background: 'rgba(29,184,122,0.15)', border: `1px solid ${C.green}`,
+              background: 'var(--green-bg)', border: `1px solid ${C.green}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>✓</div>
@@ -291,7 +291,7 @@ function CallbackInner() {
           <>
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
-              background: 'rgba(45,111,255,0.15)', border: `1px solid ${C.blue}`,
+              background: 'var(--blue-bg)', border: `1px solid ${C.blue}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>🔐</div>
@@ -323,7 +323,7 @@ function CallbackInner() {
               </div>
               {errorMsg && (
                 <div style={{
-                  padding: '10px 14px', background: 'rgba(232,80,74,0.1)',
+                  padding: '10px 14px', background: 'var(--red-bg)',
                   border: `1px solid ${C.red}`, borderRadius: 8,
                   fontSize: 12, color: C.red, marginBottom: 14, textAlign: 'left',
                 }}>{errorMsg}</div>
@@ -343,7 +343,7 @@ function CallbackInner() {
           <>
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
-              background: 'rgba(29,184,122,0.15)', border: `1px solid ${C.green}`,
+              background: 'var(--green-bg)', border: `1px solid ${C.green}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>✓</div>
@@ -360,7 +360,7 @@ function CallbackInner() {
           <>
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
-              background: 'rgba(250,199,117,0.15)', border: `1px solid ${C.amber}`,
+              background: 'var(--amber-bg)', border: `1px solid ${C.amber}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>⌛</div>
@@ -370,7 +370,7 @@ function CallbackInner() {
             </p>
             {resendOk ? (
               <div style={{
-                padding: '12px 16px', background: 'rgba(29,184,122,0.10)',
+                padding: '12px 16px', background: 'var(--green-bg)',
                 border: `1px solid ${C.green}`, borderRadius: 8,
                 fontSize: 13, color: C.green, marginBottom: 16,
               }}>{t('authCallback.emailResent')}</div>
@@ -390,7 +390,7 @@ function CallbackInner() {
           <>
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
-              background: 'rgba(232,80,74,0.15)', border: `1px solid ${C.red}`,
+              background: 'var(--red-bg)', border: `1px solid ${C.red}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 36, margin: '0 auto 18px',
             }}>✕</div>

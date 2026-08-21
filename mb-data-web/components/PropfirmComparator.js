@@ -24,18 +24,18 @@ const C = {
   surface2: 'var(--surface2)',
   border: 'var(--border)',
   border2: 'var(--border2)',
-  borderHover: 'rgba(45,111,255,0.4)',
+  borderHover: 'var(--blue-border)',
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
   blue: 'var(--blue)',
   blueLight: 'var(--blue-light)',
   green: 'var(--green)',
-  greenSoft: 'rgba(16,185,129,0.12)',
+  greenSoft: 'var(--green-bg)',
   red: 'var(--red)',
   redSoft: 'rgba(239,68,68,0.12)',
   amber: 'var(--amber)',
-  amberSoft: 'rgba(250,199,117,0.12)',
+  amberSoft: 'var(--amber-bg)',
 }
 
 // === Métadonnées dérivées par firme — pour les cards et les filtres ===
@@ -222,7 +222,7 @@ const FILTERS = [
 // Status badges
 const STATUS_BADGES = {
   alert:   { label: '⚠ Vigilance', color: C.amber, bg: C.amberSoft },
-  updated: { label: 'MAJ 2026',    color: C.blueLight, bg: 'rgba(77,143,255,0.12)' },
+  updated: { label: 'MAJ 2026',    color: C.blueLight, bg: 'var(--blue-bg)' },
   new:     { label: 'Nouveau',     color: C.green, bg: C.greenSoft },
   legacy:  { label: 'Legacy',      color: C.text3, bg: 'rgba(86,94,120,0.12)' },
 }
@@ -326,8 +326,8 @@ export default function PropfirmComparator({ user }) {
               style={{
                 padding: '6px 14px', fontSize: 12, cursor: 'pointer',
                 borderRadius: 99,
-                border: `1px solid ${isActive ? 'rgba(45,111,255,0.4)' : C.border2}`,
-                background: isActive ? 'rgba(45,111,255,0.15)' : 'transparent',
+                border: `1px solid ${isActive ? 'var(--blue-border)' : C.border2}`,
+                background: isActive ? 'var(--blue-bg)' : 'transparent',
                 color: isActive ? C.blueLight : C.text2,
                 fontWeight: isActive ? 600 : 500,
                 fontFamily: 'inherit',
@@ -368,7 +368,7 @@ export default function PropfirmComparator({ user }) {
               onMouseEnter={e => {
                 e.currentTarget.style.borderColor = C.borderHover
                 e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px rgba(45,111,255,0.08)'
+                e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px var(--blue-bg)'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.borderColor = C.border
@@ -503,7 +503,7 @@ export default function PropfirmComparator({ user }) {
       {isAdmin && !loadingOverrides && Object.keys(overrides).length > 0 && (
         <div style={{
           marginTop: 32, padding: '10px 14px',
-          background: 'rgba(45,111,255,0.08)', border: `1px solid rgba(45,111,255,0.25)`,
+          background: 'var(--blue-bg)', border: `1px solid var(--blue-border)`,
           borderRadius: 8, fontSize: 11, color: C.blueLight,
         }}>
           🔧 Mode admin · {Object.keys(overrides).length} {t('app.comparator.adminOverrides')}
@@ -625,8 +625,8 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
               padding: '10px 16px',
               fontSize: 12, fontWeight: 500,
               color: C.blueLight,
-              background: 'rgba(45,111,255,0.08)',
-              border: `1px solid rgba(45,111,255,0.25)`,
+              background: 'var(--blue-bg)',
+              border: `1px solid var(--blue-border)`,
               borderRadius: 8,
               textDecoration: 'none',
             }}
@@ -648,7 +648,7 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
                 style={{
                   padding: '7px 14px', fontSize: 12, fontWeight: 600,
                   borderRadius: 7, border: 'none', cursor: 'pointer',
-                  background: active ? 'rgba(45,111,255,0.18)' : 'transparent',
+                  background: active ? 'var(--blue-bg)' : 'transparent',
                   color: active ? C.blueLight : C.text2,
                   fontFamily: 'inherit',
                   letterSpacing: '0.04em',
@@ -705,7 +705,7 @@ function FirmDetailDrawer({ firmName, meta, ruleValue, onClose }) {
                   flex: 1,
                   padding: '8px 14px', fontSize: 12, fontWeight: 600,
                   borderRadius: 7, border: 'none', cursor: 'pointer',
-                  background: active ? 'rgba(45,111,255,0.18)' : 'transparent',
+                  background: active ? 'var(--blue-bg)' : 'transparent',
                   color: active ? C.blueLight : C.text2,
                   fontFamily: 'inherit', letterSpacing: '0.04em',
                   transition: 'all 0.15s',

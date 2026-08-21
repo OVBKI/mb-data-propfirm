@@ -17,65 +17,69 @@
    style inline ne suivra pas le thème — c'est la seule façon de casser ça.
    ============================================================================ */
 :root {
-  --bg: #0d0f14;
-  --surface: #141720;
-  --surface2: #1c2030;
-  --surface3: #242840;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13);
-  --text: #f0ede8;
-  --text2: #9098b0;
-  --text3: #8b93ab;
+  /* ── ABYSS — fond marine qui s'éclaircit vers le haut-droite ─────────────── */
+  --bg: #0a1420;
+  /* Translucide À DESSEIN : le halo ambiant traverse les cartes, ce qui donne à
+     Abyss sa profondeur. Une carte opaque n'aurait que la couleur, pas la matière. */
+  --surface: rgba(24,37,53,0.78);
+  --surface2: rgba(33,49,68,0.82);
+  --surface3: rgba(44,62,84,0.85);
+  /* Version OPAQUE, pour les rendus que le navigateur ou l'OS peint hors page :
+     menus <option>, aperçus natifs. La transparence y produit du gris sale. */
+  --surface-solid: #16222f;
+  --border: rgba(159,179,200,0.13);
+  --border2: rgba(159,179,200,0.22);
+  --text: #f0f5fa;
+  --text2: #9fb3c8;
+  --text3: #8a9fb5;
   /* Texte posé SUR un aplat de couleur --text (bouton primaire inversé). */
-  --text-inverse: #0a0c10;
-  --blue: #2d6fff;
-  --blue-light: #4d8fff;
-  --blue-bg: rgba(45,111,255,0.12);
-  --blue-border: rgba(45,111,255,0.28);
-  --green: #1db87a;
-  --green-bg: rgba(29,184,122,0.12);
-  --green-text: #33d695;
-  --red: #e8504a;
-  --red-bg: rgba(232,80,74,0.12);
-  --red-text: #ff7a73;
-  --amber: #fac775;
-  --amber-bg: rgba(250,199,117,0.12);
-  --amber-text: #fac775;
-  /* Accents secondaires : badges de firmes, cartes de tarifs. Ils vivaient en dur
-     dans des palettes locales — promus en jetons pour qu'ils suivent le thème. */
-  --violet: #a78bfa;
-  --violet-bg: rgba(167,139,250,0.14);
-  --cyan: #06b6d4;
-  --cyan-bg: rgba(6,182,212,0.14);
+  --text-inverse: #0a1420;
+  --blue: #5ab0ff;
+  --blue-light: #7cc2ff;
+  --blue-bg: rgba(90,176,255,0.14);
+  --blue-border: rgba(90,176,255,0.32);
+  --green: #3ddba8;
+  --green-bg: rgba(61,219,168,0.14);
+  --green-text: #5ee8bd;
+  --red: #ff7a86;
+  --red-bg: rgba(255,122,134,0.14);
+  --red-text: #ff9aa3;
+  --amber: #ffc25c;
+  --amber-bg: rgba(255,194,92,0.14);
+  --amber-text: #ffc25c;
+  /* Accents secondaires : badges de firmes, cartes de tarifs. */
+  --violet: #a58bff;
+  --violet-bg: rgba(165,139,255,0.16);
+  --cyan: #4ecdd4;
+  --cyan-bg: rgba(78,205,212,0.16);
 
-  /* Aplats translucides — remplacent les rgba(255,255,255,0.0X) en dur, qui
-     deviendraient invisibles (blanc sur blanc) en thème clair. */
-  --tint1: rgba(255,255,255,0.025);
-  --tint2: rgba(255,255,255,0.045);
-  --tint3: rgba(255,255,255,0.075);
-  --hairline: rgba(255,255,255,0.08);
-  --hairline2: rgba(255,255,255,0.14);
+  /* Aplats translucides — remplacent les rgba blancs en dur, qui deviendraient
+     invisibles (blanc sur blanc) en thème clair. Teintés bleu, pas gris neutre :
+     un blanc pur sur du marine tire vers le gris sale. */
+  --tint1: rgba(159,179,200,0.05);
+  --tint2: rgba(159,179,200,0.085);
+  --tint3: rgba(159,179,200,0.13);
+  --hairline: rgba(159,179,200,0.14);
+  --hairline2: rgba(159,179,200,0.24);
 
-  --overlay: rgba(0,0,0,0.55);
-  /* Barres translucides posées par-dessus le contenu (top bar, sticky headers).
-     Doivent rester semi-transparentes pour le backdrop-filter. */
-  --bar-bg: rgba(13,15,20,0.78);
-  /* Panneaux « verre dépoli » posés sur un fond dégradé : carte de connexion,
-     modales, drawers. Doivent rester translucides pour le backdrop-filter — d'où
-     un jeton distinct de --surface, qui lui est opaque. */
-  --glass: rgba(20,23,32,0.65);
-  --glass-2: rgba(28,32,48,0.7);
-  --glass-solid: rgba(20,23,32,0.95);
-  --shadow-card: 0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.15);
-  --shadow-pop: 0 12px 32px rgba(0,0,0,0.35);
+  --overlay: rgba(4,10,18,0.66);
+  /* Barres translucides posées par-dessus le contenu (top bar, sticky headers). */
+  --bar-bg: rgba(10,20,32,0.80);
+  /* Panneaux « verre dépoli » sur fond dégradé : carte de connexion, modales. */
+  --glass: rgba(255,255,255,0.055);
+  --glass-2: rgba(255,255,255,0.09);
+  --glass-solid: rgba(16,28,42,0.97);
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.28);
+  --shadow-pop: 0 16px 40px rgba(0,0,0,0.45);
 
   /* Chart.js dessine dans un canvas : var() n'y est pas résolu. Ces jetons sont
      lus via getComputedStyle par lib/theme.js → chartColors(). */
-  --chart-grid: rgba(255,255,255,0.04);
-  --chart-tick: #7b839b;
+  --chart-grid: rgba(159,179,200,0.09);
+  --chart-tick: #8a9fb5;
 
-  --radius: 8px;
-  --radius-lg: 12px;
+  /* Abyss respire : rayons larges et généreux. */
+  --radius: 12px;
+  --radius-lg: 18px;
 }
 
 /* Sombre explicite — même palette que :root. Sert à ÉPINGLER un sous-arbre
@@ -87,30 +91,32 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --bg: #f6f7fa;
-  --surface: #ffffff;
-  --surface2: #eff1f6;
-  --surface3: #e4e8f0;
-  --border: rgba(15,23,42,0.10);
-  --border2: rgba(15,23,42,0.17);
-  --text: #10131a;
-  --text2: #4a5468;
-  --text3: #5b6374;
+  /* Le clair d'Abyss reste TEINTÉ bleu — ce n'est pas un blanc neutre, sinon on
+     perd l'identité en basculant de thème. */
+  --bg: #eef3f9;
+  --surface: rgba(255,255,255,0.86);
+  --surface2: rgba(230,237,245,0.90);
+  --surface3: rgba(217,227,239,0.92);
+  --surface-solid: #ffffff;
+  --border: rgba(13,27,40,0.11);
+  --border2: rgba(13,27,40,0.19);
+  --text: #0d1b28;
+  --text2: #43566a;
+  --text3: #556a7d;
   --text-inverse: #ffffff;
 
-  /* Les accents sont assombris. Valeurs CALIBRÉES : chacune tient >= 4.5:1
-     (WCAG AA) contre les 4 fonds clairs du thème — #ffffff, --bg, --surface2 et
-     le blanc cassé des cartes. Vérifié avec axe-core. Ne pas les ré-éclaircir
-     sans revérifier le contraste : c'est ce qui rend le texte lisible. */
-  --blue: #1c5cf0;
-  --blue-light: #1550d8;
-  --blue-bg: rgba(28,92,240,0.09);
-  --blue-border: rgba(28,92,240,0.30);
+  /* Valeurs CALIBRÉES : chacune tient >= 4.5:1 (WCAG AA) contre les trois fonds
+     clairs du thème. Vérifié avec axe-core. Ne pas les ré-éclaircir sans
+     revérifier le contraste : c'est ce qui rend le texte lisible. */
+  --blue: #0d63c0;
+  --blue-light: #0b57a9;
+  --blue-bg: rgba(13,99,192,0.09);
+  --blue-border: rgba(13,99,192,0.32);
   --green: #0a7550;
-  --green-bg: rgba(13,150,104,0.10);
+  --green-bg: rgba(10,117,80,0.10);
   --green-text: #076246;
   --red: #c22a24;
-  --red-bg: rgba(211,52,46,0.10);
+  --red-bg: rgba(194,42,36,0.10);
   --red-text: #b02620;
   --amber: #8a5a06;
   --amber-bg: rgba(198,140,30,0.14);
@@ -120,33 +126,71 @@
   --cyan: #0e7490;
   --cyan-bg: rgba(14,116,144,0.10);
 
-  --tint1: rgba(15,23,42,0.025);
-  --tint2: rgba(15,23,42,0.045);
-  --tint3: rgba(15,23,42,0.075);
-  --hairline: rgba(15,23,42,0.10);
-  --hairline2: rgba(15,23,42,0.18);
+  --tint1: rgba(13,27,40,0.030);
+  --tint2: rgba(13,27,40,0.052);
+  --tint3: rgba(13,27,40,0.082);
+  --hairline: rgba(13,27,40,0.11);
+  --hairline2: rgba(13,27,40,0.19);
 
-  --overlay: rgba(15,23,42,0.38);
-  --bar-bg: rgba(255,255,255,0.82);
+  --overlay: rgba(13,27,40,0.40);
+  --bar-bg: rgba(255,255,255,0.84);
   --glass: rgba(255,255,255,0.80);
-  --glass-2: rgba(239,241,246,0.86);
+  --glass-2: rgba(230,237,245,0.88);
   --glass-solid: rgba(255,255,255,0.97);
-  --shadow-card: 0 1px 2px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.07);
-  --shadow-pop: 0 12px 32px rgba(15,23,42,0.16);
+  --shadow-card: 0 1px 2px rgba(13,27,40,0.05), 0 10px 30px rgba(13,27,40,0.08);
+  --shadow-pop: 0 16px 40px rgba(13,27,40,0.18);
 
-  --chart-grid: rgba(15,23,42,0.07);
-  --chart-tick: #5b6374;
+  --chart-grid: rgba(13,27,40,0.08);
+  --chart-tick: #556a7d;
 }
 
 html, body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  /* La variable vient de next/font (app/layout.js). La pile de secours garde une
+     métrique proche d'Outfit pour éviter le décalage pendant le chargement. */
+  font-family: var(--font-ui), 'Avenir Next', -apple-system, 'Segoe UI', system-ui, sans-serif;
   font-size: 14px;
   min-height: 100vh;
   -webkit-text-size-adjust: 100%;
   /* Lenis (smooth scroll) exige que le scroll container ne soit pas en position static */
   position: relative;
+}
+
+/* Halo ambiant Abyss — le fond s'éclaircit vers le haut-droite, comme une
+   surface d'eau vue d'en dessous. Posé en `fixed` sous l'interface : il ne
+   défile pas, donc il ne coûte rien au scroll. En thème clair il s'atténue à
+   presque rien, sinon les cartes blanches perdent leur contraste. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1500px 900px at 86% -14%, rgba(90,176,255,0.30), transparent 60%),
+    radial-gradient(1100px 780px at 10% 2%, rgba(61,219,168,0.15), transparent 56%),
+    radial-gradient(900px 700px at 50% 108%, rgba(165,139,255,0.10), transparent 60%),
+    linear-gradient(168deg, rgba(22,48,76,0.90) 0%, rgba(10,20,32,0) 64%);
+}
+[data-theme="light"] body::before,
+[data-theme="light"]::before {
+  background:
+    radial-gradient(1300px 780px at 88% -12%, rgba(13,99,192,0.07), transparent 58%),
+    radial-gradient(1000px 700px at 12% 4%, rgba(10,117,80,0.04), transparent 55%);
+}
+/* Tout le contenu passe au-dessus du halo. */
+body > * { position: relative; z-index: 1; }
+
+/* Tout ce qui s'aligne en colonne passe en chiffres tabulaires : sans ça, les
+   montants sautent d'un pixel à l'autre d'une ligne à la suivante. */
+table, .qt-mono, [data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer, [role="dialog"] {
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
 }
 
 button { cursor: pointer; font-family: inherit; }
@@ -165,12 +209,12 @@ a { color: inherit; text-decoration: none; }
    ============================================================================ */
 select option,
 select optgroup {
-  background-color: var(--surface) !important;
+  background-color: var(--surface-solid) !important;  /* opaque obligatoire : menu peint par l'OS */
   color: var(--text) !important;
 }
 select option:checked,
 select option:hover {
-  background-color: var(--surface2) !important;
+  background-color: var(--surface-solid) !important;
   color: var(--text) !important;
 }
 /* Couleur du texte du select fermé (la valeur sélectionnée affichée) */
@@ -182,13 +226,13 @@ select {
 select:not([multiple]) {
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%239098b0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%239fb3c8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 30px !important;
 }
 [data-theme="light"] select:not([multiple]) {
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%234a5468' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2343566a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 /* Inputs date/time + select : `color-scheme` pilote la pop-up native (calendrier,

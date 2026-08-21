@@ -231,7 +231,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
         {/* Halo gradient en background */}
         <div style={{
           position: 'absolute', inset: 0, opacity: 0.5,
-          background: `radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,111,255,0.18), transparent 60%)`,
+          background: `radial-gradient(ellipse 80% 60% at 50% 0%, var(--blue-bg), transparent 60%)`,
           pointerEvents: 'none',
         }} />
 
@@ -343,7 +343,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '12px 14px', borderRadius: 8,
-                      background: tradingStyle === s.k ? 'rgba(45,111,255,0.12)' : 'var(--tint1)',
+                      background: tradingStyle === s.k ? 'var(--blue-bg)' : 'var(--tint1)',
                       border: `1px solid ${tradingStyle === s.k ? C.blueLight : C.border}`,
                       color: C.text, cursor: 'pointer', textAlign: 'left',
                       fontFamily: 'inherit', transition: 'all 0.15s',
@@ -380,7 +380,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         gap: 6, padding: '12px 6px', borderRadius: 8,
-                        background: isSelected ? 'rgba(45,111,255,0.1)' : 'var(--tint1)',
+                        background: isSelected ? 'var(--blue-bg)' : 'var(--tint1)',
                         border: `1px solid ${isSelected ? C.blueLight : C.border}`,
                         cursor: 'pointer', fontFamily: 'inherit',
                         transition: 'all 0.15s', position: 'relative',
@@ -398,7 +398,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
                         <div style={{
                           position: 'absolute', top: 4, right: 4,
                           width: 14, height: 14, borderRadius: 99,
-                          background: C.blueLight, color: '#fff',
+                          background: C.blueLight, color: 'var(--text-inverse)',
                           fontSize: 9, fontWeight: 700,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>✓</div>
@@ -478,8 +478,8 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
               >
                 <div style={{
                   width: 42, height: 42, borderRadius: 9, flexShrink: 0,
-                  background: 'rgba(45,111,255,0.15)',
-                  border: '1px solid rgba(45,111,255,0.3)',
+                  background: 'var(--blue-bg)',
+                  border: '1px solid var(--blue-border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 20, color: C.blue,
                 }}>→</div>
@@ -509,14 +509,14 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
               >
                 <div style={{
                   width: 42, height: 42, borderRadius: 9, flexShrink: 0,
-                  background: 'rgba(29,184,122,0.12)', border: `1px solid ${C.green}`,
+                  background: 'var(--green-bg)', border: `1px solid ${C.green}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22,
                 }}>🎮</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
                     {t('app.onboarding.optDemoTitle')}
-                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(29,184,122,0.18)', color: C.green, marginLeft: 8, verticalAlign: 'middle' }}>{t('app.onboarding.optDemoBadge')}</span>
+                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'var(--green-bg)', color: C.green, marginLeft: 8, verticalAlign: 'middle' }}>{t('app.onboarding.optDemoBadge')}</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: C.text2 }}>
                     {t('app.onboarding.optDemoDesc')}
@@ -542,7 +542,7 @@ export default function OnboardingModal({ user, onComplete, onAddFirm, onStartTu
               >
                 <div style={{
                   width: 42, height: 42, borderRadius: 9, flexShrink: 0,
-                  background: 'rgba(45,111,255,0.12)', border: `1px solid ${C.blueLight}`,
+                  background: 'var(--blue-bg)', border: `1px solid ${C.blueLight}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22,
                 }}>🎓</div>

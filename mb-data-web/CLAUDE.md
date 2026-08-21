@@ -849,3 +849,44 @@ perdu.
 Canonique ajoutée sur `/auth` (variantes `?mode=signup`) et `/u/[username]`
 (pseudo casse-insensible). `/g/[code]` et les pages follow étaient déjà en
 `noindex` — le constat de l'audit était un faux positif.
+
+
+## Design ABYSS — 2026-08
+
+Refonte visuelle retenue après comparaison de trois pistes. Bleu abyssal, halo
+ambiant, grandes cartes arrondies.
+
+### Ce qui définit Abyss
+1. **Le halo** (`body::before` dans globals.css) — trois dégradés radiaux fixés
+   sous l'interface : bleu en haut-droite, teal en haut-gauche, violet en bas.
+   C'est la signature ; sans lui il ne reste que la palette.
+2. **Les surfaces sont TRANSLUCIDES** (`--surface: rgba(24,37,53,0.78)`). C'est
+   ce qui laisse le halo traverser les cartes et donne la profondeur. Une carte
+   opaque n'aurait que la couleur, pas la matière.
+   → `--surface-solid` existe pour les rendus que le navigateur/l'OS peint hors
+   page (menus `<option>`), où la transparence produit du gris sale.
+3. **Rayons larges** : `--radius: 12px`, `--radius-lg: 18px`.
+4. **Outfit** pour l'interface, **Roboto Mono** pour les chiffres alignés
+   (`--font-ui` / `--font-mono`, chargées par next/font dans app/layout.js).
+
+### Trois pièges que cette refonte a révélés
+- **Une barre FIXE ne peut pas être translucide sans flou.** Le bandeau cookies
+  laissait lire le contenu au travers. `--bar-bg` + `backdrop-filter` ; idem pour
+  `.drawer` et `[role="dialog"]`, via une règle globale.
+- **En Abyss sombre les accents sont CLAIRS** (`--blue: #5ab0ff`). Du `color:'#fff'`
+  posé dessus devient illisible. Le bon jeton est `--text-inverse` : sombre en
+  thème sombre, blanc en thème clair — exactement la bascule voulue.
+- **Une ombre portée doit rester transparente.** La migration des teintes avait
+  transformé `rgba(29,184,122,0.3)` en `var(--green)` plein, donnant des pâtés
+  verts. Les jetons `-bg` sont les variantes translucides.
+
+### Contraste
+Palette recalculée : chaque couleur de texte tient ≥ 4.5:1 contre les trois fonds
+de son thème (sombre `#0a1420`/`#14202e`/`#1c2b3b`, clair `#ffffff`/`#eef3f9`/`#e6edf5`).
+Le clair d'Abyss reste **teinté bleu** — un blanc neutre perdrait l'identité à la
+bascule.
+
+### Non migré
+`components/landing/**` reste épinglé en sombre sur l'ancienne palette (star field
+Three.js et dégradés mesh dessinés pour du noir). À reprendre si la landing doit
+suivre.

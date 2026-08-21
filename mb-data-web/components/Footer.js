@@ -121,7 +121,7 @@ export default function Footer() {
                         }}
                       >
                         {link.label}
-                        {link.soon && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 99, background: 'rgba(45,111,255,0.15)', color: C.blueLight }}>{t('pages.footer.badges.soon')}</span>}
+                        {link.soon && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 99, background: 'var(--blue-bg)', color: C.blueLight }}>{t('pages.footer.badges.soon')}</span>}
                       </a>
                     ) : (
                       <Link href={link.href} style={{
@@ -152,7 +152,7 @@ export default function Footer() {
             <span>🇺🇸 Quantara Technologies LLC · 🇪🇺 {t('pages.footer.bottom.eu')}</span>
             <span>·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px rgba(29,184,122,0.6)' }} />
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px var(--green-bg)' }} />
               {t('pages.footer.bottom.allOk')}
             </span>
           </div>
@@ -161,7 +161,7 @@ export default function Footer() {
         {/* Disclaimer financier */}
         <div style={{
           marginTop: 18, padding: '12px 16px',
-          background: 'rgba(250,199,117,0.05)', border: '1px solid rgba(250,199,117,0.15)',
+          background: 'var(--amber-bg)', border: '1px solid var(--amber-bg)',
           borderRadius: 8, fontSize: 11, color: C.text3, lineHeight: 1.5,
         }}>
           <strong style={{ color: 'var(--amber)' }}>{t('pages.footer.disclaimer.title')}</strong> {t('pages.footer.disclaimer.body')}

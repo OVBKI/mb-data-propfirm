@@ -194,7 +194,7 @@ export default function ProfilePage() {
           background: 'var(--glass)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid var(--border)', borderRadius: 14, padding: 28, marginBottom: 24, position: 'relative', overflow: 'hidden',
         }}>
-          <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, rgba(45,111,255,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, var(--blue-bg) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', position: 'relative' }}>
             <div className="qt-profile-avatar" style={{
@@ -202,7 +202,7 @@ export default function ProfilePage() {
               background: 'linear-gradient(135deg, var(--blue) 0%, #6e3aff 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 32, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em',
-              border: '2px solid var(--border2)', boxShadow: '0 8px 24px rgba(45,111,255,0.25)',
+              border: '2px solid var(--border2)', boxShadow: '0 8px 24px var(--blue-bg)',
             }}>
               {getInitials(displayName)}
             </div>
@@ -212,7 +212,7 @@ export default function ProfilePage() {
                 <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>{displayName}</h1>
                 {profile?.verified && <span title="Compte vérifié" style={{ fontSize: 16, color: 'var(--blue-light)' }}>{'✓'}</span>}
                 {profile?.is_public && (
-                  <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 99, background: 'rgba(29,184,122,0.12)', color: 'var(--green-text)', fontWeight: 700, letterSpacing: '0.08em' }}>PUBLIC</span>
+                  <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 99, background: 'var(--green-bg)', color: 'var(--green-text)', fontWeight: 700, letterSpacing: '0.08em' }}>PUBLIC</span>
                 )}
               </div>
 
@@ -342,7 +342,7 @@ export default function ProfilePage() {
         <div style={{ marginBottom: 24 }}>
           <SectionTitle>
             Mur
-            <span style={{ marginLeft: 8, fontSize: 9, padding: '3px 8px', borderRadius: 99, background: 'rgba(45,111,255,0.15)', color: 'var(--blue-light)', fontWeight: 700, letterSpacing: '0.08em', verticalAlign: 'middle' }}>BIENTÔT</span>
+            <span style={{ marginLeft: 8, fontSize: 9, padding: '3px 8px', borderRadius: 99, background: 'var(--blue-bg)', color: 'var(--blue-light)', fontWeight: 700, letterSpacing: '0.08em', verticalAlign: 'middle' }}>BIENTÔT</span>
           </SectionTitle>
           <div style={{ background: 'var(--glass)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px dashed var(--border2)', borderRadius: 12, padding: 40, textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.5 }}>{'\u{1F4AC}'}</div>
@@ -424,9 +424,9 @@ const inputStyle = {
 function chipStyle(active) {
   return {
     padding: '6px 12px', fontSize: 12, fontWeight: active ? 600 : 500,
-    background: active ? 'rgba(45,111,255,0.15)' : 'var(--tint1)',
+    background: active ? 'var(--blue-bg)' : 'var(--tint1)',
     color: active ? 'var(--blue-light)' : 'var(--text2)',
-    border: `1px solid ${active ? 'rgba(45,111,255,0.4)' : 'var(--border)'}`,
+    border: `1px solid ${active ? 'var(--blue-border)' : 'var(--border)'}`,
     borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
   }
 }

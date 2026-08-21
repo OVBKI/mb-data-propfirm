@@ -181,8 +181,8 @@ export default function CGUClient() {
               <div style={{
                 marginBottom: 16,
                 padding: '22px 26px',
-                background: s.danger ? 'rgba(232,80,74,0.04)' : C.surface,
-                border: `1px solid ${s.danger ? 'rgba(232,80,74,0.25)' : C.border}`,
+                background: s.danger ? 'var(--red-bg)' : C.surface,
+                border: `1px solid ${s.danger ? 'var(--red)' : C.border}`,
                 borderRadius: 12,
               }}>
                 <h2 style={{
@@ -208,8 +208,8 @@ export default function CGUClient() {
           <Reveal>
             <div style={{
               padding: '20px 24px',
-              background: 'rgba(250,199,117,0.06)',
-              border: '1px solid rgba(250,199,117,0.25)',
+              background: 'var(--amber-bg)',
+              border: '1px solid var(--amber)',
               borderRadius: 12,
               fontSize: 12, color: C.text3, lineHeight: 1.6,
             }}>

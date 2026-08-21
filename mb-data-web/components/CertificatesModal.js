@@ -333,7 +333,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
           </div>
           <button onClick={()=>setZoomCert(null)} style={{
             position:'absolute', top:'20px', right:'20px',
-            background:'var(--hairline)', color:'#fff', border:'1px solid var(--hairline2)',
+            background:'var(--tint3)', color:'var(--text)', border:'1px solid var(--hairline2)',
             borderRadius:'8px', padding:'8px 16px', fontSize:'13px', cursor:'pointer', fontWeight:'600',
           }}>✕ Fermer</button>
         </div>

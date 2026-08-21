@@ -286,8 +286,8 @@ export default function HealthPage() {
       {tradesError && (
         <div style={{
           padding: '12px 16px',
-          background: 'rgba(232,80,74,0.08)',
-          border: '1px solid rgba(232,80,74,0.3)',
+          background: 'var(--red-bg)',
+          border: '1px solid var(--red)',
           borderRadius: 10,
           fontSize: 13,
           color: C.red,

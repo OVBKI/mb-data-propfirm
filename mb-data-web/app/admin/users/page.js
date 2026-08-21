@@ -135,7 +135,7 @@ export default function AdminUsersPage() {
       {/* Erreur */}
       {error && (
         <div style={{
-          padding: 16, marginBottom: 20, background: 'rgba(232,80,74,0.08)',
+          padding: 16, marginBottom: 20, background: 'var(--red-bg)',
           border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 13, color: C.red,
           whiteSpace: 'pre-wrap', lineHeight: 1.5,
         }}>⚠ {error}</div>
@@ -179,11 +179,11 @@ export default function AdminUsersPage() {
                   <td style={{ padding: '12px 14px', fontSize: 12, color: C.text2 }}>{u.trades}</td>
                   <td style={{ padding: '12px 14px', fontSize: 11 }}>
                     {u.banned ? (
-                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(232,80,74,0.15)', color: C.red, fontWeight: 600 }}>Banni</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'var(--red-bg)', color: C.red, fontWeight: 600 }}>Banni</span>
                     ) : !u.email_confirmed_at ? (
-                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(250,199,117,0.15)', color: C.amber, fontWeight: 600 }}>Non confirmé</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'var(--amber-bg)', color: C.amber, fontWeight: 600 }}>Non confirmé</span>
                     ) : (
-                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(29,184,122,0.15)', color: C.green, fontWeight: 600 }}>Actif</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'var(--green-bg)', color: C.green, fontWeight: 600 }}>Actif</span>
                     )}
                   </td>
                   <td style={{ padding: '12px 14px', textAlign: 'right' }}>
@@ -258,7 +258,7 @@ export default function AdminUsersPage() {
               <button onClick={() => handleDelete(selected.id, selected.email)} disabled={deleting} style={{
                 width: '100%', padding: '10px 16px',
                 fontSize: 13, fontWeight: 600, borderRadius: 8,
-                background: 'rgba(232,80,74,0.08)', color: C.red,
+                background: 'var(--red-bg)', color: C.red,
                 border: `1px solid ${C.red}`,
                 cursor: deleting ? 'wait' : 'pointer', fontFamily: 'inherit',
               }}>

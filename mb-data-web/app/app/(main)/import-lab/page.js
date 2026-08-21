@@ -1356,8 +1356,8 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                 <MicroLabel>Status (auto)</MicroLabel>
                 <div style={{
                   padding: '8px 14px', fontSize: 13, fontWeight: 600,
-                  background: account?.type === 'FUNDED' ? 'rgba(16,185,129,0.12)' : 'rgba(250,199,117,0.12)',
-                  border: `1px solid ${account?.type === 'FUNDED' ? 'rgba(16,185,129,0.3)' : 'rgba(250,199,117,0.3)'}`,
+                  background: account?.type === 'FUNDED' ? 'var(--green-bg)' : 'var(--amber-bg)',
+                  border: `1px solid ${account?.type === 'FUNDED' ? 'var(--green)' : 'var(--amber)'}`,
                   color: account?.type === 'FUNDED' ? T.color.green : T.color.amber,
                   borderRadius: T.radius.md, fontFamily: T.font.mono, letterSpacing: '0.05em',
                 }}>
@@ -1369,8 +1369,8 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             {/* Bloc Achat challenge */}
             <div style={{
               padding: 12, marginTop: 8,
-              background: 'rgba(45,111,255,0.04)',
-              border: `1px solid rgba(45,111,255,0.18)`,
+              background: 'var(--blue-bg)',
+              border: `1px solid var(--blue-bg)`,
               borderRadius: T.radius.md,
             }}>
               <div style={{
@@ -1402,8 +1402,8 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             {account?.type === 'FUNDED' && (
               <div style={{
                 padding: 12, marginTop: 8,
-                background: 'rgba(16,185,129,0.04)',
-                border: `1px solid rgba(16,185,129,0.18)`,
+                background: 'var(--green-bg)',
+                border: `1px solid var(--green-bg)`,
                 borderRadius: T.radius.md,
               }}>
                 <div style={{
@@ -1547,8 +1547,8 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               <MicroLabel>Status (auto)</MicroLabel>
               <div style={{
                 padding: '8px 14px', fontSize: 13, fontWeight: 600,
-                background: account.type === 'FUNDED' ? 'rgba(16,185,129,0.12)' : 'rgba(250,199,117,0.12)',
-                border: `1px solid ${account.type === 'FUNDED' ? 'rgba(16,185,129,0.3)' : 'rgba(250,199,117,0.3)'}`,
+                background: account.type === 'FUNDED' ? 'var(--green-bg)' : 'var(--amber-bg)',
+                border: `1px solid ${account.type === 'FUNDED' ? 'var(--green)' : 'var(--amber)'}`,
                 color: account.type === 'FUNDED' ? T.color.green : T.color.amber,
                 borderRadius: T.radius.md, fontFamily: T.font.mono, letterSpacing: '0.05em',
               }}>
@@ -1560,8 +1560,8 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
           {/* Ligne 2 : Achat challenge (TOUJOURS demandé) */}
           <div style={{
             padding: 12, marginTop: 8,
-            background: 'rgba(45,111,255,0.04)',
-            border: `1px solid rgba(45,111,255,0.18)`,
+            background: 'var(--blue-bg)',
+            border: `1px solid var(--blue-bg)`,
             borderRadius: T.radius.md,
           }}>
             <div style={{
@@ -1598,8 +1598,8 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
           {account.type === 'FUNDED' && (
             <div style={{
               padding: 12, marginTop: 8,
-              background: 'rgba(16,185,129,0.04)',
-              border: `1px solid rgba(16,185,129,0.18)`,
+              background: 'var(--green-bg)',
+              border: `1px solid var(--green-bg)`,
               borderRadius: T.radius.md,
             }}>
               <div style={{
@@ -1795,7 +1795,7 @@ function ExecutionSection({ dryRun, setDryRun, importing, onLaunch, label }) {
           </div>
         </label>
 
-        <label style={modeRowStyle(!dryRun, T.color.amberSoft, 'rgba(250,199,117,0.4)')}>
+        <label style={modeRowStyle(!dryRun, T.color.amberSoft, 'var(--amber)')}>
           <input type="radio" name="exec-mode" checked={!dryRun} onChange={() => setDryRun(false)} style={{ marginTop: 3 }} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2, color: T.color.amber }}>⚠️ Import réel</div>
@@ -1831,7 +1831,7 @@ function ResultSection({ result, onReset, kind }) {
     <Section title="4 · Rapport">
       <Card style={{
         borderColor: result.ok ? T.color.green : T.color.red,
-        background: result.ok ? 'rgba(16,185,129,0.05)' : 'rgba(239,68,68,0.05)',
+        background: result.ok ? 'var(--green-bg)' : 'rgba(239,68,68,0.05)',
       }}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: result.ok ? T.color.green : T.color.red }}>
           {result.ok

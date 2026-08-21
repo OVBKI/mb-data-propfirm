@@ -65,7 +65,7 @@ export const C = {
  * Renvoie la palette sombre côté serveur, où getComputedStyle n'existe pas.
  */
 export function chartColors() {
-  const fallback = { grid: 'rgba(255,255,255,0.04)', tick: '#7b839b', text: '#f0ede8' }
+  const fallback = { grid: 'rgba(159,179,200,0.09)', tick: '#8a9fb5', text: '#f0f5fa' }
   if (typeof window === 'undefined') return fallback
   const cs = getComputedStyle(document.documentElement)
   const read = (name, dflt) => (cs.getPropertyValue(name) || '').trim() || dflt
@@ -85,7 +85,7 @@ export function chartColors() {
 export const cardStyle = {
   background: 'var(--surface)',
   border:     '1px solid var(--border)',
-  borderRadius: '10px',
+  borderRadius: 'var(--radius-lg)',
   boxShadow:  'var(--shadow-card)',
 }
 
@@ -110,7 +110,7 @@ export const btnPrimary = {
   background:    'var(--text)',
   color:         'var(--text-inverse)',
   border:        '1px solid transparent',
-  borderRadius:  '8px',
+  borderRadius:  'var(--radius)',
   cursor:        'pointer',
   fontFamily:    'inherit',
   letterSpacing: '0.005em',
@@ -129,7 +129,7 @@ export const btnGhost = {
   background:    'var(--tint1)',
   border:        '1px solid var(--hairline)',
   color:         'var(--text2)',
-  borderRadius:  '8px',
+  borderRadius:  'var(--radius)',
   cursor:        'pointer',
   fontFamily:    'inherit',
   letterSpacing: '0.005em',
@@ -145,7 +145,7 @@ export const inputStyle = {
   padding:      '10px 12px',
   fontSize:     '13px',
   border:       '1px solid var(--hairline)',
-  borderRadius: '8px',
+  borderRadius: 'var(--radius)',
   background:   'var(--tint1)',
   color:        'var(--text)',
   outline:      'none',
@@ -161,7 +161,7 @@ export const inputStyleCompact = {
   padding:      '7px 10px',
   fontSize:     '12px',
   border:       '1px solid var(--hairline)',
-  borderRadius: '6px',
+  borderRadius: '10px',
   background:   'var(--tint1)',
   color:        C.text,
   outline:      'none',

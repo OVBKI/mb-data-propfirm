@@ -74,7 +74,7 @@ export default function PushNotificationToggle() {
   if (permission === 'denied') {
     return (
       <div style={{
-        padding: '14px 18px', background: 'rgba(232,80,74,0.08)',
+        padding: '14px 18px', background: 'var(--red-bg)',
         border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 12, color: C.red, lineHeight: 1.5,
       }}>
         🚫 Tu as bloqué les notifications. Pour les réactiver : clique sur l'icône cadenas à gauche de la barre d'adresse → "Notifications" → "Autoriser", puis reload.
@@ -90,14 +90,14 @@ export default function PushNotificationToggle() {
     }}>
       <div style={{
         width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-        background: active ? 'rgba(29,184,122,0.12)' : C.surface2,
+        background: active ? 'var(--green-bg)' : C.surface2,
         border: `1px solid ${active ? C.green : C.border2}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 20,
       }}>{active ? '🔔' : '🔕'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>
-          Notifications push {active && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 99, background: 'rgba(29,184,122,0.15)', color: C.green, marginLeft: 6, fontWeight: 700 }}>ACTIVES</span>}
+          Notifications push {active && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 99, background: 'var(--green-bg)', color: C.green, marginLeft: 6, fontWeight: 700 }}>ACTIVES</span>}
         </div>
         <div style={{ fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
           {active

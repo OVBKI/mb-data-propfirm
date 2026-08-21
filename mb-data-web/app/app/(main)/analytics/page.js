@@ -31,9 +31,9 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(2)} €` } } },
         scales: { x: { grid: { display: false }, ticks: { color: CH.tick, font: { size: 10 }, maxTicksLimit: 10 } }, y: { grid: { color: CH.grid }, ticks: { color: CH.tick, font: { size: 10 }, callback: v => v + '€' } } }
       }
-      if (cRef.current) { destroy('c'); charts.current.c = new Chart(cRef.current, { type: 'line', data: { labels: cLabels, datasets: [{ label: 'Dépenses (€)', data: cSpent, borderColor: '#e8504a', backgroundColor: 'rgba(232,80,74,0.06)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Payouts (€)', data: cPayout, borderColor: '#1db87a', backgroundColor: 'rgba(29,184,122,0.06)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Net (€)', data: cNet, borderColor: '#2d6fff', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [6, 3] }] }, options: opts }) }
-      if (yRef.current) { destroy('y'); charts.current.y = new Chart(yRef.current, { type: 'bar', data: { labels: yLabels, datasets: [{ label: 'Dépenses (€)', data: ySpent, backgroundColor: '#e8504a', borderRadius: 5 }, { label: 'Payouts (€)', data: yPayout, backgroundColor: '#1db87a', borderRadius: 5 }, { label: 'Net (€)', data: yNet, backgroundColor: yNet.map(v => v >= 0 ? 'rgba(45,111,255,0.7)' : 'rgba(232,80,74,0.4)'), borderRadius: 5 }] }, options: opts }) }
-      if (mRef.current) { destroy('m'); charts.current.m = new Chart(mRef.current, { type: 'bar', data: { labels: mLabels, datasets: [{ label: 'Dépenses (€)', data: mSpent, backgroundColor: '#e8504a', borderRadius: 4 }, { label: 'Payouts (€)', data: mPayout, backgroundColor: '#1db87a', borderRadius: 4 }, { label: 'Net (€)', data: mNet, backgroundColor: mNet.map(v => v >= 0 ? 'rgba(45,111,255,0.7)' : 'rgba(232,80,74,0.4)'), borderRadius: 4 }] }, options: opts }) }
+      if (cRef.current) { destroy('c'); charts.current.c = new Chart(cRef.current, { type: 'line', data: { labels: cLabels, datasets: [{ label: 'Dépenses (€)', data: cSpent, borderColor: '#e8504a', backgroundColor: 'var(--red-bg)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Payouts (€)', data: cPayout, borderColor: '#1db87a', backgroundColor: 'var(--green-bg)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Net (€)', data: cNet, borderColor: '#2d6fff', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [6, 3] }] }, options: opts }) }
+      if (yRef.current) { destroy('y'); charts.current.y = new Chart(yRef.current, { type: 'bar', data: { labels: yLabels, datasets: [{ label: 'Dépenses (€)', data: ySpent, backgroundColor: '#e8504a', borderRadius: 5 }, { label: 'Payouts (€)', data: yPayout, backgroundColor: '#1db87a', borderRadius: 5 }, { label: 'Net (€)', data: yNet, backgroundColor: yNet.map(v => v >= 0 ? 'var(--blue-border)' : 'var(--red)'), borderRadius: 5 }] }, options: opts }) }
+      if (mRef.current) { destroy('m'); charts.current.m = new Chart(mRef.current, { type: 'bar', data: { labels: mLabels, datasets: [{ label: 'Dépenses (€)', data: mSpent, backgroundColor: '#e8504a', borderRadius: 4 }, { label: 'Payouts (€)', data: mPayout, backgroundColor: '#1db87a', borderRadius: 4 }, { label: 'Net (€)', data: mNet, backgroundColor: mNet.map(v => v >= 0 ? 'var(--blue-border)' : 'var(--red)'), borderRadius: 4 }] }, options: opts }) }
     }).catch(e => console.error('Chart.js:', e))
     return () => { destroyed = true; Object.values(charts.current).forEach(c => c?.destroy()) }
   }, [cLabels.join(','), yLabels.join(','), mLabels.join(','), theme])
@@ -52,14 +52,14 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
       <div style={{ ...cardS, padding: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text2)' }}>Performance annuelle</div>
-          {leg([{ l: 'Dépenses', c: '#e8504a' }, { l: 'Payouts', c: '#1db87a' }, { l: 'Net', c: 'rgba(45,111,255,0.8)' }])}
+          {leg([{ l: 'Dépenses', c: '#e8504a' }, { l: 'Payouts', c: '#1db87a' }, { l: 'Net', c: 'var(--blue-border)' }])}
         </div>
         <div style={{ position: 'relative', height: '220px' }}><canvas ref={yRef} /></div>
       </div>
       <div style={{ ...cardS, padding: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text2)' }}>Performance mensuelle</div>
-          {leg([{ l: 'Dépenses', c: '#e8504a' }, { l: 'Payouts', c: '#1db87a' }, { l: 'Net', c: 'rgba(45,111,255,0.8)' }])}
+          {leg([{ l: 'Dépenses', c: '#e8504a' }, { l: 'Payouts', c: '#1db87a' }, { l: 'Net', c: 'var(--blue-border)' }])}
         </div>
         <div style={{ position: 'relative', height: '220px' }}><canvas ref={mRef} /></div>
       </div>

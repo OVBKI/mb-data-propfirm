@@ -203,7 +203,7 @@ export default function CompareCfdFirmsClient({
             {firmA} et {firmB} sont pré-configurées dans Quantara (onglet CFD). Suis tes comptes des deux firmes dans un seul dashboard, gratuit pendant la beta.
           </p>
           <div style={{ display: 'inline-flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/auth?mode=signup" style={{ padding: '12px 26px', background: C.blue, color: '#fff', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Commencer gratuitement →</Link>
+            <Link href="/auth?mode=signup" style={{ padding: '12px 26px', background: C.blue, color: 'var(--text-inverse)', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Commencer gratuitement →</Link>
             <Link href="/cfd" style={{ padding: '12px 26px', background: 'transparent', color: C.text2, borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none', border: `1px solid ${C.border}` }}>Comparateur CFD</Link>
           </div>
         </section>

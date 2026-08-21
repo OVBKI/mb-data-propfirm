@@ -202,8 +202,8 @@ export default function ImprintClient() {
           <Reveal>
             <div style={{
               padding: '18px 22px',
-              background: 'rgba(45,111,255,0.04)',
-              border: '1px solid rgba(45,111,255,0.20)',
+              background: 'var(--blue-bg)',
+              border: '1px solid var(--blue-border)',
               borderRadius: 10,
               fontSize: 12, color: C.text2, lineHeight: 1.7,
             }}>

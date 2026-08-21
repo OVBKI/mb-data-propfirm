@@ -116,7 +116,7 @@ function FollowList({ items }) {
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
               background: isPublic
-                ? 'linear-gradient(135deg, #2d6fff, #4d8fff)'
+                ? 'linear-gradient(135deg, var(--blue), #4d8fff)'
                 : 'var(--tint2)',
               border: isPublic ? '1px solid var(--hairline)' : '1px dashed var(--hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -183,7 +183,7 @@ const backStyle = {
 }
 const verifiedBadgeStyle = {
   fontSize: 9, color: 'var(--blue-light)',
-  background: 'rgba(45,111,255,0.15)',
+  background: 'var(--blue-bg)',
   borderRadius: '50%', width: 14, height: 14,
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   flexShrink: 0,

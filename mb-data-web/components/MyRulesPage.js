@@ -39,7 +39,7 @@ const inputS = { width: '100%', padding: '10px 12px', fontSize: 13, border: `1px
 const labelS = { fontSize: 10.5, fontWeight: 600, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 6 }
 const btnPrimary = { padding: '8px 16px', fontSize: 12.5, fontWeight: 500, background: C.text, color: 'var(--text-inverse)', border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit' }
 const btnGhost = { padding: '7px 13px', fontSize: 12, fontWeight: 500, background: 'var(--tint1)', border: '1px solid var(--hairline)', color: C.text2, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
-const btnDanger = { padding: '6px 11px', fontSize: 11, fontWeight: 500, background: 'rgba(232,80,74,0.08)', border: '1px solid rgba(232,80,74,0.25)', color: C.red, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
+const btnDanger = { padding: '6px 11px', fontSize: 11, fontWeight: 500, background: 'var(--red-bg)', border: '1px solid var(--red)', color: C.red, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }
 
 const RULE_CATEGORIES = [
   { k: 'risk',      lk: 'catRisk',      color: 'var(--red)' },

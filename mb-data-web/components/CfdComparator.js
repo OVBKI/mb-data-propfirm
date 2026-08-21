@@ -221,7 +221,7 @@ export default function CfdComparator() {
       <div style={{ display: 'grid', gap: 12, marginBottom: 28 }}>
         <div style={{
           padding: '12px 16px',
-          background: 'rgba(250,199,117,0.07)',
+          background: 'var(--amber-bg)',
           border: `1px solid ${C.amber}44`,
           borderRadius: 10,
           fontSize: 13,

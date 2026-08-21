@@ -41,9 +41,9 @@ const C = {
 }
 
 const TYPES = [
-  { value: 'info',    label: 'ℹ️ Info',    color: C.blueLight, bg: 'rgba(45,111,255,0.10)' },
-  { value: 'success', label: '✅ Succès',  color: C.green,     bg: 'rgba(29,184,122,0.10)' },
-  { value: 'warn',    label: '⚠️ Attention',color: C.amber,     bg: 'rgba(250,199,117,0.10)' },
+  { value: 'info',    label: 'ℹ️ Info',    color: C.blueLight, bg: 'var(--blue-bg)' },
+  { value: 'success', label: '✅ Succès',  color: C.green,     bg: 'var(--green-bg)' },
+  { value: 'warn',    label: '⚠️ Attention',color: C.amber,     bg: 'var(--amber-bg)' },
   { value: 'promo',   label: '🎉 Promo',   color: '#f472b6',   bg: 'rgba(244,114,182,0.10)' },
 ]
 
@@ -217,7 +217,7 @@ export default function AdminAnnouncementsPage() {
 
       {error && (
         <div style={{
-          padding: 16, marginBottom: 20, background: 'rgba(232,80,74,0.08)',
+          padding: 16, marginBottom: 20, background: 'var(--red-bg)',
           border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 13, color: C.red,
         }}>⚠ {error}</div>
       )}
@@ -234,7 +234,7 @@ export default function AdminAnnouncementsPage() {
           Aucune annonce créée pour l'instant.<br />
           <button onClick={openNew} style={{
             marginTop: 16, padding: '10px 18px', fontSize: 13, fontWeight: 600, borderRadius: 8,
-            background: C.blue, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            background: C.blue, color: 'var(--text-inverse)', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
           }}>+ Créer ma 1ère annonce</button>
         </div>
       ) : (
@@ -256,11 +256,11 @@ export default function AdminAnnouncementsPage() {
                         background: typeMeta.bg, color: typeMeta.color,
                       }}>{typeMeta.label}</span>
                       {live ? (
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: 'rgba(29,184,122,0.15)', color: C.green }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: 'var(--green-bg)', color: C.green }}>
                           🟢 LIVE
                         </span>
                       ) : item.active ? (
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: 'rgba(250,199,117,0.15)', color: C.amber }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: 'var(--amber-bg)', color: C.amber }}>
                           ⏰ Programmé / Expiré
                         </span>
                       ) : (
@@ -384,9 +384,9 @@ export default function AdminAnnouncementsPage() {
               }}>Annuler</button>
               <button onClick={save} disabled={saving} style={{
                 padding: '10px 22px', fontSize: 13, fontWeight: 600, borderRadius: 8,
-                background: C.blue, color: '#fff', border: 'none',
+                background: C.blue, color: 'var(--text-inverse)', border: 'none',
                 cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit',
-                boxShadow: '0 4px 14px rgba(45,111,255,0.35)',
+                boxShadow: '0 4px 14px var(--blue-bg)',
               }}>{saving ? '⏳ Enregistrement...' : (editing === 'new' ? '✓ Créer' : '✓ Enregistrer')}</button>
             </div>
           </div>

@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
 
       {error && (
         <div style={{
-          padding: 16, marginBottom: 24, background: 'rgba(232,80,74,0.08)',
+          padding: 16, marginBottom: 24, background: 'var(--red-bg)',
           border: `1px solid ${C.red}`, borderRadius: 10, fontSize: 13, color: C.red,
         }}>⚠ {error}</div>
       )}

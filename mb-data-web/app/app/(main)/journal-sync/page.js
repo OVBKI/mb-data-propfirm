@@ -52,7 +52,7 @@ export default function JournalSyncHub() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
           <Link href="/app/import-lab" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(45,111,255,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(45,111,255,0.15)' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'var(--blue-border)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px var(--blue-bg)' }}
             onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
           >
             <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F4E5}'}</div>
@@ -62,14 +62,14 @@ export default function JournalSyncHub() {
               Upload un export CSV depuis Rithmic R|Trader Pro (Performance ou Trader Dashboard) pour synchroniser tes trades automatiquement.
             </p>
             <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ padding: '3px 8px', background: 'rgba(45,111,255,0.1)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
+              <span style={{ padding: '3px 8px', background: 'var(--blue-bg)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
               <span>Rithmic supporté</span><span>{'·'}</span><span>11+ propfirms détectées</span>
             </div>
             <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.blueLt, fontSize: 18 }}>{'→'}</div>
           </Link>
 
           <Link href="/app/journal-sync/view" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'rgba(29,184,122,0.5)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px rgba(29,184,122,0.15)' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'var(--green)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px var(--green-bg)' }}
             onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
           >
             <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F4CA}'}</div>
@@ -79,7 +79,7 @@ export default function JournalSyncHub() {
               Vois tes trades synchronisés avec leurs métadonnées Rithmic complètes : entry/exit prices, fills, hold time, etc.
             </p>
             <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {tradeCount != null && <span style={{ padding: '3px 8px', background: 'rgba(29,184,122,0.1)', color: C.green, borderRadius: 99, fontWeight: 600 }}>{tradeCount} trade{tradeCount > 1 ? 's' : ''}</span>}
+              {tradeCount != null && <span style={{ padding: '3px 8px', background: 'var(--green-bg)', color: C.green, borderRadius: 99, fontWeight: 600 }}>{tradeCount} trade{tradeCount > 1 ? 's' : ''}</span>}
               <span>Filtres avancés</span><span>{'·'}</span><span>Stats Rithmic</span>
             </div>
             <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.green, fontSize: 18 }}>{'→'}</div>

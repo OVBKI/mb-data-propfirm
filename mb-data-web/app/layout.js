@@ -1,4 +1,4 @@
-import { Inter } from 'next/font/google'
+import { Outfit, Roboto_Mono } from 'next/font/google'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { Analytics } from '@vercel/analytics/react'
@@ -10,7 +10,11 @@ import './globals.css'
 
 const CookieConsent = dynamic(() => import('../components/CookieConsent'), { ssr: false })
 
-const inter = Inter({ subsets: ['latin'] })
+// Abyss — Outfit pour l'interface (grotesque géométrique, chaleureux aux grandes
+// tailles), Roboto Mono pour tout ce qui s'aligne en colonne. Exposées en
+// variables CSS pour que globals.css et les styles inline y accèdent.
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-ui', display: 'swap' })
+const robotoMono = Roboto_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' })
 
 // Metadata complète — SEO + social sharing + AI search readiness.
 // Centralisée ici dans le layout racine ; chaque page peut override via export const metadata.
@@ -119,7 +123,7 @@ export const viewport = {
   maximumScale: 5,
   // Valeur de départ (thème sombre par défaut) ; ThemeProvider réécrit la balise
   // au runtime quand l'utilisateur bascule en clair.
-  themeColor: '#0d0f14',
+  themeColor: '#0a1420',
   // Les deux schémas sont supportés — c'est `color-scheme` posé par [data-theme]
   // dans globals.css qui tranche, pas cette balise.
   colorScheme: 'dark light',
@@ -150,7 +154,7 @@ export default function RootLayout({ children }) {
         <JsonLd data={ORGANIZATION_SCHEMA} />
         <JsonLd data={WEBSITE_SCHEMA} />
       </head>
-      <body className={inter.className}>
+      <body className={`${outfit.variable} ${robotoMono.variable}`}>
         <a href="#main-content" style={{
           position: 'absolute',
           left: '-9999px',

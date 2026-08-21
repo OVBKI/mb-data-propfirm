@@ -132,10 +132,10 @@ function Flag({ country, currency, size = 18, style = {} }) {
 
 // Impact color tokens — vibrant for High, calmer for Medium, muted for Low
 const IC = {
-  High:    { bar: 'var(--red)', text: '#ff6b66', bg: 'rgba(232,80,74,0.06)',  glow: 'rgba(232,80,74,0.25)' },
-  Medium:  { bar: 'var(--amber)', text: 'var(--amber)', bg: 'rgba(250,199,117,0.04)', glow: 'rgba(250,199,117,0.15)' },
+  High:    { bar: 'var(--red)', text: '#ff6b66', bg: 'var(--red-bg)',  glow: 'var(--red)' },
+  Medium:  { bar: 'var(--amber)', text: 'var(--amber)', bg: 'var(--amber-bg)', glow: 'var(--amber-bg)' },
   Low:     { bar: 'var(--text3)', text: 'var(--text2)', bg: 'transparent',            glow: 'transparent' },
-  Holiday: { bar: 'var(--blue-light)', text: '#7baaff', bg: 'rgba(45,111,255,0.06)',  glow: 'rgba(45,111,255,0.15)' },
+  Holiday: { bar: 'var(--blue-light)', text: '#7baaff', bg: 'var(--blue-bg)',  glow: 'var(--blue-bg)' },
 }
 
 // Traductions des événements ForexFactory (titres anglais → FR/ES)
@@ -269,9 +269,9 @@ function actualDiff(actual, forecast, lang) {
   const a = parseFloat(String(actual).replace(/[^0-9.-]/g, ''))
   const f = parseFloat(String(forecast).replace(/[^0-9.-]/g, ''))
   if (isNaN(a) || isNaN(f)) return null
-  if (a > f) return { color: 'var(--green)', bg: 'rgba(29,184,122,0.15)', label: t.beat, sign: '↑' }
-  if (a < f) return { color: 'var(--red)', bg: 'rgba(232,80,74,0.15)', label: t.miss, sign: '↓' }
-  return { color: 'var(--amber)', bg: 'rgba(250,199,117,0.15)', label: t.inline, sign: '=' }
+  if (a > f) return { color: 'var(--green)', bg: 'var(--green-bg)', label: t.beat, sign: '↑' }
+  if (a < f) return { color: 'var(--red)', bg: 'var(--red-bg)', label: t.miss, sign: '↓' }
+  return { color: 'var(--amber)', bg: 'var(--amber-bg)', label: t.inline, sign: '=' }
 }
 
 function todayFF() {
@@ -438,7 +438,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
               <span style={{
                 width: 6, height: 6, borderRadius: '50%',
                 background: 'var(--green)',
-                boxShadow: '0 0 8px rgba(29,184,122,0.6)',
+                boxShadow: '0 0 8px var(--green-bg)',
                 animation: 'qt-cal-pulse 2s ease-in-out infinite',
               }} />
               {t.eyebrow}
@@ -670,8 +670,8 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
         ) : error ? (
           <div style={{
             ...card, padding: 40, textAlign: 'center',
-            color: '#ff6b66', background: 'rgba(232,80,74,0.05)',
-            borderColor: 'rgba(232,80,74,0.3)',
+            color: '#ff6b66', background: 'var(--red-bg)',
+            borderColor: 'var(--red)',
           }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>⚠️</div>
             <div style={{ fontSize: 14, marginBottom: 4 }}>{t.error}</div>
@@ -767,7 +767,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
           50% { opacity: 0.3; }
         }
         .qt-cal-pill:hover { background: var(--border) !important; color: var(--text) !important; }
-        .qt-cal-pill[data-active="true"]:hover { background: rgba(45,111,255,0.22) !important; }
+        .qt-cal-pill[data-active="true"]:hover { background: var(--blue-border) !important; }
         .qt-cal-event-row { transition: background 0.15s, transform 0.15s; }
         .qt-cal-event-row:hover {
           background: var(--tint1) !important;
@@ -801,8 +801,8 @@ function pillStyle(active, monoFont) {
     letterSpacing: '0.04em',
     cursor: 'pointer',
     borderRadius: 99,
-    border: `1px solid ${active ? 'rgba(45,111,255,0.45)' : 'var(--hairline)'}`,
-    background: active ? 'rgba(45,111,255,0.18)' : 'transparent',
+    border: `1px solid ${active ? 'var(--blue-border)' : 'var(--hairline)'}`,
+    background: active ? 'var(--blue-bg)' : 'transparent',
     color: active ? '#7baaff' : 'var(--text2)',
     transition: 'all 0.15s',
     fontFamily: monoFont,
@@ -892,8 +892,8 @@ function WeekStrip({ dates, grouped, today, onJump, mono, t, lang }) {
               minWidth: 130,
               padding: '12px 14px',
               borderRadius: 12,
-              background: isToday ? 'rgba(45,111,255,0.12)' : 'var(--glass-2)',
-              border: `1px solid ${isToday ? 'rgba(45,111,255,0.45)' : 'var(--border)'}`,
+              background: isToday ? 'var(--blue-bg)' : 'var(--glass-2)',
+              border: `1px solid ${isToday ? 'var(--blue-border)' : 'var(--border)'}`,
               color: 'var(--text)',
               cursor: 'pointer',
               textAlign: 'left',
@@ -957,7 +957,7 @@ function DayCard({ date, events, isToday, nowTs, lang, t, mono, serif, cardStyle
     <div ref={refCb} style={{
       ...cardStyle,
       overflow: 'hidden',
-      borderColor: isToday ? 'rgba(45,111,255,0.35)' : cardStyle.border,
+      borderColor: isToday ? 'var(--blue-border)' : cardStyle.border,
       scrollMarginTop: 20,
     }}>
       {/* Day header */}
@@ -965,14 +965,14 @@ function DayCard({ date, events, isToday, nowTs, lang, t, mono, serif, cardStyle
         padding: '16px 22px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         gap: 12, flexWrap: 'wrap',
-        background: isToday ? 'rgba(45,111,255,0.06)' : 'var(--tint1)',
+        background: isToday ? 'var(--blue-bg)' : 'var(--tint1)',
         borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
           {isToday && (
             <span style={{
               fontSize: 9.5, fontWeight: 700, padding: '4px 10px',
-              borderRadius: 99, background: 'var(--blue)', color: '#fff',
+              borderRadius: 99, background: 'var(--blue)', color: 'var(--text-inverse)',
               textTransform: 'uppercase', letterSpacing: '0.14em',
               fontFamily: mono,
             }}>● {t.today}</span>
@@ -1007,7 +1007,7 @@ function DayCard({ date, events, isToday, nowTs, lang, t, mono, serif, cardStyle
             <span style={{
               fontSize: 11, fontWeight: 600,
               padding: '4px 10px', borderRadius: 6,
-              background: 'rgba(232,80,74,0.13)', color: '#ff6b66',
+              background: 'var(--red-bg)', color: '#ff6b66',
               fontFamily: mono, letterSpacing: '0.04em',
               display: 'inline-flex', alignItems: 'center', gap: 5,
             }}>
@@ -1019,7 +1019,7 @@ function DayCard({ date, events, isToday, nowTs, lang, t, mono, serif, cardStyle
             <span style={{
               fontSize: 11, fontWeight: 600,
               padding: '4px 10px', borderRadius: 6,
-              background: 'rgba(250,199,117,0.12)', color: 'var(--amber)',
+              background: 'var(--amber-bg)', color: 'var(--amber)',
               fontFamily: mono, letterSpacing: '0.04em',
               display: 'inline-flex', alignItems: 'center', gap: 5,
             }}>
@@ -1253,8 +1253,8 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
   const cellStyle = (active) => ({
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '11px 13px', borderRadius: 10, cursor: 'pointer',
-    border: `1px solid ${active ? 'rgba(45,111,255,0.5)' : 'var(--border)'}`,
-    background: active ? 'rgba(45,111,255,0.10)' : 'var(--glass-2)',
+    border: `1px solid ${active ? 'var(--blue-border)' : 'var(--border)'}`,
+    background: active ? 'var(--blue-bg)' : 'var(--glass-2)',
     color: active ? 'var(--text)' : 'var(--text2)',
     transition: 'all 0.15s',
     fontSize: 13, fontWeight: active ? 700 : 500,
@@ -1299,7 +1299,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
             <button onClick={() => setFCurrencies([])} style={{
               flex: 1, padding: '10px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
               borderRadius: 8, border: '1px solid var(--hairline)',
-              background: fCurrencies.length === 0 ? 'rgba(45,111,255,0.18)' : 'transparent',
+              background: fCurrencies.length === 0 ? 'var(--blue-bg)' : 'transparent',
               color: fCurrencies.length === 0 ? '#7baaff' : 'var(--text2)',
               fontFamily: mono,
             }}>{t.allCurrencies}</button>
@@ -1364,7 +1364,7 @@ function CurrencyModal({ availableCurrencies, fCurrencies, setFCurrencies, event
           <button onClick={onClose} style={{
             padding: '10px 24px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
             borderRadius: 8, border: 'none',
-            background: 'var(--blue)', color: '#fff',
+            background: 'var(--blue)', color: 'var(--text-inverse)',
             fontFamily: mono, letterSpacing: '0.06em', textTransform: 'uppercase',
           }}>OK</button>
         </div>

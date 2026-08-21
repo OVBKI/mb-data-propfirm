@@ -35,7 +35,7 @@ function CommunityComingSoon() {
       </p>
       <Link href="/app/dashboard" style={{
         display: 'inline-block', padding: '11px 22px',
-        background: C.blue, color: '#fff',
+        background: C.blue, color: 'var(--text-inverse)',
         fontSize: 13, fontWeight: 700,
         borderRadius: 10, textDecoration: 'none',
       }}>← Retour au dashboard</Link>
@@ -205,13 +205,13 @@ function GroupCard({ group }) {
         onMouseEnter={e => { e.currentTarget.style.borderColor = C.blueLight }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = C.border }}
       >
-        <div style={{ width: 48, height: 48, borderRadius: 10, background: 'linear-gradient(135deg, #2d6fff, #4d8fff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 10, background: 'linear-gradient(135deg, var(--blue), #4d8fff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
           {group.name?.[0]?.toUpperCase() || 'G'}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 600, color: C.text }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</span>
-            {group.role === 'owner' && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: 'rgba(250,199,117,0.15)', color: C.amber, letterSpacing: '0.05em' }}>OWNER</span>}
+            {group.role === 'owner' && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: 'var(--amber-bg)', color: C.amber, letterSpacing: '0.05em' }}>OWNER</span>}
           </div>
           {group.description && <div style={{ fontSize: 12, color: C.text3, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.description}</div>}
           <div style={{ fontSize: 11, color: C.text3, marginTop: 6, display: 'flex', gap: 12 }}>
@@ -228,6 +228,6 @@ function GroupCard({ group }) {
 const cardStyle = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }
 const cardHeaderStyle = { fontSize: 13, fontWeight: 600, color: C.text, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }
 const inputStyle = { width: '100%', padding: '10px 12px', fontSize: 14, background: C.surface2, color: C.text, border: `1px solid ${C.border2}`, borderRadius: 8, outline: 'none', fontFamily: 'inherit' }
-const primaryBtnStyle = (loading) => ({ padding: '10px 18px', fontSize: 13, fontWeight: 600, background: C.blue, color: '#fff', border: 'none', borderRadius: 8, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit', alignSelf: 'flex-start' })
+const primaryBtnStyle = (loading) => ({ padding: '10px 18px', fontSize: 13, fontWeight: 600, background: C.blue, color: 'var(--text-inverse)', border: 'none', borderRadius: 8, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit', alignSelf: 'flex-start' })
 const errorStyle = { padding: '8px 12px', fontSize: 12, color: C.red, background: 'rgba(239,68,68,0.08)', border: `1px solid ${C.red}`, borderRadius: 6 }
-const successStyle = { padding: '8px 12px', fontSize: 12, color: C.green, background: 'rgba(16,185,129,0.08)', border: `1px solid ${C.green}`, borderRadius: 6 }
+const successStyle = { padding: '8px 12px', fontSize: 12, color: C.green, background: 'var(--green-bg)', border: `1px solid ${C.green}`, borderRadius: 6 }

@@ -314,8 +314,8 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
               {isPublic && username.trim() && (
                 <div style={{
                   marginTop: 12, padding: '8px 12px',
-                  background: 'rgba(45,111,255,0.08)',
-                  border: '1px solid rgba(45,111,255,0.2)',
+                  background: 'var(--blue-bg)',
+                  border: '1px solid var(--blue-border)',
                   borderRadius: 6, fontSize: 11,
                   display: 'flex', alignItems: 'center', gap: 8,
                 }}>
@@ -428,7 +428,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
               {showDeleteZone && (
                 <div style={{
                   marginTop: 12, padding: 16, background: 'var(--red-bg)',
-                  border: '1px solid rgba(232,80,74,0.3)', borderRadius: 8,
+                  border: '1px solid var(--red)', borderRadius: 8,
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--red-text)', marginBottom: 6 }}>
                     Zone dangereuse
@@ -443,7 +443,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                     placeholder="SUPPRIMER MON COMPTE"
                     style={{
                       ...inputStyle, marginBottom: 10,
-                      borderColor: 'rgba(232,80,74,0.4)',
+                      borderColor: 'var(--red)',
                     }}
                   />
                   <button

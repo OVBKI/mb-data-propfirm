@@ -352,8 +352,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
                 onClick={() => setPeriod(p.k)}
                 style={{
                   padding: '5px 10px', fontSize: 11, fontWeight: 500,
-                  background: period === p.k ? 'rgba(45,111,255,0.15)' : 'var(--tint1)',
-                  border: `1px solid ${period === p.k ? 'rgba(45,111,255,0.4)' : 'var(--hairline)'}`,
+                  background: period === p.k ? 'var(--blue-bg)' : 'var(--tint1)',
+                  border: `1px solid ${period === p.k ? 'var(--blue-border)' : 'var(--hairline)'}`,
                   color: period === p.k ? C.blueLt : C.text2,
                   borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit',
                 }}
@@ -370,14 +370,14 @@ export default function HeatmapPage({ user, firms, showToast }) {
               const col = s.color(C)
               const active = statusFilter === s.k
               // Couleur active : teintée selon le statut (amber/green/red), bleue pour "Tous"
-              const activeBg = s.k === 'all' ? 'rgba(45,111,255,0.15)'
-                : s.k === 'Challenge' ? 'rgba(250,199,117,0.15)'
-                : s.k === 'Financé'   ? 'rgba(29,184,122,0.15)'
-                : 'rgba(232,80,74,0.15)'
-              const activeBorder = s.k === 'all' ? 'rgba(45,111,255,0.4)'
-                : s.k === 'Challenge' ? 'rgba(250,199,117,0.4)'
-                : s.k === 'Financé'   ? 'rgba(29,184,122,0.4)'
-                : 'rgba(232,80,74,0.4)'
+              const activeBg = s.k === 'all' ? 'var(--blue-bg)'
+                : s.k === 'Challenge' ? 'var(--amber-bg)'
+                : s.k === 'Financé'   ? 'var(--green-bg)'
+                : 'var(--red-bg)'
+              const activeBorder = s.k === 'all' ? 'var(--blue-border)'
+                : s.k === 'Challenge' ? 'var(--amber)'
+                : s.k === 'Financé'   ? 'var(--green)'
+                : 'var(--red)'
               return (
                 <button
                   key={s.k}
@@ -456,7 +456,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                     width: '80%', height: `${h}px`,
                     background: pnlColor(d.pnl, mag),
                     borderRadius: '4px 4px 0 0',
-                    border: d.count > 0 ? `1px solid ${d.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid var(--tint2)',
+                    border: d.count > 0 ? `1px solid ${d.pnl >= 0 ? 'var(--green)' : 'var(--red)'}` : '1px solid var(--tint2)',
                     transition: 'all 0.2s',
                   }} title={`${DAYS_LONG[i]} · ${d.count} trade${d.count > 1 ? 's' : ''} · ${fmtMoney(d.pnl)}${d.count > 0 ? ` · WR ${(d.wins / d.count * 100).toFixed(0)}%` : ''}`} />
                   <div style={{ fontSize: 11, color: C.text3, fontWeight: 600 }}>{DAYS_SHORT[i]}</div>
@@ -480,8 +480,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
               return (
                 <div key={side} style={{
                   padding: 14,
-                  background: side === 'Long' ? 'rgba(29,184,122,0.06)' : 'rgba(232,80,74,0.06)',
-                  border: `1px solid ${side === 'Long' ? 'rgba(29,184,122,0.25)' : 'rgba(232,80,74,0.25)'}`,
+                  background: side === 'Long' ? 'var(--green-bg)' : 'var(--red-bg)',
+                  border: `1px solid ${side === 'Long' ? 'var(--green)' : 'var(--red)'}`,
                   borderRadius: 8,
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: side === 'Long' ? C.green : C.red, marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -517,7 +517,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
                   width: '90%', height: `${barH}px`,
                   background: pnlColor(h.pnl, mag),
                   borderRadius: '3px 3px 0 0',
-                  border: h.count > 0 ? `1px solid ${h.pnl >= 0 ? 'rgba(29,184,122,0.4)' : 'rgba(232,80,74,0.4)'}` : '1px solid var(--tint2)',
+                  border: h.count > 0 ? `1px solid ${h.pnl >= 0 ? 'var(--green)' : 'var(--red)'}` : '1px solid var(--tint2)',
                 }} title={`${i}h · ${h.count} trade${h.count > 1 ? 's' : ''} · ${fmtMoney(h.pnl)}${h.count > 0 ? ` · WR ${(h.wins / h.count * 100).toFixed(0)}%` : ''}`} />
                 <div style={{ fontSize: 9, color: C.text3, fontFamily: 'ui-monospace, monospace' }}>
                   {String(i).padStart(2, '0')}
@@ -598,19 +598,19 @@ export default function HeatmapPage({ user, firms, showToast }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, fontSize: 10, color: C.text3 }}>
           <span>{t('app.heatmap.legend')}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(29,184,122,0.85)', borderRadius: 2 }}></span> {t('app.heatmap.profitStrong')}
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'var(--green)', borderRadius: 2 }}></span> {t('app.heatmap.profitStrong')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(29,184,122,0.3)', borderRadius: 2 }}></span> {t('app.heatmap.profitLight')}
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'var(--green)', borderRadius: 2 }}></span> {t('app.heatmap.profitLight')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ display: 'inline-block', width: 12, height: 12, background: C.neutral, borderRadius: 2 }}></span> {t('app.heatmap.noneLabel')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(232,80,74,0.3)', borderRadius: 2 }}></span> {t('app.heatmap.lossLight')}
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'var(--red)', borderRadius: 2 }}></span> {t('app.heatmap.lossLight')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'rgba(232,80,74,0.85)', borderRadius: 2 }}></span> {t('app.heatmap.lossStrong')}
+            <span style={{ display: 'inline-block', width: 12, height: 12, background: 'var(--red)', borderRadius: 2 }}></span> {t('app.heatmap.lossStrong')}
           </span>
           <span style={{ marginLeft: 'auto', fontSize: 9 }}>{t('app.heatmap.cellCount')}</span>
         </div>
@@ -672,8 +672,8 @@ export default function HeatmapPage({ user, firms, showToast }) {
               return (
                 <div key={s.k} style={{
                   padding: 12,
-                  background: v.count > 0 ? (v.pnl >= 0 ? 'rgba(29,184,122,0.05)' : 'rgba(232,80,74,0.05)') : 'var(--tint1)',
-                  border: `1px solid ${v.count > 0 ? (v.pnl >= 0 ? 'rgba(29,184,122,0.2)' : 'rgba(232,80,74,0.2)') : 'var(--tint2)'}`,
+                  background: v.count > 0 ? (v.pnl >= 0 ? 'var(--green-bg)' : 'var(--red-bg)') : 'var(--tint1)',
+                  border: `1px solid ${v.count > 0 ? (v.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--tint2)'}`,
                   borderRadius: 8,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>

@@ -44,7 +44,7 @@ function applyToDocument(theme) {
   document.documentElement.setAttribute('data-theme', theme)
   // Aligne la couleur de la barre d'adresse mobile sur le fond réel.
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', theme === 'light' ? '#f6f7fa' : '#0d0f14')
+  if (meta) meta.setAttribute('content', theme === 'light' ? '#eef3f9' : '#0a1420')
 }
 
 export function ThemeProvider({ children }) {

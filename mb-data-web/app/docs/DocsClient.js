@@ -401,9 +401,9 @@ export default function DocsClient() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {ROADMAP.map(q => {
                 const tone = {
-                  done:     { color: C.green,    bg: 'rgba(29,184,122,0.08)', border: 'rgba(29,184,122,0.30)', label: badges?.done || '✓' },
-                  next:     { color: C.blueLight, bg: 'rgba(45,111,255,0.08)', border: 'rgba(45,111,255,0.30)', label: badges?.next || '⚡' },
-                  planned:  { color: C.amber,   bg: 'rgba(250,199,117,0.08)', border: 'rgba(250,199,117,0.30)', label: badges?.planned || '📅' },
+                  done:     { color: C.green,    bg: 'var(--green-bg)', border: 'var(--green)', label: badges?.done || '✓' },
+                  next:     { color: C.blueLight, bg: 'var(--blue-bg)', border: 'var(--blue-border)', label: badges?.next || '⚡' },
+                  planned:  { color: C.amber,   bg: 'var(--amber-bg)', border: 'var(--amber)', label: badges?.planned || '📅' },
                   wishlist: { color: C.text3,   bg: 'var(--tint1)', border: 'var(--hairline)', label: badges?.wishlist || '✨' },
                 }[q.status]
                 return (

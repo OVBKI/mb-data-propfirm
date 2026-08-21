@@ -344,9 +344,9 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
                 style={{
                   padding: '5px 10px', fontSize: 11, fontWeight: 600,
                   borderRadius: 99,
-                  background: period === p.k ? 'rgba(45,111,255,0.15)' : 'transparent',
+                  background: period === p.k ? 'var(--blue-bg)' : 'transparent',
                   color: period === p.k ? C.blueLt : C.text2,
-                  border: `1px solid ${period === p.k ? 'rgba(45,111,255,0.4)' : 'var(--hairline)'}`,
+                  border: `1px solid ${period === p.k ? 'var(--blue-border)' : 'var(--hairline)'}`,
                   cursor: 'pointer',
                 }}
               >
@@ -395,7 +395,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
                   padding: '4px 10px',
                   fontSize: 11,
                   fontWeight: 600,
-                  background: viewMode === opt.v ? 'rgba(45,111,255,0.18)' : 'transparent',
+                  background: viewMode === opt.v ? 'var(--blue-bg)' : 'transparent',
                   color: viewMode === opt.v ? C.blueLt : C.text2,
                   border: 'none',
                   borderRadius: 6,
@@ -568,7 +568,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
           </div>
           <button onClick={() => setLightboxUrl(null)} style={{
             position: 'absolute', top: 20, right: 20,
-            background: 'var(--hairline)', color: '#fff',
+            background: 'var(--tint3)', color: 'var(--text)',
             border: '1px solid var(--hairline2)', borderRadius: 8,
             padding: '8px 16px', fontSize: 13, cursor: 'pointer', fontWeight: 600,
           }}>{t('app.trades.close')}</button>
@@ -665,7 +665,7 @@ function SideBadge({ side }) {
   if (!side) return <span style={{ color: C.text3, fontSize: 11 }}>—</span>
   const isLong = String(side).toLowerCase() === 'long'
   const color = isLong ? C.green : C.red
-  const bg = isLong ? 'rgba(29,184,122,0.15)' : 'rgba(232,80,74,0.15)'
+  const bg = isLong ? 'var(--green-bg)' : 'var(--red-bg)'
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,

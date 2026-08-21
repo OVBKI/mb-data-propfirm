@@ -23,7 +23,7 @@ export default function NotFoundClient() {
         <div style={{
           fontSize: 96, fontWeight: 800, lineHeight: 1,
           letterSpacing: '-0.04em',
-          background: 'linear-gradient(135deg, #2d6fff 0%, #4d8fff 100%)',
+          background: 'linear-gradient(135deg, var(--blue) 0%, #4d8fff 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',

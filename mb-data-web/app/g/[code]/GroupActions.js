@@ -130,8 +130,8 @@ export default function GroupActions({ groupId, inviteCode, ownerId, members }) 
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
         padding: '10px 14px',
-        background: 'rgba(45,111,255,0.06)',
-        border: `1px solid rgba(45,111,255,0.2)`,
+        background: 'var(--blue-bg)',
+        border: `1px solid var(--blue-border)`,
         borderRadius: 8,
       }}>
         <span style={{ fontSize: 11, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
@@ -179,7 +179,7 @@ function SuccessMsg({ msg }) {
   return (
     <div style={{
       padding: '8px 12px', fontSize: 12, color: C.green,
-      background: 'rgba(16,185,129,0.08)', border: `1px solid ${C.green}`,
+      background: 'var(--green-bg)', border: `1px solid ${C.green}`,
       borderRadius: 6,
     }}>{msg}</div>
   )
@@ -191,7 +191,7 @@ const containerStyle = {
 }
 const primaryBtnStyle = (loading) => ({
   padding: '10px 22px', fontSize: 13, fontWeight: 600,
-  background: C.blue, color: '#fff',
+  background: C.blue, color: 'var(--text-inverse)',
   border: 'none', borderRadius: 99,
   cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1,
   fontFamily: 'inherit', textDecoration: 'none',

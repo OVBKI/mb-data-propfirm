@@ -154,7 +154,7 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
         <div style={{ display: 'grid', gap: 12, marginBottom: 32 }}>
           <div style={{
             padding: '12px 16px',
-            background: 'rgba(250,199,117,0.07)',
+            background: 'var(--amber-bg)',
             border: `1px solid ${C.amber}44`,
             borderRadius: 10,
             fontSize: 13,
@@ -360,7 +360,7 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
           </p>
           <div style={{ display: 'inline-flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/auth?mode=signup" style={{
-              padding: '12px 26px', background: C.blue, color: '#fff', borderRadius: 8,
+              padding: '12px 26px', background: C.blue, color: 'var(--text-inverse)', borderRadius: 8,
               fontSize: 14, fontWeight: 600, textDecoration: 'none',
             }}>Commencer gratuitement →</Link>
             <Link href="/demo" style={{

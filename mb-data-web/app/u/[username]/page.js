@@ -130,8 +130,8 @@ export default async function PublicProfilePage({ params }) {
         }}>QUANTARA</Link>
         <Link href="/app" style={{
           padding: '8px 16px', fontSize: 12, fontWeight: 600,
-          background: 'rgba(45,111,255,0.12)', color: 'var(--blue-light)',
-          border: '1px solid rgba(45,111,255,0.3)', borderRadius: 8,
+          background: 'var(--blue-bg)', color: 'var(--blue-light)',
+          border: '1px solid var(--blue-border)', borderRadius: 8,
           textDecoration: 'none',
         }}>
           Ouvrir mon dashboard →
@@ -149,7 +149,7 @@ export default async function PublicProfilePage({ params }) {
       ) : (
         <div style={{
           height: 140,
-          background: 'linear-gradient(135deg, rgba(45,111,255,0.18), rgba(16,185,129,0.10) 60%, transparent)',
+          background: 'linear-gradient(135deg, var(--blue-bg), var(--green-bg) 60%, transparent)',
           borderBottom: '1px solid var(--border)',
         }} />
       )}
@@ -163,7 +163,7 @@ export default async function PublicProfilePage({ params }) {
             borderRadius: '50%',
             background: sanitizeUrl(profile.avatar_url)
               ? `url(${sanitizeUrl(profile.avatar_url)}) center/cover`
-              : 'linear-gradient(135deg, #2d6fff, #4d8fff)',
+              : 'linear-gradient(135deg, var(--blue), #4d8fff)',
             border: '4px solid #0d0f14',
             flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -181,7 +181,7 @@ export default async function PublicProfilePage({ params }) {
               {profile.verified && (
                 <span title="Profil vérifié" style={{
                   fontSize: 14, color: 'var(--blue-light)',
-                  background: 'rgba(45,111,255,0.15)',
+                  background: 'var(--blue-bg)',
                   borderRadius: '50%', width: 22, height: 22,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 }}>✓</span>

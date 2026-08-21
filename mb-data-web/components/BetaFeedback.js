@@ -56,12 +56,12 @@ function BetaBanner({ onOpen, onDismiss }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
       padding: '8px 14px', marginBottom: 14, borderRadius: 10,
-      background: 'linear-gradient(90deg, rgba(45,111,255,0.10), rgba(45,111,255,0.03))',
-      border: '1px solid rgba(45,111,255,0.22)', fontSize: 13, color: 'var(--text2)',
+      background: 'linear-gradient(90deg, var(--blue-bg), var(--blue-bg))',
+      border: '1px solid var(--blue-border)', fontSize: 13, color: 'var(--text2)',
     }}>
       <span style={{ fontSize: 15 }}>{'🚧'}</span>
       <span style={{ flex: 1, minWidth: 180 }}>{t('app.beta.bannerText')}</span>
-      <button onClick={onOpen} style={{ ...S.btnGhost, borderColor: 'rgba(45,111,255,0.4)', color: 'var(--blue-light)', whiteSpace: 'nowrap' }}>
+      <button onClick={onOpen} style={{ ...S.btnGhost, borderColor: 'var(--blue-border)', color: 'var(--blue-light)', whiteSpace: 'nowrap' }}>
         {t('app.beta.bannerCta')}
       </button>
       <button onClick={onDismiss} aria-label={t('app.beta.dismiss')} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 15, padding: '2px 6px', minWidth: 28, minHeight: 28 }}>{'✕'}</button>
@@ -79,8 +79,8 @@ function FloatingButton({ onClick }) {
       style={{
         position: 'fixed', right: 18, bottom: 18, zIndex: 480,
         width: 46, height: 46, borderRadius: '50%',
-        background: 'var(--blue, #2d6fff)', color: '#fff', border: 'none',
-        boxShadow: '0 6px 20px rgba(45,111,255,0.4)', cursor: 'pointer',
+        background: 'var(--blue)', color: 'var(--text-inverse)', border: 'none',
+        boxShadow: '0 6px 20px var(--blue-bg)', cursor: 'pointer',
         fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
     >
@@ -136,7 +136,7 @@ function FeedbackModal({ user, showToast, onClose }) {
               <button key={v} type="button" onClick={() => setType(v)} style={{
                 flex: 1, padding: '8px 6px', fontSize: 12, fontWeight: active ? 700 : 500,
                 borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                background: active ? 'rgba(45,111,255,0.14)' : 'var(--surface2)',
+                background: active ? 'var(--blue-bg)' : 'var(--surface2)',
                 border: `1px solid ${active ? 'var(--blue-light)' : 'var(--border2)'}`,
                 color: active ? 'var(--blue-light)' : 'var(--text2)',
               }}>{typeLabel(v)}</button>

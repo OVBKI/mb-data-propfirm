@@ -180,7 +180,7 @@ export default function CompareFirmsClient({
             <Link href="/auth?mode=signup" style={{
               padding: '12px 26px',
               background: C.blue,
-              color: '#fff',
+              color: 'var(--text-inverse)',
               borderRadius: 8,
               fontSize: 14,
               fontWeight: 600,

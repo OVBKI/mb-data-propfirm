@@ -26,7 +26,7 @@ const C = {
   blue: 'var(--blue)',
   blueLight: 'var(--blue-light)',
   green: 'var(--green)',
-  greenSoft: 'rgba(16,185,129,0.12)',
+  greenSoft: 'var(--green-bg)',
   amber: 'var(--amber)',
   red: 'var(--red)',
 }
@@ -243,7 +243,7 @@ export default function AdminPayoutsPage() {
             onClick={() => setDrillUser(topUser)}
             style={{
               padding: '6px 12px', fontSize: 11, fontWeight: 600,
-              background: C.green, color: '#fff', border: 'none', borderRadius: 6,
+              background: C.green, color: 'var(--text-inverse)', border: 'none', borderRadius: 6,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >Voir détail →</button>

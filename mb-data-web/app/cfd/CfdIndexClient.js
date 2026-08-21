@@ -110,7 +110,7 @@ export default function CfdIndexClient() {
         <div style={{ display: 'grid', gap: 12, marginBottom: 40 }}>
           <div style={{
             padding: '12px 16px',
-            background: 'rgba(250,199,117,0.07)',
+            background: 'var(--amber-bg)',
             border: `1px solid ${C.amber}44`,
             borderRadius: 10,
             fontSize: 13,
@@ -299,8 +299,8 @@ export default function CfdIndexClient() {
                     {(firm.platforms || []).slice(0, 4).map((p) => (
                       <span key={p} style={{
                         padding: '3px 8px',
-                        background: 'rgba(45,111,255,0.08)',
-                        border: '1px solid rgba(45,111,255,0.18)',
+                        background: 'var(--blue-bg)',
+                        border: '1px solid var(--blue-bg)',
                         borderRadius: 6,
                         fontSize: 11,
                         fontWeight: 600,
@@ -384,7 +384,7 @@ export default function CfdIndexClient() {
             <Link href="/firms" style={{
               padding: '12px 26px',
               background: C.blue,
-              color: '#fff',
+              color: 'var(--text-inverse)',
               borderRadius: 8,
               fontSize: 14,
               fontWeight: 600,

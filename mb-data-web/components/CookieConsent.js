@@ -31,7 +31,11 @@ export default function CookieConsent() {
       left: 0,
       right: 0,
       zIndex: 9999,
-      background: 'var(--surface)',
+      // Bandeau FIXE posé par-dessus le contenu : avec une surface translucide,
+      // le texte de la page transparaît au travers. Flou d'arrière-plan obligatoire.
+      background: 'var(--bar-bg)',
+      backdropFilter: 'blur(22px)',
+      WebkitBackdropFilter: 'blur(22px)',
       borderTop: '1px solid var(--hairline)',
       padding: '16px 24px',
       display: 'flex',
@@ -78,12 +82,12 @@ export default function CookieConsent() {
             fontSize: 13,
             fontWeight: 600,
             background: 'var(--blue)',
-            color: '#fff',
+            color: 'var(--text-inverse)',
             border: 'none',
             borderRadius: 8,
             cursor: 'pointer',
             fontFamily: 'inherit',
-            boxShadow: '0 2px 8px rgba(45,111,255,0.3)',
+            boxShadow: '0 2px 8px var(--blue-bg)',
             transition: 'opacity 0.15s',
           }}
         >

@@ -105,7 +105,7 @@ export default function AlertsPage() {
                     display: 'flex', alignItems: 'center', gap: '14px',
                     padding: '12px 16px',
                     borderBottom: i < upcomingBills.length - 1 ? '0.5px solid var(--border)' : 'none',
-                    background: isImminent ? 'rgba(250,199,117,0.05)' : 'transparent',
+                    background: isImminent ? 'var(--amber-bg)' : 'transparent',
                   }}>
                     <div style={{
                       width: '44px', textAlign: 'center', flexShrink: 0,
@@ -119,7 +119,7 @@ export default function AlertsPage() {
                       <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>{b.firm} · {b.account}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
                         {b.daysLeft === 0 ? t('app.alerts.today') : b.daysLeft === 1 ? t('app.alerts.tomorrowCap') : t('app.alerts.inNDays').replace('{n}', b.daysLeft)}
-                        {isImminent && <span style={{ marginLeft: '8px', padding: '1px 7px', borderRadius: '99px', background: 'rgba(250,199,117,0.15)', color: 'var(--amber-text)', fontWeight: '700', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('app.alerts.imminent')}</span>}
+                        {isImminent && <span style={{ marginLeft: '8px', padding: '1px 7px', borderRadius: '99px', background: 'var(--amber-bg)', color: 'var(--amber-text)', fontWeight: '700', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('app.alerts.imminent')}</span>}
                       </div>
                     </div>
                     <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--red)', flexShrink: 0 }}>-{b.cost} {b.sym}</div>

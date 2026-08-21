@@ -131,7 +131,7 @@ export default function PageHeader({ active }) {
                   fontSize: 14, fontWeight: active === link.key ? 600 : 500,
                   color: active === link.key ? C.blueLight : C.text2,
                   textDecoration: 'none',
-                  background: active === link.key ? 'rgba(45,111,255,0.08)' : 'transparent',
+                  background: active === link.key ? 'var(--blue-bg)' : 'transparent',
                   borderLeft: `3px solid ${active === link.key ? C.blue : 'transparent'}`,
                 }}
               >{link.label}</Link>

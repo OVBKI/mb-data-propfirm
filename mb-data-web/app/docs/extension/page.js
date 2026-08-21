@@ -80,7 +80,7 @@ export default function ExtensionDocsPage() {
         </p>
       </div>
 
-      <div style={{ ...card, background: 'rgba(45,111,255,0.05)', borderColor: 'rgba(45,111,255,0.25)' }}>
+      <div style={{ ...card, background: 'var(--blue-bg)', borderColor: 'var(--blue-border)' }}>
         <h2 style={{ fontSize: 16, margin: 0, marginBottom: 6 }}>{'\u{1F44B}'} Prérequis</h2>
         <p style={{ marginTop: 0, marginBottom: 0, color: C.text2 }}>
           Tu dois avoir la PropFirm correspondante déjà créée dans Quantara (ex: une firm nommée <strong>« Lucid Trading »</strong> avec au moins un compte). Sinon l&apos;extension renverra une erreur <span style={code}>NO_FIRM</span> et tu verras un message dans le popup.

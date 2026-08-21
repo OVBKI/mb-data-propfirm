@@ -10,7 +10,7 @@ export default function SyncRoute() {
       <h1 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '4px' }}>Synchronisation auto</h1>
       <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '24px' }}>Import automatique des trades depuis vos plateformes</div>
 
-      <div style={{ ...S.card, padding: '48px 28px', textAlign: 'center', marginBottom: '20px', background: 'linear-gradient(180deg, rgba(45,111,255,0.04), transparent)' }}>
+      <div style={{ ...S.card, padding: '48px 28px', textAlign: 'center', marginBottom: '20px', background: 'linear-gradient(180deg, var(--blue-bg), transparent)' }}>
         <div style={{ fontSize: '56px', marginBottom: '14px' }}>{'🚧'}</div>
         <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>Bientôt disponible</div>
         <div style={{ fontSize: '13px', color: 'var(--text2)', maxWidth: '520px', margin: '0 auto', lineHeight: 1.5 }}>

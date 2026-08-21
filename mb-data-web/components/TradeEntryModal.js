@@ -366,7 +366,7 @@ export default function TradeEntryModal({
             const rr = computeRiskReward({ entry: form.entryPrice, takeProfit: form.takeProfit, stop: form.stopLoss, side: form.side, pnl: form.pnl, exit: form.exitPrice })
             if (r == null && rr == null) return null
             return (
-              <div style={{ gridColumn: '1/-1', marginTop: '4px', padding: '10px 14px', background: 'rgba(45,111,255,0.06)', border: '1px solid rgba(45,111,255,0.20)', borderRadius: '8px', display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center', fontSize: '12px' }}>
+              <div style={{ gridColumn: '1/-1', marginTop: '4px', padding: '10px 14px', background: 'var(--blue-bg)', border: '1px solid var(--blue-border)', borderRadius: '8px', display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center', fontSize: '12px' }}>
                 <span style={{ fontWeight: '700', color: 'var(--blue-light)', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('app.trade.preview')}</span>
                 {r != null && (
                   <span style={{ color: 'var(--text2)' }}>
