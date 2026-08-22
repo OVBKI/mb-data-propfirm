@@ -11,9 +11,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { verifyAuth } from '../../../../lib/apiAuth'
 import { rateLimit, rateLimitResponse } from '../../../../lib/rateLimit'
-import { decryptSecret, redact } from '../../../../lib/cryptoBox'
-import { login, listFills } from '../../../../lib/tradovateClient'
-import { pairFills, toJournalEntry } from '../../../../lib/tradovate'
+import { decryptSecret, encryptSecret, redact } from '../../../../lib/cryptoBox'
+import { renewToken, listFills } from '../../../../lib/tradovateClient'
+import { pairFills, toJournalEntry, isTokenUsable } from '../../../../lib/tradovate'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
@@ -49,31 +49,38 @@ export async function POST(request) {
 
   const { data: cred } = await db
     .from('tradovate_credentials')
-    .select('id, user_id, label, username, encrypted_password, environment')
+    .select('id, user_id, label, username, encrypted_token, token_expires_at, environment')
     .eq('id', credentialId).maybeSingle()
   if (!cred || cred.user_id !== auth.user.id) {
     return Response.json({ error: 'Connexion introuvable' }, { status: 404 })
   }
 
-  let password
+  let token
   try {
-    password = decryptSecret(cred.encrypted_password)
+    token = decryptSecret(cred.encrypted_token)
   } catch {
-    // Cas réel : la clé de chiffrement a été tournée sans re-saisir les
-    // identifiants. Le message doit dire quoi FAIRE, pas « erreur interne ».
-    await noteError(db, cred.id, 'Identifiants illisibles — reconnecte ce compte.')
-    return Response.json({ error: 'Identifiants illisibles. Supprime cette connexion et refais-la.' }, { status: 409 })
+    // Cas réel : la clé de chiffrement a été tournée. Le message doit dire quoi
+    // FAIRE, pas « erreur interne ».
+    await noteError(db, cred.id, 'Jeton illisible — reconnecte ce compte.')
+    return Response.json({ error: 'Jeton illisible. Supprime cette connexion et reconnecte-toi.' }, { status: 409 })
   }
 
-  const session = await login({
-    username: cred.username, password,
-    environment: cred.environment,
-    deviceId: `quantara-${auth.user.id}`,
-  })
-  if (!session.ok) {
-    await noteError(db, cred.id, session.message)
-    const status = session.kind === 'penalty' ? 429 : session.kind === 'config' ? 503 : 400
-    return Response.json({ error: session.message, kind: session.kind }, { status })
+  const expiresAt = cred.token_expires_at ? Date.parse(cred.token_expires_at) : null
+  let session = { ok: true, token, expiresAt }
+
+  // Un jeton Tradovate vit ~80 min. On le prolonge AVANT l'échéance : un jeton
+  // expiré ne se renouvelle plus, il faut repasser par l'écran d'autorisation.
+  if (!isTokenUsable(session)) {
+    const renewed = await renewToken({ token, environment: cred.environment })
+    if (!renewed.ok) {
+      await noteError(db, cred.id, 'Autorisation expirée — reconnecte ce compte.')
+      return Response.json({ error: 'Autorisation Tradovate expirée. Reconnecte le compte.', kind: 'reauth' }, { status: 401 })
+    }
+    session = renewed
+    await db.from('tradovate_credentials').update({
+      encrypted_token: encryptSecret(renewed.token),
+      token_expires_at: renewed.expiresAt ? new Date(renewed.expiresAt).toISOString() : null,
+    }).eq('id', cred.id)
   }
 
   let fills

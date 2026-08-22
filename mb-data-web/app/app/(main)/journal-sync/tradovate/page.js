@@ -1,13 +1,13 @@
 'use client'
-// Écran de connexion Tradovate.
+// Écran de connexion Tradovate — par OAUTH.
 //
-// Le mot de passe ne fait qu'un aller : il part vers /api/tradovate/credentials,
-// y est VÉRIFIÉ auprès de Tradovate, chiffré, puis stocké. Il n'est jamais
-// relu — la liste ne renvoie que le nom d'utilisateur et l'état.
+// Aucun mot de passe n'est saisi ici. L'utilisateur part sur Tradovate, autorise
+// un accès en LECTURE SEULE, et nous revenons avec un jeton.
 //
-// L'écran dit franchement ce qu'il demande. Cacher qu'on stocke un identifiant
-// broker derrière « connecte ton compte » serait exactement ce que la page
-// sécurité reprochait à l'ancienne version.
+// ⚠️ « Démo » est le défaut, et ce n'est pas une erreur : les comptes PropFirm
+// vivent sur l'environnement demo de Tradovate même quand les payouts sont
+// réels. Choisir « live » renvoie « identifiants invalides » sans explication —
+// d'où le libellé qui le dit franchement plutôt qu'un simple « Démo/Live ».
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -16,7 +16,7 @@ import { useApp } from '../../AppContext'
 import { planLimitMessage } from '../../../../../lib/planLimits'
 import { useT, useLanguage } from '../../../../../components/LanguageProvider'
 
-const EMPTY = { label: '', username: '', password: '', environment: 'live' }
+const EMPTY = { label: '', environment: 'demo' }
 
 export default function TradovateSyncPage() {
   const { S, accts, showToast } = useApp()
@@ -51,18 +51,18 @@ export default function TradovateSyncPage() {
 
   useEffect(() => { load() }, [load])
 
+  // On récupère l'URL d'autorisation puis on y envoie l'utilisateur. Une simple
+  // redirection depuis un fetch authentifié perdrait l'en-tête Authorization —
+  // d'où l'aller-retour en deux temps.
   async function connect(e) {
     e.preventDefault()
     if (busy) return
     setBusy(true)
-    const { ok, json } = await authed('/api/tradovate/credentials', {
-      method: 'POST', body: JSON.stringify(form),
-    })
+    const q = new URLSearchParams({ label: form.label || 'Tradovate', environment: form.environment })
+    const { ok, json } = await authed(`/api/tradovate/oauth/start?${q}`)
     setBusy(false)
-    if (!ok) { showToast(json.error || 'Connexion refusée'); return }
-    setForm(EMPTY)
-    showToast('Compte Tradovate connecté ✓')
-    load()
+    if (!ok) { showToast(json.error || 'Impossible de démarrer l’autorisation'); return }
+    window.location.href = json.url
   }
 
   async function remove(id) {
@@ -103,18 +103,18 @@ export default function TradovateSyncPage() {
       </p>
       {/* Dit clairement ce qui est demandé et pourquoi. */}
       <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6, maxWidth: '62ch', margin: '0 0 26px' }}>
-        Tradovate n’offre pas de connexion déléguée : la synchronisation exige ton identifiant
-        et ton mot de passe. Ils sont chiffrés avant stockage, utilisés en lecture seule —
-        Quantara ne peut passer aucun ordre — et effacés dès que tu supprimes la connexion.
+        Tu autorises l’accès directement chez Tradovate : ton mot de passe ne passe jamais par
+        Quantara. L’accès est en lecture seule — aucun ordre ne peut être passé — et il s’annule
+        dès que tu supprimes la connexion.
       </p>
 
       {!configured && (
         <div style={{ ...S.card, padding: '16px 18px', marginBottom: 24, borderColor: 'var(--amber)' }}>
           <strong style={{ color: 'var(--amber)', fontSize: 13 }}>Configuration incomplète</strong>
           <p style={{ fontSize: 13, color: 'var(--text2)', margin: '6px 0 0', lineHeight: 1.55 }}>
-            La clé API Tradovate n’est pas renseignée côté serveur. Elle se demande depuis un
-            compte développeur Tradovate, puis se pose dans les variables d’environnement
-            (<code>TRADOVATE_CID</code>, <code>TRADOVATE_SEC</code>).
+            Les identifiants OAuth ne sont pas renseignés côté serveur. Ils sont délivrés après
+            acceptation du dossier NinjaTrader Ecosystem, puis se posent dans les variables
+            d’environnement (<code>TRADOVATE_CLIENT_ID</code>, <code>TRADOVATE_CLIENT_SECRET</code>).
           </p>
         </div>
       )}
@@ -128,26 +128,20 @@ export default function TradovateSyncPage() {
               placeholder="Apex 250k" style={S.input} required />
           </div>
           <div>
-            <label style={label}>Environnement</label>
+            <label style={label}>Type de compte</label>
             <select value={form.environment} onChange={e => setForm(f => ({ ...f, environment: e.target.value }))} style={S.input}>
-              <option value="live">Live</option>
-              <option value="demo">Démo</option>
+              <option value="demo">Compte PropFirm (évaluation ou financé)</option>
+              <option value="live">Compte personnel Tradovate</option>
             </select>
           </div>
-          <div>
-            <label style={label}>Identifiant Tradovate</label>
-            <input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-              autoComplete="off" style={S.input} required />
-          </div>
-          <div>
-            <label style={label}>Mot de passe</label>
-            <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              autoComplete="new-password" style={S.input} required />
-          </div>
         </div>
+        <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.55, margin: '14px 0 0' }}>
+          Tu vas être redirigé vers Tradovate pour autoriser l’accès. Tu saisis ton mot de passe
+          chez eux, pas ici.
+        </p>
         <button type="submit" disabled={busy || !configured}
-          style={{ ...S.btnPrimary, marginTop: 18, opacity: busy || !configured ? 0.5 : 1 }}>
-          {busy ? 'Vérification…' : 'Connecter'}
+          style={{ ...S.btnPrimary, marginTop: 16, opacity: busy || !configured ? 0.5 : 1 }}>
+          {busy ? 'Redirection…' : 'Autoriser sur Tradovate →'}
         </button>
       </form>
 

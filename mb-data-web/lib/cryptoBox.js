@@ -12,7 +12,7 @@
 // Le préfixe de version permettra de changer d'algorithme sans deviner le format
 // des lignes existantes.
 
-import { createCipheriv, createDecipheriv, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 const VERSION = 'v1'
 const IV_BYTES = 12          // 96 bits, la taille recommandée pour GCM
@@ -61,6 +61,36 @@ export function secretEquals(a, b) {
   const bb = Buffer.from(String(b || ''), 'utf8')
   if (ba.length !== bb.length) return false
   return timingSafeEqual(ba, bb)
+}
+
+// ── État OAuth signé ────────────────────────────────────────────────────────
+// Le retour d'OAuth est une REDIRECTION du navigateur : aucun en-tête
+// Authorization ne l'accompagne. Sans preuve d'identité dans l'URL, n'importe
+// qui pourrait faire rattacher SON compte Tradovate à la session d'un autre en
+// lui faisant ouvrir un lien de retour forgé.
+//
+// D'où un état SIGNÉ (HMAC) qui porte l'identifiant utilisateur et un horodatage.
+// Signé, pas chiffré : il n'y a rien de secret dedans, il faut seulement qu'il
+// soit infalsifiable.
+const STATE_TTL_MS = 10 * 60 * 1000
+
+export function signState(payload) {
+  const body = Buffer.from(JSON.stringify({ ...payload, t: Date.now() }), 'utf8').toString('base64url')
+  const mac = createHmac('sha256', readKey()).update(body).digest('base64url')
+  return `${body}.${mac}`
+}
+
+export function verifyState(token, now = Date.now()) {
+  const [body, mac] = String(token || '').split('.')
+  if (!body || !mac) return null
+  const expected = createHmac('sha256', readKey()).update(body).digest('base64url')
+  // Comparaison à temps constant : `===` sort au premier octet différent.
+  if (!secretEquals(mac, expected)) return null
+  let payload
+  try { payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) } catch { return null }
+  // Un état sans expiration resterait rejouable indéfiniment.
+  if (!payload?.t || now - payload.t > STATE_TTL_MS) return null
+  return payload
 }
 
 // Retire tout ce qui ressemble à un secret d'un objet destiné aux journaux.

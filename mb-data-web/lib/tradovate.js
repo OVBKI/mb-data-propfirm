@@ -5,6 +5,21 @@
 // la durée de vie du jeton, et surtout l'APPARIEMENT des exécutions en trades.
 // Les routes API ne font que du transport.
 //
+// ┌─ POURQUOI OAUTH, ET PAS IDENTIFIANT + MOT DE PASSE ───────────────────────┐
+// │ La voie mot de passe (/auth/accesstokenrequest) exige que l'UTILISATEUR    │
+// │ ait un abonnement API à 25 $/mois et 1 000 $ d'équité — et surtout, les    │
+// │ PropFirms désactivent la génération de clé API sur les comptes            │
+// │ d'évaluation et financés. Elle est donc inutilisable ici.                  │
+// │                                                                            │
+// │ OAuth fonctionne : l'utilisateur autorise un accès EN LECTURE SEULE chez   │
+// │ Tradovate, aucun mot de passe ne transite par nous, et ça marche sur les   │
+// │ comptes PropFirm.                                                          │
+// │                                                                            │
+// │ ⚠️ UN COMPTE PROPFIRM VIT SUR L'ENVIRONNEMENT « DEMO » de Tradovate, même  │
+// │ quand les payouts sont réels. Viser `live` renvoie « identifiants          │
+// │ invalides » sans autre explication — c'est le piège n°1 de cette API.      │
+// └───────────────────────────────────────────────────────────────────────────┘
+//
 // ┌─ CE QUE TRADOVATE DONNE, ET CE QU'IL NE DONNE PAS ────────────────────────┐
 // │ /fill/list rend des EXÉCUTIONS : « acheté 2 ESZ5 à 5012,25 à 14h31 ».     │
 // │ Il ne rend PAS de trades, et il ne rend AUCUN P&L en devise.              │
@@ -19,25 +34,45 @@ export const TRADOVATE_HOSTS = {
   demo: 'https://demo.tradovateapi.com/v1',
 }
 
+// L'écran d'autorisation est le MÊME pour les deux environnements : c'est le
+// portail Tradovate, pas l'API. Seul l'échange du code diffère ensuite.
+export const OAUTH_AUTHORIZE_URL = 'https://trader.tradovate.com/oauth'
+const OAUTH_TOKEN_PATHS = {
+  live: 'https://live.tradovateapi.com/auth/oauthtoken',
+  demo: 'https://demo.tradovateapi.com/auth/oauthtoken',
+}
+export const oauthTokenUrl = (env) => OAUTH_TOKEN_PATHS[env === 'live' ? 'live' : 'demo']
+
+// L'URL vers laquelle on envoie l'utilisateur. `state` n'est pas dans le
+// tutoriel officiel de Tradovate, mais l'omettre laisse la porte ouverte à une
+// attaque CSRF : n'importe qui pourrait faire rattacher SON compte Tradovate à
+// la session d'un autre en lui faisant ouvrir un lien de retour forgé.
+export function authorizeUrl({ clientId, redirectUri, state }) {
+  const q = new URLSearchParams({
+    response_type: 'code',
+    client_id: String(clientId || ''),
+    redirect_uri: String(redirectUri || ''),
+  })
+  if (state) q.set('state', state)
+  return `${OAUTH_AUTHORIZE_URL}?${q.toString()}`
+}
+
+// Corps de l'échange code → jeton. En FORM-URLENCODED : Tradovate refuse le
+// JSON sur ce point d'entrée, et l'erreur renvoyée ne le dit pas.
+export function tokenExchangeBody({ code, clientId, clientSecret, redirectUri }) {
+  return new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: String(code || ''),
+    client_id: String(clientId || ''),
+    client_secret: String(clientSecret || ''),
+    redirect_uri: String(redirectUri || ''),
+  })
+}
+
 // Un jeton Tradovate vit ~80 minutes. On le considère mort AVANT son échéance
 // réelle : un jeton qui expire pendant une requête produit une erreur 401
 // difficile à distinguer d'un mauvais mot de passe.
 export const TOKEN_SKEW_MS = 5 * 60 * 1000
-
-export function authBody({ username, password, appId, appVersion, cid, sec, deviceId }) {
-  return {
-    name: username,
-    password,
-    appId,
-    appVersion,
-    cid,
-    sec,
-    // Tradovate lie le jeton à un appareil. Une valeur STABLE par utilisateur
-    // évite d'être traité comme une nouvelle machine à chaque synchronisation,
-    // ce qui déclenche des vérifications supplémentaires.
-    deviceId: deviceId || 'quantara-sync',
-  }
-}
 
 // Tradovate ne répond pas par un code d'erreur quand il limite : il renvoie 200
 // avec un « p-ticket » et un délai d'attente. Traiter ça comme un succès donne

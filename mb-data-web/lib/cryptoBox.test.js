@@ -110,3 +110,31 @@ describe('redact', () => {
     expect(() => redact(deep)).not.toThrow()
   })
 })
+
+describe('état OAuth signé', () => {
+  it('fait l aller-retour', async () => {
+    const { signState, verifyState } = await import('./cryptoBox')
+    const s = signState({ uid: 'u-1', env: 'demo' })
+    expect(verifyState(s)).toMatchObject({ uid: 'u-1', env: 'demo' })
+  })
+
+  it('REFUSE un état falsifié', async () => {
+    // C'est tout l'intérêt : sans signature, n'importe qui pourrait rattacher
+    // SON compte Tradovate à la session d'un autre via un lien de retour forgé.
+    const { signState, verifyState } = await import('./cryptoBox')
+    const s = signState({ uid: 'u-1' })
+    const [body] = s.split('.')
+    const forged = Buffer.from(JSON.stringify({ uid: 'victime', t: Date.now() })).toString('base64url')
+    expect(verifyState(`${forged}.${s.split('.')[1]}`)).toBeNull()
+    expect(verifyState(`${body}.mauvaisemac`)).toBeNull()
+    expect(verifyState('n importe quoi')).toBeNull()
+  })
+
+  it('EXPIRE au bout de 10 minutes', async () => {
+    // Un état sans expiration resterait rejouable indéfiniment.
+    const { signState, verifyState } = await import('./cryptoBox')
+    const s = signState({ uid: 'u-1' })
+    expect(verifyState(s, Date.now() + 9 * 60 * 1000)).not.toBeNull()
+    expect(verifyState(s, Date.now() + 11 * 60 * 1000)).toBeNull()
+  })
+})

@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  parseAuthResponse, isTokenUsable, authBody,
+  parseAuthResponse, isTokenUsable, authorizeUrl, tokenExchangeBody, oauthTokenUrl,
   normalizeFills, pairFills, toJournalEntry, TOKEN_SKEW_MS,
 } from './tradovate'
 import { contractRoot, pointValue, tradePnL } from './futuresContracts'
@@ -138,15 +138,45 @@ describe('isTokenUsable', () => {
   })
 })
 
-describe('authBody', () => {
-  it('pose un deviceId stable par défaut', () => {
-    // Un identifiant d'appareil qui change à chaque appel fait passer chaque
-    // synchronisation pour une nouvelle machine, ce qui déclenche des
-    // vérifications supplémentaires côté Tradovate.
-    const a = authBody({ username: 'u', password: 'p', appId: 'A', appVersion: '1', cid: 1, sec: 's' })
-    const b = authBody({ username: 'u', password: 'p', appId: 'A', appVersion: '1', cid: 1, sec: 's' })
-    expect(a.deviceId).toBe(b.deviceId)
-    expect(a.name).toBe('u')
+describe('OAuth', () => {
+  const cfg = { clientId: 'abc 123', clientSecret: 's3c', redirectUri: 'https://quantara.tech/cb?x=1' }
+
+  it('construit l URL d autorisation', () => {
+    const u = new URL(authorizeUrl({ ...cfg, state: 'ST' }))
+    expect(u.origin + u.pathname).toBe('https://trader.tradovate.com/oauth')
+    expect(u.searchParams.get('response_type')).toBe('code')
+    expect(u.searchParams.get('client_id')).toBe('abc 123')
+    expect(u.searchParams.get('state')).toBe('ST')
+  })
+
+  it('ENCODE les paramètres', () => {
+    // Une redirect_uri contenant « ? » ou « & » non encodée tronquerait l URL
+    // et Tradovate refuserait l échange sans dire pourquoi.
+    const u = authorizeUrl({ ...cfg, state: 'ST' })
+    expect(u).toContain('redirect_uri=https%3A%2F%2Fquantara.tech%2Fcb%3Fx%3D1')
+    expect(u).not.toContain('cb?x=1&response')
+  })
+
+  it('omet state quand il n y en a pas', () => {
+    expect(authorizeUrl(cfg)).not.toContain('state=')
+  })
+
+  it('vise DEMO par défaut', () => {
+    // Le piège n°1 : un compte PropFirm vit sur demo, même avec des payouts
+    // réels. Viser live renvoie « identifiants invalides » sans explication.
+    expect(oauthTokenUrl('demo')).toContain('demo.tradovateapi.com')
+    expect(oauthTokenUrl(undefined)).toContain('demo.tradovateapi.com')
+    expect(oauthTokenUrl('n importe quoi')).toContain('demo.tradovateapi.com')
+    expect(oauthTokenUrl('live')).toContain('live.tradovateapi.com')
+  })
+
+  it('produit un corps FORM-URLENCODED', () => {
+    // Ce point d entrée refuse le JSON, et son message d erreur ne le dit pas.
+    const b = tokenExchangeBody({ code: 'C', ...cfg })
+    expect(b).toBeInstanceOf(URLSearchParams)
+    expect(b.get('grant_type')).toBe('authorization_code')
+    expect(b.get('code')).toBe('C')
+    expect(b.get('client_secret')).toBe('s3c')
   })
 })
 

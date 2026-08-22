@@ -798,32 +798,34 @@ create index if not exists journal_entries_user_month_idx
 
 
 -- ============================================================================
--- SYNCHRONISATION TRADOVATE
+-- SYNCHRONISATION TRADOVATE (OAuth)
 -- ----------------------------------------------------------------------------
--- Contrairement à Rithmic, Tradovate est une API REST simple : pas de service
--- Python séparé, tout tient dans les routes Next.js. Une seule table.
+-- Tradovate est une API REST simple : pas de service Python séparé, tout tient
+-- dans les routes Next.js.
 --
--- ⚠️ Cette table contient des IDENTIFIANTS DE BROKER. Trois protections :
---   1. `encrypted_password` est chiffré côté application (AES-256-GCM,
---      lib/cryptoBox.js) AVANT d'arriver ici. Un dump de la base ne rend pas
---      les mots de passe — RLS ne protège pas d'une fuite de sauvegarde.
---   2. RLS isole chaque utilisateur.
---   3. AUCUN grant de SELECT sur `encrypted_password` pour `anon` : seule la
---      route serveur, en service role, le lit.
+-- ⚠️ AUCUN MOT DE PASSE ICI. L'authentification passe par OAuth : l'utilisateur
+-- autorise un accès en lecture seule chez Tradovate et nous ne recevons qu'un
+-- JETON. La voie mot de passe a été abandonnée — elle exige un abonnement API à
+-- 25 $/mois côté utilisateur, et les PropFirms désactivent la génération de clé
+-- API sur les comptes d'évaluation et financés.
+--
+-- Le jeton reste chiffré (AES-256-GCM, lib/cryptoBox.js) : RLS ne protège pas
+-- d'une fuite de sauvegarde, le chiffrement si.
 -- ============================================================================
 create table if not exists tradovate_credentials (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade not null,
-  -- Un utilisateur peut avoir plusieurs comptes chez plusieurs firmes : le
-  -- libellé les distingue, comme pour Rithmic.
   label text not null,
-  username text not null,
-  encrypted_password text not null,
-  -- 'live' ou 'demo' : Tradovate a deux hôtes distincts, et se tromper renvoie
-  -- systématiquement « identifiants invalides » sans autre explication.
-  environment text not null default 'live' check (environment in ('live', 'demo')),
-  auto_sync boolean not null default false,
-  sync_days_window int not null default 30,
+  -- Nom d'utilisateur Tradovate, renvoyé par l'API après autorisation. Sert
+  -- uniquement à afficher DE QUEL compte il s'agit dans la liste.
+  username text,
+  encrypted_token text not null,
+  token_expires_at timestamptz,
+  -- ⚠️ « demo » PAR DÉFAUT, et c'est volontaire : un compte PropFirm vit sur
+  -- l'environnement demo de Tradovate même quand les payouts sont réels. Viser
+  -- « live » renvoie « identifiants invalides » sans autre explication.
+  environment text not null default 'demo' check (environment in ('live', 'demo')),
+  auto_sync boolean not null default true,
   last_synced_at timestamptz,
   last_error text,
   created_at timestamptz default now(),
@@ -837,10 +839,10 @@ drop policy if exists "tradovate_credentials owner" on tradovate_credentials;
 create policy "tradovate_credentials owner" on tradovate_credentials
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Le client peut gérer ses connexions (créer, renommer, supprimer) mais ne doit
--- jamais pouvoir LIRE ni ÉCRIRE le secret : il transite par la route serveur.
-revoke select (encrypted_password) on table tradovate_credentials from authenticated, anon;
-revoke update (encrypted_password) on table tradovate_credentials from authenticated, anon;
+-- Le client liste et supprime ses connexions, mais ne touche jamais au jeton :
+-- il transite uniquement par les routes serveur.
+revoke select (encrypted_token) on table tradovate_credentials from authenticated, anon;
+revoke update (encrypted_token) on table tradovate_credentials from authenticated, anon;
 
 -- Rattache un compte Quantara à un compte Tradovate. Sans ça, on ne saurait pas
 -- dans quel compte écrire les trades importés.
