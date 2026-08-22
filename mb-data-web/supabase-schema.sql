@@ -795,3 +795,63 @@ create index if not exists journal_entries_user_month_idx
 -- seule fois, en remplaçant la date par celle du lancement :
 --   update profiles set beta_grandfather = true
 --   where created_at < '2026-09-01' and coalesce(beta_grandfather, false) = false;
+
+
+-- ============================================================================
+-- SYNCHRONISATION TRADOVATE
+-- ----------------------------------------------------------------------------
+-- Contrairement à Rithmic, Tradovate est une API REST simple : pas de service
+-- Python séparé, tout tient dans les routes Next.js. Une seule table.
+--
+-- ⚠️ Cette table contient des IDENTIFIANTS DE BROKER. Trois protections :
+--   1. `encrypted_password` est chiffré côté application (AES-256-GCM,
+--      lib/cryptoBox.js) AVANT d'arriver ici. Un dump de la base ne rend pas
+--      les mots de passe — RLS ne protège pas d'une fuite de sauvegarde.
+--   2. RLS isole chaque utilisateur.
+--   3. AUCUN grant de SELECT sur `encrypted_password` pour `anon` : seule la
+--      route serveur, en service role, le lit.
+-- ============================================================================
+create table if not exists tradovate_credentials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  -- Un utilisateur peut avoir plusieurs comptes chez plusieurs firmes : le
+  -- libellé les distingue, comme pour Rithmic.
+  label text not null,
+  username text not null,
+  encrypted_password text not null,
+  -- 'live' ou 'demo' : Tradovate a deux hôtes distincts, et se tromper renvoie
+  -- systématiquement « identifiants invalides » sans autre explication.
+  environment text not null default 'live' check (environment in ('live', 'demo')),
+  auto_sync boolean not null default false,
+  sync_days_window int not null default 30,
+  last_synced_at timestamptz,
+  last_error text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (user_id, label)
+);
+
+alter table tradovate_credentials enable row level security;
+
+drop policy if exists "tradovate_credentials owner" on tradovate_credentials;
+create policy "tradovate_credentials owner" on tradovate_credentials
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Le client peut gérer ses connexions (créer, renommer, supprimer) mais ne doit
+-- jamais pouvoir LIRE ni ÉCRIRE le secret : il transite par la route serveur.
+revoke select (encrypted_password) on table tradovate_credentials from authenticated, anon;
+revoke update (encrypted_password) on table tradovate_credentials from authenticated, anon;
+
+-- Rattache un compte Quantara à un compte Tradovate. Sans ça, on ne saurait pas
+-- dans quel compte écrire les trades importés.
+alter table accounts add column if not exists tradovate_account_id text;
+create index if not exists accounts_tradovate_idx on accounts(tradovate_account_id)
+  where tradovate_account_id is not null;
+
+-- `source_id` porte l'identité d'un trade importé. L'index UNIQUE est ce qui
+-- rend la synchronisation idempotente : relancer sur la même période met à jour
+-- au lieu de dupliquer. Partiel, car les trades saisis à la main n'ont pas de
+-- source_id et seraient tous en conflit sur NULL.
+create unique index if not exists journal_entries_source_uniq
+  on journal_entries(user_id, source_id)
+  where source_id is not null;

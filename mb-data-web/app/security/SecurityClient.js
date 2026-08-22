@@ -54,13 +54,13 @@ const SECTIONS_FR = [
     ],
   },
   {
-    title: 'Aucun accès broker',
+    title: 'Accès broker',
     icon: '◇',
     color: C.blueLight,
     items: [
-      { label: 'Zero credentials brokers', value: 'Quantara ne se connecte à AUCUN broker. On ne demande JAMAIS ton mot de passe Rithmic, Tradovate, NinjaTrader, etc.' },
-      { label: 'Import CSV manuel uniquement', value: 'Tu exportes manuellement un CSV depuis ton broker (Rithmic Performance ou Dashboard) et tu le glisses dans /app/import-lab. Tu gardes le contrôle total.' },
-      { label: 'Pas d\'API key stockée', value: 'Aucun token broker n\'est stocké en DB. L\'app n\'a aucune capacité de trader pour toi.' },
+      { label: 'Par défaut : aucun accès', value: 'Quantara fonctionne entièrement sans broker. Tu exportes un CSV depuis ton broker et tu le déposes dans /app/import-lab — c\'est le mode par défaut, et il ne demande aucun identifiant.' },
+      { label: 'Sync automatique : uniquement si TU la branches', value: 'Si tu actives la synchronisation d\'un broker, ses identifiants sont nécessaires pour lire ton historique. Ils sont chiffrés (Fernet) avant d\'être stockés, isolés par RLS, et jamais écrits dans les journaux. Rien n\'est branché tant que tu ne le fais pas toi-même.' },
+      { label: 'Lecture seule', value: 'Quantara ne passe, ne modifie et n\'annule aucun ordre. L\'accès sert à lire ton historique de trades, rien d\'autre. Tu peux supprimer une connexion à tout moment : les identifiants sont effacés avec elle.' },
     ],
   },
   {
@@ -119,13 +119,13 @@ const SECTIONS_EN = [
     ],
   },
   {
-    title: 'Zero broker access',
+    title: 'Broker access',
     icon: '◇',
     color: C.blueLight,
     items: [
-      { label: 'Zero broker credentials', value: "Quantara connects to NO broker. We NEVER ask for your Rithmic, Tradovate, NinjaTrader, etc. password." },
-      { label: 'Manual CSV import only', value: 'You manually export a CSV from your broker (Rithmic Performance or Dashboard) and drop it in /app/import-lab. You stay in full control.' },
-      { label: 'No API key stored', value: 'No broker token is stored in the DB. The app has zero ability to trade on your behalf.' },
+      { label: 'By default: no access at all', value: 'Quantara works entirely without a broker. You export a CSV from your broker and drop it into /app/import-lab — that is the default mode, and it asks for no credentials.' },
+      { label: 'Automatic sync: only if YOU connect it', value: 'If you turn on a broker sync, its credentials are required to read your history. They are encrypted (Fernet) before storage, isolated by RLS, and never written to logs. Nothing is connected until you do it yourself.' },
+      { label: 'Read-only', value: 'Quantara never places, modifies or cancels an order. The access exists to read your trade history, nothing else. You can delete a connection at any time — the credentials go with it.' },
     ],
   },
   {

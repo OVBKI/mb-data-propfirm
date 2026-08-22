@@ -30,7 +30,9 @@ const SECTIONS_FR = [
 • **Données métier** : firmes ajoutées, comptes (taille, plan, drawdown, dates), trades manuels ou importés, payouts, notes personnelles, screenshots.
 • **Données techniques** : timestamp de connexion, IP (uniquement pour rate-limit anti-bot, non stockée durablement).
 
-Quantara ne collecte AUCUNE donnée bancaire, AUCUN token broker, AUCUNE donnée de tracking publicitaire.`,
+Quantara ne collecte AUCUNE donnée bancaire ni AUCUNE donnée de tracking publicitaire.
+
+• **Identifiants broker** : uniquement si tu actives toi-même une synchronisation automatique. Ils sont chiffrés avant stockage, isolés par utilisateur, jamais écrits dans les journaux, et servent en lecture seule — l'app ne peut pas passer d'ordre. Ils sont effacés dès que tu supprimes la connexion. Sans cette action de ta part, aucun identifiant broker n'est collecté.`,
   },
   {
     title: '2. Finalité du traitement',
@@ -123,7 +125,9 @@ const SECTIONS_EN = [
 • **Business data**: added firms, accounts (size, plan, drawdown, dates), manual or imported trades, payouts, personal notes, screenshots.
 • **Technical data**: login timestamp, IP (used only for anti-bot rate-limit, not durably stored).
 
-Quantara collects NO banking data, NO broker token, NO advertising tracking data.`,
+Quantara collects NO banking data and NO advertising tracking data.
+
+• **Broker credentials**: only if you turn on an automatic sync yourself. They are encrypted before storage, isolated per user, never written to logs, and used read-only — the app cannot place an order. They are deleted as soon as you remove the connection. Without that action from you, no broker credential is collected.`,
   },
   {
     title: '2. Purpose of processing',

@@ -1,5 +1,5 @@
 'use client'
-// HUB JOURNAL SYNC — 2 cards : Import CSV + View journal.
+// HUB JOURNAL SYNC — 3 cartes : Tradovate (auto), Import CSV, Voir le journal.
 // La sync Rithmic live + la gestion des comptes Rithmic ont été retirées du hub
 // jusqu'à nouvel ordre (juin 2026). Les routes /journal-sync/rithmic et
 // /journal-sync/accounts existent toujours et sont accessibles par URL directe
@@ -51,6 +51,25 @@ export default function JournalSyncHub() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
+          {/* Tradovate en PREMIER : c'est la seule synchronisation automatique.
+              L'import CSV reste, mais il demande un geste manuel à chaque fois. */}
+          <Link href="/app/journal-sync/tradovate" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'var(--blue-border)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px var(--blue-bg)' }}
+            onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{26A1}'}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.blueLt, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Automatique</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Connecter Tradovate</h3>
+            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
+              Tes allers-retours arrivent tout seuls. Apex, Lucid, Bulenox, FFN et les autres firmes sur Tradovate.
+            </p>
+            <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ padding: '3px 8px', background: 'var(--blue-bg)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
+              <span>Lecture seule</span><span>{'\u00B7'}</span><span>Identifiants chiffrés</span>
+            </div>
+            <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.blueLt, fontSize: 18 }}>{'\u2192'}</div>
+          </Link>
+
           <Link href="/app/import-lab" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
             onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'var(--blue-border)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px var(--blue-bg)' }}
             onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
