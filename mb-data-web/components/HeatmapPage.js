@@ -22,7 +22,10 @@ import { fmtMoney } from '../lib/format'
 import { useT } from './LanguageProvider'
 import Skeleton from './Skeleton'
 
-const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
+// La carte passe par les jetons `--card-*` (app/globals.css). Elle etait
+// redefinie ici avec ses propres valeurs, ce qui faisait cohabiter deux
+// cartes legerement differentes selon la page.
+const card = { background: 'var(--card-bg)', border: 'var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)' }
 
 // Filtres période
 const PERIOD_PRESETS = [

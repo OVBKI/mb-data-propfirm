@@ -26,7 +26,10 @@ import { useT } from './LanguageProvider'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
-const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
+// La carte passe par les jetons `--card-*` (app/globals.css). Elle etait
+// redefinie ici avec ses propres valeurs, ce qui faisait cohabiter deux
+// cartes legerement differentes selon la page.
+const card = { background: 'var(--card-bg)', border: 'var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)' }
 // Local variants — differ from shared theme (smaller padding/fontSize/borderRadius, no transitions)
 const inputS = { width: '100%', padding: '8px 10px', fontSize: 12, border: `1px solid var(--hairline)`, borderRadius: 6, background: 'var(--tint1)', color: C.text, outline: 'none', fontFamily: 'inherit' }
 const btnGhost = { padding: '7px 12px', fontSize: 11, fontWeight: 500, background: 'var(--tint1)', border: '1px solid var(--hairline)', color: C.text2, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }

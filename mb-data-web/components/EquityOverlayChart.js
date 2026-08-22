@@ -39,7 +39,10 @@ const C = {
   amber:    '#fac775',
 }
 
-const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
+// La carte passe par les jetons `--card-*` (app/globals.css). Elle etait
+// redefinie ici avec ses propres valeurs, ce qui faisait cohabiter deux
+// cartes legerement differentes selon la page.
+const card = { background: 'var(--card-bg)', border: 'var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)' }
 
 // Palette de couleurs distinctes pour chaque ligne (jusqu'à 5 comptes)
 const LINE_COLORS = [

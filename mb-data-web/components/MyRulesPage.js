@@ -34,7 +34,13 @@ const C = {
   purple:    'var(--violet)',
 }
 
-const card = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }
+// La carte passe par les jetons `--card-*` (app/globals.css). Elle etait
+// redefinie ici avec ses propres valeurs, ce qui faisait cohabiter deux
+// cartes legerement differentes selon la page.
+// Le PANNEAU d'une modale ne peut pas etre transparent comme la carte : on
+// lirait la page au travers.
+const panel = { background: 'var(--panel-bg)', border: 'var(--panel-border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--panel-shadow)' }
+const card = { background: 'var(--card-bg)', border: 'var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)' }
 const inputS = { width: '100%', padding: '10px 12px', fontSize: 13, border: `1px solid var(--hairline)`, borderRadius: 8, background: 'var(--tint1)', color: C.text, outline: 'none', fontFamily: 'inherit' }
 const labelS = { fontSize: 10.5, fontWeight: 600, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 6 }
 const btnPrimary = { padding: '8px 16px', fontSize: 12.5, fontWeight: 500, background: C.text, color: 'var(--text-inverse)', border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit' }
@@ -386,7 +392,7 @@ function SetupModal({ user, setup, onClose, onSave, showToast }) {
 
   return (
     <div className="qt-modal-backdrop" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, overflowY: 'auto' }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={setup ? t('app.myrules.setupModalEdit') : t('app.myrules.setupModalNew')} className="qt-modal-content" onClick={e => e.stopPropagation()} style={{ ...card, padding: 24, width: 560, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={setup ? t('app.myrules.setupModalEdit') : t('app.myrules.setupModalNew')} className="qt-modal-content" onClick={e => e.stopPropagation()} style={{ ...panel, padding: 24, width: 560, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 18 }}>
           {setup ? t('app.myrules.setupModalEdit') : t('app.myrules.setupModalNew')}
         </h3>

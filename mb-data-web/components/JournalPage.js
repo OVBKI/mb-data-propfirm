@@ -13,7 +13,7 @@ import { TooltipIcon } from './Tooltip'
 import TagSelector from './TagSelector'
 import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
 import { fmtMoney, todayISO } from '../lib/format'
-import { cardStyle as card, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
+import { cardStyle as card, panelStyle as panel, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
 import { useTheme } from './ThemeProvider'
 import { planLimitMessage } from '../lib/planLimits'
 import Skeleton from './Skeleton'
@@ -1507,7 +1507,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
       {/* Modal ajout / édition */}
       {entryModal && (
         <div onClick={()=>setEntryModal(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}>
-          <div ref={entryDialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')} className="modal" onClick={e=>e.stopPropagation()} style={{...card,padding:'28px',width:'560px',maxWidth:'100%',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
+          <div ref={entryDialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')} className="modal" onClick={e=>e.stopPropagation()} style={{...panel,padding:'28px',width:'560px',maxWidth:'100%',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
             <h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>
               {entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
             </h3>

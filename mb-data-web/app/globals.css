@@ -80,6 +80,25 @@
   /* Abyss respire : rayons larges et généreux. */
   --radius: 12px;
   --radius-lg: 18px;
+
+  /* ── LA CARTE — variante « Trait » ────────────────────────────────────────
+     Aucun aplat, un filet seul : le halo Abyss traverse la carte au lieu de
+     s'arrêter à son bord. Ces quatre jetons sont le SEUL endroit à changer pour
+     rhabiller toutes les cartes de l'app — elles étaient définies en quatre
+     exemplaires (lib/theme.js ×2, layout.js ×2) qui divergeaient déjà. */
+  --card-bg: transparent;
+  --card-border: 1px solid var(--border2);
+  --card-radius: var(--radius-lg);
+  --card-shadow: none;
+
+  /* ── LE PANNEAU ───────────────────────────────────────────────────────────
+     Ce qui FLOTTE au-dessus de la page : modales, tiroirs, menus. Distinct de
+     la carte, et jamais transparent — on lirait le contenu au travers. C'est
+     pour ça que la variante « Trait » ne pouvait pas simplement être appliquée
+     à S.card, qui servait aux deux. */
+  --panel-bg: var(--glass-solid);
+  --panel-border: 1px solid var(--border2);
+  --panel-shadow: var(--shadow-pop);
 }
 
 /* Sombre explicite — même palette que :root. Sert à ÉPINGLER un sous-arbre

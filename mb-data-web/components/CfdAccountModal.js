@@ -351,7 +351,7 @@ function CfdAccountModalInner({ account, onClose, onSaved, user, showToast }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 12px', overflowY: 'auto' }}>
-      <div role="dialog" aria-modal="true" aria-label={isEdit ? t('app.cfd.editTitle') : t('app.cfd.formTitle')} onClick={e => e.stopPropagation()} style={{ ...S.card, padding: 28, width: 560, maxWidth: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+      <div role="dialog" aria-modal="true" aria-label={isEdit ? t('app.cfd.editTitle') : t('app.cfd.formTitle')} onClick={e => e.stopPropagation()} style={{ ...S.panel, padding: 28, width: 560, maxWidth: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
         <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 20 }}>{isEdit ? t('app.cfd.editTitle') : t('app.cfd.formTitle')}</h3>
 
         {/* Firm picker — read-only in edit mode (the account's firm is fixed). */}

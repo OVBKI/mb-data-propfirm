@@ -92,7 +92,7 @@ export default function NewAccountWizard({
         className="modal"
         onClick={e => e.stopPropagation()}
         style={{
-          ...S.card, width: 620, maxWidth: '100%', padding: '26px 28px 24px',
+          ...S.panel, width: 620, maxWidth: '100%', padding: '26px 28px 24px',
           boxShadow: 'var(--shadow-pop)', display: 'flex', flexDirection: 'column', gap: 18,
         }}
       >

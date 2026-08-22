@@ -83,21 +83,32 @@ export function chartColors() {
  * JournalPage, CalendarPage, and app/page.js (cardS).
  */
 export const cardStyle = {
-  background: 'var(--surface)',
-  border:     '1px solid var(--border)',
-  borderRadius: 'var(--radius-lg)',
-  boxShadow:  'var(--shadow-card)',
+  background:   'var(--card-bg)',
+  border:       'var(--card-border)',
+  borderRadius: 'var(--card-radius)',
+  boxShadow:    'var(--card-shadow)',
 }
 
 /**
- * Lightweight card style variant — used in the dashboard (app/page.js cardS).
- * Thinner border, no box-shadow, uses CSS variable for border-radius.
+ * Le PANNEAU — ce qui flotte au-dessus de la page : modales, tiroirs, menus.
+ * Distinct de la carte, et jamais transparent : on lirait le contenu au travers.
+ * Sans cette séparation, rendre les cartes transparentes rendait les modales
+ * illisibles — elles partageaient le même style.
  */
-export const cardStyleLight = {
-  background: 'var(--surface)',
-  border:     '0.5px solid var(--border)',
+export const panelStyle = {
+  background:   'var(--panel-bg)',
+  border:       'var(--panel-border)',
   borderRadius: 'var(--radius-lg)',
+  boxShadow:    'var(--panel-shadow)',
 }
+
+/**
+ * Ancienne variante « légère ». Elle ne diffère plus de `cardStyle` : les deux
+ * lisaient les mêmes jetons avec des valeurs légèrement différentes, ce qui
+ * faisait cohabiter deux cartes presque identiques à l'écran. Gardée comme alias
+ * pour ne pas casser les imports existants.
+ */
+export const cardStyleLight = cardStyle
 
 /**
  * Primary button style — off-white inverted button matching the cosmic theme.

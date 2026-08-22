@@ -64,7 +64,7 @@ export default function QuickPayoutDialog({ firms = [], defaultAccountId = null,
         aria-label={t('app.quickPayout.title')}
         className="modal"
         onClick={e => e.stopPropagation()}
-        style={{ ...S.card, width: 460, maxWidth: '100%', padding: '24px 26px', boxShadow: 'var(--shadow-pop)' }}
+        style={{ ...S.panel, width: 460, maxWidth: '100%', padding: '24px 26px', boxShadow: 'var(--shadow-pop)' }}
       >
         <h3 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 4px', letterSpacing: '-.01em' }}>
           {t('app.quickPayout.title')}

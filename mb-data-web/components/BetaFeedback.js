@@ -124,7 +124,7 @@ function FeedbackModal({ user, showToast, onClose }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 520, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '48px 12px', overflowY: 'auto' }}>
-      <div ref={ref} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t('app.beta.title')} onClick={e => e.stopPropagation()} style={{ ...S.card, padding: 24, width: 440, maxWidth: '100%' }}>
+      <div ref={ref} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t('app.beta.title')} onClick={e => e.stopPropagation()} style={{ ...S.panel, padding: 24, width: 440, maxWidth: '100%' }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, marginBottom: 4 }}>{t('app.beta.title')}</h3>
         <p style={{ fontSize: 12.5, color: 'var(--text3)', margin: 0, marginBottom: 16, lineHeight: 1.5 }}>{t('app.beta.subtitle')}</p>
 
