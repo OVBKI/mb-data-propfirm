@@ -65,18 +65,19 @@ export default function DashboardPage() {
     S, toEUR, fmtE, fmtENet, fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
     accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
-    setFirmModal, setNewFirmName, setFirmDrawer, setCertsFirm,
+    setFirmDrawer, setCertsFirm,
     setShowOnboarding,
     getFirmLogo, STATUS_COLORS, accountLabel, MONTHS_FR,
-    marketMode, openCfdAdd,
+    marketMode, openCfdAdd, openAccountWizard,
     openSearch, alertsBadgeCount,
   } = useApp()
 
-  // Mode-gated add-PropFirm trigger: in CFD mode open the reusable CFD account
-  // modal; in futures mode keep the existing add-firm flow exactly as before.
+  // « Ajouter une PropFirm » ouvre l'assistant, qui cree la firme ET son premier
+  // compte. Le bouton promettait un resultat utilisable ; il livrait une coquille
+  // vide qu'il fallait ensuite retrouver pour lui ajouter un compte.
+  // L'assistant gere lui-meme la bascule CFD.
   function handleAddPropfirm() {
-    if (marketMode === 'cfd') { openCfdAdd(); return }
-    setFirmModal(true); setNewFirmName('')
+    openAccountWizard(null)
   }
 
   const [calYear, setCalYear] = useState(new Date().getFullYear())

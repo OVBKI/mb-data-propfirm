@@ -510,6 +510,27 @@ const FR = {
 
   // === /app — produit (sidebar + dashboard + auth + trades) ===
   app: {
+    // ── Assistant « nouveau compte » (components/NewAccountWizard.js) ──
+    wizard: {
+      title: 'Nouveau compte',
+      stepOf: 'Étape {n} sur {total}',
+      stepFirm: 'Chez quelle PropFirm ?',
+      stepPlan: 'Quel plan as-tu pris ?',
+      stepDetails: 'Encore deux détails',
+      planHint: 'Les montants viennent de nos fiches de règles. Tu pourras tout ajuster ensuite.',
+      otherFirm: 'Une autre firme',
+      otherFirmPlaceholder: 'Nom de la PropFirm',
+      next: 'Continuer',
+      back: 'Étape précédente',
+      pricePaid: 'Prix payé',
+      statusFunded: 'Déjà financé',
+      advanced: 'Options avancées',
+      recap: '{firm} · {plan}',
+      create: 'Créer le compte',
+      creating: 'Création…',
+      dd: 'DD',
+      target: 'Objectif',
+    },
     sidebar: {
       // Sections (3 sections après restructure mai 2026)
       sectionVue:       "Vue d'ensemble",
@@ -2465,6 +2486,27 @@ const EN = {
 
   // === /app — product (sidebar + dashboard + auth + trades) ===
   app: {
+    // ── New-account wizard (components/NewAccountWizard.js) ──
+    wizard: {
+      title: 'New account',
+      stepOf: 'Step {n} of {total}',
+      stepFirm: 'Which PropFirm?',
+      stepPlan: 'Which plan did you buy?',
+      stepDetails: 'Two more details',
+      planHint: 'Figures come from our rule sheets. You can adjust everything afterwards.',
+      otherFirm: 'Another firm',
+      otherFirmPlaceholder: 'PropFirm name',
+      next: 'Continue',
+      back: 'Previous step',
+      pricePaid: 'Price paid',
+      statusFunded: 'Already funded',
+      advanced: 'Advanced options',
+      recap: '{firm} · {plan}',
+      create: 'Create the account',
+      creating: 'Creating…',
+      dd: 'DD',
+      target: 'Target',
+    },
     sidebar: {
       // Sections (3 sections after restructure May 2026)
       sectionVue:       'Overview',
