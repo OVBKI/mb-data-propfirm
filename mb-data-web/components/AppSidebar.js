@@ -224,8 +224,11 @@ export default function AppSidebar({
       <div className="qt-brand">
         {/* Le vrai logo, pas la lettre. Il est posé SEUL, sans pastille : à
             l'intérieur d'un carré de 42px il ne resterait que 26px utiles, et à
-            cette taille les cinq barres du graphique deviennent illisibles. */}
-        <span className="qt-mark" aria-hidden="true"><QLogoIcon size={40} /></span>
+            cette taille les cinq barres du graphique deviennent illisibles.
+            La teinte est --text3, volontairement en retrait : l'accent bleu est
+            réservé au bouton d'action juste en dessous. Un logo bleu et un
+            bouton bleu se disputaient le regard. */}
+        <span className="qt-mark" aria-hidden="true"><QLogoIcon size={40} color="var(--text3)" /></span>
         <div className="qt-brand-t">
           <b>Quantara</b>
           <span>PropFirm Dashboard</span>
