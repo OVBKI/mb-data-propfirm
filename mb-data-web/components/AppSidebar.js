@@ -25,6 +25,7 @@ import { useState, useEffect } from 'react'
 import { useT } from './LanguageProvider'
 import { isAdmin } from '../lib/admins'
 import { useApp } from '../app/app/(main)/AppContext'
+import QLogoIcon from './QLogoIcon'
 
 // Les glyphes de la maquette, dans son ordre. Ce sont des caractères, pas des
 // SVG : c’est ce que la maquette montre, et le rendu reste net à toute taille.
@@ -221,7 +222,10 @@ export default function AppSidebar({
       <style>{SIDEBAR_CSS}</style>
 
       <div className="qt-brand">
-        <div className="qt-mark" aria-hidden="true">Q</div>
+        {/* Le vrai logo, pas la lettre. Il est posé SEUL, sans pastille : à
+            l'intérieur d'un carré de 42px il ne resterait que 26px utiles, et à
+            cette taille les cinq barres du graphique deviennent illisibles. */}
+        <span className="qt-mark" aria-hidden="true"><QLogoIcon size={40} /></span>
         <div className="qt-brand-t">
           <b>Quantara</b>
           <span>PropFirm Dashboard</span>
@@ -286,8 +290,7 @@ const SIDEBAR_CSS = `
 }
 
 .qt-brand{display:flex;align-items:center;gap:12px;padding:6px 12px 24px}
-.qt-mark{width:42px;height:42px;border-radius:13px;flex-shrink:0;display:grid;place-items:center;
-  background:linear-gradient(140deg,var(--blue),var(--green));color:var(--bg);font-weight:700;font-size:20px}
+.qt-mark{width:42px;height:42px;flex-shrink:0;display:grid;place-items:center}
 .qt-brand-t{min-width:0}
 .qt-brand-t b{font-size:18px;font-weight:600;letter-spacing:-.01em;display:block;line-height:1.15;color:var(--text)}
 .qt-brand-t span{font-size:12.5px;color:var(--text3);white-space:nowrap}
