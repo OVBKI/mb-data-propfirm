@@ -31,7 +31,7 @@ function CommunityComingSoon() {
       </h1>
       <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, margin: '0 0 22px' }}>
         Cette section est en cours de construction. On la déverrouille pour tous les utilisateurs dès qu&apos;elle est prête.
-        En attendant, profite à fond du tracking, des analytics et de la synchronisation extension.
+        En attendant, profite à fond du tracking, des analytics et de l&apos;import CSV.
       </p>
       <Link href="/app/dashboard" style={{
         display: 'inline-block', padding: '11px 22px',

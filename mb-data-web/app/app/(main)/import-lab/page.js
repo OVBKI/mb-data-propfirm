@@ -278,10 +278,10 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
   const fileInputRef = useRef(null)
 
   // The user picks a target firm BEFORE dropping the CSV. Only that firm's
-  // accounts with status Challenge or Failed are then offered for mapping.
-  // Funded accounts use the live extension sync, so they're intentionally
-  // excluded from CSV import. The picker remembers the last choice across
-  // visits via localStorage.
+  // accounts are then offered for mapping. Funded accounts used to be excluded
+  // here because they were meant to arrive through the live sync — that sync no
+  // longer exists, so excluding them would leave them with no way in at all.
+  // The picker remembers the last choice across visits via localStorage.
   const [selectedFirmId, setSelectedFirmId] = useState('')
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -647,7 +647,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
                 existingFirms={existingFirms}
                 loadingExisting={loadingExisting}
                 forcedFirmId={selectedFirmId}
-                allowedStatuses={['Challenge', 'Échoué', 'Failed']}
+                allowedStatuses={['Challenge', 'Échoué', 'Failed', 'Financé', 'Funded']}
                 onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
               />
             ))}
@@ -1019,7 +1019,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
                 existingFirms={existingFirms}
                 loadingExisting={loadingExisting}
                 forcedFirmId={selectedFirmId}
-                allowedStatuses={['Challenge', 'Échoué', 'Failed']}
+                allowedStatuses={['Challenge', 'Échoué', 'Failed', 'Financé', 'Funded']}
                 onChangeMapping={(m) => setMapping(prev => ({ ...prev, [acc.rithmicId]: m }))}
               />
             ))}
@@ -1206,8 +1206,8 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
   // When the caller passes `forcedFirmId` (set by the firm picker at the top
   // of the page), that firm overrides whatever the CSV-content auto-detection
   // would have produced. `allowedStatuses` further restricts which existing
-  // accounts are offered for mapping (e.g. ['Challenge', 'Échoué'] hides
-  // funded accounts from CSV import — those use the live extension sync).
+  // accounts are offered for mapping. Depuis le retrait de la synchronisation,
+  // les comptes financés y figurent aussi : le CSV est le seul chemin restant.
 
   const [showAll, setShowAll] = useState(false)
 
@@ -1225,7 +1225,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
 
   // Filtre les comptes : firme cible + statuses autorisés.
   // Le toggle "Tout afficher" ne lève QUE le filtre firme — pas le filtre
-  // statuts, qui est une règle métier (les funded ne passent pas par CSV).
+  // statuts, qui écarte les comptes liquidés/archivés.
   const filteredAccounts = (matchingFirm && !showAll)
     ? existingAccounts.filter(ea => ea.firm_id === matchingFirm.id && (!allowedStatusSet || allowedStatusSet.has(String(ea.status || '').toLowerCase())))
     : existingAccounts
@@ -1706,7 +1706,7 @@ function FirmPicker({ firms, selectedFirmId, onChange, loading }) {
         ))}
       </select>
       <div style={{ fontSize: 11, color: T.color.text3, marginTop: 8, lineHeight: 1.5 }}>
-        Seuls les comptes <strong style={{ color: T.color.text2 }}>Challenge</strong> et <strong style={{ color: T.color.text2 }}>Échoué</strong> de cette firme seront proposés pour le mapping. Les comptes financés utilisent la synchronisation automatique via l&apos;extension navigateur.
+        Les comptes de cette firme seront proposés pour le mapping — challenge, échoués et financés.
       </div>
     </div>
   )

@@ -562,7 +562,6 @@ const FR = {
       journalGroup:  'Journal',         // sub-header non cliquable
       journalManuel: 'Journal manuel',  // sous-item indenté
       importCsv:     'Import CSV',       // sous-item indenté
-      syncApi:       'Sync auto API',    // sous-item indenté disabled
       trades:        'Trade Log',
       heatmaps:      'Heatmaps',
       myrules:       'Mes règles',
@@ -583,7 +582,6 @@ const FR = {
       adminPanel:    '🔧 Admin Panel',
       definePseudo:  '⊕ Définir un pseudo',
       quickEdit:     'Édition rapide (pseudo, bio)',
-      syncBroker:      'Sync broker',
       new:             'Nouveau',
       exportCsv:       'Exporter en CSV',
       settingsGeneral: 'Réglages généraux',
@@ -2554,7 +2552,6 @@ const EN = {
       journalGroup:  'Journal',
       journalManuel: 'Manual journal',
       importCsv:     'CSV Import',
-      syncApi:       'Auto sync API',
       trades:        'Trade Log',
       heatmaps:      'Heatmaps',
       myrules:       'My rules',
@@ -2575,7 +2572,6 @@ const EN = {
       adminPanel:    '🔧 Admin Panel',
       definePseudo:  '⊕ Set a username',
       quickEdit:     'Quick edit (username, bio)',
-      syncBroker:      'Broker sync',
       new:             'New',
       exportCsv:       'Export as CSV',
       settingsGeneral: 'General settings',

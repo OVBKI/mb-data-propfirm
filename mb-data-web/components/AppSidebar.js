@@ -31,7 +31,7 @@ import QLogoIcon from './QLogoIcon'
 // SVG : c’est ce que la maquette montre, et le rendu reste net à toute taille.
 const G = {
   dashboard: '▤', firms: '◈', health: '♡', journal: '▦', trades: '≡',
-  heatmaps: '▩', myrules: '◇', rules: '⚖', payouts: '◉', sync: '⟳',
+  heatmaps: '▩', myrules: '◇', rules: '⚖', payouts: '◉',
   calendar: '☷', alerts: '▲', settings: '⚙',
 }
 
@@ -105,10 +105,9 @@ export default function AppSidebar({
       g: G.journal, label: t('app.sidebar.journalGroup'), group: 'journal',
       children: [
         { label: t('app.sidebar.journalManuel'), key: 'journal' },
-        // Journal Sync (Rithmic) + Sync auto API sont futures-only.
+        // L’import CSV est futures-only : les exports viennent de Rithmic.
         ...(isCfd ? [] : [
           { label: t('app.sidebar.journalSync'), href: '/app/journal-sync' },
-          { label: t('app.sidebar.syncApi'), disabled: true, lock: true },
         ]),
       ],
     },
@@ -117,7 +116,6 @@ export default function AppSidebar({
     { g: G.myrules, label: t('app.sidebar.myrules'), key: 'myrules' },
     { g: G.rules, label: t('app.sidebar.rules'), key: 'rules' },
     { g: G.payouts, label: t('app.sidebar.analytics'), key: 'analytics' },
-    { g: G.sync, label: t('app.sidebar.syncBroker'), href: '/app/journal-sync/rithmic' },
     { g: G.calendar, label: t('app.sidebar.calendar'), key: 'calendar' },
     { g: G.alerts, label: t('app.sidebar.alerts'), key: 'alerts', badge: alertsBadgeCount },
     {

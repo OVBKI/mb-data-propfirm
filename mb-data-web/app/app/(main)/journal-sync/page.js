@@ -1,9 +1,10 @@
 'use client'
-// HUB JOURNAL SYNC — 3 cartes : Tradovate (auto), Import CSV, Voir le journal.
-// La sync Rithmic live + la gestion des comptes Rithmic ont été retirées du hub
-// jusqu'à nouvel ordre (juin 2026). Les routes /journal-sync/rithmic et
-// /journal-sync/accounts existent toujours et sont accessibles par URL directe
-// mais ne sont plus mises en avant.
+// HUB JOURNAL SYNC — deux cartes : Import CSV, Voir le journal.
+//
+// Il n'y a plus AUCUNE synchronisation automatique ici. Les tentatives Rithmic
+// (service Python) et Tradovate (OAuth) ont été retirées en attendant d'y
+// revenir proprement ; seul l'import CSV subsiste, et c'est lui qui remplit
+// journal_entries.
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
@@ -41,44 +42,25 @@ export default function JournalSyncHub() {
             {'◰'} Journal Sync
           </h1>
           <p style={{ fontSize: 14, color: C.text2, margin: 0, maxWidth: 600 }}>
-            Synchronise tes trades depuis ta plateforme propfirm, ou consulte ton journal synchronisé.
+            Importe un export CSV de ta plateforme, ou consulte ton journal importé.
             {tradeCount != null && tradeCount > 0 && (
               <span style={{ marginLeft: 8, color: C.blueLt }}>
-                {'·'} <strong>{tradeCount}</strong> trade{tradeCount > 1 ? 's' : ''} déjà synchronisé{tradeCount > 1 ? 's' : ''}
+                {'·'} <strong>{tradeCount}</strong> trade{tradeCount > 1 ? 's' : ''} déjà importé{tradeCount > 1 ? 's' : ''}
               </span>
             )}
           </p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
-          {/* Tradovate en PREMIER : c'est la seule synchronisation automatique.
-              L'import CSV reste, mais il demande un geste manuel à chaque fois. */}
-          <Link href="/app/journal-sync/tradovate" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-            onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'var(--blue-border)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px var(--blue-bg)' }}
-            onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
-          >
-            <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{26A1}'}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.blueLt, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Automatique</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Connecter Tradovate</h3>
-            <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
-              Tes allers-retours arrivent tout seuls. Apex, Lucid, Bulenox, FFN et les autres firmes sur Tradovate.
-            </p>
-            <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ padding: '3px 8px', background: 'var(--blue-bg)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
-              <span>Lecture seule</span><span>{'\u00B7'}</span><span>Identifiants chiffrés</span>
-            </div>
-            <div style={{ position: 'absolute', bottom: 16, right: 18, color: C.blueLt, fontSize: 18 }}>{'\u2192'}</div>
-          </Link>
-
           <Link href="/app/import-lab" style={{ display: 'block', padding: 28, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text, transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
             onMouseEnter={ev => { ev.currentTarget.style.borderColor = 'var(--blue-border)'; ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.boxShadow = '0 12px 32px var(--blue-bg)' }}
             onMouseLeave={ev => { ev.currentTarget.style.borderColor = C.border; ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.boxShadow = 'none' }}
           >
             <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F4E5}'}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.blueLt, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Synchroniser</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.blueLt, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Importer</div>
             <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Importer un CSV</h3>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
-              Upload un export CSV depuis Rithmic R|Trader Pro (Performance ou Trader Dashboard) pour synchroniser tes trades automatiquement.
+              Upload un export CSV depuis Rithmic R|Trader Pro (Performance ou Trader Dashboard) pour ajouter tes trades au journal.
             </p>
             <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ padding: '3px 8px', background: 'var(--blue-bg)', color: C.blueLt, borderRadius: 99, fontWeight: 600 }}>BETA</span>
@@ -93,9 +75,9 @@ export default function JournalSyncHub() {
           >
             <div style={{ fontSize: 48, marginBottom: 14 }}>{'\u{1F4CA}'}</div>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Consulter</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Accéder au journal Sync</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 8 }}>Accéder au journal importé</h3>
             <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
-              Vois tes trades synchronisés avec leurs métadonnées Rithmic complètes : entry/exit prices, fills, hold time, etc.
+              Vois tes trades importés avec leurs métadonnées Rithmic complètes : entry/exit prices, fills, hold time, etc.
             </p>
             <div style={{ fontSize: 11, color: C.text3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {tradeCount != null && <span style={{ padding: '3px 8px', background: 'var(--green-bg)', color: C.green, borderRadius: 99, fontWeight: 600 }}>{tradeCount} trade{tradeCount > 1 ? 's' : ''}</span>}

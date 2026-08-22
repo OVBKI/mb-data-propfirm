@@ -798,62 +798,17 @@ create index if not exists journal_entries_user_month_idx
 
 
 -- ============================================================================
--- SYNCHRONISATION TRADOVATE (OAuth)
+-- NOTE — SYNCHRONISATION BROKER : RETIRÉE (2026-08)
 -- ----------------------------------------------------------------------------
--- Tradovate est une API REST simple : pas de service Python séparé, tout tient
--- dans les routes Next.js.
+-- Les tentatives Rithmic (service Python) et Tradovate (OAuth) ont été retirées
+-- du code. Il ne reste que l'import CSV, qui écrit dans journal_entries via le
+-- navigateur.
 --
--- ⚠️ AUCUN MOT DE PASSE ICI. L'authentification passe par OAuth : l'utilisateur
--- autorise un accès en lecture seule chez Tradovate et nous ne recevons qu'un
--- JETON. La voie mot de passe a été abandonnée — elle exige un abonnement API à
--- 25 $/mois côté utilisateur, et les PropFirms désactivent la génération de clé
--- API sur les comptes d'évaluation et financés.
+-- Les colonnes rithmic_* sur `accounts` RESTENT : elles sont alimentées par
+-- l'import CSV Rithmic (R|Trader Pro), pas par une synchronisation.
 --
--- Le jeton reste chiffré (AES-256-GCM, lib/cryptoBox.js) : RLS ne protège pas
--- d'une fuite de sauvegarde, le chiffrement si.
+-- Si la table `tradovate_credentials` a déjà été créée sur ta base, elle est
+-- désormais inutilisée. Pour la retirer :
+--   drop table if exists tradovate_credentials;
+--   alter table accounts drop column if exists tradovate_account_id;
 -- ============================================================================
-create table if not exists tradovate_credentials (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade not null,
-  label text not null,
-  -- Nom d'utilisateur Tradovate, renvoyé par l'API après autorisation. Sert
-  -- uniquement à afficher DE QUEL compte il s'agit dans la liste.
-  username text,
-  encrypted_token text not null,
-  token_expires_at timestamptz,
-  -- ⚠️ « demo » PAR DÉFAUT, et c'est volontaire : un compte PropFirm vit sur
-  -- l'environnement demo de Tradovate même quand les payouts sont réels. Viser
-  -- « live » renvoie « identifiants invalides » sans autre explication.
-  environment text not null default 'demo' check (environment in ('live', 'demo')),
-  auto_sync boolean not null default true,
-  last_synced_at timestamptz,
-  last_error text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now(),
-  unique (user_id, label)
-);
-
-alter table tradovate_credentials enable row level security;
-
-drop policy if exists "tradovate_credentials owner" on tradovate_credentials;
-create policy "tradovate_credentials owner" on tradovate_credentials
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- Le client liste et supprime ses connexions, mais ne touche jamais au jeton :
--- il transite uniquement par les routes serveur.
-revoke select (encrypted_token) on table tradovate_credentials from authenticated, anon;
-revoke update (encrypted_token) on table tradovate_credentials from authenticated, anon;
-
--- Rattache un compte Quantara à un compte Tradovate. Sans ça, on ne saurait pas
--- dans quel compte écrire les trades importés.
-alter table accounts add column if not exists tradovate_account_id text;
-create index if not exists accounts_tradovate_idx on accounts(tradovate_account_id)
-  where tradovate_account_id is not null;
-
--- `source_id` porte l'identité d'un trade importé. L'index UNIQUE est ce qui
--- rend la synchronisation idempotente : relancer sur la même période met à jour
--- au lieu de dupliquer. Partiel, car les trades saisis à la main n'ont pas de
--- source_id et seraient tous en conflit sur NULL.
-create unique index if not exists journal_entries_source_uniq
-  on journal_entries(user_id, source_id)
-  where source_id is not null;

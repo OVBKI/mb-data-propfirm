@@ -115,11 +115,10 @@ app/
       settings/page.js   # User preferences (email, notifications, language, data)
       rules/page.js      # PropfirmComparator
       myrules/page.js    # MyRulesPage
-      sync/page.js       # Coming soon placeholder
       groups/page.js     # Trading groups
       profile/page.js    # User profile editor
       import-lab/page.js # CSV import lab
-      journal-sync/      # Rithmic journal sync
+      journal-sync/      # Hub import CSV + journal importé
   admin/                 # Admin panel (hardcoded email check in lib/admins.js)
   api/                   # API routes (all use verifyAuth/verifyAdmin from lib/apiAuth.js)
 ```
@@ -405,24 +404,7 @@ Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibilit
   - 3 components in `components/health/`
   - Sidebar link added under "Vue d'ensemble", i18n FR/EN
   - No DB schema change (uses existing balance/dd_floor/payout_target fields)
-- [x] **Phase 3.5 — Rithmic Live Sync (Python service)** 🟡 EN COURS (parsing bug)
-  - **New repo subfolder** : `mb-data-rithmic-sync/` (FastAPI + async_rithmic 1.5)
-  - Deployed on **Railway** : https://mb-data-propfirm-production.up.railway.app
-  - **Architecture** :
-    ```
-    Quantara (Vercel) ──HTTPS──► rithmic-sync (Railway FastAPI)
-            │                          │
-            └──── Supabase ────────────┘ (creds chiffrés Fernet + journal_entries)
-    ```
-  - **3 SQL migrations** appliquées sur Supabase :
-    - `001_rithmic.sql` — table `rithmic_credentials` + RLS, accounts.rithmic_account_id, journal_entries.source/source_id
-    - `002_multi_credentials.sql` — PK = uuid `id`, unique(`user_id`, `label`), allows N credential sets per user
-    - `003_auto_sync.sql` — auto_sync_enabled bool, auto_sync_days_window int, last_synced_at timestamptz + partial index
-  - **Multi-credentials** : user peut sauver plusieurs paires (Lucid + TPT + Topstep) chacune avec un `label` unique
-  - **Auto-sync via APScheduler** dans le service Python (toutes les 15 min) — pas Vercel cron parce que **Vercel Hobby limite à 1 cron/jour** (notre `*/15 * * * *` faisait planter les deploys silencieusement)
-  - **UI** : `/app/journal-sync/rithmic` avec cards par connexion (label/system/sync/edit/delete) + toggle auto-sync
-  - **Nouvelles pages détail** : `/app/journal-sync/accounts` (liste groupée par PropFirm) + `/app/journal-sync/accounts/[id]` (dashboard détaillé avec equity curve Chart.js + trading calendar mensuel + stats avancées)
-  - **Status actuel** : connexion Rithmic OK, JWKS auth OK, extraction des dates de trading OK (437 dates 2025 retrouvées). MAIS `show_order_history_summary` retourne `success_count=437 / fills=0` — soit Rithmic ne renvoie rien de parseable, soit notre extractor `_extract_fills_from_summary` rate la structure. Diagnostic logging en cours.
+- [x] **Phase 3.5 — Rithmic Live Sync (service Python)** ❌ **RETIRÉ 2026-08** (voir « Synchronisation broker — retirée »)
 - [ ] Backlinks: directory submissions, YouTuber outreach
 
 **Phase 3 totals:**
@@ -465,7 +447,6 @@ Full architecture documented but NOT yet coded. When ready, build in this order:
 - [ ] Account Lifecycle Kanban
 - [ ] Anonymous Leaderboard
 - [ ] Social login (Google + Discord OAuth)
-- [ ] Chrome Extension for Rithmic
 - [ ] Target: MRR $500/mo
 
 ## Still-open audit issues
@@ -525,109 +506,37 @@ Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
 | 14 | **Trade Replay Timeline** — TradingView Lightweight Charts | 20 | High |
 | 15 | **Cross-Firm Benchmarking** — anonymized percentiles | 20 | Medium |
 
-## Rithmic Live Sync — Technical Reference
+## Synchronisation broker — RETIRÉE (2026-08)
 
-### Repos
-- `mb-data-web/` — Next.js (UI + API proxy)
-- `mb-data-rithmic-sync/` — Python FastAPI service (separate Railway deploy)
+Trois tentatives ont existé, aucune n'a fonctionné bout en bout. Toutes ont été
+supprimées à la demande de l'utilisateur, pour être reprises proprement plus tard.
+Il ne reste que **l'import CSV**.
 
-### Deployment
-- **Railway URL** : `https://mb-data-propfirm-production.up.railway.app`
-- **Branch** : `main` (auto-deploy from GitHub on push)
-- **Root directory** : `/mb-data-rithmic-sync` (set in Railway Settings → Source)
-- **Health check** : `GET /health` → JSON `{status: ok, service: quantara-rithmic-sync, ...}`
-- **Vercel project URL** : production = `https://quantara.tech`
-
-### Env vars on Railway (8 total)
-```
-SUPABASE_URL=https://xxxxxxx.supabase.co  (auto-stripped /rest/v1 or /auth/v1 if pasted)
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
-SUPABASE_JWT_SECRET=...  (Legacy JWT secret from Supabase Auth Settings)
-ENCRYPTION_KEY=<Fernet 32-byte base64 — voir Railway ; ⚠️ ROTATION REQUISE : l'ancienne clé a été committée dans git>
-RITHMIC_GATEWAY_URI=wss://rprotocol.rithmic.com:443  (PRODUCTION Chicago — NOT rituz00100 which is Test)
-RITHMIC_SYSTEM_NAME=Rithmic Paper Trading  (default, overridden per credential set)
-CORS_ORIGINS=https://quantara.tech,http://localhost:3000
-DEFAULT_SYNC_DAYS=90
-RITHMIC_CRON_SECRET=<voir Railway ; ⚠️ ROTATION REQUISE : l'ancien secret a été committé dans git> (also set on Vercel — currently unused since APScheduler runs in-process)
-PORT=8001  (set explicitly to match Railway public domain forward)
-```
-
-### Env vars on Vercel (1 added)
-```
-RITHMIC_SYNC_URL=https://mb-data-propfirm-production.up.railway.app
-RITHMIC_CRON_SECRET=<voir Vercel ; ⚠️ ROTATION REQUISE> (unused now, kept for future Vercel cron if user upgrades to Pro)
-```
-
-### async_rithmic v1.5 API surface (discovered via diagnostic logging)
-- `RithmicClient` public attrs (44 total): `cancel_all_orders, cancel_order, connect, credentials, disconnect, exit_position, get_account_rms, get_front_month_contract, get_historical_tick_data, get_historical_time_bars, get_order, get_product_rms, get_reference_data, get_stop_and_target, get_system_info, list_account_summary, list_accounts, list_bracket_stops, list_brackets, list_exchanges, list_orders, list_positions, modify_order, on_bracket_update, on_connected, on_disconnected, on_exchange_order_notification, on_historical_tick, on_historical_time_bar, on_rithmic_order_notification, on_tick, on_time_bar, plants, reconnection_settings, retry_settings, search_symbols, show_order_history_dates, show_order_history_summary, ssl_context, submit_order, subscribe_to_market_data, subscribe_to_time_bar_data, unsubscribe_from_market_data, unsubscribe_from_time_bar_data`
-- **`get_fill_history` and `replay_executions` DO NOT EXIST** on client (despite README claiming so)
-- `client.plants` is a **dict** with keys `['ticker', 'order', 'pnl', 'history']`
-- `plants['order']` is `OrderPlant` with methods : `cancel_all_orders, cancel_order, exit_position, get_account_rms, get_order, get_product_rms, get_reference_data, get_stop_and_target, get_system_info, list_accounts, list_bracket_stops, list_brackets, list_orders, modify_order, show_order_history_dates, show_order_history_summary, submit_order`
-- **OrderPlant ALSO doesn't have get_fill_history in v1.5** — only `show_order_history_*`
-
-### Fetching fills strategy (sync_service.py `_fetch_fills`)
-- **Method A** (preferred but not available in v1.5) : `client.plants['order'].get_fill_history(start, end, account_id)`
-- **Method B** (current) :
-  1. `client.show_order_history_dates()` → returns `list[1 protobuf message]` with REPEATED `date` field (YYYYMMDD strings)
-  2. Extract dates via `ListFields()` (regular getattr was buggy)
-  3. For each date : `client.show_order_history_summary(date=YYYYMMDD, account_id=...)`
-  4. Parse fills from summary response
-
-### Known Rithmic system_name values (in dropdown)
-- `Rithmic Test` (free demo)
-- `Rithmic Paper Trading`
-- `Rithmic 04 Colo` (production)
-- `Rithmic 01`, `Rithmic 04`
-- `TopstepTrader`
-- `Apex`
-- **`LucidTrading`** (single word, no space — verified via R|Trader Pro)
-- `My Funded Futures`
-- `Tradeify`
-- `Take Profit Trader`
-- `Bulenox`
-
-### Gateway URLs
-- **Production Chicago** (Lucid, Topstep, Apex, MFFU etc.) : `wss://rprotocol.rithmic.com:443`
-- **Test/Demo only** : `wss://rituz00100.rithmic.com:443` (returns only "Rithmic Test" as valid system)
-- Production Asia : `wss://rprotocol-asia.rithmic.com:443`
-- Production EU : `wss://rprotocol-eu.rithmic.com:443`
-
-### Critical bugs already fixed
-| Issue | Fix |
+| Tentative | Ce qui bloquait |
 |---|---|
-| `httpx==0.28.1` conflict with `supabase==2.10.0` | Removed pin (let supabase resolve) |
-| Railway startCommand `$PORT` literal | Removed override, Dockerfile uses `sh -c` |
-| FastAPI rejects DELETE+204+body | Changed to 200 + body |
-| Supabase JWT migration (HS256 → ES256/RS256 asymmetric) | Auth tries HS256 first, falls back to JWKS |
-| JWKS endpoint requires `apikey` header | Use httpx with header instead of PyJWKClient |
-| `SUPABASE_URL` with `/rest/v1` suffix | Defensive strip in both `auth.py` and `supabase_client.py` |
-| Vercel Hobby cron limit (1/day max) | Removed Vercel cron, use APScheduler in Python service |
-| Multi-credentials needs per-system creds | Added `label` PK + composite unique (`user_id`, `label`) |
-| Password leaking in sync error messages | Regex redaction in `jobs.py` (`'password', 'user', 'token'` etc.) |
-| Lucid `system_name` was "Lucid Trading" with space | Changed to "LucidTrading" (no space) per R|Trader Pro |
+| **Rithmic** — service Python FastAPI sur Railway (`mb-data-rithmic-sync/`) | `show_order_history_summary` renvoyait `success_count=437 / fills=0` ; `get_fill_history` n'existe pas dans async_rithmic 1.5 |
+| **Tradovate** — OAuth dans des routes Next.js | `client_id`/`client_secret` délivrés uniquement après acceptation d'un dossier NinjaTrader Ecosystem — candidature avec revue, jamais déposée |
+| **Extension navigateur** (`quantara-extension/`) — scraping du dashboard Lucid | jamais publiée |
 
-### Open bug being chased (as of last session)
-- `show_order_history_summary` returns `success_count=437 / fills=0` for Lucid account
-- 437 dates correctly extracted from `show_order_history_dates`
-- Diagnostic logging being added to log first 5 raw responses with `ListFields()` output
-- Theory : either the response is empty (Rithmic doesn't return fills via this method) OR our `_extract_fills_from_summary` doesn't match the field name (we try `fills`, `executions`, `orders`, `order_history`, `fill_history`)
-- **Next step on resume** : check logs for `DIAG[0]..DIAG[4]` lines to see actual summary structure
+### Supprimé
+`mb-data-rithmic-sync/` · `quantara-extension/` · `app/api/{tradovate,rithmic,sync}/**` ·
+`app/api/cron/rithmic-poll` · `app/app/(main)/journal-sync/{tradovate,rithmic,accounts}` ·
+`app/app/(main)/sync` · `app/docs/extension` · `lib/{tradovate,tradovateClient,cryptoBox,futuresContracts}.js`
+et leurs tests · les blocs `RITHMIC_*` / `TRADOVATE_*` de `.env.example` · la table
+`tradovate_credentials` dans `supabase-schema.sql`.
 
-### Files to read first on resume
-1. `mb-data-rithmic-sync/app/sync_service.py` — has `_fetch_fills`, `_extract_dates`, `_extract_fills_from_summary` + diagnostic logging
-2. `mb-data-rithmic-sync/app/auth.py` — JWKS + HS256 fallback
-3. `mb-data-web/app/app/(main)/journal-sync/rithmic/page.js` — multi-credentials UI
-4. `mb-data-web/app/app/(main)/journal-sync/accounts/[id]/page.js` — account detail dashboard
+### Conservé — et pourquoi
+- `lib/importers/rithmic-pnl.js`, `rithmic-dashboard.js`, `firmDetection.js` : ce sont des
+  **parseurs CSV**, pas de la synchronisation. Le nom prête à confusion, le rôle non.
+- `/app/import-lab` (dépôt du CSV) et `/app/journal-sync/view` (lecture des trades importés).
+- Les colonnes `rithmic_*` sur `accounts` : remplies par l'import CSV.
+- Le marqueur `[rithmic:` dans `journal_entries.notes`, sur lequel s'appuient
+  `hideRithmicEntries` / `onlyRithmicEntries` de `JournalPage`.
 
-### Test account (Lucid, user's own)
-- Username : `LT-63Q7ULJ4`
-- System : `LucidTrading`
-- Gateway : Chicago Area (= rprotocol.rithmic.com)
-- 2 accounts exposed under this login
-- 6 accounts mapped in Quantara (LFF050-579ZNFS2-PRO006, LFF050-791TOYD5-PRO007, LFE050-SQA26F07-TEST017, LFE050-M340O5IC-TEST019, LFF050-4T2M7E1F-PRO008, TPPRO1881087 from TPT)
-- Has trading activity in **2025-03/04** on PRO006 (Rithmic returns those dates)
-- No 2026 trades on these specific accounts (Rithmic returns "no data" for 2026 dates)
-- ⚠️ User's password leaked once in error logs — should rotate when this is all done
+### Un effet de bord corrigé au passage
+`/app/import-lab` refusait de mapper les comptes **financés** : ils étaient censés
+arriver par la synchronisation. Celle-ci n'existant plus, les exclure les aurait laissés
+sans aucune voie d'entrée. Ils sont désormais proposés au mapping comme les autres.
 
 ## Pending / Roadmap
 
@@ -637,7 +546,7 @@ RITHMIC_CRON_SECRET=<voir Vercel ; ⚠️ ROTATION REQUISE> (unused now, kept fo
   Config: DSN, ORG=quantara-ag, PROJECT=quantara-web, AUTH_TOKEN all set.
   Note: user should rotate the auth token after first verified test (was shared in chat).
 - **Stripe** — CODE SHIPPED, compte à configurer (voir « Stripe Billing » ci-dessous)
-- **Sync Rithmic/ProjectX** — waiting for 50 users
+- **Sync broker** — retirée (voir « Synchronisation broker — RETIRÉE »)
 - **Tests** — no framework yet; use Vitest when adding
 - **SEO content engine** — /firms/[slug], /guides/[slug], /blog/[slug] templates not built
 - **Social login** — Google OAuth + Discord OAuth via Supabase Auth providers
