@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { useT, useLanguage } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
@@ -731,6 +732,14 @@ export default function JournalPage({
   //   - une string YYYY-MM-DD → date par défaut, compte = filtre actif (scope)
   //   - un objet { accountId, defaultDate } → pré-remplit explicitement
   // Si aucun accountId explicite, utilise le compte filtré actif (scope = 'firmId:accountId').
+  // Un trade porte-t-il autre chose que compte + date + P&L ?
+  function entryHasDetails(e){
+    return Boolean(e && (e.instrument || e.side || e.notes || e.screenshot_url ||
+      e.entry_price != null || e.exit_price != null || e.stop_loss != null || e.take_profit != null ||
+      (e.commissions && Number(e.commissions) !== 0) || (e.slippage && Number(e.slippage) !== 0) ||
+      (Array.isArray(e.tags) && e.tags.length)))
+  }
+
   function openNewEntry(opts){
     const isObj = opts && typeof opts === 'object' && !Array.isArray(opts)
     const explicitAcctId = isObj ? opts?.accountId : undefined
@@ -745,6 +754,7 @@ export default function JournalPage({
       tags: [],
       commissions:'', slippage:'',
     })
+    setJDetails(false)
     setEntryModal({ defaultDate })
   }
   function openEditEntry(e){
@@ -770,6 +780,7 @@ export default function JournalPage({
       commissions: e.commissions != null && Number(e.commissions) !== 0 ? String(e.commissions) : '',
       slippage:    e.slippage    != null && Number(e.slippage)    !== 0 ? String(e.slippage)    : '',
     })
+    setJDetails(entryHasDetails(e))
     setEntryModal({ entry:e })
   }
   async function saveEntry(){
@@ -900,7 +911,22 @@ export default function JournalPage({
   }
 
   const monthLabel = (Array.isArray(MONTHS) ? MONTHS[calMonth] : MONTHS_FR[calMonth]) + ' ' + calYear
+  // Repli des champs d'enrichissement du formulaire de trade (cf. TradeEntryModal).
+  const [jDetails, setJDetails] = useState(false)
   const noAccounts = allAccounts.length === 0
+
+  // « Nouveau trade » depuis le rail ou la palette arrive ici avec ?new=1. On
+  // attend que les comptes soient chargés : ouvrir le formulaire avant laisserait
+  // un sélecteur de compte vide. Le drapeau ne se consomme qu'une fois.
+  const searchParams = useSearchParams()
+  const wantsNew = searchParams?.get('new') === '1'
+  const newConsumed = useRef(false)
+  useEffect(() => {
+    if (!wantsNew || newConsumed.current || loading || noAccounts) return
+    newConsumed.current = true
+    openNewEntry()
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [wantsNew, loading, noAccounts])
 
   return (
     <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>
@@ -1512,6 +1538,17 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 <label style={labelS}>{t('app.trade.fieldPnL')}</label>
                 <input type="number" step="0.01" value={form.pnl} onChange={e=>setForm(p=>({...p,pnl:e.target.value}))} placeholder="ex : 250  ou  -125" style={inputS} autoFocus />
               </div>
+              {/* Meme decoupage que TradeEntryModal : compte + date + P&L suffisent
+                  a ce qu'un trade existe, le reste est de l'enrichissement. */}
+              <div style={{gridColumn:'1/-1'}}>
+                <button type="button" onClick={()=>setJDetails(d=>!d)} aria-expanded={jDetails}
+                  style={{background:'transparent',border:'none',padding:0,cursor:'pointer',fontFamily:'inherit',fontSize:'12.5px',color:'var(--text3)',display:'flex',alignItems:'center',gap:'6px'}}>
+                  <span aria-hidden="true" style={{transform:jDetails?'rotate(90deg)':'none',transition:'transform .18s'}}>{'\u203A'}</span>
+                  {jDetails ? t('app.trade.hideDetails') : t('app.trade.addDetails')}
+                </button>
+              </div>
+
+              {jDetails && (<>
               <div>
                 <label style={labelS}>{t('app.trade.fieldInstrument')}</label>
                 <input list="instrSugg" value={form.instrument} onChange={e=>setForm(p=>({...p,instrument:e.target.value}))} placeholder="ES, NQ, MNQ, MES, GC..." style={inputS} />
@@ -1668,6 +1705,7 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 <label style={labelS}>{t('app.trade.fieldNotes')}</label>
                 <textarea rows={3} value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Optionnel" style={{...inputS,resize:'vertical',fontFamily:'inherit'}} />
               </div>
+              </>)}
             </div>
             <div style={{display:'flex',gap:'8px',justifyContent:'space-between',alignItems:'center',marginTop:'20px'}}>
               <div>

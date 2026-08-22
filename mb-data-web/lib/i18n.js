@@ -511,6 +511,19 @@ const FR = {
   // === /app — produit (sidebar + dashboard + auth + trades) ===
   app: {
     // ── Assistant « nouveau compte » (components/NewAccountWizard.js) ──
+    // ── Palette de commandes et créations rapides ──
+    palette: {
+      newAccount: '+ Nouveau compte PropFirm',
+      newTrade: '+ Nouveau trade',
+      newPayout: '+ Nouveau payout',
+      actionHint: 'Créer',
+    },
+    quickPayout: {
+      title: 'Enregistrer un payout',
+      hint: 'Saisis le montant brut demandé — le net est calculé selon ton partage.',
+      noAccount: 'Aucun compte actif. Ajoute un compte avant d’enregistrer un payout.',
+      save: 'Enregistrer',
+    },
     wizard: {
       title: 'Nouveau compte',
       stepOf: 'Étape {n} sur {total}',
@@ -571,6 +584,7 @@ const FR = {
       definePseudo:  '⊕ Définir un pseudo',
       quickEdit:     'Édition rapide (pseudo, bio)',
       syncBroker:      'Sync broker',
+      new:             'Nouveau',
       exportCsv:       'Exporter en CSV',
       settingsGeneral: 'Réglages généraux',
       myProfile:       'Mon profil',
@@ -1137,6 +1151,8 @@ const FR = {
       fieldNotes: 'Notes (setup, émotion, erreur…)',
       sideLong: 'Long',
       sideShort: 'Short',
+      addDetails: 'Ajouter les détails (prix, tags, capture…)',
+      hideDetails: 'Masquer les détails',
       sectionDetails: '📊 Détails du trade (optionnel)',
       sectionTags: '🏷 Tags du trade (optionnel)',
       sectionScreenshot: '📷 Screenshot du graphique',
@@ -2487,6 +2503,19 @@ const EN = {
   // === /app — product (sidebar + dashboard + auth + trades) ===
   app: {
     // ── New-account wizard (components/NewAccountWizard.js) ──
+    // ── Command palette and quick creations ──
+    palette: {
+      newAccount: '+ New PropFirm account',
+      newTrade: '+ New trade',
+      newPayout: '+ New payout',
+      actionHint: 'Create',
+    },
+    quickPayout: {
+      title: 'Log a payout',
+      hint: 'Enter the gross amount requested — the net is worked out from your split.',
+      noAccount: 'No active account. Add one before logging a payout.',
+      save: 'Save',
+    },
     wizard: {
       title: 'New account',
       stepOf: 'Step {n} of {total}',
@@ -2547,6 +2576,7 @@ const EN = {
       definePseudo:  '⊕ Set a username',
       quickEdit:     'Quick edit (username, bio)',
       syncBroker:      'Broker sync',
+      new:             'New',
       exportCsv:       'Export as CSV',
       settingsGeneral: 'General settings',
       myProfile:       'My profile',
@@ -3113,6 +3143,8 @@ const EN = {
       fieldNotes: 'Notes (setup, emotion, mistake…)',
       sideLong: 'Long',
       sideShort: 'Short',
+      addDetails: 'Add details (prices, tags, screenshot…)',
+      hideDetails: 'Hide details',
       sectionDetails: '📊 Trade details (optional)',
       sectionTags: '🏷 Trade tags (optional)',
       sectionScreenshot: '📷 Chart screenshot',

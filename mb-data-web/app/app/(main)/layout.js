@@ -24,6 +24,7 @@ import ProfileModal from '../../../components/ProfileModal'
 import CfdAccountModal from '../../../components/CfdAccountModal'
 import CfdAccountDrawer from '../../../components/CfdAccountDrawer'
 import NewAccountWizard from '../../../components/NewAccountWizard'
+import QuickPayoutDialog from '../../../components/QuickPayoutDialog'
 import BetaFeedback from '../../../components/BetaFeedback'
 import { FIRM_LOGOS, getFirmLogo } from '../../../lib/firmLogos'
 import { useT, useLanguage } from '../../../components/LanguageProvider'
@@ -83,6 +84,9 @@ export default function AppLayout({ children }) {
   // = on part de zéro et la firme sera créée en même temps que le compte).
   const [wizard, setWizard] = useState(null)
   const [wizardBusy, setWizardBusy] = useState(false)
+  // Payout rapide : null = fermé, sinon { acctId } (acctId null = à choisir).
+  const [quickPayout, setQuickPayout] = useState(null)
+  const [payoutBusy, setPayoutBusy] = useState(false)
   const [firmDrawer, setFirmDrawer] = useState(null)
   const [certsFirm, setCertsFirm] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -132,6 +136,11 @@ export default function AppLayout({ children }) {
   const openCfdAdd = useCallback(() => setCfdAddOpen(true), [])
   // En CFD la création passe par CfdAccountModal (modèles et règles différents) ;
   // l'assistant ne couvre que les futures.
+  // « Nouveau trade » depuis n'importe où : la saisie vit dans le journal, on y
+  // va avec un drapeau plutôt que de dupliquer le formulaire ailleurs.
+  const openNewTrade = useCallback(() => router.push('/app/journal?new=1'), [router])
+  const openQuickPayout = useCallback((acctId = null) => setQuickPayout({ acctId }), [])
+
   const openAccountWizard = useCallback((firmId = null) => {
     if (marketMode === 'cfd') { setCfdAddOpen(true); return }
     setWizard({ firmId })
@@ -443,6 +452,29 @@ export default function AppLayout({ children }) {
     }
   }
 
+  // Le brut saisi devient le NET stocké : c'est ce qui arrive sur le compte
+  // bancaire, et c'est ce que les totaux de l'app additionnent.
+  async function submitQuickPayout({ acctId, date, amount, note }) {
+    if (payoutBusy) return
+    setPayoutBusy(true)
+    try {
+      let split = 90
+      for (const f of firms) {
+        const a = (f.accounts || []).find(x => x.id === acctId)
+        if (a) { split = a.profit_split || suggestProfitSplit(f.name, a.plan_size) || 90; break }
+      }
+      const net = +((parseFloat(amount) || 0) * (split / 100)).toFixed(2)
+      const { error } = await supabase.from('payouts')
+        .insert({ account_id: acctId, user_id: user.id, date, amount: net, note })
+      if (error) { showToast(t('app.toasts.errorPrefix') + (error.message || t('app.toasts.addFailed'))); return }
+      setQuickPayout(null)
+      await loadFirms()
+      showToast(t('app.toasts.payoutAdded'))
+    } finally {
+      setPayoutBusy(false)
+    }
+  }
+
   async function deleteAccount(acctId) {
     if (!confirm(t('app.prompts.deleteAccountConfirm'))) return
     const { error } = await supabase.from('accounts').delete().eq('id', acctId)
@@ -638,7 +670,7 @@ export default function AppLayout({ children }) {
     // d'alertes : la barre globale n'existe plus, ils passent par le contexte.
     openSearch: () => setSearchOpen(true), alertsBadgeCount,
     // Market mode (Futures ⇄ CFD)
-    marketMode, setMarketMode, openCfdAdd, openAccountWizard,
+    marketMode, setMarketMode, openCfdAdd, openAccountWizard, openNewTrade, openQuickPayout,
     // Helpers
     toEUR, fmtE, fmtENet, fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
@@ -654,7 +686,7 @@ export default function AppLayout({ children }) {
   }), [
     user, firms, rates, profile, showToast, loadFirms,
     currency, searchQ, rateInfo, navigateTo,
-    marketMode, setMarketMode, openCfdAdd, openAccountWizard,
+    marketMode, setMarketMode, openCfdAdd, openAccountWizard, openNewTrade, openQuickPayout,
     fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
     accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
@@ -700,6 +732,9 @@ export default function AppLayout({ children }) {
             showLaunchTutorial={true}
             showProfileLink={true}
             isOpenMobile={mobileNavOpen}
+            onNewAccount={() => openAccountWizard(null)}
+            onNewTrade={openNewTrade}
+            onNewPayout={() => openQuickPayout(null)}
           />
           {mobileNavOpen && <div className="nav-backdrop" onClick={() => setMobileNavOpen(false)} />}
 
@@ -707,6 +742,18 @@ export default function AppLayout({ children }) {
             {children}
           </main>
         </div>
+
+        {/* ── Payout rapide ── */}
+        {quickPayout && (
+          <QuickPayoutDialog
+            firms={firms}
+            defaultAccountId={quickPayout.acctId}
+            S={S}
+            busy={payoutBusy}
+            onCancel={() => setQuickPayout(null)}
+            onSubmit={submitQuickPayout}
+          />
+        )}
 
         {/* ── Assistant « nouveau compte » ── */}
         {wizard && (
@@ -831,6 +878,12 @@ export default function AppLayout({ children }) {
           onPickFirm={(id) => { setSearchOpen(false); setFirmDrawer(id) }}
           onPickAccount={(firmId, acctId) => { setSearchOpen(false); setAcctDrawer({ firmId, acctId }) }}
           onNavigate={(href) => { setSearchOpen(false); router.push(href) }}
+          onAction={(id) => {
+            setSearchOpen(false)
+            if (id === 'new-account') openAccountWizard(null)
+            else if (id === 'new-trade') openNewTrade()
+            else if (id === 'new-payout') openQuickPayout(null)
+          }}
         />
 
         {firmDrawer&&currentFirm&&<div onClick={()=>setFirmDrawer(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:400,display:'flex',alignItems:'flex-start',justifyContent:'flex-end'}}><div ref={firmDrawerRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={currentFirm?.name || t('app.firmDrawer.accountsPrefix')} className="drawer" onClick={e=>e.stopPropagation()} style={{width:'520px',maxWidth:'95vw',height:'100vh',background:'var(--surface)',borderLeft:'0.5px solid var(--border2)',overflowY:'auto',padding:'28px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}}><div style={{display:'flex',alignItems:'center',gap:'10px'}}>{getFirmLogo(currentFirm.name,currentFirm.color,32)}<div style={{fontSize:'18px',fontWeight:'600'}}>{currentFirm.name}</div></div><div style={{display:'flex',gap:'8px'}}><button onClick={()=>renameFirm(currentFirm.id)} style={S.btnGhost}>{'✏'} {t('app.firmDrawer.rename')}</button><button onClick={()=>setFirmDrawer(null)} aria-label={t('app.acctDrawer.close')} style={S.btnGhost}>{'✕'}</button></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'20px'}}>{[[t('app.firmDrawer.totalAccounts'),(currentFirm.accounts||[]).length],[t('app.firmDrawer.totalSpent'),<span key="s" style={{color:'var(--red)'}}>{ fmtMoney(firmTotalSpent(currentFirm))}</span>],[t('app.firmDrawer.totalPayouts'),<span key="p" style={{color:'var(--green)'}}>{fmtMoney(firmTotalPayouts(currentFirm))}</span>],[t('app.firmDrawer.net'),<span key="n" style={{color:(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))>=0?'var(--green)':'var(--red)'}}>{fmtMoneyNet(firmTotalPayouts(currentFirm)-firmTotalSpent(currentFirm))}</span>]].map(([l,v],i)=>(<div key={i} style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'12px 14px'}}><div style={{fontSize:'11px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'5px'}}>{l}</div><div style={{fontSize:'16px',fontWeight:'600'}}>{v}</div></div>))}</div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}><div style={{fontSize:'13px',fontWeight:'600',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px'}}>{t('app.firmDrawer.accountsPrefix')} ({(currentFirm.accounts||[]).length})</div><button onClick={()=>openAccountWizard(currentFirm.id)} style={S.btnPrimary}>{t('app.firmDrawer.addAccount')}</button></div>{(currentFirm.accounts||[]).slice().sort((a,b)=>{const o={'Financé':0,'Challenge':1,'Échoué':2};return (o[a.status]??3)-(o[b.status]??3)}).map(a=>{const tp=totalPayoutsEUR(a),net=tp-totalSpentForAccount(a);const isFailed=a.status==='Échoué';return<div key={a.id} onClick={()=>setAcctDrawer({firmId:currentFirm.id,acctId:a.id})} style={{padding:'12px 14px',background:'var(--surface2)',borderRadius:'var(--radius)',marginBottom:'8px',cursor:'pointer',opacity:isFailed?0.55:1,filter:isFailed?'grayscale(0.4)':'none',transition:'opacity 0.15s'}} onMouseEnter={e=>{e.currentTarget.style.background='var(--surface3)';e.currentTarget.style.opacity=1}} onMouseLeave={e=>{e.currentTarget.style.background='var(--surface2)';e.currentTarget.style.opacity=isFailed?0.55:1}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'8px'}}><div style={{display:'flex',alignItems:'center',gap:'8px',flex:1,minWidth:0}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:STATUS_COLORS[a.status],flexShrink:0}} /><span style={{fontWeight:'600',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{accountLabel(a)}</span><button onClick={(e)=>{e.stopPropagation();renameAccount(a.id, a.name, a.buy_date)}} title={t('app.firmDrawer.rename')} style={{background:'transparent',border:'none',color:'var(--text3)',cursor:'pointer',padding:'2px 6px',fontSize:'13px',flexShrink:0}}>{'✏'}</button></div><span style={{display:'inline-flex',alignItems:'center',gap:'5px'}}><span style={S.badge(a.status)}>{a.status}</span>{a.liquidated_at&&<span title={`${t('app.firmDrawer.autoLiquidatedPrefix')} ${new Date(a.liquidated_at).toLocaleString('fr-FR')} ${t('app.firmDrawer.autoLiquidatedSuffix')}`} style={{fontSize:'12px',cursor:'help'}}>{'🔥'}</span>}</span></div><div style={{display:'flex',justifyContent:'space-between',fontSize:'12px'}}><span style={{color:'var(--green)'}}>{t('app.firmDrawer.payoutsLabel')} {fmtMoney(tp)}</span><span style={{color:net>=0?'var(--green)':'var(--red)'}}>{t('app.firmDrawer.netLabel')} {fmtMoneyNet(net)}</span><span style={{color:'var(--text3)'}}>{(a.payouts||[]).length} {(a.payouts||[]).length>1?t('app.firmDrawer.payoutWordPlural'):t('app.firmDrawer.payoutWord')}</span></div></div>})}<div style={{marginTop:'28px',paddingTop:'20px',borderTop:'0.5px solid var(--border)'}}><button onClick={()=>deleteFirm(currentFirm.id)} style={{background:'var(--red-bg)',color:'var(--red-text)',border:'0.5px solid var(--red-bg)',padding:'8px 16px',borderRadius:'var(--radius)',fontSize:'13px',cursor:'pointer',fontWeight:'500'}}>{t('app.firmDrawer.deleteFirm')}</button></div></div></div>}

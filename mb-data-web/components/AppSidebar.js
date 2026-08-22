@@ -61,6 +61,7 @@ export default function AppSidebar({
   showLaunchTutorial = false,
   showProfileLink = false,
   isOpenMobile = false,
+  onNewAccount, onNewTrade, onNewPayout,
 }) {
   const t = useT()
   const userIsAdmin = isAdmin(user?.email)
@@ -73,12 +74,27 @@ export default function AppSidebar({
   const inJournal = currentPage === 'journal' || href.startsWith('/app/journal')
   const inSettings = href.startsWith('/app/settings') || href.startsWith('/app/profile') || href.startsWith('/app/groups')
   const [open, setOpen] = useState({ journal: inJournal, settings: inSettings })
+  const [newMenu, setNewMenu] = useState(false)
   useEffect(() => {
     setOpen(o => ({
       journal: o.journal || inJournal,
       settings: o.settings || inSettings,
     }))
   }, [inJournal, inSettings])
+
+  // Un clic ailleurs ou Échap referme le menu : un panneau qui reste ouvert
+  // pendant qu’on navigue recouvre la ligne qu’on essaie d’atteindre.
+  useEffect(() => {
+    if (!newMenu) return
+    function onDown(e) { if (!e.target.closest?.('.qt-new-wrap')) setNewMenu(false) }
+    function onKey(e) { if (e.key === 'Escape') setNewMenu(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [newMenu])
 
   // === La liste, dans l’ordre de la maquette ===
   const items = [
@@ -212,6 +228,30 @@ export default function AppSidebar({
         </div>
       </div>
 
+      {/* La maquette n’a pas de bouton de création — elle ne montre que de la
+          navigation. Mais créer un compte, un trade ou un payout était enterré
+          dans trois pages différentes. Une ACTION en tête de liste, visuellement
+          distincte des destinations : le rail est le seul endroit present sur
+          toutes les pages. */}
+      <div className="qt-new-wrap">
+        <button className="qt-new" onClick={() => setNewMenu(o => !o)} aria-expanded={newMenu} aria-haspopup="menu">
+          <i className="qt-g" aria-hidden="true">+</i>
+          <span className="qt-t">{t('app.sidebar.new')}</span>
+        </button>
+        {newMenu && (
+          <div className="qt-new-menu" role="menu">
+            {[
+              [t('app.palette.newAccount'), onNewAccount],
+              [t('app.palette.newTrade'), onNewTrade],
+              [t('app.palette.newPayout'), onNewPayout],
+            ].filter(([, fn]) => fn).map(([label, fn]) => (
+              <button key={label} role="menuitem" className="qt-new-item"
+                onClick={() => { setNewMenu(false); fn(); if (onAfterNav) onAfterNav() }}>{label}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="qt-list">
         {items.map(it => it.group ? group(it) : row(it))}
       </div>
@@ -247,6 +287,20 @@ const SIDEBAR_CSS = `
 .qt-brand-t{min-width:0}
 .qt-brand-t b{font-size:18px;font-weight:600;letter-spacing:-.01em;display:block;line-height:1.15;color:var(--text)}
 .qt-brand-t span{font-size:12.5px;color:var(--text3);white-space:nowrap}
+
+.qt-new-wrap{position:relative;margin-bottom:6px}
+.qt-new{display:flex;align-items:center;gap:14px;width:100%;padding:11px 14px;border-radius:11px;
+  background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue-light);
+  font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;text-align:left;white-space:nowrap;
+  transition:background .15s}
+.qt-new:hover{background:var(--blue);color:var(--text-inverse);border-color:var(--blue)}
+.qt-new .qt-g{font-size:17px;font-weight:700;opacity:1}
+.qt-new-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;padding:6px;
+  border-radius:var(--radius);background:var(--glass-solid);border:1px solid var(--border2);
+  box-shadow:var(--shadow-pop);backdrop-filter:blur(18px);display:flex;flex-direction:column;gap:2px}
+.qt-new-item{display:block;width:100%;padding:9px 12px;border-radius:9px;border:none;background:transparent;
+  color:var(--text2);font-size:13.5px;font-family:inherit;text-align:left;cursor:pointer}
+.qt-new-item:hover{background:var(--tint2);color:var(--text)}
 
 .qt-list{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:4px;
   scrollbar-width:thin;scrollbar-color:var(--border2) transparent}

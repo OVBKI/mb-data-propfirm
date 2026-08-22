@@ -26,10 +26,20 @@ const PAGES = [
   { href: '/app/settings',  key: 'app.sidebar.settings' },
 ]
 
+// Les CRÉATIONS. La palette ne savait que naviguer ; or « nouveau trade » est
+// exactement le genre de chose qu'on tape plutôt que de chercher où cliquer.
+// Elles remontent en tête : chercher « trade » doit proposer d'en créer un
+// AVANT de proposer la page qui les liste.
+const ACTIONS = [
+  { id: 'new-account', key: 'app.palette.newAccount', words: 'compte propfirm challenge account firm' },
+  { id: 'new-trade',   key: 'app.palette.newTrade',   words: 'trade journal entry saisie' },
+  { id: 'new-payout',  key: 'app.palette.newPayout',  words: 'payout retrait paiement withdrawal' },
+]
+
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 export default function CommandPalette({
-  open, onOpen, onClose, firms = [], accountLabel, onPickFirm, onPickAccount, onNavigate,
+  open, onOpen, onClose, firms = [], accountLabel, onPickFirm, onPickAccount, onNavigate, onAction,
 }) {
   const t = useT()
   const [q, setQ] = useState('')
@@ -60,6 +70,12 @@ export default function CommandPalette({
   const results = useMemo(() => {
     const nq = norm(q)
     const out = []
+    for (const a of ACTIONS) {
+      const label = t(a.key)
+      if (!nq || norm(label).includes(nq) || norm(a.words).includes(nq)) {
+        out.push({ kind: 'action', id: a.id, label, sub: t('app.palette.actionHint') })
+      }
+    }
     for (const f of firms) {
       if (!nq || norm(f.name).includes(nq)) {
         out.push({ kind: 'firm', id: f.id, label: f.name, sub: `${(f.accounts || []).length} ${t('app.dashboard.accountsLabel')}` })
@@ -84,7 +100,8 @@ export default function CommandPalette({
 
   function pick(r) {
     if (!r) return
-    if (r.kind === 'firm') onPickFirm?.(r.id)
+    if (r.kind === 'action') onAction?.(r.id)
+    else if (r.kind === 'firm') onPickFirm?.(r.id)
     else if (r.kind === 'account') onPickAccount?.(r.firmId, r.id)
     else onNavigate?.(r.id)
   }
@@ -95,7 +112,7 @@ export default function CommandPalette({
     else if (e.key === 'Enter') { e.preventDefault(); pick(results[cursor]) }
   }
 
-  const ICON = { firm: '◈', account: '▤', page: '→' }
+  const ICON = { action: '+', firm: '◈', account: '▤', page: '→' }
 
   return (
     <div

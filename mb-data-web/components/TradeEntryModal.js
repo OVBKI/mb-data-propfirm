@@ -67,6 +67,16 @@ const EMPTY_FORM = {
   commissions: '', slippage: '',
 }
 
+// Un trade porte-t-il autre chose que le strict minimum (compte, date, P&L) ?
+// Sert a decider si la section « details » s'ouvre d'emblee en edition.
+export function hasDetails(f) {
+  return Boolean(
+    f.instrument || f.side || f.notes || f.screenshotUrl ||
+    f.entryPrice || f.exitPrice || f.stopLoss || f.takeProfit ||
+    f.commissions || f.slippage || (f.tags && f.tags.length)
+  )
+}
+
 // Convertit une entry Supabase → form state
 function entryToForm(e) {
   return {
@@ -104,6 +114,9 @@ export default function TradeEntryModal({
   const { locale } = useLanguage()
   const dialogRef = useDialog({ open, onClose })
   const [form, setForm] = useState(EMPTY_FORM)
+  // Replie par defaut sur un nouveau trade ; deplie en edition si le trade en
+  // porte deja, sinon l'utilisateur croirait ses donnees perdues.
+  const [details, setDetails] = useState(false)
   const [uploadingScreen, setUploadingScreen] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -111,8 +124,11 @@ export default function TradeEntryModal({
   useEffect(() => {
     if (!open) return
     if (entry) {
-      setForm(entryToForm(entry))
+      const f = entryToForm(entry)
+      setForm(f)
+      setDetails(hasDetails(f))
     } else {
+      setDetails(false)
       // Mode nouveau trade : pré-remplir compte (1er actif) + date
       const firstAcctId = defaultAccountId
         || (firms[0]?.accounts || []).find(a => a.status !== 'Échoué')?.id
@@ -279,6 +295,27 @@ export default function TradeEntryModal({
             />
           </div>
 
+          {/* Le trade minimum, c'est compte + date + P&L. Tout ce qui suit est de
+              l'ENRICHISSEMENT : prix, R-multiple, tags, capture, notes. Les
+              afficher d'emblee faisait de la saisie d'un trade un formulaire de
+              quatorze champs, alors que trois suffisent a ce qu'il existe. */}
+          <div style={{ gridColumn: '1/-1' }}>
+            <button
+              type="button"
+              onClick={() => setDetails(d => !d)}
+              aria-expanded={details}
+              style={{
+                background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: '12.5px', color: 'var(--text3)',
+                display: 'flex', alignItems: 'center', gap: '6px',
+              }}
+            >
+              <span aria-hidden="true" style={{ transform: details ? 'rotate(90deg)' : 'none', transition: 'transform .18s' }}>{'\u203A'}</span>
+              {details ? t('app.trade.hideDetails') : t('app.trade.addDetails')}
+            </button>
+          </div>
+
+          {details && (<>
           {/* Instrument + Side */}
           <div>
             <label style={labelS}>{t('app.trade.fieldInstrument')}</label>
@@ -439,6 +476,7 @@ export default function TradeEntryModal({
               style={{ ...inputS, resize: 'vertical', fontFamily: 'inherit' }}
             />
           </div>
+          </>)}
         </div>
 
         {/* Actions */}
