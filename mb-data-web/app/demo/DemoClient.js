@@ -126,8 +126,7 @@ export default function DemoClient() {
           <SidebarSection label={t('app.sidebar.sectionTrades')} />
           <SidebarItem icon="☰" label={t('app.sidebar.journalGroup')} header />
           <SidebarItem label={t('app.sidebar.journalManuel')} indent />
-          <SidebarItem label="Journal Sync" indent />
-          <SidebarItem label={t('app.sidebar.syncApi')} indent disabled badge="🔒" />
+          <SidebarItem label={t('app.sidebar.journalSync')} indent />
           <SidebarItem icon="⊞" label={t('app.sidebar.trades')} />
           <SidebarItem icon="▦" label={t('app.sidebar.heatmaps')} />
           <SidebarItem icon="⊡" label={t('app.sidebar.myrules')} />
