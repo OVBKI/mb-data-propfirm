@@ -19,7 +19,7 @@ import Skeleton from '../../../components/Skeleton'
 import Tooltip, { TooltipIcon } from '../../../components/Tooltip'
 import AnnouncementBanner from '../../../components/AnnouncementBanner'
 import Tutorial from '../../../components/Tutorial'
-import SpaceBackground from '../../../components/dashboard/SpaceBackground'
+import DashboardBackdrop from '../../../components/dashboard/DashboardBackdrop'
 import ProfileModal from '../../../components/ProfileModal'
 import CfdAccountModal from '../../../components/CfdAccountModal'
 import CfdAccountDrawer from '../../../components/CfdAccountDrawer'
@@ -709,7 +709,7 @@ export default function AppLayout({ children }) {
   return (
     <AppContext.Provider value={contextValue}>
       <div style={{ minHeight: '100vh', background: 'transparent', position: 'relative' }}>
-        <SpaceBackground />
+        <DashboardBackdrop />
         <div style={{ height: '2px', background: 'linear-gradient(90deg,var(--blue) 0%,transparent 100%)', position: 'relative', zIndex: 1 }} />
         <AnnouncementBanner />
         {/* Pas de barre globale : dans la maquette Abyss le rail fait toute la
