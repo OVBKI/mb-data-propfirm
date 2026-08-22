@@ -267,16 +267,20 @@ export default function AppSidebar({
   )
 }
 
-// ⚠️ PAS d’apostrophe droite (') dans cette chaîne, même en commentaire. React
-// l’échappe en &#x27; côté serveur mais pas côté client : le texte du <style> ne
-// correspond plus et toute la page repasse en rendu client. L’apostrophe
-// typographique (’) passe sans être échappée.
+// ⚠️ Dans cette chaîne, même en commentaire, PAS d’apostrophe droite (') ni de
+// chevrons (< >). React les échappe côté serveur (&#x27;, &lt;) mais pas côté
+// client : le texte du bloc de style ne correspond plus, l’hydratation échoue et
+// toute la page repasse en rendu client. L’apostrophe typographique (’) passe.
 const SIDEBAR_CSS = `
 /* ── Rail ── */
+/* Transparent : le halo Abyss (body::before) traverse le rail au lieu de
+   s’arrêter à son bord. C’est possible ici parce que le rail est STICKY dans une
+   rangée flex — le contenu défile dans la zone principale, à côté, jamais dessous. Rien ne
+   peut donc se lire au travers. Seul le filet de droite marque la colonne. */
 .app-nav.qt-side{
   width:262px;flex-shrink:0;
   padding:20px 14px 24px;position:sticky;top:0;height:100vh;
-  background:var(--bar-bg);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+  background:transparent;
   border-right:1px solid var(--tint2);
   display:flex;flex-direction:column;gap:4px;overflow:hidden;
 }
@@ -347,5 +351,14 @@ const SIDEBAR_CSS = `
 .qt-me-t span{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;display:block}
 
-@media(max-width:1024px){ .app-nav.qt-side{padding:16px 12px} }
+/* Mobile : le rail devient un tiroir FIXE posé PAR-DESSUS la page. Là, la
+   transparence laisserait lire le contenu au travers — il faut un fond et un
+   flou, comme le bandeau cookies l’avait déjà montré. */
+@media(max-width:1024px){
+  .app-nav.qt-side{
+    padding:16px 12px;
+    background:var(--bar-bg);
+    backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+  }
+}
 `
