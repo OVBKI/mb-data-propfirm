@@ -1432,3 +1432,32 @@ Performance Account            bloque au solde initial + 100 $
 
 Deux traders avec le même compte 50K n'ont donc pas la même marge selon la
 plateforme choisie. Consigné dans la clé `Arrêt du trailing`.
+
+### Apex — troisième passe : l'échelle des payouts
+Le tableau officiel « EOD Performance Account Max Payouts » corrige **8 des
+24 cases** stockées. L'échelle n'est pas régulière — elle STAGNE sur certains
+paliers, ce que l'interpolation implicite du catalogue avait lissé :
+
+| Payout | 25K | 50K | 100K | 150K |
+|---|---|---|---|---|
+| 1 | 1 000 | 1 500 | 2 000 | 2 500 |
+| 2 | 1 000 | **1 500** | 2 500 | 3 000 |
+| 3 | 1 000 | 2 000 | **2 500** | **3 000** |
+| 4 | 1 000 | 2 500 | 3 000 | **3 000** |
+| 5 | 1 000 | **2 500** | **4 000** | 4 000 |
+| 6 | 1 000 | 3 000 | **4 000** | 5 000 |
+
+#### Une incertitude tranchée
+Le catalogue portait depuis longtemps : *« sources contradictoires sur le lifetime
+cap : damnpropfirms dit uncapped, d'autres disent que le PA ferme — à vérifier au
+checkout »*. La page officielle règle la question : **après le 6ᵉ payout le PA est
+FERMÉ**, et il faut repasser une évaluation pour en obtenir un autre.
+
+#### Deux pièges de plus
+- **Le Safety Net ne disparaît jamais.** Il vaut la limite de drawdown + 100 $ et
+  reste en place *toute la vie* du PA — beaucoup croient qu'il saute au premier
+  payout. Seul le profit AU-DESSUS est retirable.
+- **Le solde est réévalué au traitement, pas à la demande.** On peut continuer à
+  trader après avoir demandé un payout, mais il faut se comporter comme si la
+  somme était déjà retirée : passer sous le seuil entre-temps fait refuser la
+  demande automatiquement.
