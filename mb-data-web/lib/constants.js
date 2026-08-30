@@ -204,6 +204,12 @@ export const PROPFIRM_RULES = {
     //       $3,000 / $5,000 / $6,500 / $7,500) reste celle des comptes LEGACY,
     //       qui continuent de tourner sous leurs règles d'origine.
     //
+    // ✅ CONFIRMÉ À LA SOURCE (août 2026) — apextraderfunding.com/help-center,
+    //    article « EOD Evaluations », tableau « Account Parameters ». Le site
+    //    bloque la récupération automatique (Cloudflare) ; les valeurs ont été
+    //    relues sur des captures de la page. Objectifs, drawdowns EOD, DLL,
+    //    contrats max et durée de 30 jours correspondent tous au catalogue.
+    //
     // ⚠️ TROIS PROGRAMMES COEXISTENT, ET LEURS CHIFFRES DIFFÈRENT.
     //    C'est pour ça que l'utilisateur choisit son programme à la création du
     //    compte : sans ce choix, on afficherait le drawdown 4.0 à quelqu'un qui
@@ -227,12 +233,20 @@ export const PROPFIRM_RULES = {
       // === ÉVALUATION (one-time, 30 jours calendaires max) ===
       'Objectif de profit':       {'25k':'EOD/Intraday/Legacy : $1,500 (6%)','50k':'EOD/Intraday/Legacy : $3,000 (6%)','75k':'Legacy : $4,500 (6%)','100k':'EOD/Intraday/Legacy : $6,000 (6%)','150k':'EOD/Intraday/Legacy : $9,000 (6%)','250k':'Legacy : $15,000','300k':'Legacy : $20,000'},
       'Drawdown trailing max':    {'25k':'EOD/Intraday : $1,000 · Legacy : $1,500','50k':'EOD/Intraday : $2,000 · Legacy : $2,500','75k':'Legacy : $2,750','100k':'EOD/Intraday : $3,000 · Legacy : $3,000','150k':'EOD/Intraday : $4,000 · Legacy : $5,000','250k':'Legacy : $6,500','300k':'Legacy : $7,500'},
-      'Mécanisme trailing':       {'25k':'EOD : recalcul UNE FOIS à 16h59 ET (gelé en intraday) · Intraday : tick-by-tick sur peak unrealized','50k':'EOD : recalcul 16h59 ET · Intraday : tick-by-tick','75k':'EOD ou Intraday','100k':'EOD : recalcul 16h59 ET · Intraday : tick-by-tick','150k':'EOD : recalcul 16h59 ET · Intraday : tick-by-tick','250k':'EOD ou Intraday','300k':'EOD ou Intraday'},
+      'Mécanisme trailing':       {'25k':'Seuil EOD recalculé une fois par jour à 16h59m59 ET sur le solde de clôture · appliqué EN TEMPS RÉEL la session suivante · ne redescend jamais · journée de trading remise à zéro à 18h00 ET','50k':'idem','100k':'idem','150k':'idem','75k':'idem','250k':'idem','300k':'idem'},
       'Daily Loss Limit (EOD)':   {'25k':'$500 (NOUVEAU 4.0 · pause trading session, pas de fail)','50k':'$1,000','75k':'~$1,250 (estim. legacy)','100k':'$1,500','150k':'$2,000','250k':'~$2,500 (estim. legacy)','300k':'~$3,000 (estim. legacy)'},
       'Daily Loss Limit (Intraday)':{'25k':'AUCUN (Intraday n\'a PAS de DLL)','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN','250k':'AUCUN','300k':'AUCUN'},
       'Jours de trading min (eval)':{'25k':'0 (passage en 1 jour possible)','50k':'0','75k':'0','100k':'0','150k':'0','250k':'0','300k':'0'},
       'Durée éval max':           {'25k':'30 jours calendaires (no extension)','50k':'30 jours calendaires','75k':'30 jours','100k':'30 jours calendaires','150k':'30 jours calendaires','250k':'30 jours','300k':'30 jours'},
       'Règle de cohérence (eval)':{'25k':'AUCUNE en éval','50k':'AUCUNE en éval','75k':'AUCUNE en éval','100k':'AUCUNE en éval','150k':'AUCUNE en éval','250k':'AUCUNE en éval','300k':'AUCUNE en éval'},
+      // « Not Applied » sur le tableau officiel : ni consistance NI scaling en
+      // évaluation. Le scaling n'apparaît qu'une fois en Performance Account.
+      'Scaling (eval)':           {'25k':'AUCUN en éval','50k':'AUCUN en éval','75k':'AUCUN en éval','100k':'AUCUN en éval','150k':'AUCUN en éval','250k':'AUCUN en éval','300k':'AUCUN en éval'},
+      // La DLL est une PAUSE, pas un échec : elle stoppe la session et le compte
+      // reste actif. Elle est aussi INDÉPENDANTE du seuil EOD — deux règles
+      // distinctes, ce que beaucoup de comparatifs confondent.
+      'Nature de la DLL':        {'25k':'Pause de la session en cours, le compte reste actif · sans effet sur le seuil EOD','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      'Délai activation PA':     {'25k':'7 jours calendaires après la réussite','50k':'7 jours','75k':'7 jours','100k':'7 jours','150k':'7 jours','250k':'7 jours','300k':'7 jours'},
       'Stop-Loss + Take-Profit':  {'25k':'OBLIGATOIRES sur chaque ordre (Rithmic/Tradovate enforce bracket) — depuis 4.0','50k':'OBLIGATOIRES','75k':'OBLIGATOIRES','100k':'OBLIGATOIRES','150k':'OBLIGATOIRES','250k':'OBLIGATOIRES','300k':'OBLIGATOIRES'},
       // === PERFORMANCE ACCOUNT (PA) ===
       'Règle de cohérence (PA)':  {'25k':'50% — aucun jour > 50% du profit total depuis dernier payout (relâché de 30%)','50k':'50% (relâché de 30%)','75k':'50%','100k':'50% (relâché de 30%)','150k':'50% (relâché de 30%)','250k':'50%','300k':'50%'},

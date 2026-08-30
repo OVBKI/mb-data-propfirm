@@ -1324,7 +1324,7 @@ des firmes elles-mêmes.
 ### Accessibilité des sources
 | Atteint | Bloqué (Cloudflare 403 ou rendu JS) |
 |---|---|
-| bulenox.com · phidiaspropfirm.com · alpha-futures.com · tradeify.co · futureselite.com · fundednext.com/futures · takeprofittrader.com | apextraderfunding.com · lucidtrading.com · help.tradeify.co · myfundedfutures.com/plans · fundedfuturesnetwork.com · topstep.com (pas de tableau de règles en page d'accueil) |
+| bulenox.com · phidiaspropfirm.com · alpha-futures.com · tradeify.co · futureselite.com · fundednext.com/futures · **apextraderfunding.com (via captures fournies par l'utilisateur)** | lucidtrading.com · help.tradeify.co · myfundedfutures.com · fundedfuturesnetwork.com · topstep.com · takeprofittrader.com |
 
 **Sept firmes sur douze ont pu être confrontées à leur propre site.** Les cinq
 autres restent adossées à des sources tierces recoupées — c'est une limite réelle
@@ -1367,3 +1367,32 @@ de 139 en 50K). Entrée et carte du comparateur entièrement réécrites.
   catalogue, et mentionne un palier **Tradeify Elite** vers du capital réel. La
   page de tarifs contient encore du texte de remplissage (`Lorem ipsum`, `$X`) :
   ses chiffres ne sont pas exploitables en l'état.
+
+### Apex confirmé à la source (captures de leur help center)
+Le site bloque toute récupération automatique — Cloudflare répond 403 à tout, y
+compris à un navigateur headless. Les captures de
+`apextraderfunding.com/help-center/`, article **« EOD Evaluations »**, tranchent :
+
+| | 25K | 50K | 100K | 150K |
+|---|---|---|---|---|
+| Objectif de profit | 1 500 $ | 3 000 $ | 6 000 $ | 9 000 $ |
+| **Max Drawdown (EOD)** | **1 000 $** | **2 000 $** | **3 000 $** | **4 000 $** |
+| Daily Loss Limit | 500 $ | 1 000 $ | 1 500 $ | 2 000 $ |
+| Contrats max | 4 | 6 | 8 | 12 |
+| Durée d'accès | 30 jours | 30 jours | 30 jours | 30 jours |
+| Consistance | Not Applied | Not Applied | Not Applied | Not Applied |
+| Scaling | Not Applied | Not Applied | Not Applied | Not Applied |
+
+**Les sept lignes correspondent au catalogue.** Les drawdowns 4.0 déduits de trois
+analyses tierces sont donc justes, et l'ancienne échelle (1 500 / 2 500 / 3 000 /
+5 000) était bien celle des comptes legacy.
+
+Trois précisions que seule leur page donne, désormais dans les règles :
+- Le seuil EOD est recalculé **à 16h59m59 ET** sur le solde de clôture, puis
+  **appliqué en temps réel** la session suivante. La journée de trading se remet à
+  zéro à **18h00 ET**.
+- La **DLL est une pause**, pas un échec : elle stoppe la session, le compte reste
+  actif, et elle est **indépendante du seuil EOD**. Beaucoup de comparatifs
+  confondent les deux.
+- **7 jours calendaires** pour activer le Performance Account après la réussite ;
+  la limite de 30 jours ne s'applique qu'à l'évaluation, jamais au PA.
