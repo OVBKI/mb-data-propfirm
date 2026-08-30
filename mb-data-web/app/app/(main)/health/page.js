@@ -108,7 +108,10 @@ function computeStatsByAccount(trades, accountsById) {
 // - trailing : floor = peak - maxDD (no cap), tick-by-tick (we approximate with EOD peak)
 function computeDdFloor(account, firmName, peakBalance) {
   const initial = planSizeNum(account.plan_size) || 0
-  const maxDD = maxDrawdown(firmName, account.plan_size)
+  // `account.program` = le programme choisi par le trader. Sans lui, on servait
+  // le drawdown du programme principal de la firme, faux d'un quart à la moitié
+  // pour qui tient un compte Apex legacy ou un FundedNext Rapid.
+  const maxDD = maxDrawdown(firmName, account.plan_size, account.program)
   if (!maxDD || !initial) return null
 
   const ddType = (account.dd_type || 'static').toLowerCase()
@@ -218,7 +221,7 @@ export default function HealthPage() {
     let safe = 0, caution = 0, danger = 0, noData = 0
     for (const a of enrichedAccounts) {
       if (a.balance == null || a.dd_floor == null) { noData++; continue }
-      const maxDD = maxDrawdown(a.firmName, a.plan_size)
+      const maxDD = maxDrawdown(a.firmName, a.plan_size, a.program)
       if (!maxDD || maxDD <= 0) { noData++; continue }
       const room = Math.max(0, a.balance - a.dd_floor)
       const pct = Math.min(1, room / maxDD)

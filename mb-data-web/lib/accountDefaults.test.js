@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   accountDefaults, planChoices, buildAccountForm,
-  generateAccountNames, suggestProfitSplit,
+  generateAccountNames, suggestProfitSplit, programChoices,
 } from './accountDefaults'
 import { plansForFirm } from './constants'
 
@@ -115,5 +115,57 @@ describe('generateAccountNames', () => {
 
   it('respecte la largeur du padding dorigine', () => {
     expect(generateAccountNames('A-08', 3)).toEqual(['A-08', 'A-09', 'A-10'])
+  })
+})
+
+// ── Type de compte (programme) ───────────────────────────────────────────────
+// Beaucoup de firmes vendent plusieurs programmes sous la même taille. Sans ce
+// choix, on servait le programme principal à tout le monde : un porteur de
+// compte Apex legacy voyait le drawdown 4.0, faux de 50 %.
+describe('programChoices', () => {
+  it('liste les programmes réellement disponibles à CETTE taille', () => {
+    expect(programChoices('Apex Trader Funding', '50k').map(p => p.program))
+      .toEqual(['EOD', 'Intraday', 'Legacy'])
+    // Apex ne vend plus de 75K : seul un compte legacy peut en porter un.
+    expect(programChoices('Apex Trader Funding', '75k').map(p => p.program))
+      .toEqual(['Legacy'])
+    // FundedNext n'a que Flex en 150K, et pas de Flex en 25K.
+    expect(programChoices('FundedNext Futures', '150k').map(p => p.program))
+      .toEqual(['Flex'])
+    expect(programChoices('FundedNext Futures', '25k').map(p => p.program))
+      .not.toContain('Flex')
+  })
+
+  it('chaque programme porte SES valeurs, pas celles du programme principal', () => {
+    const byName = Object.fromEntries(
+      programChoices('Apex Trader Funding', '150k').map(p => [p.program, p])
+    )
+    expect(byName['EOD'].maxDrawdown).toBe(4000)
+    expect(byName['Legacy'].maxDrawdown).toBe(5000)
+    expect(byName['EOD'].price).toBe(1490)
+    expect(byName['Intraday'].price).toBe(599)
+  })
+
+  it('rend un tableau vide sans firme ou sans plan', () => {
+    expect(programChoices(null, '50k')).toEqual([])
+    expect(programChoices('Topstep', null)).toEqual([])
+  })
+})
+
+describe('buildAccountForm avec un programme', () => {
+  it('inscrit le programme dans le formulaire et pré-remplit à partir de LUI', () => {
+    const legacy = buildAccountForm('Apex Trader Funding', '150k', {}, 'Legacy')
+    expect(legacy.program).toBe('Legacy')
+    expect(legacy.spent).toBe('397')
+
+    const eod = buildAccountForm('Apex Trader Funding', '150k', {}, 'EOD')
+    expect(eod.program).toBe('EOD')
+    expect(eod.spent).toBe('1490')
+  })
+
+  it('sans programme, le champ reste une chaîne VIDE (pas "null")', () => {
+    // Le formulaire alimente des <input> : un null y deviendrait le texte "null",
+    // et partirait tel quel en base.
+    expect(buildAccountForm('Topstep', '50k').program).toBe('')
   })
 })

@@ -16,12 +16,15 @@ import {
   defaultMinTradingDays, defaultMinDailyProfit, defaultProfitSplit,
   maxDrawdown, plansForFirm, planSizeNum,
 } from './constants'
+import { programsForFirm, defaultProgramFor } from './futuresComparison'
+
+export { programsForFirm, defaultProgramFor }
 
 // Le partage brut des règles est bruité (87, 88, 90 selon les paliers). On le
 // ramène aux quatre valeurs que les firmes pratiquent réellement — un chiffre
 // rond que l'utilisateur reconnaît vaut mieux qu'une précision inventée.
-export function suggestProfitSplit(firmName, plan) {
-  const raw = defaultProfitSplit(firmName, plan)
+export function suggestProfitSplit(firmName, plan, program) {
+  const raw = defaultProfitSplit(firmName, plan, program)
   if (!raw) return 90
   if (raw >= 95) return 100
   if (raw >= 85) return 90
@@ -32,17 +35,33 @@ export function suggestProfitSplit(firmName, plan) {
 // Ce que l'app déduit d'un couple (firme, plan). `null` veut dire « on ne sait
 // pas » — jamais 0 : un objectif de payout à 0 serait faux, une absence ne l'est
 // pas. C'est ce qui permet à l'assistant de n'afficher que les lignes connues.
-export function accountDefaults(firmName, plan) {
+// `program` est le TYPE DE COMPTE choisi par l'utilisateur (Apex EOD contre
+// Intraday contre Legacy, FundedNext Flex contre Rapid…). Beaucoup de firmes
+// vendent plusieurs programmes sous la même taille, avec des drawdowns et des
+// prix différents ; sans ce paramètre on servait le programme principal à tout
+// le monde. `null` = pas encore choisi, on retombe sur le programme principal.
+export function accountDefaults(firmName, plan, program = null) {
   return {
-    price: defaultChallengePrice(firmName, plan),
+    program,
+    price: defaultChallengePrice(firmName, plan, program),
     ddType: defaultDdType(firmName),
-    maxDrawdown: maxDrawdown(firmName, plan),
-    payoutTarget: defaultPayoutTarget(firmName, plan),
-    minTradingDays: defaultMinTradingDays(firmName, plan),
-    minDailyProfit: defaultMinDailyProfit(firmName, plan),
-    profitSplit: suggestProfitSplit(firmName, plan),
+    maxDrawdown: maxDrawdown(firmName, plan, program),
+    payoutTarget: defaultPayoutTarget(firmName, plan, program),
+    minTradingDays: defaultMinTradingDays(firmName, plan, program),
+    minDailyProfit: defaultMinDailyProfit(firmName, plan, program),
+    profitSplit: suggestProfitSplit(firmName, plan, program),
     planSizeNum: planSizeNum(plan),
   }
+}
+
+// Les programmes proposables pour un couple (firme, plan), chacun avec ses
+// valeurs déjà calculées — de quoi poser des cartes de choix comparables.
+export function programChoices(firmName, plan) {
+  if (!firmName || !plan) return []
+  return programsForFirm(firmName, plan).map(program => ({
+    program,
+    ...accountDefaults(firmName, plan, program),
+  }))
 }
 
 // Les plans d'une firme, chacun avec ses défauts déjà calculés. L'assistant
@@ -54,8 +73,8 @@ export function planChoices(firmName) {
 // La forme exacte attendue par `acctForm` dans layout.js. Les nombres y sont des
 // CHAÎNES parce que ce sont des valeurs d'<input> ; un null devient une chaîne
 // vide, pas « null ».
-export function buildAccountForm(firmName, plan, overrides = {}) {
-  const d = accountDefaults(firmName, plan)
+export function buildAccountForm(firmName, plan, overrides = {}, program = null) {
+  const d = accountDefaults(firmName, plan, program)
   const str = v => (v === null || v === undefined ? '' : String(v))
   return {
     buyDate: todayISO(),
@@ -66,6 +85,7 @@ export function buildAccountForm(firmName, plan, overrides = {}) {
     status: 'Challenge',
     notes: '',
     planSize: plan,
+    program: program || '',
     name: '',
     ddType: d.ddType,
     payoutTarget: str(d.payoutTarget),

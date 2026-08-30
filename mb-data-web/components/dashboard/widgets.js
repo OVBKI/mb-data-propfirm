@@ -26,7 +26,7 @@ function drawdownRoom(account, firmName) {
   const floor = account.dd_floor
   const custom = account.custom_drawdown != null && account.custom_drawdown > 0
     ? Number(account.custom_drawdown) : null
-  const maxDD = custom ?? maxDrawdown(firmName, account.plan_size)
+  const maxDD = custom ?? maxDrawdown(firmName, account.plan_size, account.program)
   if (balance == null || floor == null || !(maxDD > 0)) return null
   return Math.min(1, Math.max(0, (balance - floor) / maxDD))
 }

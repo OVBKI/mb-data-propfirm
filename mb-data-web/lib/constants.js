@@ -1,6 +1,30 @@
 // PropFirm rules data — vérifiées 2024/2025 (toujours vérifier sur le site officiel)
 // La plupart des firmes utilisent un drawdown TRAILING avec lock au solde initial — mais pas toutes
 // (Phidias Static, MFFU Flex/Builder statique, FFN statique une fois financé) : voir le détail par firme.
+import { extractModelSegment } from './programSegment'
+
+// Lit une cellule de règle en tenant compte du PROGRAMME choisi.
+// Sans programme, la cellule est rendue telle quelle et l'appelant retombe sur
+// son ancien comportement (« prends le premier nombre »), qui décrit le
+// programme principal de la firme.
+//
+// ⚠️ Un programme demandé mais ABSENT de la cellule rend null, jamais la valeur
+// globale : afficher le drawdown d'Apex 4.0 à quelqu'un qui tient un compte
+// legacy serait une jauge de risque fausse de 25 à 50 %, silencieusement.
+function cellFor(raw, program) {
+  if (raw == null) return null
+  if (!program) return raw
+  return extractModelSegment(raw, program)
+}
+
+// Premier entier d'une chaîne (« EOD/Intraday : $2,000 · Legacy : $2,500 » → 2000).
+function firstInt(str) {
+  const m = String(str ?? '').match(/[\d,]*\d/)
+  if (!m) return null
+  const n = parseInt(m[0].replace(/,/g, ''), 10)
+  return Number.isFinite(n) ? n : null
+}
+
 export const PROPFIRM_RULES = {
   'Topstep': {
     // VÉRIFIÉ MAI 2026 — Sources OFFICIELLES :
@@ -138,6 +162,19 @@ export const PROPFIRM_RULES = {
     //  - 🚨 Plus de mensuel : one-time only (codes promo permanents 80-90%)
     //  - 🚨 Activation fee $99 EOD / $79 Intraday NON discountable
     //  - 🚨 75K, 250K, 300K SUPPRIMÉS pour nouveaux achats (legacy uniquement)
+    //  - 🚨 DRAWDOWNS REVUS : 4.0 utilise des milliers ronds ($1,000 / $2,000 /
+    //       $3,000 / $4,000). L'ancienne échelle ($1,500 / $2,500 / $2,750 /
+    //       $3,000 / $5,000 / $6,500 / $7,500) reste celle des comptes LEGACY,
+    //       qui continuent de tourner sous leurs règles d'origine.
+    //
+    // ⚠️ TROIS PROGRAMMES COEXISTENT, ET LEURS CHIFFRES DIFFÈRENT.
+    //    C'est pour ça que l'utilisateur choisit son programme à la création du
+    //    compte : sans ce choix, on afficherait le drawdown 4.0 à quelqu'un qui
+    //    tient un compte legacy, soit une jauge de risque fausse de 25 à 50 %.
+    //      EOD       — 4.0, DLL activée, trailing recalculé à 16h59 ET
+    //      Intraday  — 4.0, pas de DLL, trailing tick-by-tick, moins cher
+    //      Legacy    — acheté avant mars 2026, ancienne échelle de drawdown ;
+    //                  seul programme à exister en 75K, 250K et 300K
     //  - 🚨 Consistency rule 30% → 50% (assouplie) — sur PA seulement
     //  - 🚨 Eval : 30 jours calendaires max, AUCUN reset (rebuy obligatoire)
     //  - 🚨 Metals HALT depuis 14 mars 2026 (GC/SI/QI/QO/MGC/HG/PL/PA)
@@ -151,8 +188,8 @@ export const PROPFIRM_RULES = {
     plans: ['25k','50k','75k','100k','150k','250k','300k'],
     rules: {
       // === ÉVALUATION (one-time, 30 jours calendaires max) ===
-      'Objectif de profit':       {'25k':'$1,500 (6%)','50k':'$3,000 (6%)','75k':'$4,500 (6% · legacy)','100k':'$6,000 (6%)','150k':'$9,000 (6%)','250k':'$15,000 (legacy)','300k':'$20,000 (legacy)'},
-      'Drawdown trailing max':    {'25k':'$1,500','50k':'$2,500','75k':'$2,750 (legacy)','100k':'$3,000','150k':'$5,000','250k':'$6,500 (legacy)','300k':'$7,500 (legacy)'},
+      'Objectif de profit':       {'25k':'EOD/Intraday/Legacy : $1,500 (6%)','50k':'EOD/Intraday/Legacy : $3,000 (6%)','75k':'Legacy : $4,500 (6%)','100k':'EOD/Intraday/Legacy : $6,000 (6%)','150k':'EOD/Intraday/Legacy : $9,000 (6%)','250k':'Legacy : $15,000','300k':'Legacy : $20,000'},
+      'Drawdown trailing max':    {'25k':'EOD/Intraday : $1,000 · Legacy : $1,500','50k':'EOD/Intraday : $2,000 · Legacy : $2,500','75k':'Legacy : $2,750','100k':'EOD/Intraday : $3,000 · Legacy : $3,000','150k':'EOD/Intraday : $4,000 · Legacy : $5,000','250k':'Legacy : $6,500','300k':'Legacy : $7,500'},
       'Mécanisme trailing':       {'25k':'EOD : recalcul UNE FOIS à 16h59 ET (gelé en intraday) · Intraday : tick-by-tick sur peak unrealized','50k':'EOD : recalcul 16h59 ET · Intraday : tick-by-tick','75k':'EOD ou Intraday','100k':'EOD : recalcul 16h59 ET · Intraday : tick-by-tick','150k':'EOD : recalcul 16h59 ET · Intraday : tick-by-tick','250k':'EOD ou Intraday','300k':'EOD ou Intraday'},
       'Daily Loss Limit (EOD)':   {'25k':'$500 (NOUVEAU 4.0 · pause trading session, pas de fail)','50k':'$1,000','75k':'~$1,250 (estim. legacy)','100k':'$1,500','150k':'$2,000','250k':'~$2,500 (estim. legacy)','300k':'~$3,000 (estim. legacy)'},
       'Daily Loss Limit (Intraday)':{'25k':'AUCUN (Intraday n\'a PAS de DLL)','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN','250k':'AUCUN','300k':'AUCUN'},
@@ -163,10 +200,10 @@ export const PROPFIRM_RULES = {
       // === PERFORMANCE ACCOUNT (PA) ===
       'Règle de cohérence (PA)':  {'25k':'50% — aucun jour > 50% du profit total depuis dernier payout (relâché de 30%)','50k':'50% (relâché de 30%)','75k':'50%','100k':'50% (relâché de 30%)','150k':'50% (relâché de 30%)','250k':'50%','300k':'50%'},
       'PA DLL initial':           {'25k':'$500 (EOD seulement) — scale avec profits','50k':'$1,000','75k':'~$1,500','100k':'$1,750','150k':'$2,500','250k':'~$3,000','300k':'~$3,500'},
-      'Safety Net (PA)':          {'25k':'$26,600 = starting + DD + $100','50k':'$52,600','75k':'$77,850 (legacy)','100k':'$103,100','150k':'$155,100','250k':'$256,600 (legacy)','300k':'$307,600 (legacy)'},
+      'Safety Net (PA)':          {'25k':'EOD/Intraday : $26,100 · Legacy : $26,600 (= solde initial + DD + $100)','50k':'EOD/Intraday : $52,100 · Legacy : $52,600','75k':'Legacy : $77,850','100k':'EOD/Intraday : $103,100 · Legacy : $103,100','150k':'EOD/Intraday : $154,100 · Legacy : $155,100','250k':'Legacy : $256,600','300k':'Legacy : $307,600'},
       'DCA (renforcement)':       {'25k':'Eval : autorisé · PA : 🚨 INTERDIT (fail auto) depuis mars 2026','50k':'Eval autorisé · PA INTERDIT','75k':'Eval autorisé · PA INTERDIT','100k':'Eval autorisé · PA INTERDIT','150k':'Eval autorisé · PA INTERDIT','250k':'Eval autorisé · PA INTERDIT','300k':'Eval autorisé · PA INTERDIT'},
       // === CONTRATS (mini = standard · micro = 10× mini, comptent à l\'unité) ===
-      'Contrats max eval (mini)': {'25k':'4','50k':'6','75k':'8 (legacy)','100k':'8','150k':'12','250k':'16 (legacy)','300k':'20 (legacy)'},
+      'Contrats max eval (mini)': {'25k':'EOD/Intraday/Legacy : 4','50k':'EOD/Intraday/Legacy : 6','75k':'Legacy : 8','100k':'EOD/Intraday/Legacy : 8','150k':'EOD/Intraday/Legacy : 12','250k':'Legacy : 16','300k':'Legacy : 20'},
       'Contrats PA pre-safety':   {'25k':'1 (½ du PA max)','50k':'2','75k':'3 (legacy)','100k':'3','150k':'4','250k':'6 (legacy)','300k':'7 (legacy)'},
       'Contrats PA post-safety':  {'25k':'2 (PA full)','50k':'4','75k':'6 (legacy)','100k':'6','150k':'9','250k':'12 (legacy)','300k':'15 (legacy)'},
       'Contrats max (micro)':     {'25k':'40 (10× mini, comptent à l\'unité)','50k':'60','75k':'80 (legacy)','100k':'80','150k':'120','250k':'160 (legacy)','300k':'200 (legacy)'},
@@ -177,8 +214,8 @@ export const PROPFIRM_RULES = {
       'Metals HALT (14 mars 2026)':{'25k':'🚨 GC, SI, QI, QO, MGC, HG, PL, PA SUSPENDUS — aucun retour annoncé','50k':'🚨 idem','75k':'🚨 idem','100k':'🚨 idem','150k':'🚨 idem','250k':'🚨 idem','300k':'🚨 idem'},
       'Auto-flat':                {'25k':'16h59 ET (toutes positions fermées · breach MLL après auto-flat = ban)','50k':'16h59 ET','75k':'16h59 ET','100k':'16h59 ET','150k':'16h59 ET','250k':'16h59 ET','300k':'16h59 ET'},
       // === TARIFS (one-time uniquement en 4.0, codes promo permanents -80/-90%) ===
-      'Prix one-time EOD (list)': {'25k':'$177','50k':'$197','75k':'~$247 (legacy)','100k':'$297','150k':'$397','250k':'~$547 (legacy)','300k':'~$647 (legacy)'},
-      'Prix one-time Intraday':   {'25k':'$118','50k':'$131','75k':'~$165 (legacy)','100k':'$198','150k':'$265','250k':'~$365 (legacy)','300k':'~$432 (legacy)'},
+      'Prix one-time EOD (list)': {'25k':'EOD : $390 · Legacy : $177 (tarif d\'alors)','50k':'EOD : $490 · Legacy : $197','75k':'Legacy : ~$247','100k':'EOD : $790 · Legacy : $297','150k':'EOD : $1,490 · Legacy : $397','250k':'Legacy : ~$547','300k':'Legacy : ~$647'},
+      'Prix one-time Intraday':   {'25k':'Intraday : $167 · Legacy : $118 (tarif d\'alors)','50k':'Intraday : $249 · Legacy : $131','75k':'Legacy : ~$165','100k':'Intraday : $399 · Legacy : $198','150k':'Intraday : $599 · Legacy : $265','250k':'Legacy : ~$365','300k':'Legacy : ~$432'},
       'Prix après codes promo':   {'25k':'~$18-35 (SAVENOW -80/-90%)','50k':'~$20-40','75k':'~$25-50','100k':'~$30-60','150k':'~$40-80','250k':'~$55-110','300k':'~$65-130'},
       'Frais activation PA':      {'25k':'$99 EOD · $79 Intraday — NON discountable, payé après passage éval','50k':'$99 / $79','75k':'$99 / $79','100k':'$99 / $79','150k':'$99 / $79','250k':'$99 / $79','300k':'$99 / $79'},
       'Reset cost':               {'25k':'SUPPRIMÉ en 4.0 (rebuy éval avec code promo = de facto reset à $18-35)','50k':'SUPPRIMÉ','75k':'SUPPRIMÉ','100k':'SUPPRIMÉ','150k':'SUPPRIMÉ','250k':'SUPPRIMÉ','300k':'SUPPRIMÉ'},
@@ -1046,7 +1083,7 @@ export function plansForFirm(firmName){
 //   - "Maximum Loss Limit" — variantes
 // Ne match PAS les clés mécaniques/contextuelles (ex: "MLL mécanique XFA") pour éviter de
 // capter une description plutôt qu'un montant.
-export function maxDrawdown(firmName, plan){
+export function maxDrawdown(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
 
@@ -1081,12 +1118,10 @@ export function maxDrawdown(firmName, plan){
   // limitée à une taille (« Drawdown Static (25K only) ») est ainsi ignorée
   // sur les autres tailles au lieu de rendre null pour tout le monde.
   for (const key of [...typed, ...candidates]) {
-    const raw = rules[key]?.[plan]
-    if (!raw) continue
-    const m = String(raw).match(/[\d,]*\d/)
-    if (!m) continue
-    const n = parseInt(m[0].replace(/,/g,''),10)
-    if (Number.isFinite(n) && n > 0) return n
+    const cell = cellFor(rules[key]?.[plan], program)
+    if (!cell) continue
+    const n = firstInt(cell)
+    if (n !== null && n > 0) return n
   }
   return null
 }
@@ -1143,45 +1178,39 @@ export function accountLabel(a){
 }
 
 // Retourne le profit target ($ numérique) selon les règles de la firme (sans le balance initial)
-export function profitTarget(firmName, plan){
+export function profitTarget(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const ptKey = Object.keys(rules).find(k => /objectif|profit\s+target/i.test(k))
   if(!ptKey) return null
-  const ptStr = rules[ptKey][plan]
-  if(!ptStr) return null
-  const m = String(ptStr).match(/[\d,]+/)
-  return m ? parseInt(m[0].replace(/,/g,''),10) : null
+  return firstInt(cellFor(rules[ptKey][plan], program))
 }
 
 // Retourne le balance cible pour un payout (planSize + profit target)
-export function defaultPayoutTarget(firmName, plan){
-  const pt = profitTarget(firmName, plan)
+export function defaultPayoutTarget(firmName, plan, program){
+  const pt = profitTarget(firmName, plan, program)
   if(pt === null) return null
   return planSizeNum(plan) + pt
 }
 
 // Retourne le nombre de jours de trading min selon la firme
-export function defaultMinTradingDays(firmName, plan){
+export function defaultMinTradingDays(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const dKey = Object.keys(rules).find(k => /jours.*trading.*min/i.test(k))
   if(!dKey) return null
-  const dStr = rules[dKey][plan]
-  if(!dStr) return null
-  const m = String(dStr).match(/(\d+)/)
-  return m ? parseInt(m[1],10) : null
+  return firstInt(cellFor(rules[dKey][plan], program))
 }
 
 // Retourne le % du profit split pour le trader (ex: 90 pour un split 90/10).
 // Cherche la clé "Répartition gains" dans les règles. Pour les valeurs composées
 // "80% trader / 90% (PRO+)" prend le PREMIER nombre rencontré.
-export function defaultProfitSplit(firmName, plan){
+export function defaultProfitSplit(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const k = Object.keys(rules).find(k => /répartition.*gains|profit.*split/i.test(k))
   if(!k) return null
-  const m = String(rules[k][plan]||'').match(/(\d{2,3})\s*%/)
+  const m = String(cellFor(rules[k][plan], program) || '').match(/(\d{2,3})\s*%/)
   return m ? parseInt(m[1],10) : null
 }
 
@@ -1189,14 +1218,14 @@ export function defaultProfitSplit(firmName, plan){
 // comme "validé" dans le décompte des jours de trading min (payout requirement).
 // Ex: Lucid demande $150 profit/jour pour valider un jour de trading.
 // Cherche la clé "Profit min jour" / "Min profit / jour" / etc.
-export function defaultMinDailyProfit(firmName, plan){
+export function defaultMinDailyProfit(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   const k = Object.keys(rules).find(k =>
     /profit\s*min.*jour|min.*profit.*jour|jour.*valid|min.*winning/i.test(k)
   )
   if(!k) return null
-  const m = String(rules[k][plan]||'').match(/\$\s*([\d,]+)/)
+  const m = String(cellFor(rules[k][plan], program) || '').match(/\$\s*([\d,]+)/)
   return m ? parseInt(m[1].replace(/,/g,''),10) : null
 }
 
@@ -1206,7 +1235,7 @@ export function defaultMinDailyProfit(firmName, plan){
 // Pour les valeurs composites "X / Y" (ex: MFFU "Prix Core (m / o)" = "$77 / $229"),
 // prend la PREMIÈRE valeur ($X = mensuel typiquement).
 // → Sert à pré-remplir le champ "Montant dépensé" du formulaire création de compte.
-export function defaultChallengePrice(firmName, plan){
+export function defaultChallengePrice(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
   // Cherche la clé prix la plus appropriée (priorité : mensuel > one-time > évaluation)
@@ -1216,10 +1245,16 @@ export function defaultChallengePrice(firmName, plan){
     || keys.find(k => /prix.*one[\s-]?time/i.test(k))
     || keys.find(k => /^prix/i.test(k))
   if(!priceKey) return null
-  const valStr = rules[priceKey][plan]
-  if(!valStr) return null
-  // Extrait le PREMIER nombre (avec virgules potentielles) après le 1er $
-  const m = String(valStr).match(/\$\s*([\d,]+)/)
-  if(!m) return null
-  return parseInt(m[1].replace(/,/g,''), 10)
+  // Avec un programme, on cherche d'abord une clé prix qui le cite (Apex a
+  // « Prix one-time EOD » et « Prix one-time Intraday » : deux clés, deux tarifs).
+  const orderedKeys = program
+    ? [...keys.filter(k => /prix/i.test(k) && new RegExp(program.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(k)),
+       priceKey, ...keys.filter(k => /prix/i.test(k))]
+    : [priceKey]
+  for (const k of orderedKeys) {
+    const cell = cellFor(rules[k]?.[plan], program)
+    const m = String(cell || '').match(/\$\s*([\d,]+)/)
+    if (m) return parseInt(m[1].replace(/,/g,''), 10)
+  }
+  return null
 }

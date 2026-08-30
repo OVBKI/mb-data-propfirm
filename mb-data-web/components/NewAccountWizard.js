@@ -18,10 +18,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from './LanguageProvider'
 import { useDialog } from './useDialog'
-import { planChoices, buildAccountForm } from '../lib/accountDefaults'
+import { planChoices, programChoices, buildAccountForm } from '../lib/accountDefaults'
 import { FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS } from '../lib/constants'
 
-const STEPS = ['firm', 'plan', 'details']
+// Le pas « programme » est CONDITIONNEL : la plupart des firmes n'en vendent
+// qu'un, et poser une question à réponse unique est du bruit. STEPS est donc
+// calculé, pas figé.
+const BASE_STEPS = ['firm', 'plan', 'program', 'details']
 
 export default function NewAccountWizard({
   firms, customFirmNames = [], getFirmLogo, S,
@@ -37,6 +40,7 @@ export default function NewAccountWizard({
   const [step, setStep] = useState(initialFirm ? 'plan' : 'firm')
   const [firmName, setFirmName] = useState(initialFirm?.name || '')
   const [plan, setPlan] = useState(null)
+  const [program, setProgram] = useState(null)
   const [form, setForm] = useState(null)
   const [advanced, setAdvanced] = useState(false)
   const customInput = useRef(null)
@@ -52,13 +56,33 @@ export default function NewAccountWizard({
 
   const plans = useMemo(() => (firmName ? planChoices(firmName) : []), [firmName])
 
+  // Les programmes dépendent de la TAILLE autant que de la firme : Apex ne vend
+  // plus que du legacy en 75K, FundedNext n'a que Flex en 150K.
+  const programs = useMemo(() => programChoices(firmName, plan), [firmName, plan])
+
   // Changer de firme invalide le plan : les tailles ne sont pas les mêmes d'une
   // firme à l'autre, et garder l'ancien choix produirait des défauts faux.
-  useEffect(() => { setPlan(null); setForm(null) }, [firmName])
+  useEffect(() => { setPlan(null); setProgram(null); setForm(null) }, [firmName])
+
+  const STEPS = useMemo(
+    () => BASE_STEPS.filter(sp => sp !== 'program' || programs.length > 1),
+    [programs.length]
+  )
 
   function pickPlan(p) {
     setPlan(p)
-    setForm(buildAccountForm(firmName, p))
+    // Une seule offre à cette taille : on la retient sans rien demander.
+    const list = programChoices(firmName, p)
+    if (list.length > 1) { setProgram(null); setStep('program'); return }
+    const only = list[0]?.program || null
+    setProgram(only)
+    setForm(buildAccountForm(firmName, p, {}, only))
+    setStep('details')
+  }
+
+  function pickProgram(prog) {
+    setProgram(prog)
+    setForm(buildAccountForm(firmName, plan, {}, prog))
     setStep('details')
   }
 
@@ -96,7 +120,8 @@ export default function NewAccountWizard({
           boxShadow: 'var(--shadow-pop)', display: 'flex', flexDirection: 'column', gap: 18,
         }}
       >
-        <Header t={t} idx={idx} step={step} firmName={firmName} plan={plan}
+        <Header t={t} idx={idx} total={STEPS.length} step={step} firmName={firmName}
+                plan={plan} program={program}
                 onBack={() => setStep(STEPS[idx - 1])} onClose={onCancel} />
 
         {step === 'firm' && (
@@ -158,6 +183,19 @@ export default function NewAccountWizard({
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {plans.map(p => <PlanCard key={p.plan} p={p} t={t} onPick={() => pickPlan(p.plan)} />)}
+            </div>
+          </>
+        )}
+
+        {step === 'program' && (
+          <>
+            <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0, lineHeight: 1.5 }}>
+              {t('app.wizard.programHint')}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {programs.map(pr => (
+                <ProgramCard key={pr.program} p={pr} t={t} onPick={() => pickProgram(pr.program)} />
+              ))}
             </div>
           </>
         )}
@@ -265,10 +303,11 @@ export default function NewAccountWizard({
 }
 
 // ── Pièces ──────────────────────────────────────────────────────────────────
-function Header({ t, idx, step, firmName, plan, onBack, onClose }) {
+function Header({ t, idx, total, step, firmName, plan, program, onBack, onClose }) {
   const titles = {
     firm: t('app.wizard.stepFirm'),
     plan: t('app.wizard.stepPlan'),
+    program: t('app.wizard.stepProgram'),
     details: t('app.wizard.stepDetails'),
   }
   return (
@@ -283,9 +322,10 @@ function Header({ t, idx, step, firmName, plan, onBack, onClose }) {
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text3)' }}>
-          {t('app.wizard.stepOf').replace('{n}', idx + 1).replace('{total}', STEPS.length)}
+          {t('app.wizard.stepOf').replace('{n}', idx + 1).replace('{total}', total)}
           {firmName && step !== 'firm' ? ` · ${firmName}` : ''}
           {plan && step === 'details' ? ` · ${String(plan).toUpperCase()}` : ''}
+          {program && step === 'details' ? ` · ${program}` : ''}
         </div>
         <h3 style={{ fontSize: 18, fontWeight: 600, margin: '4px 0 0', letterSpacing: '-.01em' }}>
           {titles[step]}
@@ -325,6 +365,37 @@ function PlanCard({ p, t, onPick }) {
         fontSize: 15, fontWeight: 700, letterSpacing: '-.01em', minWidth: 56,
         fontVariantNumeric: 'tabular-nums',
       }}>{String(p.plan).toUpperCase()}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--text3)' }}>
+        {facts.join(' · ')}
+      </span>
+      <span aria-hidden="true" style={{ color: 'var(--text3)', fontSize: 15 }}>›</span>
+    </button>
+  )
+}
+
+// Même anatomie que PlanCard : le nom à gauche, ce qui CHANGE entre programmes
+// au milieu. C'est le drawdown et le prix qui décident, pas le nom du produit.
+function ProgramCard({ p, t, onPick }) {
+  const facts = [
+    p.price != null && `${p.price} $`,
+    p.maxDrawdown != null && `${t('app.wizard.dd')} ${p.maxDrawdown.toLocaleString()} $`,
+    p.payoutTarget != null && `${t('app.wizard.target')} ${p.payoutTarget.toLocaleString()} $`,
+    `${p.profitSplit} %`,
+  ].filter(Boolean)
+
+  return (
+    <button
+      onClick={onPick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 14, width: '100%',
+        padding: '14px 16px', borderRadius: 'var(--radius)', cursor: 'pointer',
+        background: 'var(--tint1)', border: '1px solid var(--border2)',
+        fontFamily: 'inherit', textAlign: 'left', color: 'var(--text)',
+      }}
+    >
+      <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-.01em', minWidth: 96 }}>
+        {p.program}
+      </span>
       <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--text3)' }}>
         {facts.join(' · ')}
       </span>

@@ -1086,3 +1086,60 @@ dans un format que les parseurs ne savent pas lire (« idem », renvoi à une au
 taille, valeur en toutes lettres). La règle qui marche est celle appliquée à
 FundedNext Futures : « Programme : valeur · Programme : valeur », avec un chiffre
 explicite dans chaque cellule.
+
+
+## Type de compte (programme) — 2026-08
+
+Une PropFirm vend rarement UN produit. Apex vend EOD et Intraday, plus les
+comptes legacy achetés avant mars 2026 ; FundedNext vend Flex, Legacy, Rapid Pro
+et Rapid Daily ; Lucid vend Pro, Flex et Direct. **Même taille de compte,
+drawdowns et prix différents.**
+
+Jusqu'ici l'app servait le programme principal à tout le monde. Pour un porteur
+de compte Apex legacy en 150K, la jauge affichait 4 000 $ de marge au lieu de
+5 000 : une erreur de 25 % sur la seule métrique qui dit si le compte va sauter.
+
+### Ce qui a changé
+| | |
+|---|---|
+| **`accounts.program`** | nouvelle colonne texte, nullable. **SQL à jouer sur Supabase.** |
+| **Assistant** | 4ᵉ pas « Quel type de compte as-tu pris ? », **affiché seulement si la firme en propose plusieurs à cette taille** |
+| **Modale d'édition** | un `<select>` à côté de la taille, avec la même condition |
+| **Helpers** | `maxDrawdown`, `profitTarget`, `defaultPayoutTarget`, `defaultMinTradingDays`, `defaultMinDailyProfit`, `defaultProfitSplit` et `defaultChallengePrice` acceptent un 3ᵉ argument `program` |
+| **Consommateurs** | jauge Drawdown Health, page `/app/health`, widget dashboard, cron `drawdown-guardian` |
+
+### `lib/programSegment.js` — pourquoi un module à part
+`extractModelSegment` vivait dans `futuresComparison.js`, qui importe
+`constants.js`. Or `constants.js` en a désormais besoin pour lire la valeur d'un
+programme dans une cellule. Le laisser là créait un **cycle d'imports**. Le
+module ne dépend de rien : c'est ce qui le rend importable des deux côtés.
+
+### Format des cellules
+`'Programme : valeur · Programme : valeur'`, plusieurs programmes séparés par
+`/` dans le préfixe. Deux pièges :
+- **Écrire les noms EN ENTIER.** `\bRapid Pro\b` ne trouve rien dans un segment
+  étiqueté juste « Rapid ».
+- **Les noms doivent correspondre exactement** entre les cellules de
+  `constants.js` et les `models[].name` de `FIRM_COMPARISON_MAP`. C'est le
+  contrat qui fait marcher `programsForFirm()`.
+
+### Deux garde-fous
+1. **Un programme absent à cette taille rend `null`, jamais la valeur globale.**
+   Servir le drawdown 4.0 à un compte legacy serait faux silencieusement.
+2. **`programsForFirm(firm, plan)` filtre par TAILLE.** Apex n'a plus que du
+   legacy en 75K, FundedNext n'a que Flex en 150K : proposer un programme
+   inexistant enverrait l'utilisateur vers un choix dont toutes les valeurs
+   dérivées seraient nulles.
+
+### Apex corrigé
+Les drawdowns 4.0 sont des milliers ronds — **1 000 / 2 000 / 3 000 / 4 000** pour
+25/50/100/150K — contre l'ancienne échelle 1 500 / 2 500 / 2 750 / 3 000 / 5 000 /
+6 500 / 7 500, désormais rattachée au programme `Legacy`.
+
+⚠️ **Les 7 tailles sont CONSERVÉES.** Les 75K, 250K et 300K ne sont plus vendues,
+mais des comptes existants les portent (`plan_size` est stocké en base) : les
+retirer aurait cassé ces comptes. Elles n'existent simplement que sous `Legacy`.
+
+Le comparateur passe d'un seul modèle « Apex (EOD) » à trois : EOD, Intraday,
+Legacy — ce qui rend enfin visible que l'Intraday n'a PAS de perte journalière,
+son vrai différenciateur.

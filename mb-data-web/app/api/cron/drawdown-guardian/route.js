@@ -27,7 +27,7 @@ export async function GET(request) {
   // sont futures-only, ce guardian ne doit surveiller que ces comptes.
   const { data: accounts, error: accountsError } = await supabase
     .from('accounts')
-    .select('id, firm_id, plan_size, status, balance, dd_floor, dd_type, user_id:firms(user_id, name)')
+    .select('id, firm_id, plan_size, program, status, balance, dd_floor, dd_type, user_id:firms(user_id, name)')
     .in('status', ['Challenge', 'Financé', 'Funded'])
     .neq('market', 'cfd')
 
@@ -41,7 +41,7 @@ export async function GET(request) {
     const firmName = acct.user_id?.name
     // % du BUFFER de drawdown restant : room / drawdown max autorisé (pas la balance courante).
     const room = acct.balance - acct.dd_floor
-    const maxDD = maxDrawdown(firmName, acct.plan_size) || 0
+    const maxDD = maxDrawdown(firmName, acct.plan_size, acct.program) || 0
     const startBal = planSizeNum(acct.plan_size) || 0
     const denom = maxDD > 0 ? maxDD : startBal
     const roomPct = denom > 0 ? room / denom : 1

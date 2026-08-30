@@ -22,6 +22,7 @@
 // We are CONSERVATIVE : when unsure which key maps to a cell, the map uses null.
 // ---------------------------------------------------------------------------
 
+import { extractModelSegment, isUnavailableValue, stripNonDispoNote } from './programSegment'
 import {
   PROPFIRM_RULES,
   FIRM_SUGGESTIONS,
@@ -33,6 +34,11 @@ import {
   defaultMinDailyProfit,
   planSizeNum,
 } from './constants'
+
+// Ré-exporté : le parseur vit désormais dans programSegment.js (voir l'entête
+// de ce fichier pour la raison), mais les consommateurs historiques l'importent
+// depuis ici.
+export { extractModelSegment }
 
 // ---------------------------------------------------------------------------
 // Resolver helpers
@@ -90,91 +96,6 @@ function ruleValue(firm, key, plan) {
 
 // Retire une note finale '(… non dispo …)' — elle parle d'AUTRES modèles, la
 // valeur qui précède reste valide ('$12,000 (Zero non dispo)' → '$12,000').
-function stripNonDispoNote(val) {
-  return val.replace(/\s*\([^)]*non\s+dispo[^)]*\)\s*$/i, '').trim()
-}
-
-// Vrai si la valeur (une fois une éventuelle note entre parenthèses retirée)
-// est un marqueur d'indisponibilité pour le modèle LUI-MÊME :
-// 'non dispo', '— non dispo en 25K', 'n/a', '—', '-'. 'AUCUN(E)' (une vraie
-// règle « aucune limite ») n'est PAS un marqueur d'indisponibilité.
-function isUnavailableValue(val) {
-  const core = val.replace(/\s*\([^)]*\)\s*$/, '').trim()
-  if (core === '' || core === '—' || core === '-') return true
-  if (/^n\/a$/i.test(core)) return true
-  if (/^[—–-]?\s*non\s+dispo/i.test(core)) return true
-  return false
-}
-
-// Per-model extractor for firms whose rule values pack several models into one
-// composite string. Trois styles coexistent dans constants.js :
-//   Alpha         : 'Premium: $3,000 · Zero: $3,000 · Advanced: $4,000'
-//   Phidias       : '$3,000 (E2L) · $4,000 (Fundamental/Premium)'
-//   FuturesElites : 'Starter ~$3,000 · Pro ~$4,000' (préfixe sans deux-points)
-// Given such a string and a model label, returns the segment value for that
-// model, or null if the model is not available at that plan size.
-// Une note '(… non dispo …)' en fin de valeur est retirée (elle concerne les
-// autres modèles) ; 'non dispo' ne rend null QUE si la valeur du modèle
-// lui-même est un marqueur d'indisponibilité, ou si la parenthèse cite
-// explicitement CE modèle comme non dispo.
-export function extractModelSegment(rawValue, modelLabel) {
-  if (rawValue === null || rawValue === undefined) return null
-  const str = String(rawValue).trim()
-  const esc = String(modelLabel).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const labelRe = new RegExp('\\b' + esc + '\\b', 'i')
-  // Split on the firm's segment separator '·'
-  const segments = str.split('·').map(s => s.trim()).filter(Boolean)
-
-  // Vrai si la chaîne est composite (segments ciblant des modèles) : dans ce
-  // cas, un modèle sans segment est indisponible à cette taille → null.
-  let sawModelTargetedSegment = false
-
-  for (const seg of segments) {
-    const colonIdx = seg.indexOf(':')
-    if (colonIdx > 0) {
-      // Style 'Model: valeur' — le préfixe peut lister plusieurs modèles
-      // (ex: 'Select/Growth Eval : $1,500').
-      sawModelTargetedSegment = true
-      if (labelRe.test(seg.slice(0, colonIdx))) {
-        const val = stripNonDispoNote(seg.slice(colonIdx + 1).trim())
-        return isUnavailableValue(val) ? null : val
-      }
-      continue
-    }
-    // Style 'valeur (ModelA/ModelB)' — note finale entre parenthèses.
-    const pm = seg.match(/^(.*?)\s*\(([^)]*)\)$/)
-    if (pm && labelRe.test(pm[2])) {
-      // La parenthèse cite CE modèle : indisponibilité explicite ou valeur.
-      if (/non\s+dispo/i.test(pm[2])) return null
-      const val = pm[1].trim()
-      return isUnavailableValue(val) ? null : val
-    }
-    if (pm && /^[A-ZÀ-Ý]/.test(pm[2].trim()) && !/non\s+dispo/i.test(pm[2])) {
-      // Parenthèse « garde-modèle » citant d'AUTRES modèles → pas pour nous.
-      sawModelTargetedSegment = true
-      continue
-    }
-    // Style 'Model valeur' sans deux-points (ex: 'Starter ~$3,000').
-    const lm = seg.match(new RegExp('^' + esc + '\\s+(.+)$', 'i'))
-    if (lm) {
-      const val = stripNonDispoNote(lm[1].trim())
-      return isUnavailableValue(val) ? null : val
-    }
-  }
-
-  // Aucun segment ne cible ce modèle.
-  if (sawModelTargetedSegment) return null // composite : modèle absent ici
-  // Chaîne globale (s'applique à tous les modèles) — sauf marqueur d'indispo.
-  const val = stripNonDispoNote(str)
-  return isUnavailableValue(val) ? null : val
-}
-
-// Resolve a cell described by a mapping descriptor.
-// Descriptor forms:
-//   null                       → cell has no source → null
-//   { helper: 'maxDrawdown' }  → call the named constants helper
-//   { key: 'Rule Name' }       → raw PROPFIRM_RULES value at [key][plan]
-//   { key: 'Rule Name', model: 'Premium' } → composite-string per-model segment
 function resolveCell(firm, descriptor, plan) {
   if (!descriptor) return null
 
@@ -234,23 +155,68 @@ export const FIRM_COMPARISON_MAP = {
 
   // -------------------------------------------------------------------------
   'Apex Trader Funding': {
+    // Trois programmes, et ce n'est pas cosmétique : depuis mars 2026 Apex vend
+    // deux variantes (EOD et Intraday) qui partagent les montants mais pas la
+    // mécanique ni le prix, tandis que les comptes achetés AVANT gardent
+    // l'ancienne échelle de drawdown. Un porteur de compte legacy à qui on
+    // afficherait le chiffre 4.0 verrait une jauge fausse de 25 à 50 %.
+    //
+    // ⚠️ Les noms doivent correspondre EXACTEMENT aux étiquettes utilisées dans
+    //   les cellules de constants.js ('EOD', 'Intraday', 'Legacy') : c'est sur
+    //   elles que extractModelSegment découpe.
     models: [
       {
-        name: 'Apex (EOD)',
-        ddType: 'EOD',   // mapped model = EOD variant (Apex offre aussi Intraday) ; defaultDdType=eod
+        name: 'EOD',
+        ddType: 'EOD',
         challenge: {
-          drawdown: { helper: 'maxDrawdown' },                 // Drawdown trailing max
-          dailyDrawdown: { key: 'Daily Loss Limit (EOD)' },    // DLL on EOD accounts
-          objectif: { helper: 'profitTarget' },                // Objectif de profit
+          drawdown: { key: 'Drawdown trailing max', model: 'EOD' },
+          dailyDrawdown: { key: 'Daily Loss Limit (EOD)' },    // la DLL n'existe que sur EOD
+          objectif: { key: 'Objectif de profit', model: 'EOD' },
           consistance: { key: 'Règle de cohérence (eval)' },   // AUCUNE en éval
         },
         funded: {
-          drawdown: { helper: 'maxDrawdown' },                 // trailing DD identical
-          dailyDrawdown: { key: 'PA DLL initial' },            // funded PA DLL
-          buffer: { key: 'Safety Net (PA)' },                  // safety-net cushion (locks trailing)
-          jourMin: null,                                       // no funded min-days rule (qualifying days live in payout text)
-          minDailyProfit: { key: 'Qualifying days/payout' },   // string '5 jours · min $200/jour'
+          drawdown: { key: 'Drawdown trailing max', model: 'EOD' },
+          dailyDrawdown: { key: 'PA DLL initial' },
+          buffer: { key: 'Safety Net (PA)', model: 'EOD' },
+          jourMin: null,                                       // les qualifying days vivent dans le texte payout
+          minDailyProfit: { key: 'Qualifying days/payout' },
           consistance: { key: 'Règle de cohérence (PA)' },     // 50%
+        },
+      },
+      {
+        name: 'Intraday',
+        ddType: 'Trailing',
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Intraday' },
+          dailyDrawdown: { key: 'Daily Loss Limit (Intraday)' }, // AUCUNE — c'est le différenciateur
+          objectif: { key: 'Objectif de profit', model: 'Intraday' },
+          consistance: { key: 'Règle de cohérence (eval)' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Intraday' },
+          dailyDrawdown: { key: 'Daily Loss Limit (Intraday)' },
+          buffer: { key: 'Safety Net (PA)', model: 'Intraday' },
+          jourMin: null,
+          minDailyProfit: { key: 'Qualifying days/payout' },
+          consistance: { key: 'Règle de cohérence (PA)' },
+        },
+      },
+      {
+        name: 'Legacy',
+        ddType: 'EOD',   // acheté avant mars 2026, ancienne échelle de drawdown
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Legacy' },
+          dailyDrawdown: { key: 'Daily Loss Limit (EOD)' },
+          objectif: { key: 'Objectif de profit', model: 'Legacy' },
+          consistance: { key: 'Règle de cohérence (eval)' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Legacy' },
+          dailyDrawdown: { key: 'PA DLL initial' },
+          buffer: { key: 'Safety Net (PA)', model: 'Legacy' },
+          jourMin: null,
+          minDailyProfit: { key: 'Qualifying days/payout' },
+          consistance: { key: 'Règle de cohérence (PA)' },
         },
       },
     ],
@@ -834,6 +800,30 @@ export const FIRM_COMPARISON_MAP = {
 
 // Ordered list of firm names for the comparator (reuses FIRM_SUGGESTIONS order).
 // Only firms present in the curated map are returned (all 11 are mapped).
+// Programmes réellement disponibles pour une firme, et — si `plan` est fourni —
+// pour CETTE taille de compte. C'est ce que le sélecteur « type de compte »
+// affiche à la création.
+//
+// Le filtre par taille compte : proposer « Flex » sur un FundedNext 25K ou
+// « EOD » sur un Apex 75K enverrait l'utilisateur choisir un programme qui
+// n'existe pas, et toutes les valeurs dérivées retomberaient à null.
+export function programsForFirm(firmName, plan = null) {
+  const entry = FIRM_COMPARISON_MAP[firmName]
+  const names = entry
+    ? entry.models.map(m => m.name)
+    : (customFirmPrograms(firmName) || []).map(m => m.name)
+  if (!plan || names.length === 0) return names
+
+  // Un programme est disponible à cette taille s'il y résout un drawdown OU un
+  // objectif. On teste les deux : certaines firmes laissent une case vide.
+  return names.filter(n => maxDrawdown(firmName, plan, n) !== null || profitTarget(firmName, plan, n) !== null)
+}
+
+// Le programme proposé par défaut : le premier disponible à cette taille.
+export function defaultProgramFor(firmName, plan) {
+  return programsForFirm(firmName, plan)[0] || null
+}
+
 export function getFirmsWithComparison() {
   const curated = FIRM_SUGGESTIONS.filter(firm => FIRM_COMPARISON_MAP[firm])
   // Admin-added custom firms not already in the curated map (brand-new firms).

@@ -49,7 +49,7 @@ export default function DrawdownHealthCard({ account, firmName }) {
   const customDD = account.custom_drawdown != null && account.custom_drawdown > 0
     ? Number(account.custom_drawdown)
     : null
-  const maxDD = customDD ?? maxDrawdown(firmName, account.plan_size)
+  const maxDD = customDD ?? maxDrawdown(firmName, account.plan_size, account.program)
 
   const hasData = balance != null && ddFloor != null && maxDD > 0
   const room = hasData ? Math.max(0, balance - ddFloor) : null

@@ -73,7 +73,9 @@ describe('plansForFirm', () => {
 describe('maxDrawdown', () => {
   it('extracts the numeric max drawdown for known firm + plan', () => {
     expect(maxDrawdown('Topstep', '50k')).toBe(2000)
-    expect(maxDrawdown('Apex Trader Funding', '25k')).toBe(1500)
+    // Apex 4.0 (mars 2026) : $1,000 en 25K. L'ancienne échelle ($1,500) reste
+    // celle des comptes legacy — voir le test « programme » plus bas.
+    expect(maxDrawdown('Apex Trader Funding', '25k')).toBe(1000)
     expect(maxDrawdown('Bulenox', '50k')).toBe(2500)
   })
 
@@ -104,6 +106,33 @@ describe('maxDrawdown', () => {
         expect(dd, `${firm} ${plan}`).toBeGreaterThan(0)
       }
     }
+  })
+
+  it('rend le montant du PROGRAMME demandé, pas celui du programme par défaut', () => {
+    // Le cœur du sujet : un compte Apex acheté avant mars 2026 tourne encore
+    // sous l'ancienne échelle. Servir le chiffre 4.0 à son porteur donnerait une
+    // jauge fausse de 25 à 50 %.
+    expect(maxDrawdown('Apex Trader Funding', '25k', 'EOD')).toBe(1000)
+    expect(maxDrawdown('Apex Trader Funding', '25k', 'Legacy')).toBe(1500)
+    expect(maxDrawdown('Apex Trader Funding', '150k', 'Intraday')).toBe(4000)
+    expect(maxDrawdown('Apex Trader Funding', '150k', 'Legacy')).toBe(5000)
+    // FundedNext : quatre programmes, deux échelles de drawdown.
+    expect(maxDrawdown('FundedNext Futures', '50k', 'Flex')).toBe(1500)
+    expect(maxDrawdown('FundedNext Futures', '50k', 'Legacy')).toBe(2000)
+  })
+
+  it('rend null pour un programme ABSENT à cette taille, jamais la valeur globale', () => {
+    // Flex n'existe pas en 25K, et les 75K/250K/300K d'Apex sont legacy-only.
+    expect(maxDrawdown('FundedNext Futures', '25k', 'Flex')).toBeNull()
+    expect(maxDrawdown('Apex Trader Funding', '75k', 'EOD')).toBeNull()
+    expect(maxDrawdown('Apex Trader Funding', '75k', 'Legacy')).toBe(2750)
+  })
+
+  it('le prix suit aussi le programme', () => {
+    expect(defaultChallengePrice('Apex Trader Funding', '50k', 'EOD')).toBe(490)
+    expect(defaultChallengePrice('Apex Trader Funding', '50k', 'Intraday')).toBe(249)
+    expect(defaultChallengePrice('FundedNext Futures', '50k', 'Flex')).toBe(69)
+    expect(defaultChallengePrice('FundedNext Futures', '50k', 'Legacy')).toBe(199)
   })
 
   it('lit les clés par PROGRAMME des firmes multi-offres', () => {
@@ -293,7 +322,7 @@ describe('defaultMinDailyProfit', () => {
 describe('defaultChallengePrice', () => {
   it('extracts the first dollar price for known firm + plan', () => {
     expect(defaultChallengePrice('Topstep', '50k')).toBe(49)
-    expect(defaultChallengePrice('Apex Trader Funding', '25k')).toBe(177)
+    expect(defaultChallengePrice('Apex Trader Funding', '25k')).toBe(390)
     expect(defaultChallengePrice('Bulenox', '25k')).toBe(175)
   })
 

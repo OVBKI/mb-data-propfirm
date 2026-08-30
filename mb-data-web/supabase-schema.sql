@@ -65,6 +65,20 @@ alter table accounts add column if not exists total_commissions   numeric(12,2);
 -- JournalPage equity chart quand non-NULL.
 alter table accounts add column if not exists custom_drawdown    numeric(12,2);
 
+-- TYPE DE COMPTE (programme) — 2026-08
+-- Beaucoup de PropFirms vendent PLUSIEURS programmes sous la même taille, avec
+-- des drawdowns, des règles de consistance et des prix différents : Apex EOD
+-- contre Intraday contre Legacy, FundedNext Flex contre Legacy contre Rapid,
+-- Lucid Pro contre Flex contre Direct. Sans ce champ, l'app servait le programme
+-- principal à tout le monde — soit une jauge de drawdown fausse de 25 à 50 %
+-- pour qui tient un compte d'un autre programme.
+--
+-- Texte libre volontairement : les noms de programmes changent au rythme des
+-- firmes, et une contrainte d'énumération obligerait une migration à chaque
+-- renommage. NULL = non renseigné, l'app retombe sur le programme principal.
+alter table accounts add column if not exists program text;
+
+
 -- Index pour le lookup rithmic_account_id → account
 create index if not exists accounts_rithmic_account_id_idx on accounts(rithmic_account_id) where rithmic_account_id is not null;
 
