@@ -1049,17 +1049,46 @@ export function plansForFirm(firmName){
 export function maxDrawdown(firmName, plan){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
-  const ddKey = Object.keys(rules).find(k => {
+
+  // Une clé de perte JOURNALIÈRE n'est jamais un drawdown max. La confondre
+  // donnerait une jauge de risque trois à cinq fois trop serrée.
+  const isDaily = k => /\b(daily|journali[èe]re|DLL)\b/i.test(k)
+
+  const candidates = Object.keys(rules).filter(k => {
+    if (isDaily(k)) return false
+    // Formulation standard : « Drawdown total / trailing max ».
     if (/drawdown\s+(total|trailing)/i.test(k)) return true
-    // Topstep-style : "Max Loss Limit (MLL)" mais PAS "MLL mécanique XFA" ni "DLL"
+    // Topstep-style : « Max Loss Limit (MLL) », mais pas « MLL mécanique XFA ».
     if (/^(max(imum)?\s+loss\s+limit|mll)\b/i.test(k) && !/m[ée]canique|xfa|live|lfa/i.test(k)) return true
+    // Firmes à PROGRAMMES multiples : « Drawdown Select (EOD) », « Drawdown PRO+ »,
+    // « Drawdown Rapid (intraday) »… Sans ce cas, maxDrawdown rendait null pour
+    // Tradeify, Take Profit Trader, My Funded Futures et Phidias — soit un tiers du
+    // catalogue sans jauge de drawdown, sans alerte Drawdown Guardian et sans
+    // pré-remplissage à la création de compte.
+    if (/^drawdown\b/i.test(k)) return true
     return false
   })
-  if(!ddKey) return null
-  const ddStr = rules[ddKey][plan]
-  if(!ddStr) return null
-  const m = String(ddStr).match(/[\d,]+/)
-  return m ? parseInt(m[0].replace(/,/g,''),10) : null
+
+  // Quand une firme a plusieurs programmes, le MONTANT doit venir du programme
+  // dont le TYPE correspond à celui que defaultDdType() annonce — sinon la jauge
+  // affiche « EOD » au-dessus d'un chiffre intraday. C'est le cas de My Funded
+  // Futures : Rapid est intraday ($2,000 en 50K), Core/Pro est EOD ($1,500).
+  const wantEod = defaultDdType(firmName) === 'eod'
+  const typed = candidates.filter(k => wantEod ? /\bEOD\b/i.test(k) : /intraday/i.test(k))
+
+  // Puis la PREMIÈRE clé qui porte réellement une valeur pour CE plan.
+  // L'ordre du fichier place le programme principal en tête ; et une clé
+  // limitée à une taille (« Drawdown Static (25K only) ») est ainsi ignorée
+  // sur les autres tailles au lieu de rendre null pour tout le monde.
+  for (const key of [...typed, ...candidates]) {
+    const raw = rules[key]?.[plan]
+    if (!raw) continue
+    const m = String(raw).match(/[\d,]*\d/)
+    if (!m) continue
+    const n = parseInt(m[0].replace(/,/g,''),10)
+    if (Number.isFinite(n) && n > 0) return n
+  }
+  return null
 }
 
 // Indique si la firme utilise un drawdown trailing (selon PROPFIRM_RULES)
@@ -1094,6 +1123,11 @@ const EOD_TRAILING_FIRMS = new Set([
   'Funded Futures Network', // EOD
   'FuturesELites',          // EOD
   'FundedNext Futures',     // MLL trailing EOD, verrouillé au solde initial + $100
+  'Alpha Futures',          // MLL EOD trailing, lock au solde initial — les trois
+                            // programmes (Premium, Zero, Advanced) sont marqués
+                            // ddType:'EOD' dans futuresComparison.js. Sans cette
+                            // ligne, defaultDdType() retombait sur 'static' et
+                            // proposait le mauvais type à la création de compte.
 ])
 export function defaultDdType(firmName){
   if(INTRADAY_TRAILING_FIRMS.has(firmName)) return 'trailing'

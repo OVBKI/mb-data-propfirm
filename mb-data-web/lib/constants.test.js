@@ -89,14 +89,46 @@ describe('maxDrawdown', () => {
     expect(maxDrawdown('Topstep', null)).toBeNull()
   })
 
-  it('returns a positive number for every firm at its first plan', () => {
+  // Ce test tolérait auparavant un null (« some firms may not expose a matching
+  // DD key »). C'est précisément ce qui a laissé passer le trou : les clés par
+  // PROGRAMME (« Drawdown Select (EOD) », « Drawdown PRO+ »…) ne matchaient
+  // aucun motif, et maxDrawdown rendait null pour Tradeify, Take Profit Trader,
+  // My Funded Futures et Phidias. Or la jauge de drawdown, l'alerte Drawdown
+  // Guardian et le pré-remplissage du wizard en dépendent tous : un null n'est
+  // pas une donnée manquante bénigne, c'est une fonctionnalité éteinte.
+  it('rend un montant positif pour CHAQUE firme et CHAQUE plan', () => {
     for (const firm of FIRM_SUGGESTIONS) {
-      const firstPlan = plansForFirm(firm)[0]
-      const dd = maxDrawdown(firm, firstPlan)
-      // Some firms may not expose a matching DD key; if present it must be positive.
-      if (dd !== null) {
-        expect(typeof dd).toBe('number')
-        expect(dd).toBeGreaterThan(0)
+      for (const plan of plansForFirm(firm)) {
+        const dd = maxDrawdown(firm, plan)
+        expect(dd, `${firm} ${plan}`).toBeTypeOf('number')
+        expect(dd, `${firm} ${plan}`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('lit les clés par PROGRAMME des firmes multi-offres', () => {
+    expect(maxDrawdown('Tradeify', '50k')).toBe(2000)
+    expect(maxDrawdown('Take Profit Trader', '50k')).toBe(2000)
+    expect(maxDrawdown('Phidias Propfirm', '100k')).toBe(3000)
+  })
+
+  it('choisit le programme dont le TYPE correspond à defaultDdType', () => {
+    // My Funded Futures a deux programmes : Rapid en intraday ($2,000 en 50K) et
+    // Core/Pro en EOD ($1,500). defaultDdType annonce 'eod' — le montant doit
+    // suivre, sinon la jauge affiche « EOD » au-dessus d'un chiffre intraday.
+    expect(defaultDdType('My Funded Futures')).toBe('eod')
+    expect(maxDrawdown('My Funded Futures', '50k')).toBe(1500)
+    // En 25K, Core/Pro n'existe pas ('n/a') : on retombe sur Rapid, seule offre
+    // à cette taille.
+    expect(maxDrawdown('My Funded Futures', '25k')).toBe(1000)
+  })
+
+  it('ne confond jamais un drawdown max avec une perte JOURNALIÈRE', () => {
+    // Une DLL vaut trois à cinq fois moins ; la prendre rendrait toutes les
+    // jauges de risque absurdement serrées.
+    for (const firm of FIRM_SUGGESTIONS) {
+      for (const plan of plansForFirm(firm)) {
+        expect(maxDrawdown(firm, plan), `${firm} ${plan}`).toBeGreaterThanOrEqual(500)
       }
     }
   })
