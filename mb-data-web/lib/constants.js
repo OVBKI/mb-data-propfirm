@@ -17,6 +17,36 @@ function cellFor(raw, program) {
   return extractModelSegment(raw, program)
 }
 
+// « idem » veut dire « même règle que la taille INFÉRIEURE la plus proche ».
+// La sentinelle peut porter un emoji de tête (« 🌟 idem (ex: 50K → $50,100) »).
+// Ce n'est jamais une valeur affichable.
+function isIdem(v) {
+  return typeof v === 'string' && /^idem\b/i.test(v.trim().replace(/^[^a-zà-ÿ0-9]+/i, ''))
+}
+
+// Lit rules[key][plan] en résolvant « idem ».
+//
+// ⚠️ C'est ce qui manquait aux helpers de ce fichier : futuresComparison.js
+// résolvait déjà la sentinelle de son côté, pas eux. Résultat, 26 couples
+// (firme, taille) sur 52 rendaient un profit split nul — et le calcul de payout
+// retombait alors sur 90 % par défaut. Sur un compte Take Profit Trader à 80 %,
+// le net affiché était donc 10 points trop haut, sur un vrai montant d'argent.
+function readRule(rules, key, plan) {
+  const row = rules?.[key]
+  if (!row) return null
+  let v = row[plan]
+  if (v === undefined) return null
+  if (!isIdem(v)) return v
+  const smaller = Object.keys(row)
+    .filter(p => planSizeNum(p) < planSizeNum(plan))
+    .sort((a, b) => planSizeNum(b) - planSizeNum(a))
+  for (const p of smaller) {
+    const candidate = row[p]
+    if (candidate !== undefined && !isIdem(candidate)) return candidate
+  }
+  return null
+}
+
 // Premier entier d'une chaîne (« EOD/Intraday : $2,000 · Legacy : $2,500 » → 2000).
 //
 // ⚠️ Un montant PRÉFIXÉ PAR $ l'emporte toujours. Sans cette priorité, le nom du
@@ -532,7 +562,10 @@ export const PROPFIRM_RULES = {
       'Reset PRO+':               {'25k':'INTERDIT — doit redémarrer depuis Test','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       'Codes promo permanents':   {'25k':'NOFEE40 (-40% Test mensuel à vie + waive $130 activation PRO)','50k':'NOFEE40','75k':'NOFEE40','100k':'NOFEE40','150k':'NOFEE40'},
       // === PAYOUTS ===
-      'Répartition gains':        {'25k':'PRO : 80/20 (trader 80%) → PRO+ : 90/10 (trader 90%)','50k':'80/20 → 90/10','75k':'80/20 → 90/10','100k':'80/20 → 90/10','150k':'80/20 → 90/10'},
+      // Étiqueté à TOUTES les tailles, pas seulement en 25K : sans ça, un porteur
+      // de compte PRO+ voyait 80 % au lieu de 90 %, et son net de payout amputé de
+      // 10 points sur un vrai montant.
+      'Répartition gains':        {'25k':'PRO : 80/20 · PRO+ : 90/10','50k':'PRO : 80/20 · PRO+ : 90/10','75k':'PRO : 80/20 · PRO+ : 90/10','100k':'PRO : 80/20 · PRO+ : 90/10','150k':'PRO : 80/20 · PRO+ : 90/10'},
       'Payout minimum':           {'25k':'Pas de minimum strict (≥ buffer = starting + MLL)','50k':'idem','75k':'idem','100k':'idem','150k':'idem'},
       'Buffer payout (PRO/PRO+)': {'25k':'Buffer = Starting balance + Maximum Loss Limit ($26,500 sur PRO 25K) — formulation officielle TPT','50k':'$52,000','75k':'$77,500','100k':'$103,000','150k':'$154,500'},
       'Min entre payouts (PRO)':  {'25k':'7 jours minimum + 1 trade/semaine civile','50k':'7 jours','75k':'7 jours','100k':'7 jours','150k':'7 jours'},
@@ -1136,7 +1169,7 @@ export function maxDrawdown(firmName, plan, program){
   // sur les autres tailles au lieu de rendre null pour tout le monde.
   const ordered = [...typed, ...candidates]
   for (const key of ordered) {
-    const cell = cellFor(rules[key]?.[plan], program)
+    const cell = cellFor(readRule(rules, key, plan), program)
     if (!cell) continue
     const n = firstInt(cell)
     if (n !== null && n > 0) return n
@@ -1148,7 +1181,7 @@ export function maxDrawdown(firmName, plan, program){
   //   • aucune cellule ne cite de programme → la firme ne différencie pas, la
   //     valeur globale EST la bonne réponse. Rendre null y éteindrait la jauge.
   if (program) {
-    const explicit = ordered.some(k => hasExplicitProgramSegments(rules[k]?.[plan]))
+    const explicit = ordered.some(k => hasExplicitProgramSegments(readRule(rules, k, plan)))
     if (!explicit) return maxDrawdown(firmName, plan, null)
   }
   return null
@@ -1211,7 +1244,7 @@ export function profitTarget(firmName, plan, program){
   if(!rules || !plan) return null
   const ptKey = Object.keys(rules).find(k => /objectif|profit\s+target/i.test(k))
   if(!ptKey) return null
-  return firstInt(cellFor(rules[ptKey][plan], program))
+  return firstInt(cellFor(readRule(rules, ptKey, plan), program))
 }
 
 // Retourne le balance cible pour un payout (planSize + profit target)
@@ -1225,9 +1258,28 @@ export function defaultPayoutTarget(firmName, plan, program){
 export function defaultMinTradingDays(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
-  const dKey = Object.keys(rules).find(k => /jours.*trading.*min/i.test(k))
-  if(!dKey) return null
-  return firstInt(cellFor(rules[dKey][plan], program))
+  // Les clés sont nommées tantôt en français, tantôt en anglais, et tantôt par
+  // programme : « Jours de trading min », « Min jours trading (Qual) »,
+  // « Min trading days (XFA Standard) ». Le motif ne reconnaissait que la
+  // première forme, d'où 17 couples (firme, taille) sans jours minimum.
+  const keys = Object.keys(rules).filter(k =>
+    /jours.*(trading|min)|min.*(jours|trading\s*days)/i.test(k)
+  )
+  if(!keys.length) return null
+  const ordered = program
+    ? [...keys.filter(k => new RegExp(escapeRe(program), 'i').test(k)), ...keys]
+    : keys
+  for (const k of ordered) {
+    const cell = cellFor(readRule(rules, k, plan), program)
+    if (!cell) continue
+    // ⚠️ Surtout PAS firstInt ici : il privilégie les montants préfixés par $, et
+    // « 5 winning days ≥ $150 net profit » aurait rendu 150 JOURS. On retire donc
+    // les sommes d'argent avant de chercher le nombre.
+    const text = String(cell).replace(/\$\s*[\d,]+/g, ' ')
+    const m = text.match(/(?<![A-Za-zÀ-ÿ])(\d{1,3})(?!\s*%)/)
+    if (m) return parseInt(m[1], 10)
+  }
+  return null
 }
 
 // Retourne le % du profit split pour le trader (ex: 90 pour un split 90/10).
@@ -1236,11 +1288,33 @@ export function defaultMinTradingDays(firmName, plan, program){
 export function defaultProfitSplit(firmName, plan, program){
   const rules = firmRules(firmName)?.rules
   if(!rules || !plan) return null
-  const k = Object.keys(rules).find(k => /répartition.*gains|profit.*split/i.test(k))
-  if(!k) return null
-  const m = String(cellFor(rules[k][plan], program) || '').match(/(\d{2,3})\s*%/)
-  return m ? parseInt(m[1],10) : null
+
+  // Plusieurs clés possibles quand la firme sépare les splits par programme
+  // (Phidias : « Profit split E2L », « … Fundamental », « … Premium »).
+  const keys = Object.keys(rules).filter(k => /répartition.*gains|profit.*split/i.test(k))
+  if(!keys.length) return null
+
+  // Une clé qui NOMME le programme demandé passe devant les autres.
+  const ordered = program
+    ? [...keys.filter(k => new RegExp(escapeRe(program), 'i').test(k)), ...keys]
+    : keys
+
+  for (const k of ordered) {
+    const cell = cellFor(readRule(rules, k, plan), program)
+    if (!cell) continue
+    const text = String(cell)
+    // Deux notations coexistent dans les données, et seule la première était lue :
+    //   « 80 % »   → 80
+    //   « 90/10 »  → 90   (part du trader en premier, c'est la convention du secteur)
+    const pct = text.match(/(\d{2,3})\s*%/)
+    if (pct) return parseInt(pct[1], 10)
+    const ratio = text.match(/(\d{2,3})\s*\/\s*(\d{1,2})\b/)
+    if (ratio && parseInt(ratio[1],10) + parseInt(ratio[2],10) === 100) return parseInt(ratio[1], 10)
+  }
+  return null
 }
+
+function escapeRe(str){ return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
 // Retourne le profit minimum par jour ($ numérique) pour qu'un jour compte
 // comme "validé" dans le décompte des jours de trading min (payout requirement).
@@ -1253,7 +1327,7 @@ export function defaultMinDailyProfit(firmName, plan, program){
     /profit\s*min.*jour|min.*profit.*jour|jour.*valid|min.*winning/i.test(k)
   )
   if(!k) return null
-  const m = String(cellFor(rules[k][plan], program) || '').match(/\$\s*([\d,]+)/)
+  const m = String(cellFor(readRule(rules, k, plan), program) || '').match(/\$\s*([\d,]+)/)
   return m ? parseInt(m[1].replace(/,/g,''),10) : null
 }
 
@@ -1275,12 +1349,16 @@ export function defaultChallengePrice(firmName, plan, program){
   if(!priceKey) return null
   // Avec un programme, on cherche d'abord une clé prix qui le cite (Apex a
   // « Prix one-time EOD » et « Prix one-time Intraday » : deux clés, deux tarifs).
+  // On essaie TOUTES les clés prix, pas seulement la première. Beaucoup de firmes
+  // ont une clé par programme dont la plupart valent 'n/a' à une taille donnée :
+  // s'arrêter à la première laissait MFFU sans prix en 25K, 100K et 150K, Phidias
+  // en 25K et Alpha en 25K — alors que la donnée existe sur une autre clé.
+  const allPriceKeys = keys.filter(k => /prix/i.test(k))
   const orderedKeys = program
-    ? [...keys.filter(k => /prix/i.test(k) && new RegExp(program.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(k)),
-       priceKey, ...keys.filter(k => /prix/i.test(k))]
-    : [priceKey]
+    ? [...allPriceKeys.filter(k => new RegExp(escapeRe(program), 'i').test(k)), priceKey, ...allPriceKeys]
+    : [priceKey, ...allPriceKeys]
   for (const k of orderedKeys) {
-    const cell = cellFor(rules[k]?.[plan], program)
+    const cell = cellFor(readRule(rules, k, plan), program)
     const m = String(cell || '').match(/\$\s*([\d,]+)/)
     if (m) return parseInt(m[1].replace(/,/g,''), 10)
   }

@@ -1256,3 +1256,61 @@ Legacy     25K–300K · DD 1 500–7 500 $ · 177–647 $ · 100 %
 
 On y lit d'un coup ce qui sépare vraiment les trois : Legacy est le seul à monter
 à 300K, Intraday est le moins cher.
+
+
+## Les 48 trous de données comblés — 2026-08
+
+Sur les 52 couples (firme, taille), **26 n'avaient pas de profit split, 17 pas de
+jours minimum, 5 pas de prix**. La donnée était pourtant dans le fichier : ce sont
+les parseurs qui ne savaient pas la lire. Quatre causes, toutes génériques.
+
+### 1. La sentinelle « idem » n'était pas résolue
+`futuresComparison.js` la résolvait déjà (« même règle que la taille inférieure »),
+les helpers de `constants.js` non. Bulenox écrit son split une fois en 25K puis
+« idem » quatre fois. `readRule()` résout maintenant la sentinelle partout.
+
+**Pourquoi ça comptait** : un split absent faisait retomber le calcul de payout sur
+90 % par défaut. Sur un compte Take Profit Trader à 80 %, le net affiché était donc
+**10 points trop haut, sur un vrai montant d'argent**.
+
+### 2. Une seule notation de split était lue
+Les données emploient deux formes, et le motif ne connaissait que la première :
+
+```
+« 80 % »   → 80
+« 90/10 »  → 90    (part du trader en premier, convention du secteur)
+```
+
+### 3. Les clés anglaises étaient ignorées
+`/jours.*trading.*min/` ne trouve pas `Min trading days (XFA Standard)`. Le motif
+accepte désormais les deux langues et les suffixes de programme.
+
+### 4. Le sélecteur s'arrêtait à la PREMIÈRE clé
+Beaucoup de firmes ont une clé de prix par programme, dont la plupart valent `n/a`
+à une taille donnée. S'arrêter à la première laissait MFFU sans prix en 25K, 100K
+et 150K, Phidias en 25K, Alpha en 25K. On essaie maintenant toutes les clés.
+
+### Deux bugs d'extraction trouvés en vérifiant
+- **`firstInt` privilégie les montants en `$`** — utile pour un drawdown, faux pour
+  un nombre de jours : « 5 winning days ≥ $150 net profit » rendait **150 jours**.
+  Le lecteur de jours retire les sommes avant de chercher le nombre.
+- **`\b` n'est une frontière qu'entre deux caractères de mot.** Après le « + » de
+  `PRO+` il n'y en a pas, donc `/\bPRO\+\b/` ne trouvait jamais « PRO+ : 90/10 ».
+  Un porteur de compte PRO+ héritait du split de PRO. Les bornes du motif sont
+  maintenant construites selon le premier et le dernier caractère du libellé.
+
+### Donnée corrigée
+**Take Profit Trader** n'étiquetait ses splits qu'en 25K ; les autres tailles
+disaient « 80/20 → 90/10 » sans dire lequel s'applique à quoi. Étiqueté partout :
+`PRO : 80/20 · PRO+ : 90/10`.
+
+### Le programme suit jusqu'au calcul de payout
+`suggestProfitSplit` reçoit désormais `account.program` dans les quatre endroits
+qui calculent un net : le tiroir de compte, `QuickPayoutDialog`, la promotion en
+financé et le récapitulatif de payout.
+
+### Vérification
+**0 trou sur 52** pour les trois valeurs, et un test de cohérence rejette les
+absurdités (jours > 60, split hors 50–100, prix > 5 000 $). 456 tests.
+`lib/programSegment.test.js` couvre désormais le parseur lui-même — c'est lui qui
+décide quels chiffres l'app attribue au compte de quelqu'un.

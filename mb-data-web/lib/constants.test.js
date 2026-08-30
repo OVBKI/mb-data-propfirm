@@ -261,9 +261,11 @@ describe('defaultMinTradingDays', () => {
     expect(defaultMinTradingDays('Bulenox', '25k')).toBe(0)
   })
 
-  it('returns null when the firm has no matching rule key', () => {
-    // Topstep expresses "Aucun min" in prose without a "jours ... trading ... min" key.
-    expect(defaultMinTradingDays('Topstep', '50k')).toBeNull()
+  it('lit les clés nommées en ANGLAIS, et ignore les montants en dollars', () => {
+    // Topstep écrit « Min trading days (XFA Standard) », pas « Jours de trading
+    // min ». Et sa valeur est « 5 winning days ≥ $150 net profit » : chercher le
+    // premier montant y aurait trouvé 150 JOURS.
+    expect(defaultMinTradingDays('Topstep', '50k')).toBe(5)
   })
 
   it('returns null for unknown firm', () => {
@@ -359,5 +361,49 @@ describe('maxDrawdown — programme demandé mais donnée non différenciée', (
     // vend plus de 75K. Le repli ne doit pas servir le chiffre d'un autre.
     expect(maxDrawdown('Apex Trader Funding', '75k', 'EOD')).toBeNull()
     expect(maxDrawdown('Apex Trader Funding', '75k', 'Legacy')).toBe(2750)
+  })
+})
+
+// ── Aucun trou dérivé sur les 52 couples (firme, taille) ────────────────────
+// Ces trois valeurs ne sont pas décoratives :
+//   • le SPLIT calcule le net d'un payout — un défaut à 90 % sur un compte à
+//     80 % affiche 10 points de trop sur un vrai montant d'argent ;
+//   • les JOURS MIN pilotent l'éligibilité au payout ;
+//   • le PRIX pré-remplit le montant dépensé.
+// Elles étaient absentes de 26, 17 et 5 couples respectivement, non parce que la
+// donnée manquait, mais parce que les parseurs ne savaient pas la lire.
+describe('valeurs dérivées — couverture complète du catalogue', () => {
+  it('rend un profit split pour CHAQUE firme et CHAQUE taille', () => {
+    for (const firm of FIRM_SUGGESTIONS) {
+      for (const plan of plansForFirm(firm)) {
+        const v = defaultProfitSplit(firm, plan)
+        expect(v, `${firm} ${plan}`).toBeTypeOf('number')
+        expect(v, `${firm} ${plan}`).toBeGreaterThanOrEqual(50)
+        expect(v, `${firm} ${plan}`).toBeLessThanOrEqual(100)
+      }
+    }
+  })
+
+  it('rend des jours minimum et un prix pour chaque couple', () => {
+    for (const firm of FIRM_SUGGESTIONS) {
+      for (const plan of plansForFirm(firm)) {
+        expect(defaultMinTradingDays(firm, plan), `jours ${firm} ${plan}`).toBeTypeOf('number')
+        expect(defaultChallengePrice(firm, plan), `prix ${firm} ${plan}`).toBeTypeOf('number')
+      }
+    }
+  })
+
+  it('résout la sentinelle « idem » vers la taille inférieure', () => {
+    // Bulenox écrit son split une fois en 25K puis « idem » partout ensuite.
+    // futuresComparison résolvait déjà la sentinelle, pas les helpers d'ici.
+    expect(defaultProfitSplit('Bulenox', '25k')).toBe(100)
+    expect(defaultProfitSplit('Bulenox', '250k')).toBe(100)
+  })
+
+  it('lit la notation 90/10 autant que « 90 % »', () => {
+    // Take Profit Trader n'écrit jamais de pourcentage : « PRO : 80/20 → PRO+ :
+    // 90/10 ». La part du trader vient en premier, c'est la convention du secteur.
+    expect(defaultProfitSplit('Take Profit Trader', '100k')).toBe(80)
+    expect(defaultProfitSplit('Take Profit Trader', '100k', 'PRO+')).toBe(90)
   })
 })

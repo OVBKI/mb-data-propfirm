@@ -42,7 +42,7 @@ export default function QuickPayoutDialog({ firms = [], defaultAccountId = null,
   const picked = choices.find(c => c.acct.id === acctId) || null
   // Le partage stocké sur le compte prime ; la suggestion issue des règles n'est
   // qu'un repli, et un compte peut avoir négocié autre chose.
-  const split = picked?.acct.profit_split || suggestProfitSplit(picked?.firm.name, picked?.acct.plan_size) || 90
+  const split = picked?.acct.profit_split || suggestProfitSplit(picked?.firm.name, picked?.acct.plan_size, picked?.acct.program || null) || 90
   const gross = parseFloat(amount) || 0
   const net = +(gross * (split / 100)).toFixed(2)
   const canSubmit = Boolean(acctId && date && gross > 0 && !busy)

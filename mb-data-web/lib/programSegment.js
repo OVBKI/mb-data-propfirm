@@ -41,8 +41,15 @@ export function isUnavailableValue(val) {
 export function extractModelSegment(rawValue, modelLabel) {
   if (rawValue === null || rawValue === undefined) return null
   const str = String(rawValue).trim()
-  const esc = String(modelLabel).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const labelRe = new RegExp('\\b' + esc + '\\b', 'i')
+  const raw = String(modelLabel)
+  const esc = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  // ⚠️ `\b` n'est une frontière de mot QU'ENTRE un caractère de mot et un autre.
+  // Un libellé qui se termine par un signe — « PRO+ » — n'en a pas après le « + » :
+  // /\bPRO\+\b/ ne trouvait donc jamais « PRO+ : 90/10 », et le porteur d'un
+  // compte PRO+ se voyait attribuer le split de PRO, 10 points plus bas.
+  const head = /^\w/.test(raw) ? '\\b' : ''
+  const tail = /\w$/.test(raw) ? '\\b' : '(?![\\w+])'
+  const labelRe = new RegExp(head + esc + tail, 'i')
   // Split on the firm's segment separator '·'
   const segments = str.split('·').map(s => s.trim()).filter(Boolean)
 
