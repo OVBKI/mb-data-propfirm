@@ -1,18 +1,24 @@
 'use client'
-// FuturesRulesComparator — comparateur de RÈGLES futures (table groupée).
+// FuturesRulesComparator — comparateur de RÈGLES futures (grille de cartes).
 //
-// Mockup : sélecteur de plan en haut, puis une table à deux groupes de colonnes
-// (CHALLENGE / FINANCÉ), une ligne par MODÈLE de firme, les firmes multi-modèles
-// étant regroupées (nom de firme en rowSpan + sous-label modèle par sous-ligne).
+// Une carte par firme : en-tête (logo, nom, type de drawdown), onglets de
+// programme, puis deux blocs de règles libellé → valeur (CHALLENGE / FINANCÉ).
+//
+// ⚠️ POURQUOI DES CARTES ET PLUS UNE TABLE : la table faisait dix colonnes de
+// large et imposait un défilement horizontal sur téléphone, avec un <select> de
+// programme posé au milieu d'une cellule. Une carte tient sur un écran, et les
+// programmes deviennent des onglets — un vrai groupe de boutons, pas un contrôle
+// de formulaire. Le prix assumé : comparer deux firmes demande de regarder deux
+// cartes, là où deux lignes alignées se lisaient d'un coup.
 //
 // Données : 100% consommées depuis lib/futuresComparison.js — RIEN n'est inventé.
-// Chaque cellule passe par cleanCell(value, kind) (lib/futuresComparison.js,
+// Chaque valeur passe par cleanCell(value, kind) (lib/futuresComparison.js,
 // exporté là-bas pour être testable unitairement) qui :
 //   - normalise un affichage court et lisible,
 //   - retombe sur la valeur brute (tronquée) si l'extraction échoue,
 //   - met TOUJOURS la valeur brute complète en title= (tooltip au survol).
 
-import { useState, useMemo } from 'react'
+import { Fragment, useState, useMemo } from 'react'
 import { useT } from './LanguageProvider'
 import {
   getFuturesComparison,
@@ -31,9 +37,7 @@ const SR_ONLY = {
 
 // === Tokens de thème (cohérents avec globals.css / lib/theme.js) ===
 const C = {
-  bg: 'var(--bg)',
   surface: 'var(--surface)',
-  surface2: 'var(--surface2)',
   border: 'var(--border)',
   border2: 'var(--border2)',
   text: 'var(--text)',
@@ -41,28 +45,36 @@ const C = {
   text3: 'var(--text3)',
   blue: 'var(--blue)',
   blueLight: 'var(--blue-light)',
-  amber: 'var(--amber)',
   green: 'var(--green)',
+  tint1: 'var(--tint1)',
 }
 
-// Colonnes : clé i18n du libellé (app.futuresComparator.*) + kind appliqué.
-// 'type' = nouveau champ ddType (classification courte, pas une valeur monnaie).
-const CHALLENGE_COLS = [
-  { key: 'ddType', labelKey: 'colType', kind: 'type' },
+// Lignes de règles : clé de données + clé i18n du libellé + kind de nettoyage.
+const CHALLENGE_ROWS = [
   { key: 'drawdown', labelKey: 'colDrawdown', kind: 'money' },
   { key: 'dailyDrawdown', labelKey: 'colDailyDrawdown', kind: 'money' },
   { key: 'objectif', labelKey: 'colTarget', kind: 'money' },
   { key: 'consistance', labelKey: 'colConsistency', kind: 'pct' },
 ]
-// FINANCÉ a perdu Drawdown + Drawdown journalier (demande user).
-const FUNDED_COLS = [
+// FINANCÉ n'a ni Drawdown ni Drawdown journalier (demande user).
+const FUNDED_ROWS = [
   { key: 'buffer', labelKey: 'colBuffer', kind: 'buffer' },
   { key: 'jourMin', labelKey: 'colMinDays', kind: 'days' },
   { key: 'minDailyProfit', labelKey: 'colMinDailyProfit', kind: 'money' },
   { key: 'consistance', labelKey: 'colConsistency', kind: 'pct' },
 ]
 
-const TOTAL_COLS = 1 + CHALLENGE_COLS.length + FUNDED_COLS.length // 1 + 5 + 4 = 10
+// Teinte de la pastille selon le type de drawdown. Un type COMPOSÉ
+// (« EOD / Intraday » chez LucidDaily, où le type se choisit à l'achat) reste
+// neutre : le colorer comme l'un des deux ferait croire à un choix déjà fait.
+function ddTypeTint(type) {
+  const t = String(type || '')
+  if (/\//.test(t)) return { bg: 'var(--tint2)', fg: C.text2 }
+  if (/EOD/i.test(t)) return { bg: 'var(--cyan-bg)', fg: 'var(--cyan)' }
+  if (/trailing/i.test(t)) return { bg: 'var(--amber-bg)', fg: 'var(--amber)' }
+  if (/static/i.test(t)) return { bg: 'var(--violet-bg)', fg: 'var(--violet)' }
+  return { bg: 'var(--tint2)', fg: C.text2 }
+}
 
 export default function FuturesRulesComparator() {
   const t = useT()
@@ -85,12 +97,8 @@ export default function FuturesRulesComparator() {
     planOptions.includes('50k') ? '50k' : planOptions[0] || '50k'
   )
 
-  // Sélection du modèle affiché par firme (firmes multi-modèles). Clé = nom de
-  // firme, valeur = index du modèle. Défaut = index 0 (1er modèle) si absent.
+  // Programme affiché par firme. Clé = nom de firme, valeur = index du modèle.
   const [modelByFirm, setModelByFirm] = useState({})
-
-  // '50k' → '50K'
-  const fmtPlan = p => String(p).toUpperCase()
 
   return (
     <div className="page-pad" style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px 60px' }}>
@@ -113,7 +121,7 @@ export default function FuturesRulesComparator() {
         </p>
       </div>
 
-      {/* === Sélecteur de plan === */}
+      {/* === Sélecteur de taille === */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22,
         padding: '14px 18px',
@@ -143,216 +151,191 @@ export default function FuturesRulesComparator() {
                 fontFamily: 'inherit', letterSpacing: '0.03em',
                 transition: 'all 0.15s',
               }}>
-              {fmtPlan(p)}
+              {String(p).toUpperCase()}
             </button>
           )
         })}
       </div>
 
-      {/* === Table === */}
+      {/* === Grille de cartes ===
+          `auto-fill` + minmax fait tout le responsive : trois colonnes en large,
+          deux en tablette, une sur téléphone, sans media query ni classe. */}
       <div style={{
-        overflowX: 'auto',
-        border: `1px solid ${C.border}`, borderRadius: 12,
-        background: C.surface,
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+        gap: 14,
       }}>
-        <table style={{
-          borderCollapse: 'collapse', width: '100%', minWidth: 720,
-          tableLayout: 'auto',
-          fontSize: 12, color: C.text,
-        }}>
-          {/* En-tête groupé : PROPFIRM | CHALLENGE (5) | FINANCÉ (4) */}
-          <thead>
-            <tr>
-              <th rowSpan={2} scope="col" style={groupHeadCell('left')}>{t('app.futuresComparator.colPropfirm')}</th>
-              <th colSpan={CHALLENGE_COLS.length} scope="colgroup" style={{
-                ...groupHeadCell(),
-                color: C.amber, borderLeft: `1px solid ${C.border2}`,
-              }}>{t('app.futuresComparator.groupChallenge')}</th>
-              <th colSpan={FUNDED_COLS.length} scope="colgroup" style={{
-                ...groupHeadCell(),
-                color: C.green, borderLeft: `1px solid ${C.border2}`,
-              }}>{t('app.futuresComparator.groupFunded')}</th>
-            </tr>
-            <tr>
-              {CHALLENGE_COLS.map((col, i) => (
-                <th key={'c-' + col.key} scope="col" style={{
-                  ...subHeadCell(),
-                  borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
-                }}>{t(`app.futuresComparator.${col.labelKey}`)}</th>
-              ))}
-              {FUNDED_COLS.map((col, i) => (
-                <th key={'f-' + col.key} scope="col" style={{
-                  ...subHeadCell(),
-                  borderLeft: i === 0 ? `1px solid ${C.border2}` : undefined,
-                }}>{t(`app.futuresComparator.${col.labelKey}`)}</th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {firms.map((firm, firmIdx) => {
-              const offered = plansForFirm(firm).includes(plan)
-              const { models } = getFuturesComparison(firm, plan)
-              const rowBg = firmIdx % 2 === 0 ? 'transparent' : 'var(--tint1)'
-
-              // Un modèle est « dispo » pour ce plan si au moins une de ses
-              // cellules cœur (drawdown challenge/financé) se résout. Sinon les
-              // données du plan n'existent pas pour ce modèle (ex: MFFU Builder
-              // hors 50K, Phidias E2L en 50K+, Alpha Zero en 150K).
-              const isModelAvailable = m =>
-                !!m && (m.challenge.drawdown !== null || m.funded.drawdown !== null)
-
-              // Une SEULE ligne par firme : on affiche le modèle sélectionné.
-              // Défaut = 1er modèle DISPO pour ce plan (choix explicite respecté).
-              const multi = models.length > 1
-              const chosen = modelByFirm[firm]
-              const selIdx = chosen !== undefined
-                ? Math.min(chosen, Math.max(models.length - 1, 0))
-                : Math.max(models.findIndex(isModelAvailable), 0)
-              const model = models[selIdx] || null
-              // Plan proposé par la firme ET données du modèle présentes.
-              const rowOffered = offered && isModelAvailable(model)
-
-              return (
-                <tr key={firm} style={{
-                  background: rowBg,
-                  borderTop: `1px solid ${C.border2}`,
-                  opacity: rowOffered ? 1 : 0.45,
-                }}>
-                  {/* Cellule firme + sélecteur de modèle (si multi-modèles) */}
-                  <td style={{
-                    padding: '8px 10px', verticalAlign: 'top',
-                    borderRight: `1px solid ${C.border2}`,
-                    minWidth: 150, background: C.surface,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {getFirmLogo(firm, C.blue, 26)}
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>
-                          {firm}
-                        </div>
-                        {!rowOffered && (
-                          <div style={{ fontSize: 10, color: C.text3, marginTop: 3 }}>
-                            {t('app.futuresComparator.planNotAvailable')}
-                          </div>
-                        )}
-                        {/* Modèle unique : simple label. Multi : sélecteur
-                            (gardé même si le modèle courant est indispo, pour
-                            pouvoir revenir sur un modèle dispo). */}
-                        {rowOffered && model && !multi && model.name && (
-                          <div style={{
-                            fontSize: 10, color: C.blueLight, fontWeight: 600,
-                            marginTop: 4, letterSpacing: '0.04em', textTransform: 'uppercase',
-                          }}>{model.name}</div>
-                        )}
-                        {offered && multi && (
-                          <select
-                            value={selIdx}
-                            onChange={e =>
-                              setModelByFirm(prev => ({ ...prev, [firm]: Number(e.target.value) }))
-                            }
-                            aria-label={t('app.futuresComparator.modelSelectAria').replace('{firm}', firm)}
-                            style={{
-                              marginTop: 6, maxWidth: 160,
-                              fontSize: 11, fontFamily: 'inherit', fontWeight: 600,
-                              color: C.blueLight, cursor: 'pointer',
-                              background: C.surface2, border: `1px solid ${C.border2}`,
-                              borderRadius: 7, padding: '4px 8px', minHeight: 32,
-                            }}>
-                            {models.map((m, i) => (
-                              <option key={m.name || i} value={i} style={{ color: C.text, background: C.surface }}>
-                                {m.name || t('app.futuresComparator.modelFallback').replace('{n}', i + 1)}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Cellules de données du modèle sélectionné */}
-                  {model ? (
-                    <>
-                      {CHALLENGE_COLS.map((col, ci) => {
-                        // 'ddType' vit au niveau du modèle, pas dans .challenge.
-                        const rawVal = col.key === 'ddType' ? model.ddType : model.challenge[col.key]
-                        return (
-                          <DataCell
-                            key={'c-' + col.key}
-                            cell={rowOffered ? cleanCell(rawVal, col.kind) : { text: '—', title: '' }}
-                            firstOfGroup={ci === 0}
-                          />
-                        )
-                      })}
-                      {FUNDED_COLS.map((col, ci) => (
-                        <DataCell
-                          key={'f-' + col.key}
-                          cell={rowOffered ? cleanCell(model.funded[col.key], col.kind) : { text: '—', title: '' }}
-                          firstOfGroup={ci === 0}
-                        />
-                      ))}
-                    </>
-                  ) : (
-                    // Firme sans modèle résolu (sécurité)
-                    <td colSpan={TOTAL_COLS - 1} style={{ padding: '12px 14px', color: C.text3 }}>
-                      —
-                    </td>
-                  )}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        {firms.map(firm => (
+          <FirmCard
+            key={firm}
+            firm={firm}
+            plan={plan}
+            t={t}
+            selIdx={modelByFirm[firm]}
+            onSelect={i => setModelByFirm(prev => ({ ...prev, [firm]: i }))}
+          />
+        ))}
       </div>
 
-      <div style={{ marginTop: 14, fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
+      <div style={{ marginTop: 18, fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
         {t('app.futuresComparator.footer')}
       </div>
     </div>
   )
 }
 
-// === Cellule de données ====================================================
-function DataCell({ cell, firstOfGroup }) {
-  // Cellule tronquée : le title= garde le tooltip souris, et un span
-  // visuellement masqué expose la règle complète aux lecteurs d'écran.
-  const truncated = !!cell.title && cell.title !== cell.text
+// === Carte de firme ========================================================
+function FirmCard({ firm, plan, t, selIdx, onSelect }) {
+  const offered = plansForFirm(firm).includes(plan)
+  const { models } = getFuturesComparison(firm, plan)
+
+  // Un modèle est « dispo » pour ce plan si au moins une de ses cellules cœur
+  // (drawdown challenge/financé) se résout. Sinon les données du plan n'existent
+  // pas pour ce modèle (ex: MFFU Builder hors 50K, Phidias E2L en 50K+).
+  const isModelAvailable = m =>
+    !!m && (m.challenge.drawdown !== null || m.funded.drawdown !== null)
+
+  const multi = models.length > 1
+  // Défaut = 1er modèle DISPO pour ce plan ; un choix explicite est respecté même
+  // s'il pointe un programme non vendu ici — sinon on ne pourrait plus en sortir.
+  const idx = selIdx !== undefined
+    ? Math.min(selIdx, Math.max(models.length - 1, 0))
+    : Math.max(models.findIndex(isModelAvailable), 0)
+  const model = models[idx] || null
+  const shown = offered && isModelAvailable(model)
+
+  const tint = ddTypeTint(model?.ddType)
+
   return (
-    <td
-      title={cell.title || undefined}
-      style={{
-        padding: '8px 9px', whiteSpace: 'nowrap',
-        verticalAlign: 'top',
-        borderLeft: firstOfGroup ? `1px solid ${C.border2}` : `1px solid ${C.border}`,
-        color: cell.text === '—' ? C.text3 : C.text,
-        cursor: cell.title ? 'help' : 'default',
-      }}>
-      <div aria-hidden={truncated || undefined}>{cell.text}</div>
-      {truncated && <span style={SR_ONLY}>{cell.title}</span>}
-    </td>
+    <article style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 'var(--radius-lg, 18px)',
+      boxShadow: 'var(--shadow-card)',
+      padding: '16px 16px 14px',
+      opacity: shown ? 1 : 0.55,
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* En-tête : logo, nom, type de drawdown */}
+      <header style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        {getFirmLogo(firm, C.blue, 26)}
+        <h2 style={{
+          fontSize: 15, fontWeight: 700, color: C.text, margin: 0,
+          flex: 1, minWidth: 0, lineHeight: 1.2, letterSpacing: '-0.01em',
+        }}>{firm}</h2>
+        {shown && model?.ddType && (
+          <span style={{
+            fontSize: 10.5, fontWeight: 600, letterSpacing: '0.03em',
+            borderRadius: 99, padding: '3px 9px', whiteSpace: 'nowrap',
+            background: tint.bg, color: tint.fg,
+          }}>
+            {/* Le libellé de la colonne « Type » a disparu avec la table : sans
+                ce préfixe masqué, un lecteur d'écran annoncerait « EOD » seul. */}
+            <span style={SR_ONLY}>{t('app.futuresComparator.colType')} : </span>
+            {model.ddType}
+          </span>
+        )}
+      </header>
+
+      {/* Onglets de programme — un vrai groupe de boutons, plus un <select>. */}
+      {offered && multi && (
+        <div
+          role="group"
+          aria-label={t('app.futuresComparator.modelSelectAria').replace('{firm}', firm)}
+          style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 14 }}>
+          {models.map((m, i) => {
+            const active = i === idx
+            return (
+              <button
+                key={m.name || i}
+                onClick={() => onSelect(i)}
+                aria-pressed={active}
+                style={{
+                  fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600,
+                  cursor: 'pointer', borderRadius: 7, padding: '6px 10px',
+                  minHeight: 32,
+                  background: active ? 'var(--blue-bg)' : C.tint1,
+                  border: `1px solid ${active ? 'var(--blue-border)' : 'transparent'}`,
+                  color: active ? C.blueLight : C.text3,
+                  transition: 'all 0.12s',
+                }}>
+                {m.name || t('app.futuresComparator.modelFallback').replace('{n}', i + 1)}
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {/* Programme unique : pas d'onglet à cliquer, juste son nom. */}
+      {shown && !multi && model?.name && (
+        <div style={{
+          fontSize: 10, color: C.blueLight, fontWeight: 600, marginBottom: 12,
+          letterSpacing: '0.04em', textTransform: 'uppercase',
+        }}>{model.name}</div>
+      )}
+
+      {!shown ? (
+        <div style={{ fontSize: 12, color: C.text3, padding: '10px 0 4px' }}>
+          {t('app.futuresComparator.planNotAvailable')}
+        </div>
+      ) : (
+        <>
+          <PhaseLabel color={C.blue} text={t('app.futuresComparator.groupChallenge')} />
+          <RuleList rows={CHALLENGE_ROWS} source={model.challenge} t={t} />
+          <PhaseLabel color={C.green} text={t('app.futuresComparator.groupFunded')} />
+          <RuleList rows={FUNDED_ROWS} source={model.funded} t={t} last />
+        </>
+      )}
+    </article>
   )
 }
 
-// === Styles d'en-tête ======================================================
-function groupHeadCell(align) {
-  return {
-    padding: '10px 10px',
-    fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    color: C.text2,
-    textAlign: align === 'left' ? 'left' : 'center',
-    background: C.surface2,
-    borderBottom: `1px solid ${C.border2}`,
-    position: 'sticky', top: 0,
-  }
+// Intitulé de phase : le trait qui suit sépare sans ajouter de bordure à la liste.
+function PhaseLabel({ color, text }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 9,
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.11em',
+      textTransform: 'uppercase', color, margin: '4px 0 9px',
+    }}>
+      {text}
+      <span aria-hidden="true" style={{ flex: 1, height: 1, background: C.border }} />
+    </div>
+  )
 }
-function subHeadCell() {
-  return {
-    padding: '8px 9px',
-    fontSize: 10, fontWeight: 600, letterSpacing: '0.03em',
-    textTransform: 'uppercase',
-    color: C.text3, textAlign: 'left', lineHeight: 1.2,
-    background: C.surface2,
-    borderBottom: `1px solid ${C.border2}`,
-  }
+
+// === Liste de règles =======================================================
+function RuleList({ rows, source, t, last }) {
+  return (
+    <dl style={{
+      display: 'grid', gridTemplateColumns: '1fr auto', gap: '7px 12px',
+      margin: 0, marginBottom: last ? 0 : 16,
+    }}>
+      {rows.map(row => {
+        const cell = cleanCell(source[row.key], row.kind)
+        // Valeur tronquée : title= garde le tooltip souris, et un span masqué
+        // expose la règle complète aux lecteurs d'écran.
+        const truncated = !!cell.title && cell.title !== cell.text
+        return (
+          // Fragment plutôt qu'un <div> en `display: contents` : dt et dd doivent
+          // être des items DIRECTS de la grille pour que les deux colonnes
+          // s'alignent d'une ligne à l'autre.
+          <Fragment key={row.key}>
+            <dt style={{ fontSize: 12.5, color: C.text2 }}>
+              {t(`app.futuresComparator.${row.labelKey}`)}
+            </dt>
+            <dd
+              title={cell.title || undefined}
+              style={{
+                margin: 0, fontSize: 13.5, fontWeight: 600, textAlign: 'right',
+                color: cell.text === '—' ? C.text3 : C.text,
+                cursor: cell.title ? 'help' : 'default',
+              }}>
+              <span aria-hidden={truncated || undefined}>{cell.text}</span>
+              {truncated && <span style={SR_ONLY}>{cell.title}</span>}
+            </dd>
+          </Fragment>
+        )
+      })}
+    </dl>
+  )
 }

@@ -1163,6 +1163,13 @@ export function cleanCell(value, kind) {
   }
 
   if (kind === 'buffer') {
+    // ⚠️ « non publié » n'est PAS « pas de buffer », c'est son contraire : on
+    // ignore la valeur. Le motif `^non\b` l'attrapait et affichait « Non », ce
+    // qui disait à un porteur de compte LucidDirect qu'il n'a aucun seuil à
+    // franchir alors que la firme n'a simplement rien publié.
+    if (/^non\s+(publi|document|pr[ée]cis|renseign|communiqu)/i.test(raw)) {
+      return { text: '—', title: rawTitle }
+    }
     // 'AUCUN' / 'Non …' explicites = un vrai « pas de buffer » → 'Non'.
     if (/aucun|^non\b/i.test(raw)) return { text: 'Non', title: rawTitle }
     if (typeof value === 'number') return { text: fmtMoney(value), title: rawTitle }

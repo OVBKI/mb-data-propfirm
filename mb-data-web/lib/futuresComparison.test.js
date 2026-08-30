@@ -477,3 +477,24 @@ describe('LucidPro — plafonds de payout', () => {
     }
   })
 })
+
+// ── « non publié » n'est pas « pas de buffer » ──────────────────────────────
+// Le motif `^non\b` de cleanCell attrapait « non publié » et affichait « Non ».
+// Sur un compte LucidDirect, ça disait au porteur qu'il n'a AUCUN seuil à
+// franchir avant de retirer — alors que la firme n'a rien publié du tout.
+describe('cleanCell — buffer inconnu contre buffer absent', () => {
+  it('rend « — » quand la donnée est seulement absente', () => {
+    for (const v of ['non publié', 'Non documenté', 'non précisé au checkout']) {
+      expect(cleanCell(v, 'buffer').text, v).toBe('—')
+    }
+  })
+
+  it('rend « Non » quand la firme déclare vraiment ne pas en avoir', () => {
+    expect(cleanCell('AUCUN buffer exigé', 'buffer').text).toBe('Non')
+    expect(cleanCell('Non applicable — pas de buffer', 'buffer').text).toBe('Non')
+  })
+
+  it('garde la valeur complète en title dans les deux cas', () => {
+    expect(cleanCell('non publié', 'buffer').title).toBe('non publié')
+  })
+})

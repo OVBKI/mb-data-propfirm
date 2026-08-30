@@ -1716,3 +1716,54 @@ compte en danger.
   seuil. Pro et Daily le publient, Flex déclare n'en avoir aucun.
 - **Plafonds de LucidDaily et LucidDirect** : les articles « LucidPro Payouts » et
   « LucidFlex Payouts » donnent leurs grilles ; les deux autres non.
+
+## Comparateur de règles — passage en CARTES (2026-08)
+
+`/app/rules` n'est plus une table. Quatre pistes ont été maquettées
+(`mb-data-web/maquettes-comparateur.html`, conservé) ; la **piste B** a été
+retenue : une carte par firme.
+
+| | Avant | Maintenant |
+|---|---|---|
+| Structure | table de 10 colonnes | grille de cartes, une par firme |
+| Programme | `<select>` dans une cellule | onglets — un vrai `role="group"` de boutons |
+| Mobile | défilement horizontal | une colonne, une firme par écran |
+| Responsive | `min-width: 720px` | `repeat(auto-fill, minmax(320px, 1fr))`, sans media query |
+
+**Le compromis est assumé** : comparer deux firmes demande maintenant de regarder
+deux cartes, là où deux lignes alignées se lisaient d'un coup. C'est le prix du
+confort mobile. Les pistes C (matrice inversée, firmes en colonnes) et D (barres
+de contexte) restent dans le fichier de maquettes si la comparaison redevient la
+priorité.
+
+### Ce qui n'a PAS changé
+Toute la couche de données : `getFuturesComparison`, `cleanCell`, la résolution
+par programme, l'overlay `custom_propfirms`. La carte consomme exactement les
+mêmes cellules que la table — seul le rendu diffère. Les clés i18n sont
+inchangées, à l'exception du `footer` (« survolez une **cellule** » n'avait plus
+de sens).
+
+### Trois points d'accessibilité
+- Le libellé de la colonne « Type » a disparu avec l'en-tête de table. La
+  pastille de drawdown porte donc un préfixe masqué (`Type : EOD`), sinon un
+  lecteur d'écran annonce « EOD » sans dire de quoi.
+- Les onglets de programme sont un `role="group"` avec `aria-label` reprenant
+  `modelSelectAria` — l'ancienne étiquette du `<select>`, réutilisée telle quelle.
+- `dt` et `dd` sont des items DIRECTS de la grille (via `Fragment`, pas un `div`
+  en `display: contents`) : sinon les deux colonnes ne s'alignent plus d'une
+  ligne à l'autre.
+
+### Un bug révélé par le rendu
+`cleanCell(…, 'buffer')` testait `/^non\b/` et affichait **« Non »** pour
+« non publié ». C'est l'inverse du sens : « non publié » veut dire *on ne sait
+pas*, pas *il n'y a pas de buffer*. Sur un compte LucidDirect, l'app annonçait au
+porteur qu'il n'a aucun seuil à franchir avant de retirer. Les formes
+« non publié / documenté / précisé / renseigné / communiqué » rendent maintenant
+« — » ; « AUCUN buffer exigé » rend toujours « Non ». Trois tests figent la
+distinction. 480 tests.
+
+### Reste à corriger dans les données (repéré en maquettant)
+- **FuturesElites** : la ligne Buffer contient une phrase (« EOD trailing · LO… »)
+  et non un montant.
+- **My Funded Futures** : Buffer à 2 100 $ — un ordre de grandeur de perte
+  journalière, pas un solde. À vérifier.

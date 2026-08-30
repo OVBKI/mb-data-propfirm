@@ -770,7 +770,7 @@ const FR = {
       planNotAvailable: 'plan non dispo',
       modelSelectAria: 'Modèle {firm}',
       modelFallback: 'Modèle {n}',
-      footer: 'Survolez une cellule pour voir la règle complète. « — » = non documenté pour ce plan/modèle.',
+      footer: 'Survolez une valeur pour voir la règle complète. « — » = non documenté pour cette taille ou ce programme.',
     },
     topbar: {
       sections: 'Sections',
@@ -2765,7 +2765,7 @@ const EN = {
       planNotAvailable: 'plan not available',
       modelSelectAria: 'Model {firm}',
       modelFallback: 'Model {n}',
-      footer: 'Hover a cell to see the full rule. “—” = not documented for this plan/model.',
+      footer: 'Hover a value to see the full rule. “—” = not documented for this size or program.',
     },
     topbar: {
       sections: 'Sections',
