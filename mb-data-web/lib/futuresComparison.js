@@ -96,7 +96,7 @@ function ruleValue(firm, key, plan) {
 
 // Retire une note finale '(… non dispo …)' — elle parle d'AUTRES modèles, la
 // valeur qui précède reste valide ('$12,000 (Zero non dispo)' → '$12,000').
-function resolveCell(firm, descriptor, plan) {
+function resolveCell(firm, descriptor, plan, modelName = null, siblings = null) {
   if (!descriptor) return null
 
   if (descriptor.helper) {
@@ -119,7 +119,49 @@ function resolveCell(firm, descriptor, plan) {
 
   const raw = ruleValue(firm, descriptor.key, plan)
   if (descriptor.model) return extractModelSegment(raw, descriptor.model)
+
+  // Repli : le descripteur ne cite pas de programme, mais la CELLULE nomme ce
+  // modèle (« Builder : $1,000 soft pause », « EOD : $500 · Legacy : aucune »).
+  // Sans ça l'UI affichait la chaîne composite ENTIÈRE dans la colonne d'un seul
+  // programme — le tableau montrait « EOD : $1,000 · Legacy : aucune » là où on
+  // attend « $1,000 ».
+  //
+  // La condition est volontairement stricte : on n'extrait QUE si le nom du
+  // modèle apparaît vraiment. Beaucoup de cellules sont de la prose contenant un
+  // deux-points (« si dépassé : Profit Target AUGMENTE ») ; les découper les
+  // viderait de leur sens.
+  if (modelName && mentionsModel(raw, modelName)) {
+    const seg = extractModelSegment(raw, modelName)
+    if (seg !== null) return seg
+  }
+
+  // La cellule cite d'AUTRES programmes de cette firme, avec deux-points, mais
+  // pas celui-ci : la valeur ne le concerne donc pas. « Legacy : aucune » dans la
+  // colonne EOD n'est pas une information, c'est la règle du voisin.
+  //
+  // On se base sur la liste RÉELLE des modèles de la firme, pas sur une heuristique
+  // de forme : beaucoup de cellules sont de la prose avec un deux-points
+  // (« reset chaque session 5:00 PM CT ») et doivent passer telles quelles.
+  if (modelName && siblings?.length && typeof raw === 'string') {
+    const namesOther = siblings.filter(n => n && n !== modelName)
+    if (namesOther.some(n => new RegExp(`${escapeForRe(n)}\\s*:`, 'i').test(raw))) return null
+  }
   return raw
+}
+
+function escapeForRe(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Le nom du modèle apparaît-il tel quel dans la cellule ? Bornes construites
+// comme dans programSegment : un libellé finissant par un signe (« PRO+ ») n'a
+// pas de frontière de mot après lui.
+function mentionsModel(raw, modelName) {
+  if (typeof raw !== 'string' || !modelName) return false
+  const esc = String(modelName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const head = /^\w/.test(modelName) ? '\\b' : ''
+  const tail = /\w$/.test(modelName) ? '\\b' : '(?![\\w+])'
+  return new RegExp(head + esc + tail, 'i').test(raw)
 }
 
 // ---------------------------------------------------------------------------
@@ -223,7 +265,7 @@ export const FIRM_COMPARISON_MAP = {
         },
         funded: {
           drawdown: { key: 'Drawdown trailing max', model: 'Intraday' },
-          dailyDrawdown: { key: 'Daily Loss Limit (Intraday)' },
+          dailyDrawdown: { key: 'DLL Intraday (PA)' },
           buffer: { key: 'Safety Net (PA)', model: 'Intraday' },
           jourMin: null,
           minDailyProfit: { key: 'Profit min jour valide' },
@@ -970,24 +1012,28 @@ export function getFuturesComparison(firmName, plan) {
     return { models: custom || [] }
   }
 
+  // Les noms des AUTRES programmes servent à écarter les segments qui ne
+  // concernent pas le modèle courant (voir resolveCell).
+  const modelNames = entry.models.map(m => m.name)
+
   const models = entry.models.map(model => ({
     name: model.name,
     // ddType is a curated classification (not a live numeric rule). It is short
     // ('Static' | 'EOD' | 'Trailing' or a combo). null → UI renders '—'.
     ddType: model.ddType ?? null,
     challenge: {
-      drawdown: resolveCell(firmName, model.challenge.drawdown, plan),
-      dailyDrawdown: resolveCell(firmName, model.challenge.dailyDrawdown, plan),
-      objectif: resolveCell(firmName, model.challenge.objectif, plan),
-      consistance: resolveCell(firmName, model.challenge.consistance, plan),
+      drawdown: resolveCell(firmName, model.challenge.drawdown, plan, model.name, modelNames),
+      dailyDrawdown: resolveCell(firmName, model.challenge.dailyDrawdown, plan, model.name, modelNames),
+      objectif: resolveCell(firmName, model.challenge.objectif, plan, model.name, modelNames),
+      consistance: resolveCell(firmName, model.challenge.consistance, plan, model.name, modelNames),
     },
     funded: {
-      drawdown: resolveCell(firmName, model.funded.drawdown, plan),
-      dailyDrawdown: resolveCell(firmName, model.funded.dailyDrawdown, plan),
-      buffer: resolveCell(firmName, model.funded.buffer, plan),
-      jourMin: resolveCell(firmName, model.funded.jourMin, plan),
-      minDailyProfit: resolveCell(firmName, model.funded.minDailyProfit, plan),
-      consistance: resolveCell(firmName, model.funded.consistance, plan),
+      drawdown: resolveCell(firmName, model.funded.drawdown, plan, model.name, modelNames),
+      dailyDrawdown: resolveCell(firmName, model.funded.dailyDrawdown, plan, model.name, modelNames),
+      buffer: resolveCell(firmName, model.funded.buffer, plan, model.name, modelNames),
+      jourMin: resolveCell(firmName, model.funded.jourMin, plan, model.name, modelNames),
+      minDailyProfit: resolveCell(firmName, model.funded.minDailyProfit, plan, model.name, modelNames),
+      consistance: resolveCell(firmName, model.funded.consistance, plan, model.name, modelNames),
     },
   }))
 

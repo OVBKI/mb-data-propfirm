@@ -1507,3 +1507,42 @@ L'évaluation Intraday n'a **aucune** perte journalière, mais le compte financ�
 une, par palier. Et le Peak Balance qui pilote le trailing intraday inclut le
 **profit non réalisé** : une position ouverte en gain fait monter le seuil
 immédiatement.
+
+## Le comparateur affichait la chaîne composite — 2026-08
+
+Le passage des données au format « Programme : valeur · Programme : valeur » a
+corrigé les CHIFFRES mais cassé l'AFFICHAGE. La colonne EOD du comparateur
+montrait :
+
+```
+EOD : $1,000 · Legacy : aucune          au lieu de   $1,000
+EOD : $250/jour · Intraday : $200       au lieu de   $250/jour
+```
+
+Cause : `resolveCell` n'extrait le segment d'un programme que si le DESCRIPTEUR
+porte `model:`. Beaucoup de descripteurs n'en ont pas — inutile tant que les
+cellules étaient simples, indispensable dès qu'elles sont devenues composites.
+
+### Deux règles ajoutées à `resolveCell`
+1. **Si la cellule NOMME le modèle courant**, on en extrait le segment, même sans
+   `model:` dans le descripteur.
+2. **Si elle nomme d'AUTRES programmes de la firme mais pas celui-ci**, on rend
+   `null` — la valeur est celle du voisin, pas une information manquante.
+   « Legacy : aucune » dans la colonne EOD n'a rien à y faire.
+
+La discrimination se fait sur la **liste réelle des modèles de la firme**, jamais
+sur une heuristique de forme : beaucoup de cellules sont de la prose contenant un
+deux-points (« reset chaque session 5:00 PM CT », « si dépassé : Profit Target
+AUGMENTE ») et doivent passer telles quelles.
+
+### Trois cellules mal étiquetées, corrigées
+| Firme | Problème |
+|---|---|
+| **Apex Intraday** | la DLL était étiquetée par PHASE (`Éval : … · PA : …`) alors que le comparateur découpe par PROGRAMME. Séparée en deux clés : `Daily Loss Limit (Intraday)` et `DLL Intraday (PA)` |
+| **My Funded Futures** | seul Builder était étiqueté — les trois autres programmes héritaient donc de la phrase entière. Les quatre le sont maintenant |
+| **Tradeify** | `Lock drawdown` utilisait la sentinelle `idem` avec un emoji, illisible en colonne. Réécrit en valeurs explicites par taille |
+
+### Le test qui verrouille ça
+`futuresComparison.test.js` parcourt les 130 couples et échoue si **une cellule
+cite un autre programme de la même firme avec un deux-points**. C'est la
+définition exacte de la fuite, et elle ne dépend d'aucune heuristique.

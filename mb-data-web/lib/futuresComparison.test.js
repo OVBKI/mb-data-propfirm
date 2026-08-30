@@ -309,3 +309,32 @@ describe('programsForFirm', () => {
     expect(programsForFirm('Firme Inconnue')).toEqual([])
   })
 })
+
+// ── Aucune cellule ne doit exposer sa chaîne COMPOSITE ──────────────────────
+// Le comparateur affiche une colonne par programme. Si une cellule étiquetée
+// « EOD : $1,000 · Legacy : aucune » sort telle quelle, l'utilisateur lit les
+// règles de TROIS programmes dans la case d'UN seul. C'est exactement ce qui
+// s'est produit après le passage des données au format par programme.
+describe('pas de fuite de chaîne composite', () => {
+  it('aucune cellule ne cite un AUTRE programme de la même firme', () => {
+    const leaks = []
+    for (const firm of FIRM_SUGGESTIONS) {
+      for (const plan of plansForFirm(firm)) {
+        const { models } = getFuturesComparison(firm, plan)
+        const names = models.map(m => m.name)
+        for (const m of models) {
+          const others = names.filter(n => n !== m.name)
+          for (const phase of ['challenge', 'funded']) {
+            for (const [cell, v] of Object.entries(m[phase] || {})) {
+              if (typeof v !== 'string') continue
+              // Un autre programme cité AVEC deux-points = un segment non résolu.
+              const bad = others.find(o => new RegExp(`\\b${o.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`, 'i').test(v))
+              if (bad) leaks.push(`${firm} ${plan} ${m.name} ${phase}.${cell} → cite « ${bad} »`)
+            }
+          }
+        }
+      }
+    }
+    expect(leaks, leaks.slice(0, 6).join('\n')).toEqual([])
+  })
+})

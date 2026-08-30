@@ -251,7 +251,12 @@ export const PROPFIRM_RULES = {
       'Daily Loss Limit (EOD)':   {'25k':'EOD : $500 (pause de session, pas un échec) · Legacy : aucune','50k':'EOD : $1,000 · Legacy : aucune','75k':'Legacy : aucune','100k':'EOD : $1,500 · Legacy : aucune','150k':'EOD : $2,000 · Legacy : aucune','250k':'Legacy : aucune','300k':'Legacy : aucune'},
       // L'ÉVALUATION intraday n'a pas de DLL, mais le compte FINANCÉ en a une,
       // par palier (« DLL Tier Based : Yes » sur le tableau PA officiel).
-      'Daily Loss Limit (Intraday)':{'25k':'Éval : aucune · PA : oui, par palier','50k':'Éval : aucune · PA : oui, par palier','75k':'Éval : aucune','100k':'Éval : aucune · PA : oui, par palier','150k':'Éval : aucune · PA : oui, par palier','250k':'Éval : aucune','300k':'Éval : aucune'},
+      // Deux clés distinctes : l'ÉVALUATION intraday n'a pas de DLL, le compte
+      // FINANCÉ en a une par palier. Les mettre dans une seule cellule étiquetée
+      // « Éval : … · PA : … » ne marchait pas — le comparateur découpe par
+      // PROGRAMME, pas par phase, et affichait donc la chaîne entière.
+      'Daily Loss Limit (Intraday)':{'25k':'AUCUNE en évaluation','50k':'AUCUNE en évaluation','75k':'AUCUNE en évaluation','100k':'AUCUNE en évaluation','150k':'AUCUNE en évaluation','250k':'AUCUNE en évaluation','300k':'AUCUNE en évaluation'},
+      'DLL Intraday (PA)':        {'25k':'Oui, par palier (tier based)','50k':'Oui, par palier','75k':'Oui, par palier','100k':'Oui, par palier','150k':'Oui, par palier','250k':'Oui, par palier','300k':'Oui, par palier'},
       'Jours de trading min (eval)':{'25k':'EOD/Intraday : 0 (passage en 1 jour possible) · Legacy : 7 jours, non consécutifs','50k':'EOD/Intraday : 0 · Legacy : 7','75k':'Legacy : 7','100k':'EOD/Intraday : 0 · Legacy : 7','150k':'EOD/Intraday : 0 · Legacy : 7','250k':'Legacy : 7','300k':'Legacy : 7'},
       'Durée éval max':           {'25k':'30 jours calendaires (no extension)','50k':'30 jours calendaires','75k':'30 jours','100k':'30 jours calendaires','150k':'30 jours calendaires','250k':'30 jours','300k':'30 jours'},
       'Règle de cohérence (eval)':{'25k':'AUCUNE en éval','50k':'AUCUNE en éval','75k':'AUCUNE en éval','100k':'AUCUNE en éval','150k':'AUCUNE en éval','250k':'AUCUNE en éval','300k':'AUCUNE en éval'},
@@ -523,7 +528,9 @@ export const PROPFIRM_RULES = {
       'Drawdown Select (EOD)':    {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'Drawdown Growth (EOD)':    {'25k':'$1,000','50k':'$2,000','100k':'$3,500','150k':'$5,000'},
       'Drawdown Lightning (EOD)': {'25k':'$1,000','50k':'$2,000','100k':'$4,000','150k':'$5,250'},
-      'Lock drawdown':            {'25k':'🌟 Lock +$100 above starting une fois EOD balance dépasse drawdown+$100 (RARE)','50k':'🌟 idem (ex: 50K → bloque à $50,100)','100k':'🌟 idem','150k':'🌟 idem'},
+      // Le verrou vaut pour les quatre programmes : formulé sans étiquette, sinon
+      // le comparateur croit à un ciblage et n'affiche rien pour les autres.
+      'Lock drawdown':            {'25k':'Se verrouille au solde initial + $100 une fois le solde EOD au-dessus du drawdown + $100 (rare)','50k':'Se verrouille à $50,100','100k':'Se verrouille à $100,100','150k':'Se verrouille à $150,100'},
       'DLL Select Daily':         {'25k':'n/a','50k':'$1,000','100k':'$1,250','150k':'$1,750'},
       'DLL Select Flex':          {'25k':'AUCUN','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'DLL Growth':               {'25k':'$600 (soft breach pause journée, pas fail)','50k':'$1,250','100k':'$2,500','150k':'$3,750'},
@@ -679,7 +686,7 @@ export const PROPFIRM_RULES = {
       'Drawdown Core/Pro (EOD)':  {'25k':'n/a','50k':'$1,500 (3% EOD trailing)','100k':'$3,000','150k':'$4,500'},
       'Drawdown Flex (EOD static)':{'25k':'$1,000 (4% EOD STATIC · ne trail jamais)','50k':'$2,000','100k':'n/a','150k':'n/a'},
       'Drawdown Builder (buffer)':{'25k':'n/a','50k':'$2,000 default / $1,500 lower-price (fixed buffer, no trail)','100k':'n/a','150k':'n/a'},
-      'Daily Loss Limit':         {'25k':'AUCUN partout sauf Builder ($1,000 soft pause) · LIVE Pro : $700-$3,000','50k':'AUCUN · Builder : $1,000 soft pause','100k':'AUCUN · LIVE Pro : $700-$3,000','150k':'AUCUN · LIVE Pro : $700-$3,000'},
+      'Daily Loss Limit':         {'25k':'Rapid/Pro/Flex : aucune · Builder : $1,000 (pause douce)','50k':'Rapid/Pro/Flex : aucune · Builder : $1,000 (pause douce)','100k':'Rapid/Pro/Flex : aucune · Builder : non dispo','150k':'Rapid/Pro/Flex : aucune · Builder : non dispo'},
       'Jours de trading min (eval)':{'25k':'1 jour minimum','50k':'1 jour','100k':'1 jour','150k':'1 jour'},
       'Règle de cohérence (eval)':{'25k':'50% en éval (no day > 50% du profit total) · supprimée en sim funded','50k':'50% en éval · Pro 1-Day Addon supprime la règle','100k':'50% en éval','150k':'50% en éval'},
       // === SIM FUNDED → LIVE (transitions par plan) ===
