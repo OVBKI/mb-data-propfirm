@@ -322,7 +322,12 @@ export const PROPFIRM_RULES = {
       'Algos / EAs':              {'25k':'EAs autorisés · HFT INTERDIT · Bulenox ne support pas les robots officiellement','50k':'idem','100k':'idem','150k':'idem','250k':'idem'},
       'Copy trading inter-comptes':{'25k':'INTERDIT (et hedging des 2 côtés sur comptes différents)','50k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT','250k':'INTERDIT'},
       // === TARIFS ===
-      'Prix mensuel (list)':      {'25k':'$175','50k':'$175','100k':'$215','150k':'~$325','250k':'~$535'},
+      // Relevé sur bulenox.com/accounts-pricing en août 2026 : le 25K est à $145,
+      // pas $175. Les paiements sont ONE-TIME, pas mensuels — le libellé de la clé
+      // est conservé pour ne pas casser le sélecteur de prix.
+      // ⚠ La page officielle ne liste plus que 4 tailles : le 250K n'y figure plus.
+      //   Il est conservé ici parce que des comptes existants le portent.
+      'Prix mensuel (list)':      {'25k':'$145 one-time','50k':'$175 one-time','100k':'$215 one-time','150k':'$325 one-time','250k':'~$535 (taille retirée du site)'},
       'Prix mensuel (mai 2026)':  {'25k':'$125 (promo permanente -$50)','50k':'$125 (-$50)','100k':'$155 (-$60)','150k':'~$245','250k':'~$430'},
       'Frais activation Master':  {'25k':'$143 (one-time, payé après passage Qualification)','50k':'$148','100k':'$248','150k':'$498','250k':'$898'},
       'Reset cost':               {'25k':'$78 (gratuit le jour de facturation mensuelle)','50k':'$78','100k':'$78','150k':'$78','250k':'$78'},
@@ -882,6 +887,16 @@ export const PROPFIRM_RULES = {
     }
   },
   'Alpha Futures': {
+    // ⚠️ VÉRIFIÉ SUR alpha-futures.com EN AOÛT 2026 — la gamme a été RENOMMÉE.
+    //    Le catalogue portait Premium / Zero / Advanced ; la page publie
+    //    Zero / Standard / Direct, avec des prix différents de ceux stockés
+    //    (Zero : $89 au lieu de $79 en 25K, $139 au lieu de $119 en 50K).
+    //
+    //    Zero      25–100K · évaluation 1 jour · DLL active · consistance 40 % une
+    //              fois qualifié · aucun frais d'activation
+    //    Standard  50–150K · évaluation 2 jours · pas de DLL en éval · consistance
+    //              50 % en éval puis 40 % · aucun frais d'activation
+    //    Direct    25–150K · PAS d'évaluation, one-time · consistance 20 %
     // VÉRIFIÉ MAI 2026 — Sources : help.alpha-futures.com (docs officielles) + screenshots compte trader
     //
     // INFRASTRUCTURE :
@@ -933,17 +948,17 @@ export const PROPFIRM_RULES = {
     plans: ['25k','50k','100k','150k'],
     rules: {
       // Profit Target (Eval) — par plan, par taille
-      'Objectif de profit':       {'25k':'Zero: $1,500 (Premium/Advanced non dispo)','50k':'Premium: $3,000 · Zero: $3,000 · Advanced: $4,000','100k':'Premium: $6,000 · Zero: $6,000 · Advanced: $8,000','150k':'Premium: $9,000 · Advanced: $12,000 (Zero non dispo)'},
+      'Objectif de profit':       {'25k':'Zero : $1,500 · Direct : $1,500 puis $1,000 (Standard non dispo)','50k':'Zero/Standard : $3,000 · Direct : $3,000 puis $2,000','100k':'Zero/Standard : $6,000 · Direct : $6,000 puis $4,000','150k':'Standard : $9,000 · Direct : $9,000 (Zero non dispo)'},
       // MLL — Maximum Loss Limit (EOD trailing, lock starting)
-      'MLL (Maximum Loss Limit)': {'25k':'Zero: $1,000 (EOD trailing, lock starting balance)','50k':'Premium: $2,000 · Zero: $2,000 · Advanced: $1,750 (3.5%)','100k':'Premium: $3,000 · Zero: $3,000 · Advanced: $3,500','150k':'Premium: $4,500 · Advanced: $5,250 (Zero non dispo)'},
+      'MLL (Maximum Loss Limit)': {'25k':'Zero/Direct : $1,000 (EOD trailing, lock au solde initial)','50k':'Zero/Standard/Direct : $2,000','100k':'Zero/Standard/Direct : $3,000','150k':'Standard : $4,500 · Direct : $4,500 (à confirmer — la page tronque, mais le MLL de Direct égale celui de Standard aux trois autres tailles)'},
       // Daily Loss Guard (DLG) — seulement Zero
-      'Daily Loss Guard':         {'25k':'Zero: $500 (Premium/Advanced non dispo en 25K)','50k':'Premium: AUCUN · Zero: $1,000 · Advanced: AUCUN','100k':'Premium: AUCUN · Zero: $2,000 · Advanced: AUCUN','150k':'Premium: AUCUN · Advanced: AUCUN (Zero non dispo)'},
+      'Daily Loss Guard':         {'25k':'Zero : $500 · Direct : $500 (Standard non dispo)','50k':'Zero : $1,000 · Direct : $1,000 · Standard : aucune en éval, $1,000 une fois qualifié','100k':'Zero : $2,000 · Direct : $2,000 · Standard : aucune en éval, $2,000 une fois qualifié','150k':'Standard : aucune en éval, $3,000 une fois qualifié · Direct : $3,000 (à confirmer)'},
       // Min trading days
-      'Min jours trading (Eval)': {'25k':'Zero: 1 jour (one-day pass possible)','50k':'Premium: 2 · Zero: 1 · Advanced: 2','100k':'Premium: 2 · Zero: 1 · Advanced: 2','150k':'Premium: 2 · Advanced: 2 (Zero non dispo)'},
-      'Min jours trading (Qual)': {'25k':'Zero: 5','50k':'Premium: 5 · Zero: 5 · Advanced: 5','100k':'Premium: 5 · Zero: 5 · Advanced: 5','150k':'Premium: 5 · Advanced: 5 (Zero non dispo)'},
+      'Min jours trading (Eval)': {'25k':'Zero : 1 jour · Direct : aucune évaluation','50k':'Zero : 1 · Standard : 2 · Direct : aucune évaluation','100k':'Zero : 1 · Standard : 2 · Direct : aucune évaluation','150k':'Standard : 2 · Direct : aucune évaluation'},
+      'Min jours trading (Qual)': {'25k':'Zero : 5 · Direct : 5','50k':'Zero/Standard/Direct : 5','100k':'Zero/Standard/Direct : 5','150k':'Standard/Direct : 5'},
       // Consistency rule
-      'Consistency (Eval)':       {'25k':'Zero: AUCUNE','50k':'Premium: 50% · Zero: AUCUNE · Advanced: 50%','100k':'Premium: 50% · Zero: AUCUNE · Advanced: 50%','150k':'Premium: 50% · Advanced: 50% (Zero non dispo)'},
-      'Consistency (Qualified)':  {'25k':'Zero: 40% (rare en Qualified !)','50k':'Premium: AUCUNE · Zero: 40% · Advanced: AUCUNE','100k':'Premium: AUCUNE · Zero: 40% · Advanced: AUCUNE','150k':'Premium: AUCUNE · Advanced: AUCUNE (Zero non dispo)'},
+      'Consistency (Eval)':       {'25k':'Zero : aucune · Direct : aucune évaluation','50k':'Zero : aucune · Standard : 50% · Direct : aucune évaluation','100k':'Zero : aucune · Standard : 50% · Direct : aucune évaluation','150k':'Standard : 50% · Direct : aucune évaluation'},
+      'Consistency (Qualified)':  {'25k':'Zero : 40% · Direct : 20%','50k':'Zero/Standard : 40% · Direct : 20%','100k':'Zero/Standard : 40% · Direct : 20%','150k':'Standard : 40% · Direct : 20%'},
       // Profit split (Qualified) — 90% pour tous, immédiat
       'Profit Split (Qualified)': {'25k':'Zero: 90% (immédiat dès 1er payout)','50k':'Premium: 90% · Zero: 90% · Advanced: 90% (immédiat, pas tiered)','100k':'Premium: 90% · Zero: 90% · Advanced: 90%','150k':'Premium: 90% · Advanced: 90% (Zero non dispo)'},
       // Position sizing
@@ -951,9 +966,9 @@ export const PROPFIRM_RULES = {
       'Contrats max (micro)':     {'25k':'Zero: 10 (Premium/Advanced non dispo en 25K)','50k':'Premium: 40 · Zero: 30 · Advanced: 50','100k':'Premium: 80 · Zero: 60 · Advanced: 100','150k':'Premium: 120 · Advanced: 150 (Zero non dispo)'},
       'Scaling plan':             {'25k':'Zero: pas de scaling (taille max dès jour 1)','50k':'Premium: pas de scaling · Zero: pas de scaling · Advanced: PAS DE SCALING (taille max dès jour 1)','100k':'Premium: pas de scaling · Zero: pas de scaling · Advanced: pas de scaling','150k':'Premium: pas de scaling · Advanced: pas de scaling (Zero non dispo)'},
       // Pricing — par plan
-      'Prix mensuel Premium':     {'25k':'— (Premium non dispo en 25K)','50k':'$79/mo (+$149 activation) OU $159/mo (0 activation)','100k':'$159/mo (+$149 activation) OU $269/mo (0 activation)','150k':'$239/mo (+$149 activation) OU $379/mo (0 activation)'},
-      'Prix mensuel Zero':        {'25k':'$79/mo · 0 activation permanent','50k':'$119/mo · 0 activation permanent','100k':'$239/mo · 0 activation permanent','150k':'— (Zero non dispo en 150K)'},
-      'Prix mensuel Advanced':    {'25k':'— (Advanced non dispo en 25K)','50k':'$139/mo + $149 activation','100k':'$279/mo + $149 activation','150k':'$419/mo + $149 activation'},
+      'Prix mensuel Standard':    {'25k':'— (Standard commence à 50K)','50k':'$129/mois · aucun frais d\'activation','100k':'$239/mois · aucun frais d\'activation','150k':'$349/mois · aucun frais d\'activation'},
+      'Prix mensuel Zero':        {'25k':'$89/mois · 0 activation','50k':'$139/mois · 0 activation','100k':'$279/mois · 0 activation','150k':'— (Zero s\'arrête à 100K)'},
+      'Prix one-time Direct':     {'25k':'$349 one-time','50k':'$519 one-time','100k':'$689 one-time','150k':'$859 one-time'},
       'Activation fee':           {'25k':'Zero: $0 (Premium/Advanced non dispo)','50k':'Premium path1: $149 · Premium path2: $0 · Zero: $0 · Advanced: $149','100k':'Premium path1: $149 · Premium path2: $0 · Zero: $0 · Advanced: $149','150k':'Premium path1: $149 · Premium path2: $0 · Advanced: $149 (Zero non dispo)'},
       // Reset costs (Eval phase)
       'Reset Eval':               {'25k':'Zero: $69 (Premium/Advanced non dispo)','50k':'Premium: $69 (path1) ou $149 (path2) · Zero: $109 · Advanced: $139','100k':'Premium: $139 (path1) ou $239 (path2) · Zero: $219 · Advanced: $279','150k':'Premium: $219 (path1) ou $329 (path2) · Advanced: $419 (Zero non dispo)'},
@@ -1031,7 +1046,10 @@ export const PROPFIRM_RULES = {
       'Frais activation':         {'25k':'$0 — aucun frais d\'activation ni abonnement mensuel','50k':'$0','100k':'$0','150k':'$0'},
       'Coût du reset':            {'25k':'Non confirmé à 2 sources','50k':'Flex : $77.99 · Legacy/Rapid Pro/Rapid Daily : non confirmé','100k':'Flex : $144.99 · Legacy/Rapid Pro/Rapid Daily : non confirmé','150k':'Flex : $278.99'},
       // === PAYOUTS ===
-      'Répartition gains':        {'25k':'Legacy : 80% (95% via add-on payant) · Rapid Pro/Rapid Daily : 90%','50k':'Flex : 80% (95% via add-on) · Legacy : 80% (95% via add-on) · Rapid Pro/Rapid Daily : 90%','100k':'Flex : 80% (95% via add-on) · Legacy : 80% (95% via add-on) · Rapid Pro/Rapid Daily : 90%','150k':'Flex : 80% (95% via add-on)'},
+      // fundednext.com/futures affiche « Reward Share 95% » dans le bloc de règles
+      // Flex, et « Withdraw 95% of your reward » en tête de l'offre. Le 80 %
+      // stocké venait d'une analyse tierce.
+      'Répartition gains':        {'25k':'Legacy : 80% · Rapid Pro/Rapid Daily : 90%','50k':'Flex : 95% · Legacy : 80% · Rapid Pro/Rapid Daily : 90%','100k':'Flex : 95% · Legacy : 80% · Rapid Pro/Rapid Daily : 90%','150k':'Flex : 95%'},
       'Cadence payout':           {'25k':'Legacy : après 5 benchmark days · Rapid Pro : tous les 3 jours · Rapid Daily : quotidien','50k':'Flex/Legacy : après 5 benchmark days · Rapid Pro : tous les 3 jours · Rapid Daily : quotidien','100k':'Flex/Legacy : après 5 benchmark days · Rapid Pro : tous les 3 jours · Rapid Daily : quotidien','150k':'Flex : après 5 benchmark days'},
       'Plafond par cycle':        {'25k':'Legacy : 50% du profit plafonné $3,000, décapé après 30 benchmark days · Rapid Pro/Rapid Daily : $800','50k':'Flex : 50% plafonné $1,500 · Legacy : 50% plafonné $6,000, décapé après 30 benchmark days · Rapid Pro/Rapid Daily : $1,200','100k':'Flex : 50% plafonné $2,500 · Legacy : 50% plafonné $6,000, décapé après 30 benchmark days · Rapid Pro/Rapid Daily : $2,500','150k':'Flex : 50% du profit plafonné $4,000'},
       'Fin du compte':            {'25k':'Legacy/Rapid Pro/Rapid Daily : pas de limite de retraits','50k':'Flex : le compte SE TERMINE après le 5e retrait · Legacy/Rapid Pro/Rapid Daily : pas de limite','100k':'Flex : se termine après le 5e retrait · Legacy/Rapid Pro/Rapid Daily : pas de limite','150k':'Flex : se termine après le 5e retrait'},

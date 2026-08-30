@@ -730,59 +730,62 @@ export const FIRM_COMPARISON_MAP = {
   // -------------------------------------------------------------------------
   // Alpha Futures — composite per-model strings; values extracted via `model`.
   'Alpha Futures': {
+    // Renommé en août 2026 (vérifié sur alpha-futures.com) : Premium / Zero /
+    // Advanced sont devenus Zero / Standard / Direct. Direct est un financement
+    // DIRECT — pas d'évaluation du tout, d'où les cases de challenge à null.
     models: [
       {
-        name: 'Premium',
-        ddType: 'EOD',   // 'MLL (Maximum Loss Limit)' = "EOD trailing, lock starting balance"
-        challenge: {
-          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Premium' },
-          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Premium' }, // AUCUN
-          objectif: { key: 'Objectif de profit', model: 'Premium' },
-          consistance: { key: 'Consistency (Eval)', model: 'Premium' }, // 50%
-        },
-        funded: {
-          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Premium' },
-          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Premium' }, // AUCUN
-          buffer: null,                                                  // MLL locks at starting; no separate buffer rule
-          jourMin: { key: 'Min jours trading (Qual)', model: 'Premium' }, // 5
-          minDailyProfit: null,                                          // $200 floor lives in payout text, not a per-plan $ field
-          consistance: { key: 'Consistency (Qualified)', model: 'Premium' }, // AUCUNE
-        },
-      },
-      {
         name: 'Zero',
-        ddType: 'EOD',   // 'MLL (Maximum Loss Limit)' = "EOD trailing, lock starting balance"
+        ddType: 'EOD',
         challenge: {
           drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Zero' },
-          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Zero' },    // $500/$1,000/$2,000
+          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Zero' },
           objectif: { key: 'Objectif de profit', model: 'Zero' },
-          consistance: { key: 'Consistency (Eval)', model: 'Zero' },    // AUCUNE
+          consistance: { key: 'Consistency (Eval)', model: 'Zero' },      // aucune
         },
         funded: {
           drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Zero' },
           dailyDrawdown: { key: 'Daily Loss Guard', model: 'Zero' },
           buffer: null,
-          jourMin: { key: 'Min jours trading (Qual)', model: 'Zero' },  // 5
+          jourMin: { key: 'Min jours trading (Qual)', model: 'Zero' },
           minDailyProfit: null,
-          consistance: { key: 'Consistency (Qualified)', model: 'Zero' }, // 40% (rare in Qualified)
+          consistance: { key: 'Consistency (Qualified)', model: 'Zero' },  // 40 %
         },
       },
       {
-        name: 'Advanced',
-        ddType: 'EOD',   // 'MLL (Maximum Loss Limit)' = "EOD trailing, lock starting balance"
+        name: 'Standard',
+        ddType: 'EOD',
         challenge: {
-          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Advanced' },
-          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Advanced' }, // AUCUN
-          objectif: { key: 'Objectif de profit', model: 'Advanced' },    // 8% target
-          consistance: { key: 'Consistency (Eval)', model: 'Advanced' }, // 50%
+          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Standard' },
+          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Standard' },
+          objectif: { key: 'Objectif de profit', model: 'Standard' },
+          consistance: { key: 'Consistency (Eval)', model: 'Standard' },   // 50 %
         },
         funded: {
-          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Advanced' },
-          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Advanced' }, // AUCUN
+          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Standard' },
+          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Standard' },
           buffer: null,
-          jourMin: { key: 'Min jours trading (Qual)', model: 'Advanced' }, // 5
+          jourMin: { key: 'Min jours trading (Qual)', model: 'Standard' },
           minDailyProfit: null,
-          consistance: { key: 'Consistency (Qualified)', model: 'Advanced' }, // AUCUNE
+          consistance: { key: 'Consistency (Qualified)', model: 'Standard' },
+        },
+      },
+      {
+        name: 'Direct',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Direct' },
+          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Direct' },
+          objectif: { key: 'Objectif de profit', model: 'Direct' },
+          consistance: { key: 'Consistency (Eval)', model: 'Direct' },
+        },
+        funded: {
+          drawdown: { key: 'MLL (Maximum Loss Limit)', model: 'Direct' },
+          dailyDrawdown: { key: 'Daily Loss Guard', model: 'Direct' },
+          buffer: null,
+          jourMin: { key: 'Min jours trading (Qual)', model: 'Direct' },
+          minDailyProfit: null,
+          consistance: { key: 'Consistency (Qualified)', model: 'Direct' }, // 20 %
         },
       },
     ],

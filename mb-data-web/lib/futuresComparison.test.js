@@ -82,10 +82,12 @@ describe('résolution complète sur les données réelles', () => {
 // (c) Régressions sur les bugs vérifiés
 // ---------------------------------------------------------------------------
 describe('régressions extractModelSegment (données réelles)', () => {
-  it('Alpha Advanced @150k : objectif = $12,000 (pas null malgré la note "Zero non dispo")', () => {
-    const m = modelOf('Alpha Futures', '150k', 'Advanced')
-    expect(m.challenge.objectif).toBe('$12,000')
-    expect(cleanCell(m.challenge.objectif, 'money').text).toBe('12 000 $')
+  // Alpha a renommé sa gamme en août 2026 (vérifié sur alpha-futures.com) :
+  // Premium / Zero / Advanced sont devenus Zero / Standard / Direct.
+  it('Alpha Standard @150k : objectif = $9,000', () => {
+    const m = modelOf('Alpha Futures', '150k', 'Standard')
+    expect(m.challenge.objectif).toBe('$9,000')
+    expect(cleanCell(m.challenge.objectif, 'money').text).toBe('9 000 $')
   })
 
   it('Alpha Zero @25k : objectif = $1,500 (pas null malgré "Premium/Advanced non dispo")', () => {
@@ -94,10 +96,11 @@ describe('régressions extractModelSegment (données réelles)', () => {
     expect(cleanCell(m.challenge.objectif, 'money').text).toBe('1 500 $')
   })
 
-  it('Alpha : modèles réellement indisponibles → null (Zero @150k, Premium/Advanced @25k)', () => {
+  it('Alpha : modèles réellement indisponibles → null (Zero @150k, Standard @25k)', () => {
+    // Zero s'arrête à 100K, Standard commence à 50K. Direct couvre les quatre.
     expect(modelOf('Alpha Futures', '150k', 'Zero').challenge.objectif).toBeNull()
-    expect(modelOf('Alpha Futures', '25k', 'Premium').challenge.objectif).toBeNull()
-    expect(modelOf('Alpha Futures', '25k', 'Advanced').challenge.drawdown).toBeNull()
+    expect(modelOf('Alpha Futures', '25k', 'Standard').challenge.objectif).toBeNull()
+    expect(modelOf('Alpha Futures', '25k', 'Direct').challenge.drawdown).toMatch(/^\$1,000\b/)
   })
 
   it("Tradeify Select @25k : jours min funded = '3 jours' → '3' (pas '1')", () => {

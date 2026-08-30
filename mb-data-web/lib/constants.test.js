@@ -325,7 +325,8 @@ describe('defaultChallengePrice', () => {
   it('extracts the first dollar price for known firm + plan', () => {
     expect(defaultChallengePrice('Topstep', '50k')).toBe(49)
     expect(defaultChallengePrice('Apex Trader Funding', '25k')).toBe(390)
-    expect(defaultChallengePrice('Bulenox', '25k')).toBe(175)
+    // Relevé sur bulenox.com/accounts-pricing en août 2026 : le 25K est à $145.
+    expect(defaultChallengePrice('Bulenox', '25k')).toBe(145)
   })
 
   it('returns null for unknown firm', () => {

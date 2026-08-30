@@ -1314,3 +1314,56 @@ financé et le récapitulatif de payout.
 absurdités (jours > 60, split hors 50–100, prix > 5 000 $). 456 tests.
 `lib/programSegment.test.js` couvre désormais le parseur lui-même — c'est lui qui
 décide quels chiffres l'app attribue au compte de quelqu'un.
+
+
+## Vérification sur les sites OFFICIELS — 2026-08
+
+Contrôle du catalogue non plus contre des analyses tierces, mais contre les pages
+des firmes elles-mêmes.
+
+### Accessibilité des sources
+| Atteint | Bloqué (Cloudflare 403 ou rendu JS) |
+|---|---|
+| bulenox.com · phidiaspropfirm.com · alpha-futures.com · tradeify.co · futureselite.com · fundednext.com/futures · takeprofittrader.com | apextraderfunding.com · lucidtrading.com · help.tradeify.co · myfundedfutures.com/plans · fundedfuturesnetwork.com · topstep.com (pas de tableau de règles en page d'accueil) |
+
+**Sept firmes sur douze ont pu être confrontées à leur propre site.** Les cinq
+autres restent adossées à des sources tierces recoupées — c'est une limite réelle
+de cette vérification, pas un oubli.
+
+### Divergence majeure : Alpha Futures a renommé toute sa gamme
+Le catalogue portait **Premium / Zero / Advanced**. La page publie
+**Zero / Standard / Direct**, avec des prix différents de ceux stockés.
+
+| Programme | Tailles | Évaluation | Consistance | Prix |
+|---|---|---|---|---|
+| **Zero** | 25–100K | 1 jour, DLL active | aucune → 40 % qualifié | 89 / 139 / 279 $ par mois |
+| **Standard** | 50–150K | 2 jours, pas de DLL | 50 % → 40 % qualifié | 129 / 239 / 349 $ par mois |
+| **Direct** | 25–150K | aucune — financé direct | 20 % | 349 / 519 / 689 / 859 $ one-time |
+
+Les prix Zero stockés étaient sous-évalués (79 $ au lieu de 89 en 25K, 119 au lieu
+de 139 en 50K). Entrée et carte du comparateur entièrement réécrites.
+
+### Autres corrections issues des pages officielles
+| Firme | Correction |
+|---|---|
+| **Bulenox** | 25K à **145 $** (stocké 175). Paiements **one-time**, pas mensuels. La page ne liste plus que 4 tailles — le **250K n'y figure plus**, conservé car des comptes existants le portent |
+| **FundedNext** | Flex est à **95 % de reward share**, pas 80 %. Le bloc de règles officiel affiche « Reward Share 95% » ; le 80 % venait d'une analyse tierce |
+
+### Confirmé exact par la source officielle
+- **Phidias** — E2L en 25/50/100/150K, drawdown statique, 25K à 500 $ de drawdown
+  pour 1 500 $ d'objectif et 0 jour minimum, Premium progressif 75 → 100 % sur
+  5 payouts. Les corrections faites plus tôt tiennent.
+- **FundedNext** — trois programmes Flex / Legacy / Rapid, et les prix promo
+  (69,99 / 129,99 / 249,99 $ avec code) correspondent exactement au stocké.
+- **Bulenox** — objectifs 1 500 / 3 000 / 6 000 / 9 000 et drawdowns
+  1 500 / 2 500 / 3 000 / 4 500 : identiques au catalogue.
+
+### Divergences repérées, PAS encore corrigées
+- **FuturesElite** publie **Elite · Prime · Instant · Evaluation**, là où le
+  catalogue porte Starter / Pro / Instant Funded. Le site ne donne pas de tableau
+  par taille : renommer sans les chiffres remplacerait une donnée douteuse par une
+  autre.
+- **Tradeify** confirme un **Select 300K v2** (« Tradeify Forge ») absent du
+  catalogue, et mentionne un palier **Tradeify Elite** vers du capital réel. La
+  page de tarifs contient encore du texte de remplissage (`Lorem ipsum`, `$X`) :
+  ses chiffres ne sont pas exploitables en l'état.
