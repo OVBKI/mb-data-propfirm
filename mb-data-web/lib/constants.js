@@ -411,83 +411,101 @@ export const PROPFIRM_RULES = {
     }
   },
   'Lucid Trading': {
-    // VÉRIFIÉ MAI 2026 — 5 FAMILLES ACTIVES (pas 4 !) : LucidPro / LucidFlex / LucidDirect / LucidLive / LucidMaxx
-    // Sources officielles : lucidtrading.com + support.lucidtrading.com (help center)
-    // Sources tierces vérifiées : proptradingvibes (payout rules + accounts), damnpropfirms, phidiaspropfirm, pipback, saveonpropfirms
+    // VÉRIFIÉ AOÛT 2026 — sur le PDF officiel fourni par l'utilisateur : les six
+    // tableaux « Account Details » affichés au checkout, un par programme et par
+    // taille. C'est une source de PREMIÈRE MAIN — lucidtrading.com bloque toute
+    // récupération automatique (Cloudflare 403), le catalogue reposait jusqu'ici
+    // sur des analyses tierces recoupées.
     //
-    // FAMILLES :
-    //   • LucidPro    → éval classique one-time, 40% consistency funded, profit goal + 3j min (OS août 2025: 5j supprimé)
-    //   • LucidFlex   → éval + funded SANS daily loss limit (différenciateur unique), 50% consistency eval seulement
-    //   • LucidDirect → Instant Funding (skip éval), 20% consistency strict (single day ≤ 20% cycle profit)
-    //   • LucidLive   → 🌟 NOUVEAU 2026 : REAL MONEY $0 starting + bonus, swing + overnight + WEEKEND OK
-    //   • LucidMaxx   → invite-only, daily payouts NO CAP, 80/20 sur capital réel (split plus bas mais cap zéro)
+    // QUATRE PROGRAMMES ACHETABLES :
+    //   • LucidPro    → éval one-time · consistance 40% en financé · 3 jours entre payouts
+    //   • LucidFlex   → éval one-time · consistance 50% en ÉVAL puis AUCUNE en financé,
+    //                   compensée par 5 jours de profit minimum ($100→$250) · scaling plan
+    //   • LucidDaily  → éval one-time · PAYOUTS QUOTIDIENS · drawdown EOD ou Intraday
+    //                   CHOISI AU CHECKOUT — seul programme du catalogue où le type de
+    //                   drawdown est une option d'achat et non une caractéristique
+    //   • LucidDirect → Straight To Funded (aucune évaluation) · consistance 20%
     //
-    // CHANGEMENTS MAJEURS :
-    //  - 🚨 28 nov 2025 : profit split 80/20 → 90/10 SAUF LucidMaxx (80/20)
-    //  - 🚨 Mars 2026 : 90/10 standard sur tous (sauf legacy pre-28 nov : 100% premier $10K cumul)
-    //  - Fév 2026 : DLL ajoutée en éval LucidPro/Direct (soft breach halt journée) · LucidMaxx lancé · LucidBlack DISCONTINUÉ
-    //  - Fév 2026 : LucidLive rebuilt from scratch (escrow supprimé)
-    //  - Nov 2025 : LucidFlex lancé (NO DLL → différenciateur principal)
-    //  - Août 2025 : 8-day minimum supprimé sur Pro
+    // LucidLive et LucidMaxx ne sont PAS vendus : ce sont des paliers atteints après
+    // 5 payouts (6 pour Direct). Ils n'apparaissent donc pas dans le sélecteur de
+    // programme, mais leurs règles restent documentées plus bas.
+    //
+    // ⚠️ LA DLL EST OPTIONNELLE sur Pro / Flex / Daily : le tableau officiel la donne
+    // en « ON/OFF », activée ou non à l'achat. Les montants ci-dessous sont ceux qui
+    // s'appliquent SI elle est activée ; sans elle il ne reste que la MLL.
+    //
+    // ⚠️ LucidScale — AU-DESSUS du trail initial, la DLL cesse d'être un montant fixe
+    // et devient 60% du Peak EOD Balance : elle S'ÉLARGIT à mesure que le compte monte.
+    // En dessous du trail initial, c'est le montant fixe qui s'applique.
+    //
+    // ⚠️ La MLL ne suit PAS la baisse de solde après un retrait : laisser $1,000-$1,500
+    // au-dessus du minimum.
     //
     // Plateformes : Rithmic, Tradovate, NinjaTrader (PAS ProjectX, PAS TradingView)
-    //
-    // ⚠ MLL ne suit PAS la baisse de balance après retrait : laisser $1,000-$1,500 au-dessus du MLL min
     plans: ['25k','50k','100k','150k'],
     rules: {
-      // === ÉVALUATION (LucidPro one-time, profit target 6%) ===
-      'Objectif de profit':       {'25k':'LucidPro/LucidFlex : $1,250 · LucidDirect : aucun (financé direct)','50k':'LucidPro/LucidFlex : $3,000 · LucidDirect : aucun','100k':'LucidPro/LucidFlex : $6,000 · LucidDirect : aucun','150k':'LucidPro/LucidFlex : $9,000 · LucidDirect : aucun'},
-      'Drawdown trailing max':    {'25k':'LucidPro/LucidFlex : $1,000 · LucidDirect : $1,000','50k':'LucidPro/LucidFlex : $2,000 · LucidDirect : $2,000','100k':'LucidPro/LucidFlex : $3,000 · LucidDirect : $3,500','150k':'LucidPro/LucidFlex : $4,500 · LucidDirect : $5,000'},
-      'DLL LucidPro/Direct':      {'25k':'~$600 (fév 2026, soft breach halt journée)','50k':'$1,200 (~2.4%)','100k':'~$2,400 (extrapolation 2.4%)','150k':'~$3,600 (extrapolation 2.4%)'},
-      'DLL LucidFlex':            {'25k':'AUCUN — différenciateur clé Flex (eval ET funded)','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
-      'Jours de trading min (eval)':{'25k':'0 (suppr. août 2025 sur Pro · suppr. fév 2026 sur Direct)','50k':'0','100k':'0','150k':'0'},
-      'Profit min jour valide (eval)':{'25k':'$0 (pas de seuil par jour en éval)','50k':'$0','100k':'$0','150k':'$0'},
-      'Consistency (eval) LucidPro':{'25k':'AUCUNE (supprimée)','50k':'AUCUNE','100k':'AUCUNE','150k':'AUCUNE'},
-      'Consistency (eval) LucidFlex':{'25k':'50% (Best day ≤ 50% du profit eval) — ENLEVÉE en funded','50k':'50%','100k':'50%','150k':'50%'},
-      'Consistency LucidDirect':  {'25k':'20% (STRICTE) — single day ≤ 20% du cycle profit','50k':'20%','100k':'20%','150k':'20%'},
-      'Limite de temps Eval':     {'25k':'60 jours calendaires (LucidPro)','50k':'60 jours','100k':'60 jours','150k':'60 jours'},
-      // === FUNDED (par famille) ===
-      'Consistency LucidPro funded':{'25k':'40% (35% pour comptes pre-28 nov 2025 legacy) — chaque cycle de payout','50k':'40%','100k':'40%','150k':'40%'},
-      'Consistency LucidFlex funded':{'25k':'AUCUNE en funded (différenciateur !)','50k':'AUCUNE','100k':'AUCUNE','150k':'AUCUNE'},
-      'Jours min LucidPro funded':{'25k':'3 jours calendaires entre payouts','50k':'3 jours calendaires','100k':'3 jours calendaires','150k':'3 jours calendaires'},
-      'Jours min LucidFlex funded':{'25k':'5 jours profitables (non consécutifs OK)','50k':'5 jours profitables','100k':'5 jours profitables','150k':'5 jours profitables'},
-      'Profit min/jour LucidFlex':{'25k':'$100/jour','50k':'$150/jour','100k':'$200/jour','150k':'$250/jour'},
-      // === LUCID LIVE (real money 2026) ===
+      // === IDENTITÉ DES PROGRAMMES ===
+      'Nature du programme':      {'25k':'LucidPro : évaluation one-time · LucidFlex : évaluation one-time · LucidDaily : évaluation one-time, payouts quotidiens · LucidDirect : Straight To Funded, aucune évaluation','50k':'LucidPro : évaluation one-time · LucidFlex : évaluation one-time · LucidDaily : évaluation one-time, payouts quotidiens · LucidDirect : Straight To Funded, aucune évaluation','100k':'LucidPro : évaluation one-time · LucidFlex : évaluation one-time · LucidDaily : évaluation one-time, payouts quotidiens · LucidDirect : Straight To Funded, aucune évaluation','150k':'LucidPro : évaluation one-time · LucidFlex : évaluation one-time · LucidDaily : évaluation one-time, payouts quotidiens · LucidDirect : Straight To Funded, aucune évaluation'},
+      'Type de drawdown':         {'25k':'LucidPro : EOD · LucidFlex : EOD · LucidDaily : EOD OU Intraday, au choix à l’achat · LucidDirect : EOD','50k':'LucidPro : EOD · LucidFlex : EOD · LucidDaily : EOD OU Intraday, au choix à l’achat · LucidDirect : EOD','100k':'LucidPro : EOD · LucidFlex : EOD · LucidDaily : EOD OU Intraday, au choix à l’achat · LucidDirect : EOD','150k':'LucidPro : EOD · LucidFlex : EOD · LucidDaily : EOD OU Intraday, au choix à l’achat · LucidDirect : EOD'},
+      // === ÉVALUATION ===
+      'Objectif de profit':       {'25k':'LucidPro/LucidFlex/LucidDaily : $1,250 · LucidDirect : aucun (financé direct)','50k':'LucidPro/LucidFlex/LucidDaily : $3,000 · LucidDirect : aucun (financé direct)','100k':'LucidPro/LucidFlex/LucidDaily : $6,000 · LucidDirect : aucun (financé direct)','150k':'LucidPro/LucidFlex/LucidDaily : $9,000 · LucidDirect : aucun (financé direct)'},
+      'Drawdown trailing max':    {'25k':'LucidPro/LucidFlex/LucidDaily : $1,000 · LucidDirect : $1,000','50k':'LucidPro/LucidFlex/LucidDaily : $2,000 · LucidDirect : $2,000','100k':'LucidPro/LucidFlex/LucidDaily : $3,000 · LucidDirect : $3,500','150k':'LucidPro/LucidFlex/LucidDaily : $4,500 · LucidDirect : $5,000'},
+      'Daily Loss Limit (éval)':  {'25k':'LucidPro/LucidFlex/LucidDaily : $600 si activée (ON/OFF à l’achat) · LucidDirect : sans objet (aucune évaluation)','50k':'LucidPro/LucidFlex/LucidDaily : $1,200 si activée (ON/OFF à l’achat) · LucidDirect : sans objet (aucune évaluation)','100k':'LucidPro/LucidFlex/LucidDaily : $1,800 si activée (ON/OFF à l’achat) · LucidDirect : sans objet (aucune évaluation)','150k':'LucidPro/LucidFlex/LucidDaily : $2,700 si activée (ON/OFF à l’achat) · LucidDirect : sans objet (aucune évaluation)'},
+      'Jours de trading min (eval)':{'25k':'LucidPro/LucidFlex/LucidDaily : 1 jour (one-day pass) · LucidDirect : 0 (financé direct)','50k':'LucidPro/LucidFlex/LucidDaily : 1 jour (one-day pass) · LucidDirect : 0 (financé direct)','100k':'LucidPro/LucidFlex/LucidDaily : 1 jour (one-day pass) · LucidDirect : 0 (financé direct)','150k':'LucidPro/LucidFlex/LucidDaily : 1 jour (one-day pass) · LucidDirect : 0 (financé direct)'},
+      'Seuil quotidien en éval':  {'25k':'Aucun seuil de profit par jour pendant l’évaluation','50k':'Aucun seuil de profit par jour pendant l’évaluation','100k':'Aucun seuil de profit par jour pendant l’évaluation','150k':'Aucun seuil de profit par jour pendant l’évaluation'},
+      'Consistency (eval)':       {'25k':'LucidPro : AUCUNE · LucidFlex : 50% · LucidDaily : 50% · LucidDirect : 20% (STRICTE, dès le premier cycle)','50k':'LucidPro : AUCUNE · LucidFlex : 50% · LucidDaily : 50% · LucidDirect : 20% (STRICTE, dès le premier cycle)','100k':'LucidPro : AUCUNE · LucidFlex : 50% · LucidDaily : 50% · LucidDirect : 20% (STRICTE, dès le premier cycle)','150k':'LucidPro : AUCUNE · LucidFlex : 50% · LucidDaily : 50% · LucidDirect : 20% (STRICTE, dès le premier cycle)'},
+      'Frais activation':         {'25k':'$0 — activation GRATUITE sur les quatre programmes','50k':'$0 — activation GRATUITE sur les quatre programmes','100k':'$0 — activation GRATUITE sur les quatre programmes','150k':'$0 — activation GRATUITE sur les quatre programmes'},
+      'Limite de temps Eval':     {'25k':'Aucune limite de durée annoncée au checkout','50k':'Aucune limite de durée annoncée au checkout','100k':'Aucune limite de durée annoncée au checkout','150k':'Aucune limite de durée annoncée au checkout'},
+      // === FINANCÉ ===
+      'DLL funded (sous le trail initial)':{'25k':'LucidPro/LucidFlex/LucidDaily : $600 · LucidDirect : AUCUNE','50k':'LucidPro/LucidFlex/LucidDaily : $1,200 · LucidDirect : $1,200','100k':'LucidPro/LucidFlex/LucidDaily : $1,800 · LucidDirect : $2,100','150k':'LucidPro/LucidFlex/LucidDaily : $2,700 · LucidDirect : $3,000'},
+      'LucidScale DLL (au-dessus du trail initial)':{'25k':'LucidPro/LucidFlex/LucidDaily : 60% du Peak EOD Balance · LucidDirect : AUCUNE','50k':'LucidPro/LucidFlex/LucidDaily : 60% du Peak EOD Balance · LucidDirect : 60% du Peak EOD Balance','100k':'LucidPro/LucidFlex/LucidDaily : 60% du Peak EOD Balance · LucidDirect : 60% du Peak EOD Balance','150k':'LucidPro/LucidFlex/LucidDaily : 60% du Peak EOD Balance · LucidDirect : 60% du Peak EOD Balance'},
+      'Consistency funded':       {'25k':'LucidPro : 40% par cycle de payout · LucidFlex : AUCUNE · LucidDaily : AUCUNE · LucidDirect : 20% (STRICTE)','50k':'LucidPro : 40% par cycle de payout · LucidFlex : AUCUNE · LucidDaily : AUCUNE · LucidDirect : 20% (STRICTE)','100k':'LucidPro : 40% par cycle de payout · LucidFlex : AUCUNE · LucidDaily : AUCUNE · LucidDirect : 20% (STRICTE)','150k':'LucidPro : 40% par cycle de payout · LucidFlex : AUCUNE · LucidDaily : AUCUNE · LucidDirect : 20% (STRICTE)'},
+      'Jours min avant payout':   {'25k':'LucidPro : 3 jours · LucidFlex : 5 jours · LucidDaily : payouts QUOTIDIENS · LucidDirect : 5 jours','50k':'LucidPro : 3 jours · LucidFlex : 5 jours · LucidDaily : payouts QUOTIDIENS · LucidDirect : 5 jours','100k':'LucidPro : 3 jours · LucidFlex : 5 jours · LucidDaily : payouts QUOTIDIENS · LucidDirect : 5 jours','150k':'LucidPro : 3 jours · LucidFlex : 5 jours · LucidDaily : payouts QUOTIDIENS · LucidDirect : 5 jours'},
+      'Jours de profit min (funded)':{'25k':'LucidFlex : 5 jours de profit · LucidPro : non exigé · LucidDaily : non exigé · LucidDirect : non exigé','50k':'LucidFlex : 5 jours de profit · LucidPro : non exigé · LucidDaily : non exigé · LucidDirect : non exigé','100k':'LucidFlex : 5 jours de profit · LucidPro : non exigé · LucidDaily : non exigé · LucidDirect : non exigé','150k':'LucidFlex : 5 jours de profit · LucidPro : non exigé · LucidDaily : non exigé · LucidDirect : non exigé'},
+      // ⚠️ Cette clé est celle que defaultMinDailyProfit() trouve. Elle doit rester la
+      // SEULE clé « profit min … jour » de la firme : le sélecteur s'arrête à la
+      // première trouvée, et une clé d'évaluation placée devant renvoyait $0 à tout
+      // le monde — y compris aux comptes LucidFlex, dont les $100 à $250 par jour
+      // décident si une journée compte dans les cinq exigées.
+      'Profit min/jour (funded)': {'25k':'LucidFlex : $100/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun','50k':'LucidFlex : $150/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun','100k':'LucidFlex : $200/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun','150k':'LucidFlex : $250/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun'},
+      'Profit requis par payout': {'25k':'LucidPro : $250 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié','50k':'LucidPro : $500 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié','100k':'LucidPro : $750 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié','150k':'LucidPro : $1,000 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié'},
+      'Scaling plan':             {'25k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON','50k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON','100k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON','150k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON'},
+      'Comptes financés max':     {'25k':'5 comptes financés simultanés (LucidDirect compris)','50k':'5 comptes financés simultanés (LucidDirect compris)','100k':'5 comptes financés simultanés (LucidDirect compris)','150k':'5 comptes financés simultanés (LucidDirect compris)'},
+      // === LUCID LIVE / LUCID MAXX (paliers, pas des produits) ===
+      'Payouts avant LucidLive':  {'25k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts','50k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts','100k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts','150k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts'},
       'LucidLive starting balance':{'25k':'$0 starting + bonus crédité','50k':'$0 + bonus','100k':'$0 + bonus','150k':'$0 + bonus'},
       'LucidLive bonus':          {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
-      'LucidLive transitions':    {'25k':'5 payouts Flex/Pro · 6 payouts Direct → accès LucidLive (1 max par foyer, cap $150K)','50k':'idem','100k':'idem','150k':'idem'},
+      'LucidMaxx':                {'25k':'Sur invitation · payouts quotidiens sans plafond · split 80/20 sur capital réel','50k':'idem','100k':'idem','150k':'idem'},
       // === TRADING RESTRICTIONS ===
       'Heures de trading':        {'25k':'Dim 18h EST → Jeu 16h45 EST · auto-flat 16h45 EST · reprise 18h EST','50k':'idem','100k':'idem','150k':'idem'},
-      'Positions overnight':      {'25k':'INTERDIT (Pro/Flex/Direct) · ✅ AUTORISÉ uniquement sur LucidLive','50k':'idem','100k':'idem','150k':'idem'},
-      'Weekend trading':          {'25k':'INTERDIT (Pro/Flex/Direct) · ✅ AUTORISÉ uniquement sur LucidLive','50k':'idem','100k':'idem','150k':'idem'},
-      'Trading des news':         {'25k':'Autorisé sur toutes familles (NFP, FOMC, CPI, Powell, GDP)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
+      'Positions overnight':      {'25k':'INTERDIT sur les quatre programmes achetables · autorisé uniquement sur LucidLive','50k':'idem','100k':'idem','150k':'idem'},
+      'Weekend trading':          {'25k':'INTERDIT sur les quatre programmes achetables · autorisé uniquement sur LucidLive','50k':'idem','100k':'idem','150k':'idem'},
+      'Trading des news':         {'25k':'Autorisé (NFP, FOMC, CPI, Powell, GDP)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
       'DCA / scalping':           {'25k':'Autorisé (pas de min hold time)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
       'Bots / copy trading':      {'25k':'Autorisés (trader responsable du PnL)','50k':'Autorisés','100k':'Autorisés','150k':'Autorisés'},
-      // === CONTRATS ===
+      // === CONTRATS (confirmés par le PDF : « Max Account Size ») ===
       'Contrats max (mini)':      {'25k':'2','50k':'4','100k':'6','150k':'10'},
       'Contrats max (micro)':     {'25k':'20 (10× mini)','50k':'40','100k':'60','150k':'100'},
-      // === TARIFS (one-time, pas de mensuel) ===
-      'Prix LucidPro (retail)':   {'25k':'~$157','50k':'$215','100k':'$299','150k':'~$432'},
-      'Prix LucidPro (VIBES -40%)':{'25k':'$94.50','50k':'$129.50','100k':'$199.50','150k':'$259'},
-      'Prix LucidFlex (retail)':  {'25k':'$164 (~$98.50 avec VIBES)','50k':'~$245','100k':'$295','150k':'~$415'},
-      'Prix LucidDirect (instant)':{'25k':'$197','50k':'$549','100k':'$799 (ajouté fév 2026)','150k':'$899'},
-      'Frais activation':         {'25k':'$0 (aucun frais activation après éval)','50k':'$0','100k':'$0','150k':'$0'},
-      'Codes promo permanents':   {'25k':'VIBES (-40%), NINJA, SOPF, DGT (35-50% courant)','50k':'idem','100k':'idem','150k':'idem'},
-      'Reset compte':             {'25k':'Non documenté précisément (à vérifier au checkout)','50k':'idem','100k':'idem','150k':'idem'},
+      // === TARIFS (one-time, relevés sur le PDF ; le prix barré est le tarif public) ===
+      'Prix LucidPro (one-time)': {'25k':'$90.60 — $70.60 avec code promo','50k':'$140.40 — $115.40 avec code promo','100k':'$225.40 — $180.40 avec code promo','150k':'$300.50 — $245.50 avec code promo'},
+      'Prix LucidFlex (one-time)':{'25k':'$65.30 — $50.30 avec code promo','50k':'$105.20 — $90.20 avec code promo','100k':'$215.60 — $170.60 avec code promo','150k':'$295.40 — $250.40 avec code promo'},
+      'Prix LucidDaily (one-time)':{'25k':'Variable selon les options choisies (EOD/Intraday, DLL ON/OFF) — prix calculé au checkout','50k':'Variable selon les options choisies (EOD/Intraday, DLL ON/OFF) — prix calculé au checkout','100k':'Variable selon les options choisies (EOD/Intraday, DLL ON/OFF) — prix calculé au checkout','150k':'Variable selon les options choisies (EOD/Intraday, DLL ON/OFF) — prix calculé au checkout'},
+      'Prix LucidDirect (one-time)':{'25k':'$230.30 (tarif public $329)','50k':'$360.50 (tarif public $515)','100k':'$490.00 (tarif public $700)','150k':'$585.20 (tarif public $836)'},
+      'Codes promo permanents':   {'25k':'Codes partenaires courants (VIBES, NINJA, SOPF, DGT) — 30 à 50% selon la période','50k':'idem','100k':'idem','150k':'idem'},
+      'Reset compte':             {'25k':'Non documenté au checkout (à vérifier dans le tableau de bord)','50k':'idem','100k':'idem','150k':'idem'},
       // === PAYOUTS ===
-      'Profit split (nouveaux)':  {'25k':'90/10 from dollar one (post 28 nov 2025) · LucidMaxx exception : 80/20','50k':'90/10','100k':'90/10','150k':'90/10'},
-      'Profit split (legacy)':    {'25k':'100% premier $10K cumul puis 90/10 (comptes pre-28 nov 2025)','50k':'idem','100k':'idem','150k':'idem'},
-      'Payout minimum':           {'25k':'$500 toutes familles','50k':'$500','100k':'$500','150k':'$500'},
+      'Profit split (nouveaux)':  {'25k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10','50k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10','100k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10','150k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10'},
+      'Profit split (legacy)':    {'25k':'100% sur les premiers $10K cumulés puis 90/10 (comptes antérieurs au 28 nov. 2025)','50k':'idem','100k':'idem','150k':'idem'},
+      'Payout minimum':           {'25k':'$500 sur tous les programmes','50k':'$500','100k':'$500','150k':'$500'},
       'Cap LucidFlex (fixe)':     {'25k':'$1,000 (= $900 net après 10%)','50k':'$2,000 ($1,800 net)','100k':'$2,500 ($2,250 net)','150k':'$3,000 ($2,700 net)'},
-      'Cap LucidPro (progressif)':{'25k':'~$1,500 → uncapped','50k':'$2K → $3K → $4K → $5K → $6K+ uncapped','100k':'Progression similaire 50K','150k':'$3K (1er) → $3,500+ (uncapped après)'},
-      'Cap LucidDirect (progressif)':{'25k':'$1,000 (cycles 1-6) puis uncapped','50k':'$2K (1-2) → $2,500 (3-6) uncapped','100k':'$2,500 (1-2) → $3,000 (3-6)','150k':'$3,000 (1-2) → $3,500 (3-6)'},
-      'Cap LucidMaxx':            {'25k':'NO CAP — daily payouts on-demand (capital réel)','50k':'NO CAP','100k':'NO CAP','150k':'NO CAP'},
-      'Délai payout':             {'25k':'~15 min approval (média) · fonds en 2 jours ouvrés','50k':'idem','100k':'idem','150k':'idem'},
-      'Méthodes payout':          {'25k':'Plaid ACH (US) · PayPal · Rise (crypto USDT/USDC) · WorkMarket (intl wire)','50k':'idem','100k':'idem','150k':'idem'},
-      'Frais retrait':            {'25k':'$0 (Lucid ne charge aucun frais)','50k':'$0','100k':'$0','150k':'$0'},
-      'Buffer post-payout':       {'25k':'Laisser $1,000-$1,500 au-dessus du MLL min (MLL ne suit pas la baisse de balance)','50k':'idem','100k':'idem','150k':'idem'},
+      'Cap LucidPro (progressif)':{'25k':'~$1,500 puis déplafonné','50k':'$2K → $3K → $4K → $5K → $6K puis déplafonné','100k':'Progression comparable au 50K','150k':'$3K au premier payout, $3,500+ ensuite puis déplafonné'},
+      'Cap LucidDirect (progressif)':{'25k':'$1,000 (cycles 1-6) puis déplafonné','50k':'$2K (1-2) → $2,500 (3-6) puis déplafonné','100k':'$2,500 (1-2) → $3,000 (3-6)','150k':'$3,000 (1-2) → $3,500 (3-6)'},
+      'Délai payout':             {'25k':'~15 min de validation · fonds sous 2 jours ouvrés','50k':'idem','100k':'idem','150k':'idem'},
+      'Méthodes payout':          {'25k':'Plaid ACH (US) · PayPal · Rise (crypto USDT/USDC) · WorkMarket (virement international)','50k':'idem','100k':'idem','150k':'idem'},
+      'Frais retrait':            {'25k':'$0 (Lucid ne prélève aucun frais)','50k':'$0','100k':'$0','150k':'$0'},
+      'Buffer post-payout':       {'25k':'Laisser $1,000-$1,500 au-dessus du MLL minimum (la MLL ne redescend pas avec le solde)','50k':'idem','100k':'idem','150k':'idem'},
       // === MULTI-COMPTES ===
-      'Comptes financés simul.':  {'25k':'5 max par foyer (toutes familles confondues sauf LucidLive : 1 max)','50k':'5 max','100k':'5 max','150k':'5 max'},
+      'Comptes financés simul.':  {'25k':'5 max par foyer (LucidLive : 1 max, plafonné à $150K)','50k':'5 max','100k':'5 max','150k':'5 max'},
       'Comptes Eval simul.':      {'25k':'10 max par foyer','50k':'10 max','100k':'10 max','150k':'10 max'},
     }
   },

@@ -442,3 +442,36 @@ describe('Apex — divergences entre programmes', () => {
     }
   })
 })
+
+// ── Lucid : les valeurs servies au compte d'un utilisateur ──────────────────
+// Relevées sur le PDF officiel du checkout (août 2026).
+describe('Lucid Trading — helpers par programme', () => {
+  const PLANS = ['25k', '50k', '100k', '150k']
+
+  it('sert le drawdown du bon programme', () => {
+    expect(PLANS.map(p => maxDrawdown('Lucid Trading', p, 'LucidPro'))).toEqual([1000, 2000, 3000, 4500])
+    expect(PLANS.map(p => maxDrawdown('Lucid Trading', p, 'LucidDaily'))).toEqual([1000, 2000, 3000, 4500])
+    // Direct diverge sur les deux plus grosses tailles — c'est précisément là
+    // qu'une valeur héritée de LucidPro serait la plus coûteuse.
+    expect(PLANS.map(p => maxDrawdown('Lucid Trading', p, 'LucidDirect'))).toEqual([1000, 2000, 3500, 5000])
+  })
+
+  it('donne le profit minimum quotidien de LucidFlex, et rien aux autres', () => {
+    expect(PLANS.map(p => defaultMinDailyProfit('Lucid Trading', p, 'LucidFlex'))).toEqual([100, 150, 200, 250])
+    expect(defaultMinDailyProfit('Lucid Trading', '150k', 'LucidPro')).toBeNull()
+  })
+
+  it('a un prix et un split sur les quatre programmes', () => {
+    for (const program of ['LucidPro', 'LucidFlex', 'LucidDaily', 'LucidDirect']) {
+      for (const plan of PLANS) {
+        expect(defaultChallengePrice('Lucid Trading', plan, program), `${program} ${plan}`).toBeGreaterThan(0)
+        expect(defaultProfitSplit('Lucid Trading', plan, program)).toBe(90)
+      }
+    }
+  })
+
+  it('ne donne aucun objectif de profit à LucidDirect', () => {
+    expect(profitTarget('Lucid Trading', '100k', 'LucidDirect')).toBeNull()
+    expect(profitTarget('Lucid Trading', '100k', 'LucidPro')).toBe(6000)
+  })
+})

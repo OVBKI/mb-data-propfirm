@@ -63,7 +63,8 @@ Cells: **CHALLENGE** = ddType · drawdown · dailyDrawdown · objectif · consis
 | Bulenox | Option 2 (EOD) | EOD | "Option 2 EOD close 16h CT" |
 | Lucid Trading | LucidPro | EOD | "EOD trailing (recalcule 16h45 EST close)" |
 | Lucid Trading | LucidFlex | EOD | shares Lucid EOD trailing max |
-| Lucid Trading | LucidDirect | Static | the "Static" leg of FIRM_META "Trailing OU Static" |
+| Lucid Trading | LucidDaily | EOD / Intraday | le type se CHOISIT à l'achat (PDF officiel) |
+| Lucid Trading | LucidDirect | EOD | le PDF officiel tranche : EOD, et non "Static" comme supposé |
 | Tradeify | Select Daily/Flex/Growth/Lightning | EOD | "Drawdown … (EOD)" keys + FIRM_META "EOD uniquement" |
 | Take Profit Trader | Test → PRO → PRO+ | EOD / Trailing | Test EOD → PRO funded INTRADAY |
 | My Funded Futures | Rapid | Trailing | "Drawdown Rapid (intraday)" 4% trailing |
@@ -127,19 +128,31 @@ Cells: **CHALLENGE** = ddType · drawdown · dailyDrawdown · objectif · consis
 | minDailyProfit | — | `Profit min jour valide` ($0) |
 | consistance | `Règle de cohérence (Q)` (AUCUNE) | `Règle de cohérence Master` (40%) |
 
-## Lucid Trading — 3 models: `LucidPro`, `LucidFlex`, `LucidDirect`
-| Cell | LucidPro | LucidFlex | LucidDirect |
-|---|---|---|---|
-| chal.drawdown | `maxDrawdown()` | `maxDrawdown()` | `maxDrawdown()` |
-| chal.dailyDrawdown | `DLL LucidPro/Direct` | `DLL LucidFlex` (AUCUN) | `DLL LucidPro/Direct` |
-| chal.objectif | `profitTarget()` | `profitTarget()` | `profitTarget()` |
-| chal.consistance | `Consistency (eval) LucidPro` (AUCUNE) | `Consistency (eval) LucidFlex` (50%) | `Consistency LucidDirect` (20%) |
-| fund.drawdown | `maxDrawdown()` | `maxDrawdown()` | `maxDrawdown()` |
-| fund.dailyDrawdown | `DLL LucidPro/Direct` | `DLL LucidFlex` | `DLL LucidPro/Direct` |
-| fund.buffer | `Buffer post-payout` ⚠ | `Buffer post-payout` ⚠ | `Buffer post-payout` ⚠ |
-| fund.jourMin | `Jours min LucidPro funded` (3) | `Jours min LucidFlex funded` (5) | `null` (no Direct funded min-days key) |
-| fund.minDailyProfit | `null` | `Profit min/jour LucidFlex` | `null` |
-| fund.consistance | `Consistency LucidPro funded` (40%) | `Consistency LucidFlex funded` (AUCUNE) | `Consistency LucidDirect` (20%) |
+## Lucid Trading — 4 models: `LucidPro`, `LucidFlex`, `LucidDaily`, `LucidDirect`
+Réécrit en août 2026 sur le PDF officiel du checkout (source de première main).
+`LucidDaily` — payouts quotidiens, drawdown EOD **ou** Intraday choisi à l'achat —
+manquait entièrement au catalogue.
+
+| Cell | LucidPro | LucidFlex | LucidDaily | LucidDirect |
+|---|---|---|---|---|
+| chal.drawdown | `maxDrawdown(model)` | `maxDrawdown(model)` | `maxDrawdown(model)` | `maxDrawdown(model)` |
+| chal.dailyDrawdown | `Daily Loss Limit (éval)` | idem | idem | idem (sans objet) |
+| chal.objectif | `profitTarget(model)` | `profitTarget(model)` | `profitTarget(model)` | `profitTarget(model)` → null |
+| chal.consistance | `Consistency (eval)` (AUCUNE) | `Consistency (eval)` (50%) | `Consistency (eval)` (50%) | `Consistency (eval)` (20%) |
+| fund.drawdown | `maxDrawdown(model)` | `maxDrawdown(model)` | `maxDrawdown(model)` | `maxDrawdown(model)` |
+| fund.dailyDrawdown | `DLL funded (sous le trail initial)` | idem | idem | idem |
+| fund.buffer | `Buffer post-payout` ⚠ | idem | idem | idem |
+| fund.jourMin | `Jours min avant payout` (3) | (5) | (quotidiens) | (5) |
+| fund.minDailyProfit | `Profit min/jour (funded)` (aucun) | ($100→$250) | (aucun) | (aucun) |
+| fund.consistance | `Consistency funded` (40%) | (AUCUNE) | (AUCUNE) | (20%) |
+
+⚠️ **`model:` est OBLIGATOIRE sur les helpers de Lucid.** Les cellules sont
+composites et un helper ne reçoit le programme QUE par `descriptor.model` — il n'y
+a pas de repli sur le modèle de la colonne, et c'est délibéré (Tradeify, MFFU et
+FuturesElites étiquettent des VARIANTES, pas des programmes : un repli y viderait
+sept cellules correctes). Sans `model:`, LucidDirect affichait $3,000 de drawdown
+au lieu de $3,500 en 100K, et un objectif de $6,000 alors qu'il est financé direct
+et n'en a aucun.
 
 ⚠ **Buffer caveat (Lucid):** the only buffer-like rule is `Buffer post-payout`,
 which is a *post-payout withdrawal hold* ("leave $1,000–$1,500 above MLL min"),

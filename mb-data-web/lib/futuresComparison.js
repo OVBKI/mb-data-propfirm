@@ -104,6 +104,14 @@ function resolveCell(firm, descriptor, plan, modelName = null, siblings = null) 
     // Lucid affichaient le même drawdown : le helper prenait le premier nombre de
     // la cellule, identique pour tout le monde. Le comparateur montrait donc trois
     // colonnes qui se distinguaient partout SAUF sur le chiffre qui compte.
+    // ⚠️ PAS de repli sur le modèle de la colonne ici. Un helper reçoit le
+    // programme UNIQUEMENT via `model:`, et c'est délibéré : plusieurs firmes
+    // étiquettent leurs cellules par VARIANTE et non par programme du comparateur
+    // (« Select/Growth Eval » chez Tradeify, « Pro 1-Day Addon » chez My Funded
+    // Futures, « Instant : 5% buffer » chez FuturesElites). Un repli automatique
+    // y chercherait un segment nommé comme la colonne, n'en trouverait pas, et
+    // viderait sept cellules aujourd'hui correctes — ou pire, prendrait le
+    // montant d'un add-on pour celui du programme.
     const program = descriptor.model || null
     switch (descriptor.helper) {
       case 'maxDrawdown':
@@ -336,60 +344,85 @@ export const FIRM_COMPARISON_MAP = {
   },
 
   // -------------------------------------------------------------------------
+  // Quatre programmes vendus au checkout (PDF officiel, août 2026). LucidDaily
+  // manquait au catalogue : c'est le seul programme dont le TYPE de drawdown est
+  // une option d'achat (EOD ou Intraday), et le seul à payer quotidiennement.
   'Lucid Trading': {
     models: [
       {
         name: 'LucidPro',
-        ddType: 'EOD',   // "EOD trailing (recalcule à 16h45 EST close)" ; FIRM_META 'Trailing intraday OU Static'
+        ddType: 'EOD',
         challenge: {
-          drawdown: { helper: 'maxDrawdown' },                   // Drawdown trailing max
-          dailyDrawdown: { key: 'DLL LucidPro/Direct' },         // ~$1,200
-          objectif: { helper: 'profitTarget' },                  // Objectif de profit
-          consistance: { key: 'Consistency (eval) LucidPro' },   // AUCUNE (supprimée)
+          drawdown: { helper: 'maxDrawdown', model: 'LucidPro' },
+          dailyDrawdown: { key: 'Daily Loss Limit (éval)' },     // $600 → $2,700, OPTIONNELLE
+          objectif: { helper: 'profitTarget', model: 'LucidPro' },
+          consistance: { key: 'Consistency (eval)' },            // AUCUNE en éval
         },
         funded: {
-          drawdown: { helper: 'maxDrawdown' },
-          dailyDrawdown: { key: 'DLL LucidPro/Direct' },
-          buffer: { key: 'Buffer post-payout' },                 // post-payout cushion (see summary note)
-          jourMin: { key: 'Jours min LucidPro funded' },         // 3 days between payouts
-          minDailyProfit: null,                                  // no per-day profit floor for Pro
-          consistance: { key: 'Consistency LucidPro funded' },   // 40%
+          drawdown: { helper: 'maxDrawdown', model: 'LucidPro' },
+          dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
+          buffer: { key: 'Buffer post-payout' },
+          jourMin: { key: 'Jours min avant payout' },            // 3 jours
+          minDailyProfit: { key: 'Profit min/jour (funded)' },   // aucun pour Pro
+          consistance: { key: 'Consistency funded' },            // 40%
         },
       },
       {
         name: 'LucidFlex',
-        ddType: 'EOD',   // partage le "Drawdown trailing max" EOD de Lucid (pas de DLL)
+        ddType: 'EOD',
         challenge: {
-          drawdown: { helper: 'maxDrawdown' },
-          dailyDrawdown: { key: 'DLL LucidFlex' },               // AUCUN (differentiator)
-          objectif: { helper: 'profitTarget' },
-          consistance: { key: 'Consistency (eval) LucidFlex' },  // 50%
+          drawdown: { helper: 'maxDrawdown', model: 'LucidFlex' },
+          dailyDrawdown: { key: 'Daily Loss Limit (éval)' },
+          objectif: { helper: 'profitTarget', model: 'LucidFlex' },
+          consistance: { key: 'Consistency (eval)' },            // 50% en éval
         },
         funded: {
-          drawdown: { helper: 'maxDrawdown' },
-          dailyDrawdown: { key: 'DLL LucidFlex' },               // AUCUN funded too
+          drawdown: { helper: 'maxDrawdown', model: 'LucidFlex' },
+          dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
           buffer: { key: 'Buffer post-payout' },
-          jourMin: { key: 'Jours min LucidFlex funded' },        // 5 profitable days
-          minDailyProfit: { key: 'Profit min/jour LucidFlex' },  // $100/$150/$200/$250
-          consistance: { key: 'Consistency LucidFlex funded' },  // AUCUNE en funded
+          jourMin: { key: 'Jours min avant payout' },            // 5 jours
+          minDailyProfit: { key: 'Profit min/jour (funded)' },   // $100 → $250
+          consistance: { key: 'Consistency funded' },            // AUCUNE en financé
+        },
+      },
+      {
+        name: 'LucidDaily',
+        // Le tableau officiel donne « EOD or Intraday » : le type se choisit à
+        // l'achat. On annonce les deux plutôt que d'en privilégier un — un
+        // porteur de compte Intraday à qui l'app afficherait « EOD » lirait un
+        // seuil recalculé une fois par jour là où le sien suit le plus haut.
+        ddType: 'EOD / Intraday',
+        challenge: {
+          drawdown: { helper: 'maxDrawdown', model: 'LucidDaily' },
+          dailyDrawdown: { key: 'Daily Loss Limit (éval)' },
+          objectif: { helper: 'profitTarget', model: 'LucidDaily' },
+          consistance: { key: 'Consistency (eval)' },            // 50%
+        },
+        funded: {
+          drawdown: { helper: 'maxDrawdown', model: 'LucidDaily' },
+          dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
+          buffer: { key: 'Buffer post-payout' },
+          jourMin: { key: 'Jours min avant payout' },            // payouts QUOTIDIENS
+          minDailyProfit: { key: 'Profit min/jour (funded)' },
+          consistance: { key: 'Consistency funded' },            // AUCUNE en financé
         },
       },
       {
         name: 'LucidDirect',
-        ddType: 'Static',   // l'option "Static" du couple FIRM_META 'Trailing intraday OU Static (au choix)'
+        ddType: 'EOD',   // le PDF tranche : EOD, et non 'Static' comme supposé
         challenge: {
-          drawdown: { helper: 'maxDrawdown' },
-          dailyDrawdown: { key: 'DLL LucidPro/Direct' },         // shares Pro/Direct DLL
-          objectif: { helper: 'profitTarget' },
-          consistance: { key: 'Consistency LucidDirect' },       // 20% (strict, applies cycle-wide)
+          drawdown: { helper: 'maxDrawdown', model: 'LucidDirect' },
+          dailyDrawdown: { key: 'Daily Loss Limit (éval)' },     // sans objet : financé direct
+          objectif: { helper: 'profitTarget', model: 'LucidDirect' },                  // aucun objectif
+          consistance: { key: 'Consistency (eval)' },            // 20%
         },
         funded: {
-          drawdown: { helper: 'maxDrawdown' },
-          dailyDrawdown: { key: 'DLL LucidPro/Direct' },
+          drawdown: { helper: 'maxDrawdown', model: 'LucidDirect' },
+          dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
           buffer: { key: 'Buffer post-payout' },
-          jourMin: null,                                         // no Direct-specific funded min-days key
-          minDailyProfit: null,
-          consistance: { key: 'Consistency LucidDirect' },       // 20% strict (cycle profit)
+          jourMin: { key: 'Jours min avant payout' },            // 5 jours
+          minDailyProfit: { key: 'Profit min/jour (funded)' },
+          consistance: { key: 'Consistency funded' },            // 20%
         },
       },
     ],

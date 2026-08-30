@@ -338,3 +338,51 @@ describe('pas de fuite de chaîne composite', () => {
     expect(leaks, leaks.slice(0, 6).join('\n')).toEqual([])
   })
 })
+
+// ── Lucid : quatre programmes, quatre jeux de chiffres ──────────────────────
+// Relevé sur le PDF officiel du checkout (août 2026). LucidDaily manquait
+// entièrement au catalogue, et LucidDirect héritait des chiffres de LucidPro
+// parce que les descripteurs `{ helper: … }` ne portaient pas de `model:` :
+// $3,000 de drawdown affichés au lieu de $3,500 en 100K, et un objectif de
+// profit alors que le programme est financé DIRECT et n'en a aucun.
+describe('Lucid Trading — les quatre programmes se distinguent', () => {
+  it('vend LucidDaily à toutes les tailles', () => {
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      expect(programsForFirm('Lucid Trading', plan)).toEqual(
+        ['LucidPro', 'LucidFlex', 'LucidDaily', 'LucidDirect']
+      )
+    }
+  })
+
+  it('donne à LucidDirect SON drawdown, pas celui de LucidPro', () => {
+    const at = plan => {
+      const { models } = getFuturesComparison('Lucid Trading', plan)
+      return Object.fromEntries(models.map(m => [m.name, m.challenge.drawdown]))
+    }
+    expect(at('100k')).toMatchObject({ LucidPro: 3000, LucidDaily: 3000, LucidDirect: 3500 })
+    expect(at('150k')).toMatchObject({ LucidPro: 4500, LucidDaily: 4500, LucidDirect: 5000 })
+  })
+
+  it('ne donne AUCUN objectif de profit à LucidDirect (financé direct)', () => {
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      const { models } = getFuturesComparison('Lucid Trading', plan)
+      const byName = Object.fromEntries(models.map(m => [m.name, m]))
+      expect(byName.LucidDirect.challenge.objectif).toBeNull()
+      expect(byName.LucidPro.challenge.objectif).toBeGreaterThan(0)
+    }
+  })
+
+  it('réserve le profit minimum quotidien à LucidFlex', () => {
+    // C'est le seuil qui décide si une journée compte dans les cinq exigées.
+    // Une clé d'évaluation placée devant renvoyait $0 à tout le monde.
+    const { models } = getFuturesComparison('Lucid Trading', '150k')
+    const byName = Object.fromEntries(models.map(m => [m.name, m]))
+    expect(byName.LucidFlex.funded.minDailyProfit).toMatch(/250/)
+    expect(byName.LucidPro.funded.minDailyProfit).toMatch(/aucun/i)
+  })
+
+  it('annonce les deux types de drawdown de LucidDaily', () => {
+    const { models } = getFuturesComparison('Lucid Trading', '50k')
+    expect(models.find(m => m.name === 'LucidDaily').ddType).toBe('EOD / Intraday')
+  })
+})

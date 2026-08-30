@@ -1546,3 +1546,69 @@ AUGMENTE ») et doivent passer telles quelles.
 `futuresComparison.test.js` parcourt les 130 couples et échoue si **une cellule
 cite un autre programme de la même firme avec un deux-points**. C'est la
 définition exacte de la fuite, et elle ne dépend d'aucune heuristique.
+
+## Lucid repris sur le PDF officiel — 2026-08
+
+Le catalogue portait trois programmes Lucid déduits d'analyses tierces
+(lucidtrading.com répond 403 à toute récupération automatique). Le PDF du
+checkout fourni par l'utilisateur — les tableaux « Account Details » des quatre
+programmes réellement vendus — corrige la fiche entière.
+
+### LucidDaily manquait
+Quatrième programme, absent du catalogue : **payouts quotidiens**, et le seul du
+marché où le **type de drawdown est une option d'ACHAT** — EOD ou intraday, choisi
+au checkout. D'où son `ddType: 'EOD / Intraday'` : annoncer « EOD » à un porteur de
+compte intraday lui ferait lire un seuil recalculé une fois par jour là où le sien
+suit le plus haut en temps réel.
+
+### Ce que le PDF corrige
+| | Avant | PDF officiel |
+|---|---|---|
+| Programmes | 3 (Pro, Flex, Direct) | **4** (+ Daily) |
+| LucidDirect, type de drawdown | `Static` (supposé) | **EOD** |
+| Daily Loss Limit | montants extrapolés « ~$2,400 » | **$600 / $1,200 / $1,800 / $2,700, et OPTIONNELLE** (ON/OFF au checkout) |
+| DLL au-dessus du trail | absente | **LucidScale : 60 % du plus haut solde EOD** — elle s'élargit avec le compte |
+| Jours d'éval | 0 | **1** (one-day pass) |
+| Frais d'activation | « $0 » sans source | confirmé **gratuit** |
+| Prix | fourchettes « ~$157 » | **montants exacts au cent**, avec et sans code promo |
+
+### Deux pièges de format rencontrés
+- **Un deux-points dans une cellule vaut ciblage de programme.** Écrire un prix
+  `'$90.60 (coupon : $70.60)'` faisait lire « coupon » comme un nom de programme :
+  aucun segment ne correspondait, et Lucid perdait TOUS ses prix. Réécrit sans
+  deux-points.
+- **Un segment non étiqueté suivi d'un segment étiqueté rend `null`.**
+  `'90/10 dès le premier dollar · LucidMaxx : 80/20'` : le second segment rendait
+  la cellule composite, et le premier — qui porte la vraie valeur — n'appartenait
+  à personne. Les quatre programmes sont maintenant étiquetés explicitement.
+
+### `model:` est obligatoire sur les helpers
+Un descripteur `{ helper: 'maxDrawdown' }` sans `model:` résout la cellule sans
+savoir de quelle colonne il s'agit : il rendait le PREMIER montant à tout le monde.
+LucidDirect affichait donc $3,000 de drawdown au lieu de $3,500 en 100K, et un
+objectif de profit alors qu'il est financé DIRECT et n'en a aucun.
+
+Le repli « à défaut, prendre le modèle de la colonne » a été essayé puis **retiré** :
+Tradeify, My Funded Futures et FuturesElites étiquettent des **variantes** et non
+des programmes du comparateur (« Select/Growth Eval », « Pro 1-Day Addon »,
+« Instant : 5% buffer »). Le repli y cherchait un segment nommé comme la colonne,
+n'en trouvait pas, et vidait sept cellules correctes — ou pire, prenait le montant
+d'un add-on pour celui du programme. Le ciblage reste donc explicite, descripteur
+par descripteur.
+
+### La fiche publique décrivait un produit inexistant
+`/firms/lucid-trading` vendait « Lucid Static », un plan sans trailing qui n'existe
+pas. Tagline, intro, `ddType`, `keyFacts` et les quatre FAQ réécrits sur les quatre
+programmes réels.
+
+470 tests (+9). Vérifié dans le navigateur : les quatre colonnes du comparateur
+affichent bien quatre jeux de chiffres distincts, sans fuite de chaîne composite.
+
+### Reste ouvert chez Lucid
+- **Prix LucidDaily** : le checkout le calcule selon les options (EOD/intraday,
+  DLL ON/OFF) et n'affiche pas de tarif fixe. Le pré-remplissage retombe sur le
+  tarif LucidPro.
+- **Profit requis par payout** : le PDF ne le publie que pour LucidPro
+  ($250 / $500 / $750 / $1,000).
+- **DLL financée de LucidFlex** : alignée sur Pro/Daily faute de ligne distincte
+  dans le tableau.
