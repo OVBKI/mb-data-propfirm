@@ -1103,7 +1103,7 @@ de compte Apex legacy en 150K, la jauge affichait 4 000 $ de marge au lieu de
 | | |
 |---|---|
 | **`accounts.program`** | nouvelle colonne texte, nullable. **SQL à jouer sur Supabase.** |
-| **Assistant** | 4ᵉ pas « Quel type de compte as-tu pris ? », **affiché seulement si la firme en propose plusieurs à cette taille** |
+| **Assistant** | 2ᵉ pas « Quel type de compte as-tu pris ? », entre la firme et la taille, **affiché seulement si la firme propose plusieurs programmes** |
 | **Modale d'édition** | un `<select>` à côté de la taille, avec la même condition |
 | **Helpers** | `maxDrawdown`, `profitTarget`, `defaultPayoutTarget`, `defaultMinTradingDays`, `defaultMinDailyProfit`, `defaultProfitSplit` et `defaultChallengePrice` acceptent un 3ᵉ argument `program` |
 | **Consommateurs** | jauge Drawdown Health, page `/app/health`, widget dashboard, cron `drawdown-guardian` |
@@ -1229,3 +1229,30 @@ programme ou si un programme non vendu réapparaît.
 - **MFFU Rapid** : classé intraday ici, EOD chez certaines sources — à trancher.
 - **26/52 couples sans profit split**, **17/52 sans jours minimum** — cellules
   au format non lisible par les parseurs.
+
+### Ordre des étapes : le programme AVANT la taille
+`BASE_STEPS = ['firm', 'program', 'plan', 'details']`
+
+Le programme **détermine** les tailles disponibles : Apex Legacy se vend en 75K,
+250K et 300K, ses variantes 4.0 non. Dans l'ordre inverse, la liste des tailles
+mélangeait deux générations d'offres — le 75K à 247 $ (tarif legacy) voisinait
+avec le 25K à 390 $ (tarif 4.0) dans la même colonne.
+
+`plansForProgram(firm, program)` restreint la liste, et `planChoices(firm,
+program)` calcule les montants DE CE PROGRAMME. Un programme inconnu ne vide
+jamais la liste : mieux vaut tout proposer que bloquer la création de compte.
+
+### La carte « programme » montre une FOURCHETTE
+À cette étape aucune taille n'est choisie. Afficher le prix du plus petit compte
+donnerait un chiffre exact mais trompeur — on le lirait comme « le prix du
+programme ». `programSummaries()` rend donc l'étendue des tailles et les bornes
+du drawdown et du prix :
+
+```
+EOD        25K–150K · DD 1 000–4 000 $ · 390–1 490 $ · 100 %
+Intraday   25K–150K · DD 1 000–4 000 $ · 167–599 $ · 100 %
+Legacy     25K–300K · DD 1 500–7 500 $ · 177–647 $ · 100 %
+```
+
+On y lit d'un coup ce qui sépare vraiment les trois : Legacy est le seul à monter
+à 300K, Intraday est le moins cher.

@@ -18,13 +18,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from './LanguageProvider'
 import { useDialog } from './useDialog'
-import { planChoices, programChoices, buildAccountForm } from '../lib/accountDefaults'
+import { planChoices, programSummaries, buildAccountForm } from '../lib/accountDefaults'
+import { programsForFirm } from '../lib/futuresComparison'
 import { FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS } from '../lib/constants'
 
-// Le pas « programme » est CONDITIONNEL : la plupart des firmes n'en vendent
+// Le programme vient AVANT la taille, parce qu'il DÉTERMINE les tailles
+// disponibles : Apex Legacy se vend en 75K, 250K et 300K, ses variantes 4.0 non.
+// Dans l'autre sens, la liste des tailles mélangeait les prix de deux
+// générations d'offres.
+//
+// Le pas « programme » reste CONDITIONNEL : beaucoup de firmes n'en vendent
 // qu'un, et poser une question à réponse unique est du bruit. STEPS est donc
 // calculé, pas figé.
-const BASE_STEPS = ['firm', 'plan', 'program', 'details']
+const BASE_STEPS = ['firm', 'program', 'plan', 'details']
 
 export default function NewAccountWizard({
   firms, customFirmNames = [], getFirmLogo, S,
@@ -54,35 +60,43 @@ export default function NewAccountWizard({
     })
   }, [customFirmNames])
 
-  const plans = useMemo(() => (firmName ? planChoices(firmName) : []), [firmName])
+  // Tous les programmes de la firme, toutes tailles confondues. On les compare
+  // sur la taille la plus courante pour que les cartes portent des chiffres.
+  const programNames = useMemo(() => (firmName ? programsForFirm(firmName) : []), [firmName])
+  const programs = useMemo(
+    () => (firmName && programNames.length > 1 ? programSummaries(firmName) : []),
+    [firmName, programNames.length]
+  )
 
-  // Les programmes dépendent de la TAILLE autant que de la firme : Apex ne vend
-  // plus que du legacy en 75K, FundedNext n'a que Flex en 150K.
-  const programs = useMemo(() => programChoices(firmName, plan), [firmName, plan])
+  // Les tailles dépendent du PROGRAMME choisi, et leurs montants aussi.
+  const plans = useMemo(() => (firmName ? planChoices(firmName, program) : []), [firmName, program])
 
-  // Changer de firme invalide le plan : les tailles ne sont pas les mêmes d'une
+  // Changer de firme invalide programme et plan : rien n'est transposable d'une
   // firme à l'autre, et garder l'ancien choix produirait des défauts faux.
   useEffect(() => { setPlan(null); setProgram(null); setForm(null) }, [firmName])
 
   const STEPS = useMemo(
-    () => BASE_STEPS.filter(sp => sp !== 'program' || programs.length > 1),
-    [programs.length]
+    () => BASE_STEPS.filter(sp => sp !== 'program' || programNames.length > 1),
+    [programNames.length]
   )
 
-  function pickPlan(p) {
-    setPlan(p)
-    // Une seule offre à cette taille : on la retient sans rien demander.
-    const list = programChoices(firmName, p)
-    if (list.length > 1) { setProgram(null); setStep('program'); return }
-    const only = list[0]?.program || null
-    setProgram(only)
-    setForm(buildAccountForm(firmName, p, {}, only))
-    setStep('details')
+  function pickFirmName(name) {
+    setFirmName(name)
+    const list = programsForFirm(name)
+    // Un seul programme : on le retient sans rien demander et on passe aux tailles.
+    setProgram(list.length > 1 ? null : (list[0] || null))
+    setStep(list.length > 1 ? 'program' : 'plan')
   }
 
   function pickProgram(prog) {
     setProgram(prog)
-    setForm(buildAccountForm(firmName, plan, {}, prog))
+    setPlan(null)
+    setStep('plan')
+  }
+
+  function pickPlan(p) {
+    setPlan(p)
+    setForm(buildAccountForm(firmName, p, {}, program))
     setStep('details')
   }
 
@@ -135,7 +149,7 @@ export default function NewAccountWizard({
                   <button
                     key={name}
                     type="button"
-                    onClick={() => { setFirmName(name); setStep('plan') }}
+                    onClick={() => pickFirmName(name)}
                     title={name}
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
@@ -164,25 +178,14 @@ export default function NewAccountWizard({
                   onChange={e => setFirmName(e.target.value)}
                   placeholder={t('app.wizard.otherFirmPlaceholder')}
                   style={{ ...S.input, flex: 1 }}
-                  onKeyDown={e => { if (e.key === 'Enter' && firmName.trim()) setStep('plan') }}
+                  onKeyDown={e => { if (e.key === 'Enter' && firmName.trim()) pickFirmName(firmName.trim()) }}
                 />
                 <button
-                  onClick={() => firmName.trim() && setStep('plan')}
+                  onClick={() => firmName.trim() && pickFirmName(firmName.trim())}
                   disabled={!firmName.trim()}
                   style={{ ...S.btnPrimary, opacity: firmName.trim() ? 1 : 0.5 }}
                 >{t('app.wizard.next')}</button>
               </div>
-            </div>
-          </>
-        )}
-
-        {step === 'plan' && (
-          <>
-            <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0, lineHeight: 1.5 }}>
-              {t('app.wizard.planHint')}
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {plans.map(p => <PlanCard key={p.plan} p={p} t={t} onPick={() => pickPlan(p.plan)} />)}
             </div>
           </>
         )}
@@ -196,6 +199,17 @@ export default function NewAccountWizard({
               {programs.map(pr => (
                 <ProgramCard key={pr.program} p={pr} t={t} onPick={() => pickProgram(pr.program)} />
               ))}
+            </div>
+          </>
+        )}
+
+        {step === 'plan' && (
+          <>
+            <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0, lineHeight: 1.5 }}>
+              {t('app.wizard.planHint')}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {plans.map(p => <PlanCard key={p.plan} p={p} t={t} onPick={() => pickPlan(p.plan)} />)}
             </div>
           </>
         )}
@@ -324,8 +338,8 @@ function Header({ t, idx, total, step, firmName, plan, program, onBack, onClose 
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text3)' }}>
           {t('app.wizard.stepOf').replace('{n}', idx + 1).replace('{total}', total)}
           {firmName && step !== 'firm' ? ` · ${firmName}` : ''}
+          {program && (step === 'plan' || step === 'details') ? ` · ${program}` : ''}
           {plan && step === 'details' ? ` · ${String(plan).toUpperCase()}` : ''}
-          {program && step === 'details' ? ` · ${program}` : ''}
         </div>
         <h3 style={{ fontSize: 18, fontWeight: 600, margin: '4px 0 0', letterSpacing: '-.01em' }}>
           {titles[step]}
@@ -376,11 +390,20 @@ function PlanCard({ p, t, onPick }) {
 // Même anatomie que PlanCard : le nom à gauche, ce qui CHANGE entre programmes
 // au milieu. C'est le drawdown et le prix qui décident, pas le nom du produit.
 function ProgramCard({ p, t, onPick }) {
+  // Une FOURCHETTE, pas les chiffres d'une taille : à ce stade la taille n'est pas
+  // choisie, et citer celle du plus petit compte se lirait comme « le prix du
+  // programme ». Quand toutes les tailles partagent la même valeur, on n'affiche
+  // qu'elle.
+  const money = r => (r == null ? null : r.same
+    ? `${r.lo.toLocaleString()} $`
+    : `${r.lo.toLocaleString()}–${r.hi.toLocaleString()} $`)
+
+  const sizes = (p.plans || []).map(x => String(x).toUpperCase())
   const facts = [
-    p.price != null && `${p.price} $`,
-    p.maxDrawdown != null && `${t('app.wizard.dd')} ${p.maxDrawdown.toLocaleString()} $`,
-    p.payoutTarget != null && `${t('app.wizard.target')} ${p.payoutTarget.toLocaleString()} $`,
-    `${p.profitSplit} %`,
+    sizes.length > 2 ? `${sizes[0]}–${sizes[sizes.length - 1]}` : sizes.join(' · '),
+    p.drawdown && `${t('app.wizard.dd')} ${money(p.drawdown)}`,
+    p.price && money(p.price),
+    p.profitSplit != null && `${p.profitSplit} %`,
   ].filter(Boolean)
 
   return (
@@ -393,7 +416,7 @@ function ProgramCard({ p, t, onPick }) {
         fontFamily: 'inherit', textAlign: 'left', color: 'var(--text)',
       }}
     >
-      <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-.01em', minWidth: 96 }}>
+      <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-.01em', minWidth: 108 }}>
         {p.program}
       </span>
       <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--text3)' }}>

@@ -64,10 +64,54 @@ export function programChoices(firmName, plan) {
   }))
 }
 
+// Résumé d'un programme AVANT que la taille soit choisie.
+//
+// Le piège : à ce stade aucune taille n'est retenue, donc afficher le prix ou le
+// drawdown d'UNE taille (la plus petite, par exemple) donne un chiffre exact mais
+// trompeur — on croit lire le prix du programme. On montre donc une FOURCHETTE et
+// l'étendue des tailles, ce qui compare vraiment les programmes entre eux.
+export function programSummaries(firmName) {
+  if (!firmName) return []
+  return programsForFirm(firmName).map(program => {
+    const plans = plansForProgram(firmName, program)
+    const cards = plans.map(plan => accountDefaults(firmName, plan, program))
+    const range = key => {
+      const v = cards.map(c => c[key]).filter(x => typeof x === 'number' && x > 0)
+      if (!v.length) return null
+      const lo = Math.min(...v), hi = Math.max(...v)
+      return { lo, hi, same: lo === hi }
+    }
+    return {
+      program,
+      plans,
+      drawdown: range('maxDrawdown'),
+      price: range('price'),
+      profitSplit: cards[0]?.profitSplit ?? null,
+      ddType: cards[0]?.ddType ?? null,
+    }
+  })
+}
+
+// Les tailles où un programme est réellement vendu. Apex Legacy existe en 75K,
+// 250K et 300K ; ses variantes 4.0 non. Proposer les sept tailles à tout le monde
+// affichait un prix legacy à côté d'un prix 4.0 dans la même liste.
+export function plansForProgram(firmName, program) {
+  const all = plansForFirm(firmName)
+  if (!program) return all
+  const kept = all.filter(plan => programsForFirm(firmName, plan).includes(program))
+  // Un programme qu'on ne sait rattacher à aucune taille ne doit pas vider la
+  // liste : mieux vaut tout proposer que bloquer la création de compte.
+  return kept.length ? kept : all
+}
+
 // Les plans d'une firme, chacun avec ses défauts déjà calculés. L'assistant
-// s'en sert pour poser des cartes de choix informatives.
-export function planChoices(firmName) {
-  return plansForFirm(firmName).map(plan => ({ plan, ...accountDefaults(firmName, plan) }))
+// s'en sert pour poser des cartes de choix informatives. Avec un programme, les
+// montants sont ceux DE CE PROGRAMME et la liste se restreint à ses tailles.
+export function planChoices(firmName, program = null) {
+  return plansForProgram(firmName, program).map(plan => ({
+    plan,
+    ...accountDefaults(firmName, plan, program),
+  }))
 }
 
 // La forme exacte attendue par `acctForm` dans layout.js. Les nombres y sont des

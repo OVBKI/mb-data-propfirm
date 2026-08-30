@@ -9,3 +9,8 @@ Thumbs.db
 # Experimental Remotion project for the landing background video (~513 MB with
 # node_modules). Not part of the deployed app; kept locally only.
 quantara-video/
+
+# Dépendances. Un `npx` lancé depuis la RACINE (au lieu de mb-data-web/) y crée un
+# node_modules parasite — c'est déjà arrivé, et un cache .vite s'était retrouvé
+# dans un commit. Ignoré ici comme dans mb-data-web/.gitignore.
+node_modules/

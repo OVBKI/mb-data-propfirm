@@ -6,8 +6,14 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  accountDefaults, planChoices, buildAccountForm,
-  generateAccountNames, suggestProfitSplit, programChoices,
+  accountDefaults,
+  planChoices,
+  buildAccountForm,
+  generateAccountNames,
+  suggestProfitSplit,
+  programChoices,
+  plansForProgram,
+  programSummaries,
 } from './accountDefaults'
 import { plansForFirm } from './constants'
 
@@ -167,5 +173,53 @@ describe('buildAccountForm avec un programme', () => {
     // Le formulaire alimente des <input> : un null y deviendrait le texte "null",
     // et partirait tel quel en base.
     expect(buildAccountForm('Topstep', '50k').program).toBe('')
+  })
+})
+
+// ── Le programme est choisi AVANT la taille ─────────────────────────────────
+// C'est lui qui détermine les tailles disponibles : dans l'autre sens, la liste
+// des tailles mélangeait les prix de deux générations d'offres Apex.
+describe('plansForProgram', () => {
+  it('restreint les tailles à celles où le programme est vendu', () => {
+    expect(plansForProgram('Apex Trader Funding', 'EOD')).toEqual(['25k', '50k', '100k', '150k'])
+    expect(plansForProgram('Apex Trader Funding', 'Legacy'))
+      .toEqual(['25k', '50k', '75k', '100k', '150k', '250k', '300k'])
+    expect(plansForProgram('FundedNext Futures', 'Flex')).toEqual(['50k', '100k', '150k'])
+    expect(plansForProgram('Phidias Propfirm', 'Fundamental')).toEqual(['50k', '100k', '150k'])
+    expect(plansForProgram('Phidias Propfirm', 'E2L')).toEqual(['25k', '50k', '100k', '150k'])
+  })
+
+  it('sans programme, rend toutes les tailles de la firme', () => {
+    expect(plansForProgram('Apex Trader Funding', null)).toEqual(plansForFirm('Apex Trader Funding'))
+  })
+
+  it('ne vide JAMAIS la liste sur un programme inconnu', () => {
+    // Une liste vide bloquerait la création de compte. Mieux vaut tout proposer.
+    expect(plansForProgram('Apex Trader Funding', 'Programme Inexistant').length).toBeGreaterThan(0)
+  })
+})
+
+describe('programSummaries', () => {
+  it('rend une FOURCHETTE, pas les chiffres d’une seule taille', () => {
+    // À l'étape « type de compte » aucune taille n'est encore choisie : citer
+    // celle du plus petit compte se lirait comme « le prix du programme ».
+    const byName = Object.fromEntries(
+      programSummaries('Apex Trader Funding').map(p => [p.program, p])
+    )
+    expect(byName['EOD'].drawdown).toEqual({ lo: 1000, hi: 4000, same: false })
+    expect(byName['Legacy'].drawdown).toEqual({ lo: 1500, hi: 7500, same: false })
+    expect(byName['Intraday'].price).toEqual({ lo: 167, hi: 599, same: false })
+    expect(byName['Legacy'].plans).toContain('300k')
+    expect(byName['EOD'].plans).not.toContain('300k')
+  })
+
+  it('marque same:true quand toutes les tailles partagent la valeur', () => {
+    const s = programSummaries('Apex Trader Funding')[0]
+    expect(s.drawdown.same).toBe(false)
+    expect(typeof s.profitSplit).toBe('number')
+  })
+
+  it('rend un tableau vide sans firme', () => {
+    expect(programSummaries(null)).toEqual([])
   })
 })
