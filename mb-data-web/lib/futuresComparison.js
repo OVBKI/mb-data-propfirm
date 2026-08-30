@@ -744,6 +744,88 @@ export const FIRM_COMPARISON_MAP = {
       },
     ],
   },
+  'FundedNext Futures': {
+    // Quatre programmes. Rapid Pro et Rapid Daily partagent objectif, MLL et prix :
+    // ce qui les sépare, c'est la DLL, la consistance et la cadence de payout — donc
+    // deux entrées distinctes, sinon le comparateur les confondrait.
+    //
+    // ⚠ Les libellés doivent être écrits en entier ('Rapid Pro', pas 'Rapid') :
+    //   extractModelSegment cherche \bRapid Pro\b dans le préfixe du segment.
+    models: [
+      {
+        name: 'Flex',
+        ddType: 'EOD',   // MLL trailing EOD, verrouillé au solde initial + $100
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Flex' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Flex' },   // aucune
+          objectif: { key: 'Objectif de profit', model: 'Flex' },
+          consistance: { key: 'Consistency (éval)', model: 'Flex' },          // 40%
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Flex' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Flex' },
+          buffer: { key: 'Règle buffer', model: 'Flex' },                     // aucune
+          jourMin: { key: 'Jours de trading min', model: 'Flex' },            // 5
+          minDailyProfit: null,                                               // aucun seuil $ publié
+          consistance: { key: 'Consistency (financé)', model: 'Flex' },       // aucune
+        },
+      },
+      {
+        name: 'Legacy',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Legacy' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Legacy' }, // aucune
+          objectif: { key: 'Objectif de profit', model: 'Legacy' },
+          consistance: { key: 'Consistency (éval)', model: 'Legacy' },        // 40%
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Legacy' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Legacy' },
+          buffer: { key: 'Règle buffer', model: 'Legacy' },                   // aucune
+          jourMin: { key: 'Jours de trading min', model: 'Legacy' },          // 5
+          minDailyProfit: null,
+          consistance: { key: 'Consistency (financé)', model: 'Legacy' },     // aucune
+        },
+      },
+      {
+        name: 'Rapid Pro',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Rapid Pro' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Rapid Pro' }, // aucune
+          objectif: { key: 'Objectif de profit', model: 'Rapid Pro' },
+          consistance: { key: 'Consistency (éval)', model: 'Rapid Pro' },     // aucune
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Rapid Pro' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Rapid Pro' },
+          buffer: { key: 'Règle buffer', model: 'Rapid Pro' },                // aucune
+          jourMin: { key: 'Jours de trading min', model: 'Rapid Pro' },       // 0
+          minDailyProfit: null,
+          consistance: { key: 'Consistency (financé)', model: 'Rapid Pro' },  // 40% — ici, pas en éval
+        },
+      },
+      {
+        name: 'Rapid Daily',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Rapid Daily' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Rapid Daily' }, // $500/$1,000/$1,250
+          objectif: { key: 'Objectif de profit', model: 'Rapid Daily' },
+          consistance: { key: 'Consistency (éval)', model: 'Rapid Daily' },   // aucune
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Rapid Daily' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Rapid Daily' },
+          buffer: { key: 'Règle buffer', model: 'Rapid Daily' },              // solde de clôture ≥ initial + MLL + $100
+          jourMin: { key: 'Jours de trading min', model: 'Rapid Daily' },     // 0
+          minDailyProfit: null,
+          consistance: { key: 'Consistency (financé)', model: 'Rapid Daily' },// aucune
+        },
+      },
+    ],
+  },
 }
 
 // ---------------------------------------------------------------------------

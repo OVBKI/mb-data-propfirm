@@ -21,12 +21,14 @@ const looksLikeIdem = v =>
   typeof v === 'string' && /^idem\b/i.test(v.trim().replace(/^[^a-zà-ÿ0-9]+/i, ''))
 
 // ---------------------------------------------------------------------------
-// (a) Intégrité : les 11 firmes sont couvertes
+// (a) Intégrité : toutes les firmes suggérées sont couvertes
 // ---------------------------------------------------------------------------
 describe('getFirmsWithComparison', () => {
-  it('retourne les 11 firmes futures, dans l’ordre de FIRM_SUGGESTIONS', () => {
+  it('retourne toutes les firmes futures, dans l’ordre de FIRM_SUGGESTIONS', () => {
+    // Pas de longueur en dur : ajouter une firme au catalogue ne doit pas casser
+    // ce test, seulement OUBLIER de la mapper doit le casser.
     const firms = getFirmsWithComparison()
-    expect(firms).toHaveLength(11)
+    expect(firms.length).toBeGreaterThanOrEqual(11)
     expect(firms).toEqual(FIRM_SUGGESTIONS.filter(f => FIRM_COMPARISON_MAP[f]))
     // Chaque firme suggérée est bien mappée (aucune perdue par le filter).
     expect(firms).toEqual(FIRM_SUGGESTIONS)

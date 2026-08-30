@@ -17,7 +17,7 @@ const CONTENT_DATE = new Date('2026-05-01T00:00:00Z')
 export default function sitemap() {
   const now = CONTENT_DATE
 
-  // Programmatic SEO : 1 index /firms + 11 pages /firms/[slug] générées depuis PROPFIRM_RULES
+  // Programmatic SEO : 1 index /firms + une page /firms/[slug] par firme de PROPFIRM_RULES
   const firmPages = [
     {
       url: `${BASE_URL}/firms`,
@@ -33,7 +33,7 @@ export default function sitemap() {
     })),
   ]
 
-  // Phase 3.2 : 55 pages /compare/[firmA]-vs-[firmB] générées depuis toutes les paires (11 choose 2)
+  // Phase 3.2 : une page /compare/[firmA]-vs-[firmB] par paire de firmes (n choose 2)
   const compareFirmPages = getAllFirmPairs().map(({ slug }) => ({
     url: `${BASE_URL}/compare/${slug}`,
     lastModified: now,

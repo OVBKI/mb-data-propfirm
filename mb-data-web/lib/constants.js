@@ -885,6 +885,73 @@ export const PROPFIRM_RULES = {
       'Max comptes simultanés':   {'25k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com','50k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com','100k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com','150k':'Voir doc "Maximum Allocation" sur help.alpha-futures.com'},
     }
   },
+  'FundedNext Futures': {
+    // VÉRIFIÉ AOÛT 2026 — sources : fundednext.com/futures, helpfutures.fundednext.com,
+    // blog officiel (Rapid Pro vs Rapid Daily), tradetanto, damnpropfirms.
+    //
+    // ⚠ NE PAS CONFONDRE avec 'FundedNext' dans lib/cfdConstants.js : c'est la MÊME
+    //   maison (FundedNext, Dubaï) mais deux produits sans rapport. Le CFD, c'est la
+    //   gamme Stellar sur MT4/MT5. Ici c'est du futures CME sur Tradovate. Les règles
+    //   n'ont rien en commun — d'où deux entrées distinctes.
+    //
+    // TROIS PROGRAMMES ACTIFS, tous en UNE SEULE ÉTAPE :
+    //   • Flex   (50/100/150K) — le plus récent (mai 2026), objectifs les plus bas
+    //   • Legacy (25/50/100K)  — le plus ancien, retraits décapés après 30 benchmark days
+    //   • Rapid  (25/50/100K)  — deux variantes, Pro et Daily, 90% de reward share
+    //
+    // ⚠ BOLT (50K) EST ARRÊTÉ depuis juillet 2026, remplacé par Rapid. Conservé nulle
+    //   part ici : un plan qu'on ne peut plus acheter n'a rien à faire dans un
+    //   sélecteur de création de compte.
+    //
+    // MÉCANIQUE COMMUNE : MLL trailing EOD qui monte avec le plus haut solde de fin de
+    // journée, ne redescend jamais, et se VERROUILLE au solde initial + $100 une fois
+    // que le profit égale le MLL. C'est la mécanique Topstep, pas le trailing intraday.
+    //
+    // ⚠ CE QUE LE PRÉ-REMPLISSAGE UTILISE : les parseurs (profitTarget, maxDrawdown,
+    //   defaultChallengePrice…) lisent le PREMIER nombre de chaque cellule. La première
+    //   valeur est donc toujours celle de FLEX là où Flex existe (50/100/150K), et
+    //   celle de LEGACY en 25K. Les autres programmes suivent dans la même cellule.
+    plans: ['25k','50k','100k','150k'],
+    rules: {
+      // ⚠ SYNTAXE : chaque cellule est écrite « Modèle : valeur · Modèle : valeur ».
+      //   extractModelSegment() (lib/futuresComparison.js) découpe sur « · » puis lit
+      //   le préfixe avant « : ». Un préfixe peut citer plusieurs modèles séparés par
+      //   « / ». Sans ce format, le comparateur ne sait pas quel programme afficher.
+      //   Et « Rapid Pro » / « Rapid Daily » doivent être écrits EN ENTIER : le motif
+      //   \bRapid Pro\b ne trouve rien dans un segment étiqueté juste « Rapid ».
+      //
+      // === OBJECTIFS ET RISQUE ===
+      'Objectif de profit':       {'25k':'Legacy : $1,250 · Rapid Pro/Rapid Daily : $1,500','50k':'Flex : $2,500 · Legacy/Rapid Pro/Rapid Daily : $3,000','100k':'Flex : $5,000 · Rapid Pro/Rapid Daily : $5,000 · Legacy : $6,000','150k':'Flex : $8,000 (seul programme en 150K)'},
+      'Drawdown trailing max':    {'25k':'Legacy/Rapid Pro/Rapid Daily : $1,000','50k':'Flex : $1,500 · Legacy/Rapid Pro/Rapid Daily : $2,000','100k':'Flex : $2,500 · Rapid Pro/Rapid Daily : $2,500 · Legacy : $3,000','150k':'Flex : $4,000'},
+      'Mécanisme MLL':            {'25k':'Trailing EOD sur le plus haut solde de CLÔTURE, verrouillé à $25,100 quand le profit atteint le MLL','50k':'Trailing EOD, verrouillé à $50,100','100k':'Trailing EOD, verrouillé à $100,100','150k':'Trailing EOD, verrouillé à $150,100'},
+      'Perte journalière (DLL)':  {'25k':'Rapid Daily : $500 (soft — met la journée en pause, ne tue pas le compte) · Legacy/Rapid Pro : aucune','50k':'Rapid Daily : $1,000 (soft) · Flex/Legacy/Rapid Pro : aucune','100k':'Rapid Daily : $1,250 (soft) · Flex/Legacy/Rapid Pro : aucune','150k':'Flex : aucune'},
+      'Règle buffer':             {'25k':'Rapid Daily : solde de clôture ≥ $25,100 + MLL avant que le surplus devienne retirable · Legacy/Rapid Pro : aucune','50k':'Rapid Daily : solde de clôture ≥ $52,100 · Flex/Legacy/Rapid Pro : aucune','100k':'Rapid Daily : solde de clôture ≥ $102,600 · Flex/Legacy/Rapid Pro : aucune','150k':'Flex : aucune'},
+      // === VALIDATION ET CONSISTANCE ===
+      'Jours de trading min':     {'25k':'Legacy : 5 benchmark days avant le 1er retrait · Rapid Pro/Rapid Daily : 0','50k':'Flex/Legacy : 5 benchmark days · Rapid Pro/Rapid Daily : 0','100k':'Flex/Legacy : 5 benchmark days · Rapid Pro/Rapid Daily : 0','150k':'Flex : 5 benchmark days'},
+      'Profit min jour valide':   {'25k':'Aucun seuil $ publié pour valider un benchmark day','50k':'Aucun seuil $ publié','100k':'Aucun seuil $ publié','150k':'Aucun seuil $ publié'},
+      'Consistency (éval)':       {'25k':'Legacy : 40% · Rapid Pro/Rapid Daily : aucune','50k':'Flex/Legacy : 40% · Rapid Pro/Rapid Daily : aucune','100k':'Flex/Legacy : 40% · Rapid Pro/Rapid Daily : aucune','150k':'Flex : 40%'},
+      'Consistency (financé)':    {'25k':'Rapid Pro : 40% · Legacy/Rapid Daily : aucune','50k':'Rapid Pro : 40% · Flex/Legacy/Rapid Daily : aucune','100k':'Rapid Pro : 40% · Flex/Legacy/Rapid Daily : aucune','150k':'Flex : aucune'},
+      // === TRADING ===
+      'Positions overnight':      {'25k':'INTERDIT — flat obligatoire à 15h10 CT','50k':'INTERDIT — flat à 15h10 CT','100k':'INTERDIT — flat à 15h10 CT','150k':'INTERDIT — flat à 15h10 CT'},
+      'Trading des news':         {'25k':'Aucune restriction (différenciateur vs Topstep et MFFU)','50k':'Aucune restriction','100k':'Aucune restriction','150k':'Aucune restriction'},
+      'Contrats max (éval)':      {'25k':'Legacy : 2 mini + 20 micro · Rapid Pro/Rapid Daily : 2 mini + 10 micro','50k':'Flex : 3 mini + 30 micro · Legacy : 3 mini + 30 micro · Rapid Pro/Rapid Daily : 3 mini + 15 micro','100k':'Flex : 5 mini + 50 micro · Legacy : 5 mini + 50 micro · Rapid Pro/Rapid Daily : 5 mini + 25 micro','150k':'Flex : 8 mini + 80 micro'},
+      'Contrats max (financé)':   {'25k':'Legacy : 3 mini + 30 micro · Rapid Pro/Rapid Daily : 3 mini + 15 micro','50k':'Flex : 3 mini + 30 micro · Legacy : 5 mini + 50 micro · Rapid Pro/Rapid Daily : 5 mini + 25 micro','100k':'Flex : 5 mini + 50 micro · Legacy : 7 mini + 70 micro · Rapid Pro/Rapid Daily : 7 mini + 35 micro','150k':'Flex : 8 mini + 80 micro'},
+      'Plateformes':              {'25k':'Tradovate (défaut), NinjaTrader, TradingView via Tradovate, Rithmic','50k':'Tradovate (défaut), NinjaTrader, TradingView, Rithmic','100k':'Tradovate (défaut), NinjaTrader, TradingView, Rithmic','150k':'Tradovate (défaut), NinjaTrader, TradingView, Rithmic'},
+      // === TARIFS — one-time, AUCUN frais d'activation, AUCUN abonnement mensuel ===
+      // ⚠ FundedNext promotionne en quasi-permanence. Les montants « promo » sont ceux
+      //   relevés en août 2026 : indicatifs, pas un tarif stable.
+      'Prix (one-time)':          {'25k':'Legacy : $79.99 · Rapid Pro/Rapid Daily : $84.79 promo (list $159.98)','50k':'Flex : $69.99 promo (list $133.99) · Legacy : $199.99 · Rapid Pro/Rapid Daily : $158.99 promo (list $299.98)','100k':'Flex : $129.99 promo (list $249.99) · Legacy : $239.99 · Rapid Pro/Rapid Daily : $264.99 promo (list $499.98)','150k':'Flex : $249.99 promo (list $483.99)'},
+      'Frais activation':         {'25k':'$0 — aucun frais d\'activation ni abonnement mensuel','50k':'$0','100k':'$0','150k':'$0'},
+      'Coût du reset':            {'25k':'Non confirmé à 2 sources','50k':'Flex : $77.99 · Legacy/Rapid Pro/Rapid Daily : non confirmé','100k':'Flex : $144.99 · Legacy/Rapid Pro/Rapid Daily : non confirmé','150k':'Flex : $278.99'},
+      // === PAYOUTS ===
+      'Répartition gains':        {'25k':'Legacy : 80% (95% via add-on payant) · Rapid Pro/Rapid Daily : 90%','50k':'Flex : 80% (95% via add-on) · Legacy : 80% (95% via add-on) · Rapid Pro/Rapid Daily : 90%','100k':'Flex : 80% (95% via add-on) · Legacy : 80% (95% via add-on) · Rapid Pro/Rapid Daily : 90%','150k':'Flex : 80% (95% via add-on)'},
+      'Cadence payout':           {'25k':'Legacy : après 5 benchmark days · Rapid Pro : tous les 3 jours · Rapid Daily : quotidien','50k':'Flex/Legacy : après 5 benchmark days · Rapid Pro : tous les 3 jours · Rapid Daily : quotidien','100k':'Flex/Legacy : après 5 benchmark days · Rapid Pro : tous les 3 jours · Rapid Daily : quotidien','150k':'Flex : après 5 benchmark days'},
+      'Plafond par cycle':        {'25k':'Legacy : 50% du profit plafonné $3,000, décapé après 30 benchmark days · Rapid Pro/Rapid Daily : $800','50k':'Flex : 50% plafonné $1,500 · Legacy : 50% plafonné $6,000, décapé après 30 benchmark days · Rapid Pro/Rapid Daily : $1,200','100k':'Flex : 50% plafonné $2,500 · Legacy : 50% plafonné $6,000, décapé après 30 benchmark days · Rapid Pro/Rapid Daily : $2,500','150k':'Flex : 50% du profit plafonné $4,000'},
+      'Fin du compte':            {'25k':'Legacy/Rapid Pro/Rapid Daily : pas de limite de retraits','50k':'Flex : le compte SE TERMINE après le 5e retrait · Legacy/Rapid Pro/Rapid Daily : pas de limite','100k':'Flex : se termine après le 5e retrait · Legacy/Rapid Pro/Rapid Daily : pas de limite','150k':'Flex : se termine après le 5e retrait'},
+      'Payout minimum':           {'25k':'DISPUTÉ : $250 (help center) contre $500 par cycle (analyses tierces)','50k':'DISPUTÉ : $250 contre $500','100k':'DISPUTÉ : $250 contre $500','150k':'DISPUTÉ : $250 contre $500'},
+      'Délai de traitement':      {'25k':'~24h annoncé, bonus $1,000 si dépassé','50k':'~24h annoncé, bonus $1,000 si dépassé','100k':'~24h annoncé, bonus $1,000 si dépassé','150k':'~24h annoncé, bonus $1,000 si dépassé'},
+    }
+  },
 }
 
 export const FIRM_COLORS = ['#2d6fff','#1db87a','#e8504a','#fac775','#a78bfa','#f472b6','#34d399','#fb923c']
@@ -902,6 +969,7 @@ export const FIRM_SUGGESTIONS = [
   'Funded Futures Network',
   'FuturesELites',
   'Alpha Futures',
+  'FundedNext Futures',
 ]
 
 // Couleurs associées à chaque firm suggérée (utilisées pour le default logo si pas de SVG custom)
@@ -917,6 +985,7 @@ export const FIRM_SUGGESTION_COLORS = {
   'Funded Futures Network': '#a86bff',
   'FuturesELites':          '#f472b6',
   'Alpha Futures':          '#0a3a2a',
+  'FundedNext Futures':     '#00a99d',
 }
 export const STATUS_COLORS = { 'Financé': '#1db87a', 'Challenge': '#fac775', 'Échoué': '#e8504a' }
 
@@ -1024,6 +1093,7 @@ const EOD_TRAILING_FIRMS = new Set([
   'Phidias Propfirm',       // Fundamental = EOD (Static = static)
   'Funded Futures Network', // EOD
   'FuturesELites',          // EOD
+  'FundedNext Futures',     // MLL trailing EOD, verrouillé au solde initial + $100
 ])
 export function defaultDdType(firmName){
   if(INTRADAY_TRAILING_FIRMS.has(firmName)) return 'trailing'

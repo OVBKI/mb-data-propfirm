@@ -413,6 +413,50 @@ export const FIRM_META = {
       },
     ],
   },
+  'FundedNext Futures': {
+    tagline: 'Le bras futures de FundedNext : évaluation en une étape, MLL trailing EOD, aucun frais d\'activation.',
+    description: 'FundedNext Futures 2026 — règles vérifiées : programmes Flex, Legacy et Rapid, MLL trailing EOD, reward share jusqu\'à 95%, comptes 25K à 150K.',
+    intro: 'FundedNext est d\'abord connue pour son offre CFD / forex (la gamme Stellar, sur MT4 et MT5). Son bras futures est un produit distinct, lancé plus tard, sur contrats CME et plateforme Tradovate — les deux ne partagent ni les règles, ni les tailles de compte, ni la mécanique de drawdown. Ici, tout tient en UNE seule étape : pas de phase 1 puis phase 2, on atteint l\'objectif et le compte passe en financé. Le Maximum Loss Limit est un trailing de fin de journée, calqué sur la mécanique Topstep : il monte avec le plus haut solde de clôture, ne redescend jamais, et se verrouille au solde initial majoré de 100 $ une fois que le profit accumulé égale le MLL. Trois programmes cohabitent en 2026 : Flex (le plus récent, mai 2026, avec les objectifs les plus bas du catalogue), Legacy (le plus ancien, dont les plafonds de retrait sautent après 30 benchmark days) et Rapid, décliné en Pro et Daily, qui monte le reward share à 90%. Le Bolt 50K a été retiré en juillet 2026. Aucun programme ne facture de frais d\'activation ni d\'abonnement mensuel : le prix est payé une seule fois. Les positions overnight sont interdites, avec flat obligatoire à 15h10 CT, mais le trading des news n\'est soumis à aucune restriction — un vrai écart avec Topstep et My Funded Futures.',
+    website: 'https://fundednext.com/futures',
+    founded: '2022 (activité futures plus récente)',
+    country: 'Émirats arabes unis (Dubaï)',
+    platform: 'Tradovate · NinjaTrader · TradingView (via Tradovate) · Rithmic',
+    ddType: 'EOD trailing, verrouillé au solde initial + 100 $',
+    splits: 'Flex et Legacy : 80% de base, jusqu\'à 95% via un add-on payant. Rapid Pro et Rapid Daily : 90% inclus.',
+    keyFacts: [
+      'Évaluation en UNE étape sur les trois programmes',
+      'MLL trailing EOD verrouillé au solde initial + 100 $',
+      'Aucun frais d\'activation, aucun abonnement mensuel',
+      'Trading des news sans restriction',
+      'Flat obligatoire à 15h10 CT — pas d\'overnight',
+    ],
+    faqs: [
+      {
+        q: 'Quelle est la différence entre FundedNext Futures et FundedNext (CFD) ?',
+        a: 'Ce sont deux produits de la même maison, sans règles communes. Le FundedNext historique est une offre CFD / forex sur MT4, MT5, cTrader et Match-Trader, avec la gamme Stellar en une ou deux étapes et un max loss statique de 6 à 10%. FundedNext Futures porte sur des contrats CME via Tradovate, en une seule étape, avec un Maximum Loss Limit exprimé en dollars et calculé en trailing de fin de journée. Un compte de l\'un ne donne aucun droit sur l\'autre.',
+      },
+      {
+        q: 'Quels programmes FundedNext Futures propose-t-il en 2026 ?',
+        a: 'Trois : Flex (50K, 100K, 150K), le plus récent et celui dont les objectifs de profit sont les plus bas ; Legacy (25K, 50K, 100K), dont les plafonds de retrait disparaissent après 30 benchmark days ; et Rapid (25K, 50K, 100K), décliné en Pro et Daily, avec 90% de reward share. Le programme Bolt, un 50K à retraits quotidiens, a été retiré en juillet 2026 et remplacé par Rapid.',
+      },
+      {
+        q: 'Comment fonctionne le drawdown chez FundedNext Futures ?',
+        a: 'C\'est un Maximum Loss Limit trailing de fin de journée. Il se recalcule une fois par jour à partir du plus haut solde de clôture atteint, monte avec les gains et ne redescend jamais avec les pertes. Une fois que le profit cumulé égale le montant du MLL, celui-ci se verrouille au solde initial majoré de 100 $ et cesse de suivre. Concrètement, sur un 50K le seuil finit par se figer à 50 100 $. Une perte intraday violente ne fait donc pas sauter le compte tant que la clôture reste au-dessus du seuil.',
+      },
+      {
+        q: 'Quelle est la différence entre Rapid Pro et Rapid Daily ?',
+        a: 'Même prix, mêmes tailles, mêmes objectifs et même MLL. Rapid Pro n\'impose aucune limite de perte journalière mais applique une règle de consistance de 40% sur le compte financé, et paie tous les 3 jours. Rapid Daily supprime la règle de consistance et paie tous les jours, mais ajoute une limite de perte journalière — qui met simplement la journée en pause, sans tuer le compte — et une règle de buffer : le solde de clôture doit atteindre le solde initial plus le MLL plus 100 $ avant que le surplus devienne retirable.',
+      },
+      {
+        q: 'La règle de consistance de 40% s\'applique-t-elle au compte financé ?',
+        a: 'Cela dépend du programme, et c\'est le point le plus mal compris. Sur Flex et Legacy, les 40% ne s\'appliquent que pendant l\'évaluation : une fois financé, il n\'y a plus de contrainte de consistance. Sur Rapid Pro, c\'est l\'inverse — aucune consistance pendant le challenge, mais 40% sur le compte financé. Rapid Daily n\'en a nulle part.',
+      },
+      {
+        q: 'FundedNext Futures autorise-t-il le trading des news ?',
+        a: 'Oui, sans restriction — ni fenêtre interdite autour des publications macro, ni obligation d\'être flat avant un chiffre. C\'est un écart net avec Topstep, My Funded Futures ou FuturesElite, qui imposent des buffers. En revanche les positions overnight restent interdites : flat obligatoire à 15h10 CT.',
+      },
+    ],
+  },
 }
 
 // Helpers pour récupérer les firms ordonnées (utilisé sur l'index)
