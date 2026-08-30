@@ -272,7 +272,7 @@ export default function PricingClient() {
                     padding: '14px 16px',
                     fontSize: 14, fontWeight: 600,
                     background: submitting ? C.text3 : C.blue,
-                    color: '#fff',
+                    color: 'var(--text-inverse)',
                     border: 'none',
                     borderRadius: 10,
                     cursor: submitting ? 'not-allowed' : 'pointer',
@@ -461,13 +461,15 @@ function ctaPrimaryStyle(variant) {
     fontSize: 13, fontWeight: 600,
     textAlign: 'center',
     background: isLifetime ? `linear-gradient(135deg, ${C.amber}, #f4a460)` : C.blue,
-    color: isLifetime ? 'var(--text-inverse)' : '#fff',
+    // En Abyss SOMBRE les accents sont clairs (--blue #5ab0ff) : du blanc dessus
+    // ne tient pas le contraste. --text-inverse bascule dans le bon sens.
+    color: 'var(--text-inverse)',
     border: 'none',
     borderRadius: 10,
     textDecoration: 'none',
     cursor: 'pointer',
     fontFamily: 'inherit',
-    boxShadow: isLifetime ? '0 4px 12px var(--amber)' : '0 4px 12px var(--blue-border)',
+    boxShadow: isLifetime ? '0 4px 12px var(--amber-bg)' : '0 4px 12px var(--blue-border)',
     boxSizing: 'border-box',
   }
 }

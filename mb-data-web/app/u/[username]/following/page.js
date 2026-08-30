@@ -120,7 +120,7 @@ function FollowList({ items }) {
                 : 'var(--tint2)',
               border: isPublic ? '1px solid var(--hairline)' : '1px dashed var(--hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, fontWeight: 700, color: '#fff',
+              fontSize: 16, fontWeight: 700, color: 'var(--text-inverse)',
               flexShrink: 0,
             }}>
               {isPublic ? (p.username?.[0]?.toUpperCase() || '?') : '🔒'}

@@ -9,10 +9,15 @@
 //   <Skeleton.Card />                                  // carte complète
 //   <Skeleton.AppShell />                              // shell complet de /app
 
+// ⚠️ `surface3` était figé sur '#222637', une valeur de l'ancienne palette. Le
+// shimmer est un dégradé surface2 → surface3 → surface2 : en thème CLAIR, le
+// reflet devenait un bloc bleu-gris SOMBRE balayant des placeholders pâles. Et
+// comme ce composant porte l'état de chargement de TOUTES les pages de données,
+// le défaut se voyait partout à la fois.
 const C = {
   surface: 'var(--surface)',
   surface2: 'var(--surface2)',
-  surface3: '#222637',
+  surface3: 'var(--surface3)',
   border: 'var(--border)',
   bg: 'var(--bg)',
 }

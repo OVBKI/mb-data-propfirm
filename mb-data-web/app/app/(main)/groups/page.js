@@ -205,7 +205,7 @@ function GroupCard({ group }) {
         onMouseEnter={e => { e.currentTarget.style.borderColor = C.blueLight }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = C.border }}
       >
-        <div style={{ width: 48, height: 48, borderRadius: 10, background: 'linear-gradient(135deg, var(--blue), #4d8fff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 10, background: 'linear-gradient(135deg, var(--blue), #4d8fff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: 'var(--text-inverse)', flexShrink: 0 }}>
           {group.name?.[0]?.toUpperCase() || 'G'}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>

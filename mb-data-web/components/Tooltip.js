@@ -14,9 +14,15 @@
 import { useState, useRef, useEffect, useId } from 'react'
 import { C } from '../lib/theme'
 
-// Fond opaque du tooltip — pas d'équivalent dans lib/theme.js (les surfaces du
-// thème sont translucides, illisibles pour un élément flottant au-dessus du contenu).
-const TOOLTIP_BG = '#222637'
+// Fond OPAQUE du tooltip : les surfaces du thème sont translucides, illisibles
+// pour un élément flottant au-dessus du contenu.
+//
+// ⚠️ C'était '#222637' en dur, un fond sombre. Le texte, lui, utilise C.text —
+// clair en thème sombre, mais quasi NOIR en thème clair. Le tooltip devenait
+// donc noir sur gris foncé : illisible sur toute la moitié claire de l'app.
+// `--surface-solid` est exactement le jeton prévu pour ça (opaque dans les deux
+// thèmes) ; il existait déjà quand ce commentaire disait le contraire.
+const TOOLTIP_BG = 'var(--surface-solid)'
 
 export default function Tooltip({ text, children, maxWidth = 280, position = 'top', style = {} }) {
   const [open, setOpen] = useState(false)
@@ -101,6 +107,7 @@ export default function Tooltip({ text, children, maxWidth = 280, position = 'to
             maxWidth,
             padding: '10px 14px',
             background: TOOLTIP_BG,
+            border: '1px solid var(--border2)',
             border: `1px solid ${C.border2}`,
             borderRadius: 8,
             fontSize: 12,

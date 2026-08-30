@@ -1767,3 +1767,91 @@ distinction. 480 tests.
   et non un montant.
 - **My Funded Futures** : Buffer à 2 100 $ — un ordre de grandeur de perte
   journalière, pas un solde. À vérifier.
+
+## Audit « pages cassées depuis Abyss » — 2026-08
+
+Constat utilisateur : beaucoup de pages semblaient cassées depuis la refonte.
+Méthode : crawl des 15 pages publiques dans les DEUX thèmes (Playwright), plus
+axe-core sur la règle `color-contrast`, plus un balayage statique des couleurs en
+dur et des jetons CSS jamais définis.
+
+### Résultat mesuré
+| | avant | après |
+|---|---|---|
+| contrastes · thème **clair** | **52** | **1** |
+| contrastes · thème **sombre** | **53** | **2** |
+| pages en 404/500 | 0 | 0 |
+| débordement horizontal | 0 | 0 |
+
+Rien n'était « cassé » au sens d'une page blanche : le défaut était **de la
+couleur figée sur l'ancienne palette**, invisible en sombre et flagrante en clair.
+
+### Les six causes réelles
+1. **`Skeleton` avait `surface3: '#222637'` en dur.** Le shimmer est un dégradé
+   surface2 → surface3 → surface2 : en clair, le reflet devenait un bloc
+   bleu-gris SOMBRE balayant des placeholders pâles. Comme ce composant porte
+   l'état de chargement de TOUTES les pages de données, le défaut se voyait
+   partout à la fois. Même valeur figée dans 12 autres fichiers, dont les
+   **7 pages admin**, `Tutorial` et `OnboardingModal` — alors que `--surface3`
+   existe dans les deux thèmes depuis le début.
+2. **`Tooltip` peignait un fond `#222637` avec `color: var(--text)`.** En clair,
+   texte quasi noir sur gris foncé : illisible. Le commentaire du fichier
+   affirmait qu'aucun jeton opaque n'existait ; `--surface-solid` était pourtant
+   déjà là.
+3. **`CFD_REPUTATION` figeait `#1db87a` / `#fac775` / `#e8504a`.** À elles
+   seules, ces trois teintes causaient **23 des 52** violations du thème clair
+   (2.26:1 et 1.45:1). Elles composaient aussi leur fond en concaténant une
+   alpha hexadécimale (`${color}1f`) — une astuce qui ne marche que sur un
+   littéral, jamais sur un `var()`. Remplacées par `tone` + `reputationTint()`.
+4. **`var(--accent, #2d6fff)` dans `CfdComparator`.** Le jeton `--accent`
+   n'existe nulle part : la valeur de repli l'emportait TOUJOURS et tout le
+   comparateur CFD restait peint au bleu d'avant Abyss. Un balayage systématique
+   des `var(--x)` contre `globals.css` n'a trouvé que ce cas (les deux autres
+   « manquants » sont `--font-ui`/`--font-mono`, posés par next/font).
+5. **11 `color: '#fff'` sur un fond d'accent.** En Abyss sombre les accents sont
+   CLAIRS (`--blue: #5ab0ff`) : blanc dessus = 2.31:1. Migrés vers
+   `--text-inverse`, qui bascule dans le bon sens.
+6. **Le bandeau `/demo` utilisait `--blue-border` comme FOND.** Un jeton de
+   bordure est très translucide : en clair il donne un bleu quasi blanc, sur
+   lequel le texte blanc disparaissait entièrement.
+
+### Deux corrections qui ne sont pas des couleurs
+- **Les entrées « Soon » du pied de page étaient des `<a href="#">`** avec
+  `opacity: 0.5`. Un lien actif au clavier qui ne mène nulle part, et une opacité
+  qui casse le contraste — sur toutes les pages publiques. Rendues en `<span>` :
+  ça dit la vérité, ce n'est pas encore cliquable.
+- **Les boutons inertes de `/demo`** n'avaient que `cursor: 'default'`. Sans
+  l'attribut `disabled`, ce sont des contrôles actifs pour le clavier et pour
+  axe. Marqués `disabled`.
+
+### `readableOn()` — pour les fonds de MARQUE
+Le sélecteur de plan de `/firms/[slug]` se peint à la couleur de la firme. Ni
+`#fff` ni `--text-inverse` ne conviennent : une couleur de marque **ne suit pas
+le thème**, donc `--text-inverse` se tromperait une fois sur deux, et le blanc
+échoue sur les marques claires (3.13:1 sur le `#4d8fff` de Lucid).
+
+`lib/theme.js` expose donc `readableOn(hex)` : il calcule les DEUX ratios WCAG et
+garde le meilleur. Pas de seuil de luminance approximatif — un premier essai à
+`L > 0.35` rendait encore du blanc sur `#4d8fff` alors que le sombre donne 5.76:1.
+
+⚠️ Sur une marque de luminance MOYENNE (`#8b5cf6`), **aucune** des deux ne peut
+atteindre 4.5:1 : c'est arithmétique, pas un défaut du helper. Le test dit donc
+« rend toujours la meilleure des deux » et vérifie le seuil AA séparément, sur
+les marques où il est atteignable. Promettre 4.5:1 partout aurait été faux.
+
+### Les 3 violations restantes, assumées
+- **`.qt-notif-section` sur la landing** (les deux thèmes) — `#7b839b`, l'ancien
+  `--text3`. `components/landing/**` reste épinglé en sombre sur la palette
+  pré-Abyss ; c'est un chantier à part.
+- **`/pricing`, 4.45:1** — `--green` clair sur son propre fond teinté. À 0.05 du
+  seuil ; le corriger demande de retoucher un jeton global, donc de re-vérifier
+  tous ses autres usages.
+
+### Un piège d'outillage, pour mémoire
+Lancer `npm run build` pendant que `next dev` tourne **corrompt `.next`** (les
+deux partagent le dossier) : les pages passent en 500 et une mesure de contraste
+renvoie alors 0 violation partout — un faux « tout est parfait » très
+convaincant. Toute campagne de mesure doit vérifier que les pages répondent 200
+avant de croire ses chiffres.
+
+485 tests (+5, sur `readableOn`).

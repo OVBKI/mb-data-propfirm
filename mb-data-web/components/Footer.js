@@ -109,19 +109,31 @@ export default function Footer() {
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {section.links.map(link => (
                   <li key={link.label}>
-                    {link.external ? (
+                    {/* ⚠️ Une entrée « Soon » n'est PAS un lien : son href vaut '#',
+                        elle ne mène nulle part. La rendre en <a> donnait un lien
+                        actif au clavier qui ne fait rien, et l'`opacity: 0.5`
+                        faisait passer son texte sous le seuil de contraste — sur
+                        TOUTES les pages publiques, puisque c'est le pied de page.
+                        Un <span> dit la vérité : ce n'est pas encore cliquable. */}
+                    {link.soon ? (
+                      <span style={{
+                        fontSize: 13, color: C.text3,
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                      }}>
+                        {link.label}
+                        <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 99, background: 'var(--blue-bg)', color: C.blueLight }}>{t('pages.footer.badges.soon')}</span>
+                      </span>
+                    ) : link.external ? (
                       <a
                         href={link.href}
                         target={link.href.startsWith('mailto:') ? undefined : '_blank'}
                         rel="noopener noreferrer"
                         style={{
                           fontSize: 13, color: C.text2, textDecoration: 'none',
-                          opacity: link.soon ? 0.5 : 1,
                           display: 'inline-flex', alignItems: 'center', gap: 6,
                         }}
                       >
                         {link.label}
-                        {link.soon && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 99, background: 'var(--blue-bg)', color: C.blueLight }}>{t('pages.footer.badges.soon')}</span>}
                       </a>
                     ) : (
                       <Link href={link.href} style={{
@@ -162,7 +174,11 @@ export default function Footer() {
         <div style={{
           marginTop: 18, padding: '12px 16px',
           background: 'var(--amber-bg)', border: '1px solid var(--amber-bg)',
-          borderRadius: 8, fontSize: 11, color: C.text3, lineHeight: 1.5,
+          // ⚠️ --text3 sur le fond ambre translucide donnait 4.33:1, juste sous
+          // le seuil AA de 4.5 — et ce bloc est le pied de page de TOUTES les
+          // pages publiques, donc l'écart se comptait treize fois. C'est un
+          // avertissement légal : il doit se lire.
+          borderRadius: 8, fontSize: 11, color: C.text2, lineHeight: 1.5,
         }}>
           <strong style={{ color: 'var(--amber)' }}>{t('pages.footer.disclaimer.title')}</strong> {t('pages.footer.disclaimer.body')}
         </div>

@@ -101,11 +101,17 @@ export default function DemoClient() {
     <div style={{ minHeight: '100vh', background: 'var(--bg, #0d0f14)', color: 'var(--text, #f0ede8)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
       <PageHeader />
 
+      {/* ⚠️ Le fond était `var(--blue-border)` — un jeton de BORDURE, donc très
+          translucide. En thème clair il donnait un bleu quasi blanc, sur lequel
+          le texte en `#fff` disparaissait complètement. Le fond plein est
+          `--blue`, et la couleur qui tient dessus dans LES DEUX thèmes est
+          `--text-inverse` : en Abyss sombre les accents sont CLAIRS, donc du
+          blanc dessus serait tout aussi illisible. */}
       {!dismissed && (
-        <div style={{ padding: '10px 24px', background: 'linear-gradient(90deg, var(--blue-border), var(--blue-border))', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{t('demo.banner')}</span>
-          <Link href="/auth?mode=signup" style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, background: '#fff', color: 'var(--blue)', textDecoration: 'none' }}>{t('demo.signupCta')}</Link>
-          <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 16, padding: 4 }} aria-label={t('demo.close')}>×</button>
+        <div style={{ padding: '10px 24px', background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-inverse)' }}>{t('demo.banner')}</span>
+          <Link href="/auth?mode=signup" style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, background: 'var(--text-inverse)', color: 'var(--blue)', textDecoration: 'none' }}>{t('demo.signupCta')}</Link>
+          <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', color: 'var(--text-inverse)', opacity: 0.75, cursor: 'pointer', fontSize: 16, padding: 4 }} aria-label={t('demo.close')}>×</button>
         </div>
       )}
 
@@ -158,11 +164,11 @@ export default function DemoClient() {
             </div>
             <div className="page-header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', border: '1px solid var(--hairline)', borderRadius: 8, overflow: 'hidden', background: 'var(--tint1)' }}>
-                <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'var(--blue)', color: 'var(--text-inverse)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>USD</button>
-                <button style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text2)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>EUR</button>
+                <button disabled style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'var(--blue)', color: 'var(--text-inverse)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>USD</button>
+                <button disabled style={{ padding: '7px 14px', fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text2)', cursor: 'default', fontWeight: 600, letterSpacing: '0.05em' }}>EUR</button>
               </div>
               <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder={t('app.dashboard.searchPlaceholder')} style={{ maxWidth: 180, width: '100%', padding: '8px 12px', fontSize: 13, background: 'var(--surface, #141720)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'inherit', outline: 'none' }} />
-              <button style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, background: 'var(--blue)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, cursor: 'default', opacity: 0.5 }}>{t('app.dashboard.btnAddPropfirm')}</button>
+              <button disabled style={{ padding: '8px 18px', fontSize: 13, fontWeight: 600, background: 'var(--blue)', color: 'var(--text-inverse)', border: 'none', borderRadius: 8, cursor: 'default', opacity: 0.5 }}>{t('app.dashboard.btnAddPropfirm')}</button>
             </div>
           </div>
 
@@ -360,7 +366,7 @@ function DemoCalendar({ calMonth, calYear, sdow, dim, todayDate, t, monthNames, 
                   background: isSelected ? 'var(--blue-bg)' : 'transparent',
                   outline: isSelected ? '2px solid var(--blue)' : 'none', outlineOffset: -2,
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'var(--blue)' : 'transparent', color: isToday ? '#fff' : 'var(--text2)', marginBottom: 5 }}>{day}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'var(--blue)' : 'transparent', color: isToday ? 'var(--text-inverse)' : 'var(--text2)', marginBottom: 5 }}>{day}</div>
                   {buyT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--red-bg, var(--red-bg))', color: 'var(--red-text, #e8504a)', marginBottom: 3, display: 'inline-block' }}>-{buyT} $</div>}
                   {payT > 0 && <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--green-bg, var(--green-bg))', color: 'var(--green-text, #1db87a)', display: 'inline-block' }}>+{payT} $</div>}
                 </div>
@@ -483,7 +489,7 @@ function SidebarItem({ icon, label, active, header, indent, disabled, badge, bad
     <>
       {icon && <span style={{ fontSize: 13, width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>}
       <span style={{ flex: 1 }}>{label}</span>
-      {badge && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: badgeColor || 'var(--hairline)', color: badgeColor ? '#fff' : 'var(--text3)', fontWeight: 700 }}>{badge}</span>}
+      {badge && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: badgeColor || 'var(--hairline)', color: badgeColor ? 'var(--text-inverse)' : 'var(--text3)', fontWeight: 700 }}>{badge}</span>}
     </>
   )
   if (href) return <Link href={href} style={style}>{inner}</Link>

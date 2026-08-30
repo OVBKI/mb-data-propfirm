@@ -32,10 +32,25 @@
 // Les composants in-app (CfdAccountModal, CfdAccountDrawer, CfdDrawdownCard, CfdComparator)
 // passent par les clés app.cfd.reputation.* / app.cfd.basisDaily.* / app.cfd.basisMax.*
 // (lib/i18n.js) avec fallback sur ces constantes.
+// ⚠️ COULEURS EN JETONS, pas en hexadécimal. Les trois teintes étaient figées sur
+// l'ancienne palette (#1db87a / #fac775 / #e8504a) : en thème CLAIR, la pastille
+// « Fiable » tombait à 2.26:1 de contraste et « Correct » à 1.45:1 — illisible.
+// À elles seules elles causaient 23 des violations de contraste de /cfd.
+//
+// `color` sert au TEXTE (variante -text, calibrée pour tenir sur un fond teinté),
+// `tone` nomme la famille pour composer le fond et la bordure. Il ne faut PAS
+// reconstruire une couleur translucide en concaténant une alpha hexadécimale
+// (`${color}1f`) : ça ne marche que sur un littéral, jamais sur un var().
 export const CFD_REPUTATION = {
-  solid: { label: 'Fiable', color: '#1db87a', note: 'Historique de payouts régulier, pas de scandale notable.' },
-  ok: { label: 'Correct', color: '#fac775', note: 'Globalement correct ; quelques points à surveiller.' },
-  caution: { label: 'Prudence', color: '#e8504a', note: 'Réputation fragile ou incident de payouts — vérifie avant de t’engager.' },
+  solid: { label: 'Fiable', tone: 'green', color: 'var(--green-text)', note: 'Historique de payouts régulier, pas de scandale notable.' },
+  ok: { label: 'Correct', tone: 'amber', color: 'var(--amber-text)', note: 'Globalement correct ; quelques points à surveiller.' },
+  caution: { label: 'Prudence', tone: 'red', color: 'var(--red-text)', note: 'Réputation fragile ou incident de payouts — vérifie avant de t’engager.' },
+}
+
+// Fond et bordure translucides d'une pastille de réputation, depuis son `tone`.
+export function reputationTint(rep) {
+  const tone = rep?.tone || 'blue'
+  return { bg: `var(--${tone}-bg)`, border: `var(--${tone}-bg)` }
 }
 
 export const CFD_PROPFIRM_RULES = {

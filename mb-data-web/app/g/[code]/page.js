@@ -116,7 +116,7 @@ export default async function GroupPage({ params }) {
             background: 'linear-gradient(135deg, var(--blue), #4d8fff)',
             border: '4px solid #0d0f14',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 32, fontWeight: 800, color: '#fff',
+            fontSize: 32, fontWeight: 800, color: 'var(--text-inverse)',
             flexShrink: 0,
           }}>
             {group.name?.[0]?.toUpperCase() || 'G'}
@@ -219,7 +219,7 @@ function MemberList({ items, ownerId }) {
                 : 'var(--tint2)',
               border: isPublic ? '1px solid var(--hairline)' : '1px dashed var(--hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, fontWeight: 700, color: '#fff',
+              fontSize: 16, fontWeight: 700, color: 'var(--text-inverse)',
               flexShrink: 0,
             }}>
               {isPublic ? (p.username?.[0]?.toUpperCase() || '?') : '🔒'}

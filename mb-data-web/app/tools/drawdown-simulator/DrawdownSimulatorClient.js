@@ -125,7 +125,8 @@ export default function DrawdownSimulatorClient() {
                         flex: 1, padding: '8px', borderRadius: 6,
                         fontSize: 12, fontWeight: 600, cursor: 'pointer',
                         background: ddType === type ? C.blue : 'transparent',
-                        color: ddType === type ? '#fff' : C.text2,
+                        // --text-inverse, pas '#fff' : en Abyss sombre --blue est CLAIR.
+                        color: ddType === type ? 'var(--text-inverse)' : C.text2,
                         border: 'none', fontFamily: 'inherit',
                       }}>
                         {type === 'eod' ? t('simulator.typeEod') : t('simulator.typeIntraday')}

@@ -5,6 +5,7 @@ import PageHeader from '../../../components/PageHeader'
 import Footer from '../../../components/Footer'
 import {
   CFD_REPUTATION,
+  reputationTint,
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from '../../../lib/cfdConstants'
@@ -70,6 +71,7 @@ function MetaCard({ label, children }) {
 export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
   const rep = CFD_REPUTATION[firm.reputation]
   const color = rep?.color || C.blue
+  const tint = reputationTint(rep)
   const f = firm.flagship || {}
 
   // Head-to-head links: every /cfd/compare/[pair] page involving this firm.
@@ -128,8 +130,8 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
               alignItems: 'flex-start',
               gap: 10,
               padding: '12px 16px',
-              background: `${color}12`,
-              border: `1px solid ${color}44`,
+              background: tint.bg,
+              border: `1px solid ${tint.border}`,
               borderRadius: 10,
             }}>
               <span style={{
@@ -138,8 +140,8 @@ export default function CfdFirmClient({ firmName, firm, slug, tagline, faqs }) {
                 fontSize: 12,
                 fontWeight: 700,
                 color: color,
-                background: `${color}22`,
-                border: `1px solid ${color}55`,
+                background: tint.bg,
+                border: `1px solid ${tint.border}`,
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
               }}>{rep.label}</span>

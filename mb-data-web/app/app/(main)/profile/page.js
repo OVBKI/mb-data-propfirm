@@ -201,7 +201,7 @@ export default function ProfilePage() {
               width: 92, height: 92, flexShrink: 0, borderRadius: '50%',
               background: 'linear-gradient(135deg, var(--blue) 0%, #6e3aff 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 32, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em',
+              fontSize: 32, fontWeight: 700, color: 'var(--text-inverse)', letterSpacing: '-0.02em',
               border: '2px solid var(--border2)', boxShadow: '0 8px 24px var(--blue-bg)',
             }}>
               {getInitials(displayName)}

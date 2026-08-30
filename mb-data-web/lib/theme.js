@@ -214,3 +214,39 @@ export function chipBtn(active) {
     transition:   'all 0.15s',
   }
 }
+
+/**
+ * Couleur de texte lisible sur un fond de MARQUE.
+ *
+ * ⚠️ Ni '#fff' ni `var(--text-inverse)` ne conviennent ici. Une couleur de marque
+ * (le bleu de Lucid, l'orange de Topstep, le vert de Tradeify) ne suit PAS le
+ * thème : elle est la même en clair et en sombre. `--text-inverse` bascule avec
+ * le thème et se tromperait donc une fois sur deux, et un blanc fixe échoue sur
+ * les marques claires — le sélecteur de plan de /firms/[slug] affichait du blanc
+ * sur le #4d8fff de Lucid, soit 3.13:1 au lieu des 4.5 requis.
+ *
+ * On calcule les DEUX ratios de contraste (WCAG 2.1) et on garde le meilleur.
+ * Pas de seuil de luminance approximatif : sur #4d8fff un seuil à 0.35 rendait
+ * du blanc (3.13:1) alors que le sombre donne 5.76:1.
+ *
+ * ⚠️ Sur une marque de luminance MOYENNE (#8b5cf6, le violet de FuturesElites),
+ * aucune des deux ne peut atteindre 4.5:1 — c'est une limite arithmétique, pas
+ * un défaut du helper. On rend alors la moins mauvaise ; si le contraste compte
+ * vraiment à cet endroit, c'est le fond de marque qu'il faut abandonner.
+ *
+ * @param {string} hex - couleur de fond, '#rgb' ou '#rrggbb'
+ * @returns {string} '#0a1420' (texte sombre) ou '#ffffff' (texte clair)
+ */
+export function readableOn(hex) {
+  const s = String(hex || '').trim().replace('#', '')
+  const full = s.length === 3 ? s.split('').map(c => c + c).join('') : s
+  if (!/^[0-9a-f]{6}$/i.test(full)) return '#ffffff' // pas un hex → on ne devine pas
+  const chan = i => {
+    const v = parseInt(full.slice(i * 2, i * 2 + 2), 16) / 255
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+  }
+  const L = 0.2126 * chan(0) + 0.7152 * chan(1) + 0.0722 * chan(2)
+  const onWhite = 1.05 / (L + 0.05)          // contraste contre #ffffff
+  const onDark = (L + 0.05) / (0.0055 + 0.05) // contraste contre #0a1420
+  return onDark >= onWhite ? '#0a1420' : '#ffffff'
+}

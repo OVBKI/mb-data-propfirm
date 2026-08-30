@@ -5,6 +5,7 @@ import PageHeader from '../../components/PageHeader'
 import Footer from '../../components/Footer'
 import {
   CFD_REPUTATION,
+  reputationTint,
   CFD_DAILY_BASIS_LABEL,
   CFD_MAX_BASIS_LABEL,
 } from '../../lib/cfdConstants'
@@ -42,7 +43,7 @@ function InitialAvatar({ name, color, size = 40 }) {
         justifyContent: 'center',
         fontSize: size * 0.42,
         fontWeight: 800,
-        color: '#fff',
+        color: 'var(--text-inverse)',
         background: `linear-gradient(135deg, ${color}, ${color}99)`,
         border: `1px solid ${color}55`,
       }}
@@ -55,6 +56,7 @@ function InitialAvatar({ name, color, size = 40 }) {
 function ReputationBadge({ reputation }) {
   const rep = CFD_REPUTATION[reputation]
   if (!rep) return null
+  const tint = reputationTint(rep)
   return (
     <span
       title={rep.note}
@@ -65,8 +67,8 @@ function ReputationBadge({ reputation }) {
         fontSize: 11,
         fontWeight: 700,
         color: rep.color,
-        background: `${rep.color}1f`,
-        border: `1px solid ${rep.color}55`,
+        background: tint.bg,
+        border: `1px solid ${tint.border}`,
         whiteSpace: 'nowrap',
       }}
     >
@@ -342,7 +344,7 @@ export default function CfdIndexClient() {
                   display: 'flex', flexDirection: 'column', padding: 20, background: C.surface,
                   border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none', color: C.text,
                 }}>
-                  <div style={{ fontSize: 11, color: '#22d3ee', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: 'var(--cyan)', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
                     {g.category} · {g.readingTime} min
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 8 }}>{g.title}</div>

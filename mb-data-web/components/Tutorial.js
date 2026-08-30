@@ -26,7 +26,7 @@ import { useT } from './LanguageProvider'
 const C = {
   surface: 'var(--surface)',
   surface2: 'var(--surface2)',
-  surface3: '#222637',
+  surface3: 'var(--surface3)',
   border: 'var(--border)',
   border2: 'var(--border2)',
   text: 'var(--text)',

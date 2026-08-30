@@ -1,4 +1,5 @@
 'use client'
+import { readableOn } from '../../../lib/theme'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import PageHeader from '../../../components/PageHeader'
@@ -156,7 +157,7 @@ export default function FirmPageClient({ firmName, firm, meta, otherFirms }) {
                   style={{
                     padding: '8px 16px',
                     background: selectedPlan === p ? color : 'transparent',
-                    color: selectedPlan === p ? '#fff' : C.text2,
+                    color: selectedPlan === p ? readableOn(color) : C.text2,
                     border: `1px solid ${selectedPlan === p ? color : C.border}`,
                     borderRadius: 8,
                     fontSize: 13,

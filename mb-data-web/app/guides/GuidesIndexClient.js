@@ -21,7 +21,7 @@ const CATEGORY_COLORS = {
   'Règles': 'var(--violet)',
   'Guide PropFirm': 'var(--amber)',
   'Payouts': C.green,
-  'CFD / Forex': '#22d3ee',
+  'CFD / Forex': 'var(--cyan)',
 }
 
 export default function GuidesIndexClient() {

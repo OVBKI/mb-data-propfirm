@@ -33,7 +33,10 @@ const C = {
   text: 'var(--text)',
   text2: 'var(--text2)',
   text3: 'var(--text3)',
-  blue: 'var(--accent, #2d6fff)',
+  // ⚠️ C'était `var(--accent, #2d6fff)`. Le jeton `--accent` n'existe nulle part
+  // dans globals.css : la valeur de repli l'emportait TOUJOURS, et tout le
+  // comparateur CFD restait peint au bleu d'avant Abyss.
+  blue: 'var(--blue)',
   amber: 'var(--amber)',
   green: 'var(--green)',
 }
