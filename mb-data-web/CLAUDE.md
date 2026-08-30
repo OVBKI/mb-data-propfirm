@@ -1396,3 +1396,39 @@ Trois précisions que seule leur page donne, désormais dans les règles :
   confondent les deux.
 - **7 jours calendaires** pour activer le Performance Account après la réussite ;
   la limite de 30 jours ne s'applique qu'à l'évaluation, jamais au PA.
+
+### Apex — deuxième passe sur captures (PA, payouts, trailing)
+Trois articles de plus : « EOD Performance Accounts », « EOD Payouts » et la
+section « When EOD Drawdown Stops Trailing ». Quatre écarts corrigés.
+
+| | Stocké | Officiel |
+|---|---|---|
+| **Profit min / jour** (25/50/100/150K) | 125 / 200 / 250 / 375 $ | **100 / 250 / 300 / 350 $** |
+| **Contrats PA à pleine taille, 150K** | 9 | **10** |
+| **Safety Net** | confondu avec le solde minimum de demande | deux colonnes distinctes |
+| **Clé du profit min** | `Qualifying days/payout` — illisible par le parseur | renommée `Profit min jour valide` |
+
+**Le profit minimum quotidien décide si une journée COMPTE** dans les cinq jours
+qualifiants d'un payout. Les quatre valeurs étaient fausses, et la clé portait un
+nom qu'aucun motif ne trouvait — `defaultMinDailyProfit('Apex', …)` rendait `null`
+alors que la donnée existait. Renommée, elle est lue partout (le comparateur avait
+trois références, toutes rebranchées).
+
+**Safety Net contre solde minimum.** Le tableau officiel a deux colonnes que la
+cellule fusionnait : le Safety Net (26 100 / 52 100 / 103 100 / 154 100 $) débloque
+la taille de position pleine ; le solde minimum pour DEMANDER un payout est 500 $
+plus haut (26 600 / 52 600 / 103 600 / 154 600 $). Nouvelle clé
+`Solde min pour payout`.
+
+#### Le piège Tradovate
+L'arrêt du trailing dépend de la **plateforme**, ce qu'aucune source tierce ne
+disait :
+
+```
+Performance Account            bloque au solde initial + 100 $
+Éval Rithmic / WealthCharts    bloque quand le seuil atteint le solde objectif
+Éval TRADOVATE                 ne bloque JAMAIS — suit le plus haut indéfiniment
+```
+
+Deux traders avec le même compte 50K n'ont donc pas la même marge selon la
+plateforme choisie. Consigné dans la clé `Arrêt du trailing`.

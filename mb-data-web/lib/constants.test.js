@@ -316,8 +316,17 @@ describe('defaultMinDailyProfit', () => {
   })
 
   it('returns null when no matching rule/value exists', () => {
-    expect(defaultMinDailyProfit('Apex Trader Funding', '50k')).toBeNull()
     expect(defaultMinDailyProfit('Nope', '50k')).toBeNull()
+  })
+
+  it('lit le profit min quotidien d’Apex (tableau officiel EOD Payouts)', () => {
+    // La clé s'appelait « Qualifying days/payout » : aucun motif ne la trouvait,
+    // donc Apex n'avait pas de profit min quotidien alors que la donnée existait.
+    // Ce chiffre décide si une journée COMPTE dans les 5 jours qualifiants.
+    expect(defaultMinDailyProfit('Apex Trader Funding', '25k')).toBe(100)
+    expect(defaultMinDailyProfit('Apex Trader Funding', '50k')).toBe(250)
+    expect(defaultMinDailyProfit('Apex Trader Funding', '100k')).toBe(300)
+    expect(defaultMinDailyProfit('Apex Trader Funding', '150k')).toBe(350)
   })
 })
 

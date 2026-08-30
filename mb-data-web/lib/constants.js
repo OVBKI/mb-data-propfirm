@@ -233,7 +233,12 @@ export const PROPFIRM_RULES = {
       // === ÉVALUATION (one-time, 30 jours calendaires max) ===
       'Objectif de profit':       {'25k':'EOD/Intraday/Legacy : $1,500 (6%)','50k':'EOD/Intraday/Legacy : $3,000 (6%)','75k':'Legacy : $4,500 (6%)','100k':'EOD/Intraday/Legacy : $6,000 (6%)','150k':'EOD/Intraday/Legacy : $9,000 (6%)','250k':'Legacy : $15,000','300k':'Legacy : $20,000'},
       'Drawdown trailing max':    {'25k':'EOD/Intraday : $1,000 · Legacy : $1,500','50k':'EOD/Intraday : $2,000 · Legacy : $2,500','75k':'Legacy : $2,750','100k':'EOD/Intraday : $3,000 · Legacy : $3,000','150k':'EOD/Intraday : $4,000 · Legacy : $5,000','250k':'Legacy : $6,500','300k':'Legacy : $7,500'},
-      'Mécanisme trailing':       {'25k':'Seuil EOD recalculé une fois par jour à 16h59m59 ET sur le solde de clôture · appliqué EN TEMPS RÉEL la session suivante · ne redescend jamais · journée de trading remise à zéro à 18h00 ET','50k':'idem','100k':'idem','150k':'idem','75k':'idem','250k':'idem','300k':'idem'},
+      'Mécanisme trailing':       {'25k':'Seuil EOD recalculé une fois par jour à 16h59m59 ET sur le solde de clôture, appliqué EN TEMPS RÉEL la session suivante, ne redescend jamais · journée remise à zéro à 18h00 ET','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
+      // ⚠️ TROIS COMPORTEMENTS D'ARRÊT, ET LE TROISIÈME EST UN PIÈGE.
+      //    Sur une évaluation TRADOVATE le drawdown ne se verrouille JAMAIS : il
+      //    suit le plus haut solde de clôture indéfiniment. Deux traders avec le
+      //    même compte 50K n'ont donc pas la même marge selon leur plateforme.
+      'Arrêt du trailing':        {'25k':'PA : bloque à $25,100 (solde initial + $100) · Éval Rithmic/WealthCharts : bloque à $26,500 (= solde + objectif) · Éval TRADOVATE : ne bloque JAMAIS','50k':'PA : $50,100 · Éval Rithmic/WealthCharts : $53,000 · Éval Tradovate : jamais','75k':'Legacy','100k':'PA : $100,100 · Éval Rithmic/WealthCharts : $106,000 · Éval Tradovate : jamais','150k':'PA : $150,100 · Éval Rithmic/WealthCharts : $159,000 · Éval Tradovate : jamais','250k':'Legacy','300k':'Legacy'},
       'Daily Loss Limit (EOD)':   {'25k':'$500 (NOUVEAU 4.0 · pause trading session, pas de fail)','50k':'$1,000','75k':'~$1,250 (estim. legacy)','100k':'$1,500','150k':'$2,000','250k':'~$2,500 (estim. legacy)','300k':'~$3,000 (estim. legacy)'},
       'Daily Loss Limit (Intraday)':{'25k':'AUCUN (Intraday n\'a PAS de DLL)','50k':'AUCUN','75k':'AUCUN','100k':'AUCUN','150k':'AUCUN','250k':'AUCUN','300k':'AUCUN'},
       'Jours de trading min (eval)':{'25k':'0 (passage en 1 jour possible)','50k':'0','75k':'0','100k':'0','150k':'0','250k':'0','300k':'0'},
@@ -251,12 +256,17 @@ export const PROPFIRM_RULES = {
       // === PERFORMANCE ACCOUNT (PA) ===
       'Règle de cohérence (PA)':  {'25k':'50% — aucun jour > 50% du profit total depuis dernier payout (relâché de 30%)','50k':'50% (relâché de 30%)','75k':'50%','100k':'50% (relâché de 30%)','150k':'50% (relâché de 30%)','250k':'50%','300k':'50%'},
       'PA DLL initial':           {'25k':'$500 (EOD seulement) — scale avec profits','50k':'$1,000','75k':'~$1,500','100k':'$1,750','150k':'$2,500','250k':'~$3,000','300k':'~$3,500'},
-      'Safety Net (PA)':          {'25k':'EOD/Intraday : $26,100 · Legacy : $26,600 (= solde initial + DD + $100)','50k':'EOD/Intraday : $52,100 · Legacy : $52,600','75k':'Legacy : $77,850','100k':'EOD/Intraday : $103,100 · Legacy : $103,100','150k':'EOD/Intraday : $154,100 · Legacy : $155,100','250k':'Legacy : $256,600','300k':'Legacy : $307,600'},
+      // Le tableau officiel a DEUX colonnes que la cellule confondait : le Safety
+      // Net (seuil qui débloque la taille de position pleine) et le solde minimum
+      // exigé pour DEMANDER un payout, 500 $ plus haut. Séparées ci-dessous.
+      'Safety Net (PA)':          {'25k':'$26,100','50k':'$52,100','75k':'Legacy : $77,850','100k':'$103,100','150k':'$154,100','250k':'Legacy : $256,600','300k':'Legacy : $307,600'},
+      'Solde min pour payout':    {'25k':'$26,600','50k':'$52,600','75k':'Legacy : non confirmé','100k':'$103,600','150k':'$154,600','250k':'Legacy : non confirmé','300k':'Legacy : non confirmé'},
       'DCA (renforcement)':       {'25k':'Eval : autorisé · PA : 🚨 INTERDIT (fail auto) depuis mars 2026','50k':'Eval autorisé · PA INTERDIT','75k':'Eval autorisé · PA INTERDIT','100k':'Eval autorisé · PA INTERDIT','150k':'Eval autorisé · PA INTERDIT','250k':'Eval autorisé · PA INTERDIT','300k':'Eval autorisé · PA INTERDIT'},
       // === CONTRATS (mini = standard · micro = 10× mini, comptent à l\'unité) ===
       'Contrats max eval (mini)': {'25k':'EOD/Intraday/Legacy : 4','50k':'EOD/Intraday/Legacy : 6','75k':'Legacy : 8','100k':'EOD/Intraday/Legacy : 8','150k':'EOD/Intraday/Legacy : 12','250k':'Legacy : 16','300k':'Legacy : 20'},
       'Contrats PA pre-safety':   {'25k':'1 (½ du PA max)','50k':'2','75k':'3 (legacy)','100k':'3','150k':'4','250k':'6 (legacy)','300k':'7 (legacy)'},
-      'Contrats PA post-safety':  {'25k':'2 (PA full)','50k':'4','75k':'6 (legacy)','100k':'6','150k':'9','250k':'12 (legacy)','300k':'15 (legacy)'},
+      // Tableau officiel « EOD Performance Accounts » : 2 / 4 / 6 / 10.
+      'Contrats PA post-safety':  {'25k':'2','50k':'4','75k':'6 (legacy)','100k':'6','150k':'10','250k':'12 (legacy)','300k':'15 (legacy)'},
       'Contrats max (micro)':     {'25k':'40 (10× mini, comptent à l\'unité)','50k':'60','75k':'80 (legacy)','100k':'80','150k':'120','250k':'160 (legacy)','300k':'200 (legacy)'},
       // === TRADING RESTRICTIONS ===
       'Positions overnight':      {'25k':'INTERDIT (flat à 16h59 ET impératif)','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT','250k':'INTERDIT','300k':'INTERDIT'},
@@ -276,7 +286,10 @@ export const PROPFIRM_RULES = {
       'Payout minimum':           {'25k':'$500 (toutes tailles)','50k':'$500','75k':'$500','100k':'$500','150k':'$500','250k':'$500','300k':'$500'},
       'Payout ladder (1→6)':      {'25k':'$1,000 flat (tous les 6 steps)','50k':'$1,500 → $1,750 → $2,000 → $2,500 → $2,750 → $3,000','75k':'~$1,750 step 1 (legacy, scaling proportionnel)','100k':'$2,000 → $2,500 → $3,000 → $3,000 → $3,500 → $4,000','150k':'$2,500 → $3,000 → $3,500 → $4,000 → $4,500 → $5,000','250k':'(legacy, scaling proportionnel)','300k':'(legacy, scaling proportionnel)'},
       'Après 6 payouts':          {'25k':'Caps levés (uncapped) sur la même PA · sources contradictoires sur lifetime cap : damnpropfirms dit uncapped, autres disent PA ferme — à vérifier au checkout','50k':'Caps levés (uncapped)','75k':'Caps levés','100k':'Caps levés','150k':'Caps levés','250k':'Caps levés','300k':'Caps levés'},
-      'Qualifying days/payout':   {'25k':'5 jours · profit min $125/jour','50k':'5 jours · min $200/jour','75k':'5 jours · ~$225 (legacy)','100k':'5 jours · min $250/jour','150k':'5 jours · min $375/jour','250k':'5 jours · min $500/jour','300k':'5 jours · ~$600 (legacy)'},
+      // ⚠ CORRIGÉ août 2026 sur le tableau officiel « EOD Payouts ». Les quatre
+      //   valeurs stockées étaient fausses ($125/$200/$250/$375), et ce chiffre
+      //   décide si une journée COMPTE dans les 5 jours qualifiants d'un payout.
+      'Profit min jour valide':   {'25k':'5 jours qualifiants · profit min $100/jour','50k':'5 jours · min $250/jour','75k':'5 jours · ~$225 (legacy, non confirmé)','100k':'5 jours · min $300/jour','150k':'5 jours · min $350/jour','250k':'5 jours · min $500/jour (legacy)','300k':'5 jours · ~$600 (legacy)'},
       'Délai payout':             {'25k':'24-48h processing','50k':'24-48h','75k':'24-48h','100k':'24-48h','150k':'24-48h','250k':'24-48h','300k':'24-48h'},
       'Méthodes payout':          {'25k':'ACH (US) · Plane (international) — Deel supprimé','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
       // === MULTI-COMPTES ===

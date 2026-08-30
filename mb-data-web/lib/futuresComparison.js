@@ -208,7 +208,7 @@ export const FIRM_COMPARISON_MAP = {
           dailyDrawdown: { key: 'PA DLL initial' },
           buffer: { key: 'Safety Net (PA)', model: 'EOD' },
           jourMin: null,                                       // les qualifying days vivent dans le texte payout
-          minDailyProfit: { key: 'Qualifying days/payout' },
+          minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Règle de cohérence (PA)' },     // 50%
         },
       },
@@ -226,7 +226,7 @@ export const FIRM_COMPARISON_MAP = {
           dailyDrawdown: { key: 'Daily Loss Limit (Intraday)' },
           buffer: { key: 'Safety Net (PA)', model: 'Intraday' },
           jourMin: null,
-          minDailyProfit: { key: 'Qualifying days/payout' },
+          minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Règle de cohérence (PA)' },
         },
       },
@@ -244,7 +244,7 @@ export const FIRM_COMPARISON_MAP = {
           dailyDrawdown: { key: 'PA DLL initial' },
           buffer: { key: 'Safety Net (PA)', model: 'Legacy' },
           jourMin: null,
-          minDailyProfit: { key: 'Qualifying days/payout' },
+          minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Règle de cohérence (PA)' },
         },
       },
