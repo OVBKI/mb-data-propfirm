@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comparateur de règles — 4 pistes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Jetons repris de app/globals.css — une maquette peut mentir sur la forme,
+   jamais sur la couleur. */
+:root{
+  --bg:#0a1420;
+  --surface:rgba(24,37,53,0.78); --surface2:rgba(33,49,68,0.82);
+  --border:rgba(159,179,200,0.13); --border2:rgba(159,179,200,0.22);
+  --text:#f0f5fa; --text2:#9fb3c8; --text3:#8a9fb5; --text-inverse:#0a1420;
+  --blue:#5ab0ff; --blue-light:#7cc2ff; --blue-bg:rgba(90,176,255,0.14); --blue-border:rgba(90,176,255,0.32);
+  --green:#3ddba8; --green-bg:rgba(61,219,168,0.14);
+  --amber:#ffc25c; --amber-bg:rgba(255,194,92,0.14);
+  --violet:#a58bff; --violet-bg:rgba(165,139,255,0.16);
+  --cyan:#4ecdd4; --cyan-bg:rgba(78,205,212,0.16);
+  --tint1:rgba(159,179,200,0.05); --tint2:rgba(159,179,200,0.085); --tint3:rgba(159,179,200,0.13);
+  --hairline:rgba(159,179,200,0.14); --bar-bg:rgba(10,20,32,0.80);
+  --shadow-card:0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.28);
+  --radius:12px; --radius-lg:18px;
+  --font-ui:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'Roboto Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+[data-theme="light"]{
+  --bg:#eef3f9;
+  --surface:rgba(255,255,255,0.88); --surface2:rgba(255,255,255,0.72);
+  --border:rgba(38,62,88,0.14); --border2:rgba(38,62,88,0.22);
+  --text:#0f2338; --text2:#3d5771; --text3:#4a6280; --text-inverse:#ffffff;
+  --blue:#0a6fd1; --blue-light:#0a6fd1; --blue-bg:rgba(10,111,209,0.10); --blue-border:rgba(10,111,209,0.28);
+  --green:#0a8f66; --green-bg:rgba(10,143,102,0.12);
+  --amber:#8a6200; --amber-bg:rgba(138,98,0,0.12);
+  --violet:#6242c9; --violet-bg:rgba(98,66,201,0.12);
+  --cyan:#12727a; --cyan-bg:rgba(18,114,122,0.12);
+  --tint1:rgba(38,62,88,0.035); --tint2:rgba(38,62,88,0.06); --tint3:rgba(38,62,88,0.10);
+  --hairline:rgba(38,62,88,0.12); --bar-bg:rgba(255,255,255,0.88);
+  --shadow-card:0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px rgba(15,35,56,0.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh}
+/* Le halo Abyss — sans lui il ne reste que la palette. */
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(900px 600px at 88% 4%, rgba(90,176,255,0.16), transparent 60%),
+    radial-gradient(700px 500px at 4% 8%, rgba(78,205,212,0.11), transparent 60%),
+    radial-gradient(800px 700px at 45% 110%, rgba(165,139,255,0.12), transparent 62%);}
+[data-theme="light"] body::before{
+  background:
+    radial-gradient(900px 600px at 88% 4%, rgba(10,111,209,0.10), transparent 60%),
+    radial-gradient(700px 500px at 4% 8%, rgba(18,114,122,0.08), transparent 60%),
+    radial-gradient(800px 700px at 45% 110%, rgba(98,66,201,0.08), transparent 62%);}
+.wrap{max-width:1280px;margin:0 auto;padding:28px 20px 90px}
+
+.pagehead{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:space-between}
+.pagehead h1{font-size:26px;font-weight:600;letter-spacing:-0.02em}
+.pagehead p{color:var(--text2);font-size:14px;max-width:64ch;margin-top:6px}
+code{font-family:var(--font-mono);font-size:.9em;background:var(--tint2);padding:1px 5px;border-radius:5px}
+.themebtn{font-family:inherit;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;
+  background:var(--surface2);border:1px solid var(--border2);border-radius:999px;padding:9px 16px;
+  min-height:36px;transition:color .15s,border-color .15s}
+.themebtn:hover{color:var(--text);border-color:var(--blue-border)}
+.note{font-size:13.5px;color:var(--text2);background:var(--tint1);border:1px solid var(--border);
+  border-left:3px solid var(--blue);border-radius:0 10px 10px 0;padding:13px 16px;margin-top:20px;max-width:80ch}
+.note b{color:var(--text);font-weight:600}
+
+section{margin-top:54px}
+.seclabel{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px}
+.secnum{font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.08em;
+  color:var(--blue);background:var(--blue-bg);border:1px solid var(--blue-border);
+  border-radius:999px;padding:3px 10px}
+.seclabel h2{font-size:19px;font-weight:600;letter-spacing:-0.01em}
+.secdesc{color:var(--text2);font-size:14px;max-width:78ch;margin-bottom:18px}
+.secdesc em{color:var(--text);font-style:normal;font-weight:500}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);overflow:hidden}
+.scroll{overflow-x:auto}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.nil{color:var(--text3);opacity:.42}
+
+.sizes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.sizes button{font-family:inherit;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;
+  background:var(--surface2);border:1px solid var(--border);border-radius:9px;
+  padding:7px 14px;min-height:34px;transition:.15s}
+.sizes button:hover{color:var(--text)}
+.sizes button[aria-pressed="true"]{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue-light)}
+
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+.dot{width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center;
+  font-size:10px;font-weight:700;font-family:var(--font-mono);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.fname{display:flex;align-items:center;gap:9px;font-weight:600;font-size:13.5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.03em;
+  border-radius:999px;padding:3px 9px;white-space:nowrap}
+.p-eod{background:var(--cyan-bg);color:var(--cyan)}
+.p-tr{background:var(--amber-bg);color:var(--amber)}
+.p-st{background:var(--violet-bg);color:var(--violet)}
+.p-mix{background:var(--tint2);color:var(--text2)}
+
+/* ══ A — TABLEAU DENSE ═════════════════════════════════════════════════════ */
+.A thead th{position:sticky;top:0;z-index:2;background:var(--bar-bg);backdrop-filter:blur(10px);
+  font-weight:600;text-align:left;white-space:nowrap}
+.A .grouprow th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:11px 12px 7px;border-bottom:1px solid var(--border)}
+.A .g-chal{color:var(--blue)}
+.A .g-fund{color:var(--green)}
+.A .colrow th{font-size:11px;color:var(--text2);padding:0 12px 10px;
+  border-bottom:1px solid var(--border2);font-weight:500}
+.A .colrow th.r,.A td.r{text-align:right}
+/* Un filet vertical sépare les deux groupes. Un fond différent en ferait deux
+   tableaux au lieu d'un. */
+.A .sep{border-left:1px solid var(--border2)}
+.A tbody td{padding:11px 12px;border-bottom:1px solid var(--hairline);vertical-align:middle}
+.A tbody tr:hover td{background:var(--tint1)}
+.A tbody tr:last-child td{border-bottom:none}
+.A .firmcell{position:sticky;left:0;z-index:1;background:var(--surface);
+  border-right:1px solid var(--border2);min-width:212px}
+.A tbody tr:hover .firmcell{background:var(--surface2)}
+.A td.val{font-size:13.5px;font-weight:500}
+.progs{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}
+.prog{font-size:10.5px;font-weight:600;color:var(--text3);cursor:pointer;font-family:inherit;
+  background:transparent;border:1px solid var(--border);border-radius:6px;padding:2.5px 7px;transition:.12s}
+.prog:hover{color:var(--text2);border-color:var(--border2)}
+.prog[aria-pressed="true"]{background:var(--tint3);border-color:var(--border2);color:var(--text)}
+
+/* ══ B — CARTES ════════════════════════════════════════════════════════════ */
+.Bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.fcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);padding:16px 16px 6px}
+.fcard header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.fcard h3{font-size:15px;font-weight:600;flex:1;min-width:0}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{font-family:inherit;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;
+  background:var(--tint1);border:1px solid transparent;border-radius:7px;padding:5px 10px;transition:.12s}
+.tabs button:hover{color:var(--text2)}
+.tabs button[aria-pressed="true"]{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue-light)}
+.phase{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  display:flex;align-items:center;gap:9px;margin:4px 0 9px}
+.phase::after{content:'';flex:1;height:1px;background:var(--border)}
+.phase.c{color:var(--blue)}
+.phase.f{color:var(--green)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:7px 12px;margin-bottom:16px}
+.kv dt{font-size:12.5px;color:var(--text2)}
+.kv dd{font-size:13.5px;font-weight:600;text-align:right}
+
+/* ══ C — MATRICE INVERSÉE ══════════════════════════════════════════════════ */
+.C table{font-size:13.5px}
+.C thead th{background:var(--bar-bg);backdrop-filter:blur(10px);position:sticky;top:0;z-index:2;
+  padding:14px;border-bottom:1px solid var(--border2);text-align:left;vertical-align:bottom;min-width:172px}
+.C thead th:first-child{min-width:200px;left:0;z-index:3;font-size:11px;color:var(--text3);font-weight:600}
+.C .colfirm{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600}
+.C .colprog{font-size:11px;color:var(--text3);font-weight:500;margin-top:5px}
+.C tbody th{text-align:left;font-weight:500;font-size:12.5px;color:var(--text2);padding:12px 14px;
+  position:sticky;left:0;background:var(--surface);border-right:1px solid var(--border2);
+  border-bottom:1px solid var(--hairline);white-space:nowrap}
+.C tbody td{padding:12px 14px;border-bottom:1px solid var(--hairline);font-weight:600;
+  border-right:1px solid var(--hairline)}
+.C tbody tr:hover td{background:var(--tint1)}
+.C tbody tr:hover th{background:var(--surface2)}
+.C .best{color:var(--green)}
+.C .best::after{content:' ▲';font-size:9px;vertical-align:2px}
+.C .rowgroup th,.C .rowgroup td{background:var(--tint2);font-size:10.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;color:var(--text3);
+  border-bottom:1px solid var(--border)}
+.C .rowgroup th{position:sticky;left:0}
+.picker{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.picker .lbl{font-size:12px;color:var(--text3);margin-right:4px}
+.picker button{font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 11px;transition:.12s}
+.picker button:hover{color:var(--text)}
+.picker button[aria-pressed="true"]{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue-light)}
+
+/* ══ D — BARRES DE CONTEXTE ════════════════════════════════════════════════ */
+.D thead th{background:var(--bar-bg);backdrop-filter:blur(10px);position:sticky;top:0;z-index:2;
+  font-size:11px;font-weight:600;color:var(--text2);text-align:left;padding:12px;
+  border-bottom:1px solid var(--border2);white-space:nowrap}
+.D tbody td{padding:9px 12px;border-bottom:1px solid var(--hairline);vertical-align:middle}
+.D tbody tr:hover td{background:var(--tint1)}
+.D tbody tr:last-child td{border-bottom:none}
+.D .firmcell{position:sticky;left:0;background:var(--surface);
+  border-right:1px solid var(--border2);min-width:206px}
+.D tbody tr:hover .firmcell{background:var(--surface2)}
+.meter{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;min-width:136px}
+.track{height:5px;border-radius:99px;background:var(--tint2);overflow:hidden}
+.fill{height:100%;border-radius:99px;display:block}
+.meter .v{font-size:12.5px;font-weight:600;white-space:nowrap}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--text2);
+  padding:12px 16px;border-top:1px solid var(--border)}
+.legend i{display:inline-block;width:22px;height:5px;border-radius:99px;margin-right:7px;vertical-align:middle}
+
+.verdict{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.vc{background:var(--tint1);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px}
+.vc h4{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.vc p{font-size:13px;color:var(--text2)}
+.vc.plus h4{color:var(--green)}
+.vc.minus h4{color:var(--amber)}
+.vc.use h4{color:var(--blue)}
+
+@media (max-width:720px){
+  .wrap{padding:20px 12px 70px}
+  .pagehead h1{font-size:21px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="pagehead">
+  <div>
+    <h1>Comparateur de règles — quatre pistes</h1>
+    <p>Mêmes données que <code>/app/rules</code> aujourd'hui : 12 firmes, taille 50K, valeurs réelles du catalogue.
+       Seule la forme change. Les quatre pistes répondent à des questions différentes — ce n'est pas quatre
+       habillages du même tableau.</p>
+  </div>
+  <button class="themebtn" id="tbtn" type="button">☀ Thème clair</button>
+</div>
+
+<p class="note">
+  Le tableau actuel a trois défauts précis, et chaque piste en corrige un jeu différent.
+  <b>1.</b> Dix colonnes de large, dont beaucoup de « — » qui pèsent visuellement autant que les vraies valeurs.
+  <b>2.</b> Les chiffres ne sont pas alignés : impossible de balayer une colonne d'un coup d'œil.
+  <b>3.</b> Le programme se choisit dans un <code>&lt;select&gt;</code> — un contrôle de formulaire posé dans une cellule de tableau.
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════ A ═══ -->
+<section>
+  <div class="seclabel"><span class="secnum">PISTE A</span><h2>Tableau dense, mais tenu</h2></div>
+  <p class="secdesc">
+    On garde la structure actuelle et on la <em>discipline</em> : chiffres en chasse fixe alignés à droite,
+    colonne de firme figée au défilement, « — » estompé au lieu d'être affiché aussi fort qu'une valeur,
+    programmes en pastilles cliquables plutôt qu'en menu déroulant, filet vertical entre Challenge et Financé.
+    <em>C'est la piste la moins risquée</em> : même densité, mêmes cellules, uniquement du style.
+  </p>
+
+  <div class="sizes" role="group" aria-label="Taille de compte">
+    <button type="button">25K</button>
+    <button type="button" aria-pressed="true">50K</button>
+    <button type="button">100K</button>
+    <button type="button">150K</button>
+  </div>
+
+  <div class="card scroll">
+    <table class="A">
+      <thead>
+        <tr class="grouprow">
+          <th rowspan="2" class="firmcell" style="vertical-align:bottom;padding-bottom:10px">PropFirm</th>
+          <th colspan="5" class="g-chal">Challenge</th>
+          <th colspan="4" class="g-fund sep">Compte financé</th>
+        </tr>
+        <tr class="colrow">
+          <th>Type</th><th class="r">Drawdown</th><th class="r">DD / jour</th>
+          <th class="r">Objectif</th><th class="r">Consist.</th>
+          <th class="r sep">Buffer</th><th class="r">Jours min</th>
+          <th class="r">Profit / j</th><th class="r">Consist.</th>
+        </tr>
+      </thead>
+      <tbody id="Abody"></tbody>
+    </table>
+  </div>
+
+  <div class="verdict">
+    <div class="vc plus"><h4>Ce que ça gagne</h4><p>Lisible d'un coup d'œil sans rien perdre. Aucun changement de logique : ce sont exactement les mêmes cellules.</p></div>
+    <div class="vc minus"><h4>Ce que ça ne règle pas</h4><p>Neuf colonnes restent neuf colonnes. Sur mobile, il faut toujours défiler horizontalement.</p></div>
+    <div class="vc use"><h4>Quand la choisir</h4><p>Si l'objectif est « que ce soit beau » sans toucher à l'architecture de la page.</p></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ B ═══ -->
+<section>
+  <div class="seclabel"><span class="secnum">PISTE B</span><h2>Une carte par firme</h2></div>
+  <p class="secdesc">
+    On abandonne le tableau. Chaque firme devient une carte, les programmes des onglets, les règles une liste
+    libellé → valeur. <em>Le gain réel est sur mobile</em> : plus aucun défilement horizontal, et une firme
+    entière tient sur un écran. Le prix à payer est direct — comparer deux firmes demande de regarder deux cartes.
+  </p>
+  <div class="Bgrid" id="Bgrid"></div>
+
+  <div class="verdict">
+    <div class="vc plus"><h4>Ce que ça gagne</h4><p>Excellent sur téléphone. Chaque firme respire et les programmes deviennent des onglets évidents.</p></div>
+    <div class="vc minus"><h4>Ce que ça ne règle pas</h4><p>Ça <b>casse</b> la comparaison : douze cartes ne se lisent pas comme douze lignes alignées.</p></div>
+    <div class="vc use"><h4>Quand la choisir</h4><p>En rendu mobile uniquement, le tableau restant en vue large.</p></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ C ═══ -->
+<section>
+  <div class="seclabel"><span class="secnum">PISTE C</span><h2>Matrice inversée — les firmes en colonnes</h2></div>
+  <p class="secdesc">
+    On fait pivoter le tableau : une colonne par firme, une ligne par règle, et on choisit jusqu'à quatre firmes.
+    <em>C'est la façon dont on compare vraiment</em> — personne ne lit douze firmes, on en oppose deux ou trois.
+    Une ligne = une règle, donc l'œil balaie des valeurs de même nature, et la plus avantageuse se marque en vert.
+    Bonus : plus rien ne limite le nombre de règles affichées.
+  </p>
+
+  <div class="picker" id="Cpick"><span class="lbl">Comparer (2 à 4) :</span></div>
+  <div class="card scroll">
+    <table class="C"><thead><tr id="Chead"></tr></thead><tbody id="Cbody"></tbody></table>
+  </div>
+
+  <div class="verdict">
+    <div class="vc plus"><h4>Ce que ça gagne</h4><p>La comparaison devient évidente, et on peut afficher <b>toutes</b> les règles, pas seulement neuf.</p></div>
+    <div class="vc minus"><h4>Ce que ça ne règle pas</h4><p>On perd la vue d'ensemble : impossible de balayer les douze firmes d'un seul regard.</p></div>
+    <div class="vc use"><h4>Quand la choisir</h4><p>En complément — un bouton « comparer » depuis le tableau, pas à sa place.</p></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ D ═══ -->
+<section>
+  <div class="seclabel"><span class="secnum">PISTE D</span><h2>Tableau à barres de contexte</h2></div>
+  <p class="secdesc">
+    La piste A, mais chaque chiffre porte une barre qui dit <em>où il se situe par rapport aux autres firmes</em>.
+    « 2 000 $ de drawdown » ne veut rien dire seul ; « 2 000 $, soit le milieu du marché » se lit sans réfléchir.
+    Vert quand la valeur avantage le trader, ambre quand elle le contraint : la couleur n'est pas décorative,
+    elle porte le sens.
+  </p>
+
+  <div class="card scroll">
+    <table class="D">
+      <thead><tr>
+        <th class="firmcell">PropFirm</th><th>Type</th><th>Drawdown max</th><th>DD journalier</th>
+        <th>Objectif</th><th>Jours min</th><th>Profit / jour</th>
+      </tr></thead>
+      <tbody id="Dbody"></tbody>
+    </table>
+    <div class="legend">
+      <span><i style="background:var(--green)"></i>dans la moitié favorable du marché</span>
+      <span><i style="background:var(--amber)"></i>dans la moitié défavorable</span>
+      <span class="nil">— donnée non publiée par la firme</span>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="vc plus"><h4>Ce que ça gagne</h4><p>Un chiffre isolé ne dit rien. La barre le situe, donc le tableau répond enfin à « est-ce que c'est bien ? ».</p></div>
+    <div class="vc minus"><h4>Ce que ça ne règle pas</h4><p>Il faut trancher pour <b>chaque</b> règle si « plus » vaut mieux ou pire. Se tromper de sens ment au lecteur. Et quand les firmes se tiennent — les objectifs de profit, par exemple — les barres se ressemblent toutes.</p></div>
+    <div class="vc use"><h4>Quand la choisir</h4><p>Si le comparateur doit aider à <b>choisir</b> une firme, pas seulement à consulter ses règles.</p></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+'use strict';
+// ── Données RÉELLES, extraites du catalogue à la taille 50K ────────────────
+var FIRMS = [
+ {n:'Topstep',               a:'TS', c:'#e94b3c', progs:['XFA Standard','XFA Consistency'],
+  dd:'EOD',            d:2000, dl:1000, o:3000, cc:'50 %', bu:null,  jm:5,    mp:150,  fc:null},
+ {n:'Apex Trader Funding',   a:'AP', c:'#f5a623', progs:['EOD','Intraday','Legacy'],
+  dd:'EOD',            d:2000, dl:1000, o:3000, cc:null,   bu:52100, jm:null, mp:250,  fc:'50 %'},
+ {n:'Bulenox',               a:'BX', c:'#4a90d9', progs:['Option 1 (No Scaling)','Option 2 (EOD)'],
+  dd:'Trailing',       d:2500, dl:null, o:3000, cc:null,   bu:50100, jm:5,    mp:0,    fc:'40 %'},
+ {n:'Lucid Trading',         a:'LU', c:'#4d8fff', progs:['LucidPro','LucidFlex','LucidDaily','LucidDirect'],
+  dd:'EOD',            d:2000, dl:1200, o:3000, cc:null,   bu:52100, jm:3,    mp:null, fc:'40 %'},
+ {n:'Tradeify',              a:'TD', c:'#22c1a4', progs:['Select Daily','Select Flex','Growth','Lightning Funded'],
+  dd:'EOD',            d:2000, dl:1000, o:3000, cc:'40 %', bu:50100, jm:3,    mp:100,  fc:'Balance'},
+ {n:'Take Profit Trader',    a:'TP', c:'#7c5cff', progs:['PRO','PRO+'],
+  dd:'EOD / Trailing', d:2000, dl:null, o:3000, cc:'50 %', bu:52000, jm:7,    mp:null, fc:null},
+ {n:'My Funded Futures',     a:'MF', c:'#00b8a9', progs:['Rapid','Pro','Flex','Builder'],
+  dd:'Trailing',       d:2000, dl:null, o:3000, cc:'50 %', bu:null,  jm:null, mp:null, fc:null},
+ {n:'Phidias Propfirm',      a:'PH', c:'#d4574e', progs:['E2L','Fundamental','Premium'],
+  dd:'Static',         d:650,  dl:null, o:2500, cc:null,   bu:null,  jm:null, mp:null, fc:'30 %'},
+ {n:'Funded Futures Network',a:'FF', c:'#2fa8e0', progs:['Standard','Express'],
+  dd:'EOD / Static',   d:2000, dl:null, o:3000, cc:'40 %', bu:null,  jm:null, mp:null, fc:'3 payouts'},
+ {n:'FuturesElites',         a:'FE', c:'#8b5cf6', progs:['Starter','Pro','Instant Funded'],
+  dd:'EOD',            d:2000, dl:1100, o:3000, cc:'40 %', bu:null,  jm:5,    mp:null, fc:'40 %'},
+ {n:'Alpha Futures',         a:'AF', c:'#00c48c', progs:['Zero','Standard','Direct'],
+  dd:'EOD',            d:2000, dl:1000, o:3000, cc:null,   bu:null,  jm:5,    mp:null, fc:'40 %'},
+ {n:'FundedNext Futures',    a:'FN', c:'#00a99d', progs:['Flex','Legacy','Rapid Pro','Rapid Daily'],
+  dd:'EOD',            d:1500, dl:null, o:2500, cc:'40 %', bu:null,  jm:5,    mp:null, fc:null}
+];
+
+// ── Fabrique de noeuds. Tout passe par textContent : aucune chaîne n'est
+//    interprétée comme du balisage, y compris les noms de firmes.
+function el(tag, props) {
+  var node = document.createElement(tag);
+  var p = props || {};
+  Object.keys(p).forEach(function (k) {
+    if (k === 'text') node.textContent = p[k];
+    else if (k === 'class') node.className = p[k];
+    else if (k === 'style') node.setAttribute('style', p[k]);
+    else node.setAttribute(k, p[k]);
+  });
+  for (var i = 2; i < arguments.length; i++) {
+    var c = arguments[i];
+    if (c === null || c === undefined || c === false) continue;
+    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return node;
+}
+function fill(host, nodes) {
+  while (host.firstChild) host.removeChild(host.firstChild);
+  nodes.forEach(function (n) { host.appendChild(n); });
+}
+
+var money = function (n) { return n === null || n === undefined ? null : n.toLocaleString('fr-FR') + ' $'; };
+// Une valeur absente s'efface : elle ne doit pas peser autant qu'un vrai chiffre.
+function value(v) {
+  if (v === null || v === undefined) return el('span', { class: 'nil', text: '—' });
+  return el('span', { class: 'num', text: String(v) });
+}
+function badge(f) { return el('span', { class: 'dot', style: 'background:' + f.c, text: f.a }); }
+function ddPill(t) {
+  var k = t === 'EOD' ? 'p-eod' : t === 'Trailing' ? 'p-tr' : t === 'Static' ? 'p-st' : 'p-mix';
+  return el('span', { class: 'pill ' + k, text: t });
+}
+// Groupe de boutons à sélection unique — le comportement d'un radio, sans le
+// menu déroulant qui casse la ligne du tableau.
+function radioGroup(host) {
+  host.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || !host.contains(b)) return;
+    var all = host.querySelectorAll('button');
+    for (var i = 0; i < all.length; i++) all[i].setAttribute('aria-pressed', String(all[i] === b));
+  });
+}
+
+// ── A ──────────────────────────────────────────────────────────────────────
+fill(document.getElementById('Abody'), FIRMS.map(function (f) {
+  var progs = el('div', { class: 'progs' });
+  f.progs.forEach(function (p, i) {
+    progs.appendChild(el('button', { class: 'prog', type: 'button', 'aria-pressed': String(i === 0), text: p }));
+  });
+  radioGroup(progs);
+
+  var firmCell = el('td', { class: 'firmcell' },
+    el('div', { class: 'fname' }, badge(f), el('span', { text: f.n })), progs);
+
+  var cells = [
+    el('td', { class: 'val' }, ddPill(f.dd)),
+    el('td', { class: 'val r' }, value(money(f.d))),
+    el('td', { class: 'val r' }, value(money(f.dl))),
+    el('td', { class: 'val r' }, value(money(f.o))),
+    el('td', { class: 'val r' }, value(f.cc)),
+    el('td', { class: 'val r sep' }, value(money(f.bu))),
+    el('td', { class: 'val r' }, value(f.jm)),
+    el('td', { class: 'val r' }, value(money(f.mp))),
+    el('td', { class: 'val r' }, value(f.fc))
+  ];
+  var row = el('tr', null, firmCell);
+  cells.forEach(function (c) { row.appendChild(c); });
+  return row;
+}));
+radioGroup(document.querySelector('.sizes'));
+
+// ── B ──────────────────────────────────────────────────────────────────────
+function kvList(pairs) {
+  var dl = el('dl', { class: 'kv' });
+  pairs.forEach(function (p) {
+    dl.appendChild(el('dt', { text: p[0] }));
+    dl.appendChild(el('dd', null, value(p[1])));
+  });
+  return dl;
+}
+fill(document.getElementById('Bgrid'), FIRMS.slice(0, 6).map(function (f) {
+  var tabs = el('div', { class: 'tabs' });
+  f.progs.forEach(function (p, i) {
+    tabs.appendChild(el('button', { type: 'button', 'aria-pressed': String(i === 0), text: p }));
+  });
+  radioGroup(tabs);
+
+  return el('article', { class: 'fcard' },
+    el('header', null, badge(f), el('h3', { text: f.n }), ddPill(f.dd)),
+    tabs,
+    el('div', { class: 'phase c', text: 'Challenge' }),
+    kvList([
+      ['Drawdown max', money(f.d)],
+      ['Drawdown journalier', money(f.dl)],
+      ['Objectif de profit', money(f.o)],
+      ['Consistance', f.cc]
+    ]),
+    el('div', { class: 'phase f', text: 'Compte financé' }),
+    kvList([
+      ['Buffer', money(f.bu)],
+      ['Jours minimum', f.jm],
+      ['Profit min / jour', money(f.mp)],
+      ['Consistance', f.fc]
+    ])
+  );
+}));
+
+// ── C ──────────────────────────────────────────────────────────────────────
+var picked = [1, 3, 4, 0]; // Apex, Lucid, Tradeify, Topstep
+
+// `dir` dit ce qui est AVANTAGEUX, pas ce qui est grand : un drawdown large
+// laisse de la marge, un objectif bas est plus facile à atteindre.
+var CROWS = [
+  { g: 'Challenge' },
+  { l: 'Type de drawdown',    node: function (f) { return ddPill(f.dd); } },
+  { l: 'Drawdown maximum',    node: function (f) { return value(money(f.d)); },  key: 'd',  dir: 'max' },
+  { l: 'Drawdown journalier', node: function (f) { return value(money(f.dl)); }, key: 'dl', dir: 'max' },
+  { l: 'Objectif de profit',  node: function (f) { return value(money(f.o)); },  key: 'o',  dir: 'min' },
+  { l: 'Consistance',         node: function (f) { return value(f.cc); } },
+  { g: 'Compte financé' },
+  { l: 'Buffer',              node: function (f) { return value(money(f.bu)); } },
+  { l: 'Jours minimum',       node: function (f) { return value(f.jm); },        key: 'jm', dir: 'min' },
+  { l: 'Profit min / jour',   node: function (f) { return value(money(f.mp)); }, key: 'mp', dir: 'min' },
+  { l: 'Consistance',         node: function (f) { return value(f.fc); } }
+];
+
+function winnerIndex(sel, row) {
+  if (!row.key) return -1;
+  var vals = sel.map(function (f) { return f[row.key]; });
+  var real = vals.filter(function (v) { return v !== null && v !== undefined; });
+  // Rien à distinguer si une seule firme publie la valeur, ou si elles sont toutes égales.
+  if (real.length < 2) return -1;
+  var uniq = real.filter(function (v, i, a) { return a.indexOf(v) === i; });
+  if (uniq.length < 2) return -1;
+  var target = row.dir === 'max' ? Math.max.apply(null, real) : Math.min.apply(null, real);
+  return vals.indexOf(target);
+}
+
+function renderC() {
+  var sel = picked.map(function (i) { return FIRMS[i]; });
+
+  var head = [el('th', { text: 'Règle' })];
+  sel.forEach(function (f) {
+    head.push(el('th', null,
+      el('div', { class: 'colfirm' }, badge(f), el('span', { text: f.n })),
+      el('div', { class: 'colprog', text: f.progs[0] })));
+  });
+  fill(document.getElementById('Chead'), head);
+
+  fill(document.getElementById('Cbody'), CROWS.map(function (r) {
+    if (r.g) {
+      var g = el('tr', { class: 'rowgroup' }, el('th', { text: r.g }));
+      sel.forEach(function () { g.appendChild(el('td')); });
+      return g;
+    }
+    var win = winnerIndex(sel, r);
+    var tr = el('tr', null, el('th', { text: r.l }));
+    sel.forEach(function (f, i) {
+      tr.appendChild(el('td', { class: i === win ? 'best' : '' }, r.node(f)));
+    });
+    return tr;
+  }));
+}
+
+var pick = document.getElementById('Cpick');
+FIRMS.forEach(function (f, i) {
+  pick.appendChild(el('button', {
+    type: 'button', 'data-i': String(i),
+    'aria-pressed': String(picked.indexOf(i) !== -1), text: f.n
+  }));
+});
+pick.addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-i]');
+  if (!b) return;
+  var i = Number(b.getAttribute('data-i'));
+  if (picked.indexOf(i) !== -1) {
+    if (picked.length <= 2) return;           // en dessous de deux, il n'y a plus de comparaison
+    picked = picked.filter(function (x) { return x !== i; });
+  } else {
+    if (picked.length >= 4) return;           // au-delà de quatre, les colonnes deviennent illisibles
+    picked = picked.concat(i);
+  }
+  var all = pick.querySelectorAll('button[data-i]');
+  for (var k = 0; k < all.length; k++) {
+    all[k].setAttribute('aria-pressed', String(picked.indexOf(Number(all[k].getAttribute('data-i'))) !== -1));
+  }
+  renderC();
+});
+renderC();
+
+// ── D ──────────────────────────────────────────────────────────────────────
+// Chaque règle déclare son SENS. Sans ce champ la couleur mentirait une fois
+// sur deux : un gros drawdown est une bonne nouvelle, un gros objectif non.
+var METERS = [
+  { k: 'd',  fmt: money, better: 'high' },
+  { k: 'dl', fmt: money, better: 'high' },
+  { k: 'o',  fmt: money, better: 'low' },
+  { k: 'jm', fmt: function (v) { return String(v); }, better: 'low' },
+  { k: 'mp', fmt: money, better: 'low' }
+];
+function known(k) {
+  return FIRMS.map(function (f) { return f[k]; })
+              .filter(function (x) { return x !== null && x !== undefined; });
+}
+function meter(f, m) {
+  var v = f[m.k];
+  if (v === null || v === undefined) return value(null);
+  var vals = known(m.k);
+  var hi = Math.max.apply(null, vals);
+
+  // ⚠️ La barre part de ZÉRO, pas du minimum du groupe. Normalisée entre min et
+  // max, une différence de 20 % ($2,500 contre $3,000 d'objectif) s'affichait
+  // comme 0 % contre 100 % : la barre criait un écart qui n'existe pas. Partir de
+  // zéro donne une proportion vraie — et quand les firmes se tiennent, les barres
+  // se ressemblent, ce qui EST l'information.
+  var pct = hi === 0 ? 0 : Math.max(3, Math.round((v / hi) * 100));
+
+  // La couleur ne suit pas la longueur mais le RANG : être dans la moitié
+  // favorable des firmes qui publient cette règle. Une barre longue est verte
+  // quand « plus » veut dire « plus de marge ».
+  var sorted = vals.slice().sort(function (a, b) { return a - b; });
+  var betterCount = sorted.filter(function (x) {
+    return m.better === 'high' ? x < v : x > v;
+  }).length;
+  var good = betterCount >= vals.length / 2;
+
+  var track = el('span', { class: 'track' },
+    el('span', { class: 'fill', style: 'width:' + pct + '%;background:' + (good ? 'var(--green)' : 'var(--amber)') }));
+  return el('div', { class: 'meter' }, track, el('span', { class: 'v num', text: m.fmt(v) }));
+}
+fill(document.getElementById('Dbody'), FIRMS.map(function (f) {
+  var tr = el('tr', null,
+    el('td', { class: 'firmcell' }, el('div', { class: 'fname' }, badge(f), el('span', { text: f.n }))),
+    el('td', null, ddPill(f.dd)));
+  METERS.forEach(function (m) { tr.appendChild(el('td', null, meter(f, m))); });
+  return tr;
+}));
+
+// ── Bascule de thème ───────────────────────────────────────────────────────
+var tb = document.getElementById('tbtn');
+tb.addEventListener('click', function () {
+  var dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+  tb.textContent = dark ? '☾ Thème sombre' : '☀ Thème clair';
+});
+</script>
+</body>
+</html>
