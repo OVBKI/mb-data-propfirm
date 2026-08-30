@@ -1021,3 +1021,68 @@ tiroir sans réorganiser l'écran.
 `lib/dashboardLayout.test.js` — 398 tests au total dans le projet. Couvre la
 duplication, les options, l'identité des références, les presets, l'aller-retour
 d'import/export et la réparation d'une disposition abîmée.
+
+
+## Audit du catalogue PropFirms — 2026-08
+
+Vérification firme par firme des règles et des types de compte, contre les sources
+officielles (help centers, pages produit) et recoupée sur des analyses tierces.
+**12 firmes futures, 52 combinaisons firme × plan, 9 firmes CFD.**
+
+### Ajouté
+**FundedNext Futures** — produit distinct du FundedNext CFD déjà présent. Trois
+programmes (Flex, Legacy, Rapid décliné en Pro et Daily), 25K à 150K, MLL trailing
+EOD verrouillé au solde initial + 100 $. Bolt écarté : arrêté en juillet 2026.
+
+### Corrigé
+1. **`maxDrawdown()` rendait `null` pour 4 firmes sur 12** (Tradeify, Take Profit
+   Trader, My Funded Futures, Phidias). Leurs clés sont nommées par PROGRAMME
+   (« Drawdown Select (EOD) »), ce que les motifs n'acceptaient pas. Conséquence :
+   jauge Drawdown Health vide, cron `drawdown-guardian` jamais déclenché, wizard
+   sans ligne drawdown. Le sélecteur accepte désormais toute clé `Drawdown …`, en
+   excluant les pertes JOURNALIÈRES, et préfère le programme dont le type
+   correspond à `defaultDdType` (sinon MFFU affichait « EOD » au-dessus du chiffre
+   intraday de Rapid).
+2. **Alpha Futures classée `static`** par `defaultDdType` alors que ses trois
+   programmes sont marqués EOD dans `futuresComparison.js`. Ajoutée à
+   `EOD_TRAILING_FIRMS`.
+3. Le test de `maxDrawdown` **tolérait explicitement un `null`** — c'est ce qui a
+   laissé passer le trou. Il exige maintenant un montant positif pour chaque
+   firme et chaque plan.
+
+### Erreurs de données constatées, NON corrigées (décision utilisateur requise)
+| Firme | Constat | Impact |
+|---|---|---|
+| **Apex** | Le catalogue porte 7 tailles (25/50/75/100/150/250/300K). Apex n'en vend plus que **4** : 25/50/100/150K. Et 3 des 4 drawdowns restants sont faux : 25K 1 500 $ au lieu de 1 000, 50K 2 500 au lieu de 2 000, 150K 5 000 au lieu de 4 000. Seul le 100K (3 000) est juste. | Jauge de risque fausse sur la firme la plus utilisée du marché |
+| **Phidias** | Le programme **Premium** manque au comparateur (seuls Static/E2L et Fundamental/Swing sont mappés). C'est pourtant celui qui monte le split de 75 à 100% et autorise l'overnight et le week-end. | Programme invisible |
+| **Bulenox** | La taille **10K** manque (6 tailles chez Bulenox, 5 stockées). | Taille non proposée |
+| **Lucid** | **LucidDaily** manque (payouts quotidiens, drawdown au choix). | Programme invisible |
+| **Tradeify** | **Elite** manque — c'est le seul en 80/20, les autres sont en 90/10. | Split faux si l'utilisateur est sur Elite |
+| **FFN** | Drawdown 150K : 4 500 $ stocké contre 5 000 $ relevé. Une seule source tierce, à confirmer. | À vérifier |
+| **`PX_FIRMS`** | Mappe encore Tradeify, TPT et MFFU sur ProjectX. ProjectX a mis fin à ses licences tierces en février 2026 et est exclusif Topstep. | Mapping mort |
+
+⚠️ **Retirer une taille de `plans` casse les comptes existants** qui la portent
+(`plan_size` est stocké en base). Pour Apex, marquer les tailles retirées plutôt
+que les supprimer.
+
+### Vérifié conforme
+Topstep (tailles, objectifs, MLL, split 90/10 depuis le 12 janv. 2026, prix),
+Bulenox (trailing intraday, lock à +100 $, consistance 40% au payout), Lucid
+(EOD, 90/10, minimum 500 $), les noms de programmes de Tradeify, MFFU, TPT, FFN
+et Alpha Futures.
+
+**FTMO** : `profitTargets: [10, 5]` est **juste**. De nombreuses analyses tierces
+affirment que la phase 1 est passée de 10 à 8% ; la page officielle
+`ftmo.com/en/trading-objectives` dit toujours 10%. La source officielle prime —
+utile rappel que les sites de review se recopient entre eux.
+
+### Trous de données restants (52 combinaisons firme × plan)
+- **26/52 sans profit split** — Bulenox 50K+, Lucid, TPT 50K+, MFFU, Phidias 50K+, FFN, FuturesElite 100K+
+- **17/52 sans jours de trading minimum** — Topstep, Tradeify, FFN, FuturesElite 100K+, Alpha
+- **5/52 sans prix** — MFFU 25/100/150K, Phidias 25K, Alpha 25K
+
+Ce ne sont pas des données absentes du fichier : ce sont des cellules rédigées
+dans un format que les parseurs ne savent pas lire (« idem », renvoi à une autre
+taille, valeur en toutes lettres). La règle qui marche est celle appliquée à
+FundedNext Futures : « Programme : valeur · Programme : valeur », avec un chiffre
+explicite dans chaque cellule.
