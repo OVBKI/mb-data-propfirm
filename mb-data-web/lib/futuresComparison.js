@@ -361,7 +361,7 @@ export const FIRM_COMPARISON_MAP = {
         funded: {
           drawdown: { helper: 'maxDrawdown', model: 'LucidPro' },
           dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
-          buffer: { key: 'Buffer post-payout' },
+          buffer: { key: 'Buffer payout' },
           jourMin: { key: 'Jours min avant payout' },            // 3 jours
           minDailyProfit: { key: 'Profit min/jour (funded)' },   // aucun pour Pro
           consistance: { key: 'Consistency funded' },            // 40%
@@ -379,7 +379,7 @@ export const FIRM_COMPARISON_MAP = {
         funded: {
           drawdown: { helper: 'maxDrawdown', model: 'LucidFlex' },
           dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
-          buffer: { key: 'Buffer post-payout' },
+          buffer: { key: 'Buffer payout' },
           jourMin: { key: 'Jours min avant payout' },            // 5 jours
           minDailyProfit: { key: 'Profit min/jour (funded)' },   // $100 → $250
           consistance: { key: 'Consistency funded' },            // AUCUNE en financé
@@ -401,7 +401,7 @@ export const FIRM_COMPARISON_MAP = {
         funded: {
           drawdown: { helper: 'maxDrawdown', model: 'LucidDaily' },
           dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
-          buffer: { key: 'Buffer post-payout' },
+          buffer: { key: 'Buffer payout' },
           jourMin: { key: 'Jours min avant payout' },            // payouts QUOTIDIENS
           minDailyProfit: { key: 'Profit min/jour (funded)' },
           consistance: { key: 'Consistency funded' },            // AUCUNE en financé
@@ -419,7 +419,7 @@ export const FIRM_COMPARISON_MAP = {
         funded: {
           drawdown: { helper: 'maxDrawdown', model: 'LucidDirect' },
           dailyDrawdown: { key: 'DLL funded (sous le trail initial)' },
-          buffer: { key: 'Buffer post-payout' },
+          buffer: { key: 'Buffer payout' },
           jourMin: { key: 'Jours min avant payout' },            // 5 jours
           minDailyProfit: { key: 'Profit min/jour (funded)' },
           consistance: { key: 'Consistency funded' },            // 20%

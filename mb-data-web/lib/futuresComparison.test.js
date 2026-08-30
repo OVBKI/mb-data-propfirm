@@ -10,7 +10,7 @@ import {
   programsForFirm,
   defaultProgramFor,
 } from './futuresComparison'
-import { FIRM_SUGGESTIONS, plansForFirm } from './constants'
+import { FIRM_SUGGESTIONS, plansForFirm, PROPFIRM_RULES, maxDrawdown } from './constants'
 
 // Récupère un modèle par nom dans le résultat résolu.
 const modelOf = (firm, plan, name) => {
@@ -67,9 +67,16 @@ describe('résolution complète sur les données réelles', () => {
     }
   }
 
-  it("Lucid 'Buffer post-payout' 50k+ résout le texte 25k (pas 'idem')", () => {
-    const m = modelOf('Lucid Trading', '100k', 'LucidPro')
-    expect(m.funded.buffer).toMatch(/\$1,000/)
+  // Le comparateur pointait sur 'Buffer post-payout', une phrase de conseil
+  // (« laisser $1,000-$1,500 au-dessus du MLL »). La colonne BUFFER en tirait
+  // « $1,000 » — un chiffre qui n'est pas le buffer mais une marge de sécurité
+  // recommandée. Le help center publie le vrai seuil : solde de départ + MLL
+  // initiale + $100, en dessous duquel aucun retrait n'est possible.
+  it("Lucid affiche le SEUIL de buffer, pas la marge conseillée", () => {
+    expect(modelOf('Lucid Trading', '100k', 'LucidPro').funded.buffer).toMatch(/\$103,100/)
+    // LucidDirect a une MLL plus large en 100K : son buffer est plus haut.
+    expect(modelOf('Lucid Trading', '100k', 'LucidDirect').funded.buffer).toMatch(/\$103,600/)
+    expect(modelOf('Lucid Trading', '150k', 'LucidDaily').funded.buffer).toMatch(/\$154,600/)
   })
 
   it("FuturesELites 'DLL Instant' 100k résout la valeur 50k (pas 'idem')", () => {
@@ -384,5 +391,34 @@ describe('Lucid Trading — les quatre programmes se distinguent', () => {
   it('annonce les deux types de drawdown de LucidDaily', () => {
     const { models } = getFuturesComparison('Lucid Trading', '50k')
     expect(models.find(m => m.name === 'LucidDaily').ddType).toBe('EOD / Intraday')
+  })
+})
+
+// ── LucidDaily : le plafond QUOTIDIEN et les conditions de retrait ──────────
+// Help center « LucidDaily Payouts ». Deux mécaniques absentes du catalogue et
+// propres à ce programme.
+describe('LucidDaily — plafond quotidien et éligibilité au payout', () => {
+  const rules = () => PROPFIRM_RULES['Lucid Trading'].rules
+
+  it('plafonne le profit SIM par jour, et le dépassement fait passer en live', () => {
+    const key = 'Profit quotidien max (LucidDaily)'
+    const at = plan => extractModelSegment(rules()[key][plan], 'LucidDaily')
+    expect(at('25k')).toMatch(/\$6,000/)
+    expect(at('50k')).toMatch(/\$8,000/)
+    expect(at('100k')).toMatch(/\$10,000/)
+    expect(at('150k')).toMatch(/\$12,000/)
+    expect(at('150k')).toMatch(/passage automatique en live/i)
+    // Ce n'est PAS une règle des trois autres programmes.
+    expect(extractModelSegment(rules()[key]['50k'], 'LucidPro')).toMatch(/sans objet/i)
+  })
+
+  it('vérifie la formule officielle du buffer sur les quatre tailles', () => {
+    // « Initial Max Loss Limit + $100 », soit solde de départ + MLL + $100.
+    const SIZES = { '25k': 25000, '50k': 50000, '100k': 100000, '150k': 150000 }
+    for (const [plan, size] of Object.entries(SIZES)) {
+      const buffer = extractModelSegment(rules()['Buffer payout'][plan], 'LucidDaily')
+      const attendu = size + maxDrawdown('Lucid Trading', plan, 'LucidDaily') + 100
+      expect(Number(buffer.replace(/[^0-9]/g, '')), plan).toBe(attendu)
+    }
   })
 })

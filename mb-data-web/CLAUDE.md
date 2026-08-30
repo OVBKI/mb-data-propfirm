@@ -1604,6 +1604,41 @@ programmes réels.
 470 tests (+9). Vérifié dans le navigateur : les quatre colonnes du comparateur
 affichent bien quatre jeux de chiffres distincts, sans fuite de chaîne composite.
 
+### Deuxième passe — l'article « LucidDaily Payouts » du help center
+Deux mécaniques que ni le PDF ni les analyses tierces ne donnaient.
+
+**Un plafond de profit par JOUR, pas par demande.** LucidDaily n'écrête pas le
+retrait : il plafonne le profit simulé quotidien à **6 000 / 8 000 / 10 000 /
+12 000 $**. L'atteindre ou le dépasser **fait passer le compte en LIVE
+automatiquement** — c'est une sortie de programme, pas un écrêtage. C'est aussi ce
+qui remplace, pour Daily, le décompte de 5 payouts vers LucidLive.
+
+**Le buffer est un SEUIL de solde, pas un montant retirable.** Formule officielle
+« Initial Max Loss Limit + $100 », soit solde de départ + MLL + $100 :
+
+| | 25K | 50K | 100K | 150K |
+|---|---|---|---|---|
+| Buffer publié (Daily) | 26 100 $ | 52 100 $ | 103 100 $ | 154 600 $ |
+
+Les quatre montants **vérifient exactement** la formule avec les MLL du catalogue
+(1 000 / 2 000 / 3 000 / 4 500) — une confirmation indépendante de ces chiffres.
+Un test recalcule la formule au lieu de figer les montants : si une MLL change, il
+échoue. Les buffers des trois autres programmes sont **calculés**, pas publiés —
+d'où l'écart de LucidDirect en 100K (103 600 $) et 150K (155 100 $), dont la MLL
+est plus large.
+
+**Deuxième condition de retrait** : un profit net **positif depuis le dernier
+payout**, ne serait-ce qu'un dollar. Et deux pièges consignés : la demande est
+**définitive** une fois soumise, et un trade pris avant son traitement qui ramène
+le solde dans le buffer peut la faire **refuser**.
+
+#### La colonne BUFFER du comparateur montrait un mauvais chiffre
+Elle pointait sur `Buffer post-payout`, une phrase de CONSEIL (« laisser
+$1,000-$1,500 au-dessus du MLL »), dont elle extrayait « $1,000 ». Ce n'est pas le
+buffer, c'est une marge de sécurité recommandée. Les quatre modèles pointent
+maintenant sur `Buffer payout`, le vrai seuil. La phrase de conseil reste dans les
+règles, à sa place.
+
 ### Reste ouvert chez Lucid
 - **Prix LucidDaily** : le checkout le calcule selon les options (EOD/intraday,
   DLL ON/OFF) et n'affiche pas de tarif fixe. Le pré-remplissage retombe sur le
@@ -1612,3 +1647,5 @@ affichent bien quatre jeux de chiffres distincts, sans fuite de chaîne composit
   ($250 / $500 / $750 / $1,000).
 - **DLL financée de LucidFlex** : alignée sur Pro/Daily faute de ligne distincte
   dans le tableau.
+- **Buffers de Pro / Flex / Direct** : calculés avec la formule officielle, pas
+  publiés tels quels — seuls ceux de LucidDaily le sont.

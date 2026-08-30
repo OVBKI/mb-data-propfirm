@@ -469,10 +469,15 @@ export const PROPFIRM_RULES = {
       // décident si une journée compte dans les cinq exigées.
       'Profit min/jour (funded)': {'25k':'LucidFlex : $100/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun','50k':'LucidFlex : $150/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun','100k':'LucidFlex : $200/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun','150k':'LucidFlex : $250/jour · LucidPro : aucun · LucidDaily : aucun · LucidDirect : aucun'},
       'Profit requis par payout': {'25k':'LucidPro : $250 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié','50k':'LucidPro : $500 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié','100k':'LucidPro : $750 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié','150k':'LucidPro : $1,000 · LucidFlex : non publié au checkout · LucidDaily : non publié · LucidDirect : non publié'},
+      // ⚠️ Propre à LucidDaily : il n'y a pas de plafond par DEMANDE mais un
+      // plafond de profit par JOUR. L'atteindre ou le dépasser fait passer le
+      // compte en LIVE automatiquement — c'est donc une sortie de programme, pas
+      // un simple écrêtage du retrait.
+      'Profit quotidien max (LucidDaily)':{'25k':'LucidDaily : $6,000 — atteint ou dépassé, passage automatique en live · LucidPro : sans objet · LucidFlex : sans objet · LucidDirect : sans objet','50k':'LucidDaily : $8,000 — atteint ou dépassé, passage automatique en live · LucidPro : sans objet · LucidFlex : sans objet · LucidDirect : sans objet','100k':'LucidDaily : $10,000 — atteint ou dépassé, passage automatique en live · LucidPro : sans objet · LucidFlex : sans objet · LucidDirect : sans objet','150k':'LucidDaily : $12,000 — atteint ou dépassé, passage automatique en live · LucidPro : sans objet · LucidFlex : sans objet · LucidDirect : sans objet'},
       'Scaling plan':             {'25k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON','50k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON','100k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON','150k':'LucidFlex : OUI · LucidPro : NON · LucidDaily : NON · LucidDirect : NON'},
       'Comptes financés max':     {'25k':'5 comptes financés simultanés (LucidDirect compris)','50k':'5 comptes financés simultanés (LucidDirect compris)','100k':'5 comptes financés simultanés (LucidDirect compris)','150k':'5 comptes financés simultanés (LucidDirect compris)'},
       // === LUCID LIVE / LUCID MAXX (paliers, pas des produits) ===
-      'Payouts avant LucidLive':  {'25k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts','50k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts','100k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts','150k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : 5 payouts · LucidDirect : 6 payouts'},
+      'Payouts avant LucidLive':  {'25k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : déclenché par le profit quotidien max, pas par un nombre de payouts · LucidDirect : 6 payouts','50k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : déclenché par le profit quotidien max, pas par un nombre de payouts · LucidDirect : 6 payouts','100k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : déclenché par le profit quotidien max, pas par un nombre de payouts · LucidDirect : 6 payouts','150k':'LucidPro : 5 payouts · LucidFlex : 5 payouts · LucidDaily : déclenché par le profit quotidien max, pas par un nombre de payouts · LucidDirect : 6 payouts'},
       'LucidLive starting balance':{'25k':'$0 starting + bonus crédité','50k':'$0 + bonus','100k':'$0 + bonus','150k':'$0 + bonus'},
       'LucidLive bonus':          {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'LucidMaxx':                {'25k':'Sur invitation · payouts quotidiens sans plafond · split 80/20 sur capital réel','50k':'idem','100k':'idem','150k':'idem'},
@@ -496,11 +501,25 @@ export const PROPFIRM_RULES = {
       // === PAYOUTS ===
       'Profit split (nouveaux)':  {'25k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10','50k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10','100k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10','150k':'LucidPro : 90/10 · LucidFlex : 90/10 · LucidDaily : 90/10 · LucidDirect : 90/10'},
       'Profit split (legacy)':    {'25k':'100% sur les premiers $10K cumulés puis 90/10 (comptes antérieurs au 28 nov. 2025)','50k':'idem','100k':'idem','150k':'idem'},
-      'Payout minimum':           {'25k':'$500 sur tous les programmes','50k':'$500','100k':'$500','150k':'$500'},
+      // Le buffer est un SEUIL DE SOLDE, pas un montant retirable : on ne peut
+      // retirer que ce qui dépasse. Formule officielle « Initial Max Loss Limit
+      // + $100 », c'est-à-dire solde de départ + MLL initiale + $100 — les quatre
+      // montants publiés pour LucidDaily la vérifient exactement.
+      'Formule du buffer':        {'25k':'Solde de départ + MLL initiale + $100 · on ne retire JAMAIS sur le buffer','50k':'idem','100k':'idem','150k':'idem'},
+      // ⚠️ Les montants LucidDaily sont PUBLIÉS. Ceux des trois autres programmes
+      // sont calculés avec la même formule à partir de leur MLL — d'où l'écart de
+      // LucidDirect en 100K et 150K, dont la MLL est plus large.
+      'Buffer payout':            {'25k':'LucidDaily : $26,100 · LucidPro : $26,100 · LucidFlex : $26,100 · LucidDirect : $26,100','50k':'LucidDaily : $52,100 · LucidPro : $52,100 · LucidFlex : $52,100 · LucidDirect : $52,100','100k':'LucidDaily : $103,100 · LucidPro : $103,100 · LucidFlex : $103,100 · LucidDirect : $103,600','150k':'LucidDaily : $154,600 · LucidPro : $154,600 · LucidFlex : $154,600 · LucidDirect : $155,100'},
+      'Profit net depuis le dernier payout':{'25k':'Doit être POSITIF, ne serait-ce que $1 — deuxième condition d\'éligibilité avec le buffer','50k':'idem','100k':'idem','150k':'idem'},
+      // Deux pièges qui font refuser une demande déjà envoyée.
+      'Demande de payout':        {'25k':'DÉFINITIVE une fois soumise : ni modifiable ni annulable','50k':'idem','100k':'idem','150k':'idem'},
+      'Solde au traitement':      {'25k':'Un trade pris AVANT le traitement qui ramène le solde dans le buffer peut faire REFUSER la demande','50k':'idem','100k':'idem','150k':'idem'},
+      'Payout minimum':           {'25k':'$500 par compte, sur tous les programmes','50k':'$500 par compte','100k':'$500 par compte','150k':'$500 par compte'},
       'Cap LucidFlex (fixe)':     {'25k':'$1,000 (= $900 net après 10%)','50k':'$2,000 ($1,800 net)','100k':'$2,500 ($2,250 net)','150k':'$3,000 ($2,700 net)'},
       'Cap LucidPro (progressif)':{'25k':'~$1,500 puis déplafonné','50k':'$2K → $3K → $4K → $5K → $6K puis déplafonné','100k':'Progression comparable au 50K','150k':'$3K au premier payout, $3,500+ ensuite puis déplafonné'},
       'Cap LucidDirect (progressif)':{'25k':'$1,000 (cycles 1-6) puis déplafonné','50k':'$2K (1-2) → $2,500 (3-6) puis déplafonné','100k':'$2,500 (1-2) → $3,000 (3-6)','150k':'$3,000 (1-2) → $3,500 (3-6)'},
-      'Délai payout':             {'25k':'~15 min de validation · fonds sous 2 jours ouvrés','50k':'idem','100k':'idem','150k':'idem'},
+      'Cap LucidDaily':           {'25k':'Aucun plafond par demande — le retrait vaut les profits sim accumulés AU-DESSUS du buffer','50k':'idem','100k':'idem','150k':'idem'},
+      'Délai payout':             {'25k':'Aucune fenêtre fixe : demande possible tout jour où les critères sont remplis · une fois approuvée, débit du compte en quelques minutes et versement sous 2 jours ouvrés','50k':'idem','100k':'idem','150k':'idem'},
       'Méthodes payout':          {'25k':'Plaid ACH (US) · PayPal · Rise (crypto USDT/USDC) · WorkMarket (virement international)','50k':'idem','100k':'idem','150k':'idem'},
       'Frais retrait':            {'25k':'$0 (Lucid ne prélève aucun frais)','50k':'$0','100k':'$0','150k':'$0'},
       'Buffer post-payout':       {'25k':'Laisser $1,000-$1,500 au-dessus du MLL minimum (la MLL ne redescend pas avec le solde)','50k':'idem','100k':'idem','150k':'idem'},
