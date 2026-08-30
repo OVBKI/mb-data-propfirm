@@ -1461,3 +1461,49 @@ FERMÉ**, et il faut repasser une évaluation pour en obtenir un autre.
   trader après avoir demandé un payout, mais il faut se comporter comme si la
   somme était déjà retirée : passer sous le seuil entre-temps fait refuser la
   demande automatiquement.
+
+### Apex — quatrième passe : le PDF complet du help center
+17 pages couvrant les **trois programmes** (EOD, Intraday, Legacy). Le PDF est
+composé de captures : `pypdf` n'en tire que les titres, il a fallu le lire
+visuellement page par page.
+
+#### Le profit minimum quotidien DIFFÈRE entre EOD et Intraday
+| Taille | EOD | Intraday |
+|---|---|---|
+| 25K | 100 $ | 100 $ |
+| 50K | **250 $** | **200 $** |
+| 100K | **300 $** | **250 $** |
+| 150K | **350 $** | **300 $** |
+
+Le catalogue servait les valeurs EOD à tout le monde. Sur un compte Intraday 150K,
+une journée à 320 $ compte en réalité — elle était comptée comme non qualifiante.
+
+#### L'échelle des payouts diffère aussi
+L'Intraday paie plus vite sur les premiers paliers (50K : 1500·2000·2500·2500·3000·3000
+contre 1500·1500·2000·2500·2500·3000 en EOD).
+
+#### Legacy — quatre corrections
+| | Stocké | Officiel |
+|---|---|---|
+| **Contrats minis** (25/50/75/100/150/250/300K) | 4/6/8/8/12/16/20 | **4/10/12/14/17/27/35** |
+| **Perte journalière** | estimations « ~1 250 $ » inventées | **AUCUNE** — « no daily maximum drawdown limit » |
+| **Jours de trading min** | 0 | **7**, non consécutifs |
+| **Frais d'activation PA** | 99 $ / 79 $ | **125 / 140 / 175 / 200 / 250 / 300 $** à vie selon la taille |
+
+Depuis le 1ᵉʳ mars 2026, un compte Legacy acheté n'est éligible **qu'au forfait à
+vie** — l'activation mensuelle n'existe plus pour eux.
+
+L'échelle des drawdowns Legacy (1 500 / 2 500 / 2 750 / 3 000 / 5 000 / 6 500 /
+7 500) est en revanche **confirmée exacte** par le tableau officiel.
+
+#### Deux règles absentes du catalogue
+- **Legacy STATIC** — une sous-famille où le drawdown ne bouge jamais. Le 100K
+  Static a un plancher FIXE à 99 375 $, soit 625 $ de marge, pour deux minis.
+- **Règle d'inactivité (PA)** — sans **deux journées à +50 $ net sur 30 jours
+  calendaires glissants**, le compte financé est fermé.
+
+#### Confirmé au passage
+L'évaluation Intraday n'a **aucune** perte journalière, mais le compte financé en a
+une, par palier. Et le Peak Balance qui pilote le trailing intraday inclut le
+**profit non réalisé** : une position ouverte en gain fait monter le seuil
+immédiatement.

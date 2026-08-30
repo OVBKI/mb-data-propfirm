@@ -417,3 +417,28 @@ describe('valeurs dérivées — couverture complète du catalogue', () => {
     expect(defaultProfitSplit('Take Profit Trader', '100k', 'PRO+')).toBe(90)
   })
 })
+
+// ── Apex : les trois programmes ne partagent PAS leurs chiffres ──────────────
+// Vérifié sur le PDF officiel du help center (EOD, Intraday, Legacy), août 2026.
+describe('Apex — divergences entre programmes', () => {
+  it('le profit min quotidien diffère entre EOD et Intraday', () => {
+    // Confondre les deux fait compter des journées qui ne qualifient pas.
+    expect(defaultMinDailyProfit('Apex Trader Funding', '50k', 'EOD')).toBe(250)
+    expect(defaultMinDailyProfit('Apex Trader Funding', '50k', 'Intraday')).toBe(200)
+    expect(defaultMinDailyProfit('Apex Trader Funding', '150k', 'EOD')).toBe(350)
+    expect(defaultMinDailyProfit('Apex Trader Funding', '150k', 'Intraday')).toBe(300)
+  })
+
+  it('Legacy exige 7 jours de trading, les offres 4.0 aucun', () => {
+    expect(defaultMinTradingDays('Apex Trader Funding', '50k', 'EOD')).toBe(0)
+    expect(defaultMinTradingDays('Apex Trader Funding', '50k', 'Legacy')).toBe(7)
+  })
+
+  it('l’échelle Legacy des drawdowns est confirmée par la doc officielle', () => {
+    // « Legacy Trailing Max Drawdown by Plan and Contract Size ».
+    const legacy = { '25k': 1500, '50k': 2500, '75k': 2750, '100k': 3000, '150k': 5000, '250k': 6500, '300k': 7500 }
+    for (const [plan, dd] of Object.entries(legacy)) {
+      expect(maxDrawdown('Apex Trader Funding', plan, 'Legacy'), plan).toBe(dd)
+    }
+  })
+})
