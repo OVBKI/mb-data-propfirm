@@ -1623,9 +1623,16 @@ qui remplace, pour Daily, le décompte de 5 payouts vers LucidLive.
 Les quatre montants **vérifient exactement** la formule avec les MLL du catalogue
 (1 000 / 2 000 / 3 000 / 4 500) — une confirmation indépendante de ces chiffres.
 Un test recalcule la formule au lieu de figer les montants : si une MLL change, il
-échoue. Les buffers des trois autres programmes sont **calculés**, pas publiés —
-d'où l'écart de LucidDirect en 100K (103 600 $) et 150K (155 100 $), dont la MLL
-est plus large.
+échoue.
+
+⚠️ **Le buffer NE SE GÉNÉRALISE PAS.** J'avais d'abord appliqué la formule aux
+quatre programmes. L'article « LucidFlex Payouts » dit explicitement l'inverse :
+*« There is no buffer balance that must be maintained in LucidFlex funded
+accounts »* — c'est même un différenciateur du programme. La généralisation aurait
+inventé un seuil de 154 600 $ sur un compte qui n'en a aucun, et affiché « pas
+encore éligible » à quelqu'un qui pouvait retirer. Pour LucidPro et LucidDirect le
+help center ne publie rien : la cellule dit « non publié » plutôt que d'extrapoler.
+Un test fige les trois cas.
 
 **Deuxième condition de retrait** : un profit net **positif depuis le dernier
 payout**, ne serait-ce qu'un dollar. Et deux pièges consignés : la demande est
@@ -1639,6 +1646,26 @@ buffer, c'est une marge de sécurité recommandée. Les quatre modèles pointent
 maintenant sur `Buffer payout`, le vrai seuil. La phrase de conseil reste dans les
 règles, à sa place.
 
+### Troisième passe — l'article « LucidFlex Payouts »
+LucidFlex a le système de retrait le plus simple de la gamme, et il ne ressemble à
+aucun autre programme Lucid :
+
+| | LucidFlex |
+|---|---|
+| Buffer | **AUCUN** |
+| Condition 1 | **5 jours distincts** au-dessus du profit minimum (100 / 150 / 200 / 250 $), **remis à zéro après chaque payout approuvé** |
+| Condition 2 | profit net positif sur le cycle, ne serait-ce qu'un dollar |
+| Plafond par demande | **50 % du profit**, dans la limite de 1 000 / 2 000 / 2 500 / 3 000 $ |
+| Progression du plafond | **AUCUNE** — la même grille de la 1ʳᵉ à la 5ᵉ demande |
+| Nombre de payouts | **5 MAXIMUM par compte**, ensuite passage en live |
+
+Deux précisions qui changent la lecture des cellules existantes :
+- Le plafond est le **plus petit** de deux bornes, pas un montant fixe. Le
+  catalogue écrivait « $2,000 ($1,800 net) » : sur 3 000 $ de profit, le retrait
+  réel est de 1 500 $, pas 2 000.
+- Les 5 jours **se remettent à zéro** à chaque payout approuvé. Un compte qui a
+  déjà retiré repart de zéro, pas de cinq.
+
 ### Reste ouvert chez Lucid
 - **Prix LucidDaily** : le checkout le calcule selon les options (EOD/intraday,
   DLL ON/OFF) et n'affiche pas de tarif fixe. Le pré-remplissage retombe sur le
@@ -1647,5 +1674,5 @@ règles, à sa place.
   ($250 / $500 / $750 / $1,000).
 - **DLL financée de LucidFlex** : alignée sur Pro/Daily faute de ligne distincte
   dans le tableau.
-- **Buffers de Pro / Flex / Direct** : calculés avec la formule officielle, pas
-  publiés tels quels — seuls ceux de LucidDaily le sont.
+- **Buffers de LucidPro et LucidDirect** : le help center ne les publie pas.
+  LucidDaily les publie, LucidFlex déclare n'en avoir aucun.

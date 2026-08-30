@@ -185,6 +185,7 @@ export const FIRM_META = {
       'Activation du compte financé gratuite',
       'Profit split 90/10, retrait minimum 500 $, aucun frais',
       'LucidDaily : plafond de profit par JOUR — l\'atteindre fait passer en live',
+      'LucidFlex : aucun buffer à maintenir, 5 payouts maximum par compte',
       'Plans 25K à 150K',
     ],
     faqs: [
@@ -206,7 +207,7 @@ export const FIRM_META = {
       },
       {
         q: 'Quand peut-on demander un retrait chez Lucid ?',
-        a: 'Deux conditions, et aucune fenêtre de temps imposée. Il faut d\'abord que le solde dépasse le buffer — solde de départ + limite de perte maximale + 100 $, soit 26 100 $ sur un 25K et 154 600 $ sur un 150K — sachant qu\'on ne retire jamais SUR le buffer. Il faut ensuite un profit net positif depuis le dernier retrait, ne serait-ce qu\'un dollar. La demande est définitive une fois envoyée : ni modifiable ni annulable. Et un trade pris avant qu\'elle soit traitée, qui ramène le solde dans le buffer, peut la faire refuser.',
+        a: 'Cela dépend du programme, et aucune fenêtre de temps n\'est imposée. Sur LucidDaily il faut que le solde dépasse le buffer — solde de départ + limite de perte maximale + 100 $, soit 26 100 $ sur un 25K et 154 600 $ sur un 150K — sachant qu\'on ne retire jamais SUR le buffer. LucidFlex, lui, n\'exige AUCUN buffer : il demande à la place cinq jours distincts de profit minimum (100 $ à 250 $ selon la taille), remis à zéro après chaque retrait approuvé, et plafonne chaque demande à 50 % du profit dans la limite de 1 000 $ à 3 000 $ — un plafond qui ne monte jamais, contrairement aux autres programmes. Dans les deux cas il faut un profit net positif sur le cycle, ne serait-ce qu\'un dollar. La demande est définitive une fois envoyée, et un trade pris avant son traitement qui fait repasser le solde sous le seuil requis peut la faire refuser.',
       },
       {
         q: 'Qu\'est-ce que le plafond de profit quotidien de LucidDaily ?',

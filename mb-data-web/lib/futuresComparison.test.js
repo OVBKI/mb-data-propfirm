@@ -70,13 +70,21 @@ describe('résolution complète sur les données réelles', () => {
   // Le comparateur pointait sur 'Buffer post-payout', une phrase de conseil
   // (« laisser $1,000-$1,500 au-dessus du MLL »). La colonne BUFFER en tirait
   // « $1,000 » — un chiffre qui n'est pas le buffer mais une marge de sécurité
-  // recommandée. Le help center publie le vrai seuil : solde de départ + MLL
-  // initiale + $100, en dessous duquel aucun retrait n'est possible.
+  // recommandée. Le help center publie le vrai seuil pour LucidDaily.
   it("Lucid affiche le SEUIL de buffer, pas la marge conseillée", () => {
-    expect(modelOf('Lucid Trading', '100k', 'LucidPro').funded.buffer).toMatch(/\$103,100/)
-    // LucidDirect a une MLL plus large en 100K : son buffer est plus haut.
-    expect(modelOf('Lucid Trading', '100k', 'LucidDirect').funded.buffer).toMatch(/\$103,600/)
     expect(modelOf('Lucid Trading', '150k', 'LucidDaily').funded.buffer).toMatch(/\$154,600/)
+  })
+
+  // ⚠️ Le buffer NE SE GÉNÉRALISE PAS. « LucidFlex Payouts » dit explicitement
+  // qu'aucun buffer n'est exigé — c'est un différenciateur du programme.
+  // Appliquer la formule aux quatre aurait inventé un seuil de $154,600 sur un
+  // compte qui n'en a pas, et affiché « pas encore éligible » à quelqu'un qui
+  // pouvait retirer. Pour Pro et Direct, le help center ne publie rien.
+  it("n'invente pas de buffer là où la firme n'en impose aucun", () => {
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      expect(modelOf('Lucid Trading', plan, 'LucidFlex').funded.buffer).toMatch(/aucun buffer/i)
+      expect(modelOf('Lucid Trading', plan, 'LucidPro').funded.buffer).toMatch(/non publié/i)
+    }
   })
 
   it("FuturesELites 'DLL Instant' 100k résout la valeur 50k (pas 'idem')", () => {
@@ -414,6 +422,7 @@ describe('LucidDaily — plafond quotidien et éligibilité au payout', () => {
 
   it('vérifie la formule officielle du buffer sur les quatre tailles', () => {
     // « Initial Max Loss Limit + $100 », soit solde de départ + MLL + $100.
+    // Vaut pour LucidDaily UNIQUEMENT — LucidFlex n'a pas de buffer du tout.
     const SIZES = { '25k': 25000, '50k': 50000, '100k': 100000, '150k': 150000 }
     for (const [plan, size] of Object.entries(SIZES)) {
       const buffer = extractModelSegment(rules()['Buffer payout'][plan], 'LucidDaily')
