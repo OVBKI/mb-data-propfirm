@@ -259,8 +259,15 @@ export const PROPFIRM_RULES = {
       // Le tableau officiel a DEUX colonnes que la cellule confondait : le Safety
       // Net (seuil qui débloque la taille de position pleine) et le solde minimum
       // exigé pour DEMANDER un payout, 500 $ plus haut. Séparées ci-dessous.
+      // = limite de drawdown + $100, et il reste en place TOUTE LA VIE du PA : il ne
+      // disparaît PAS après le premier payout. Seul le profit AU-DESSUS du safety net
+      // est retirable.
       'Safety Net (PA)':          {'25k':'$26,100','50k':'$52,100','75k':'Legacy : $77,850','100k':'$103,100','150k':'$154,100','250k':'Legacy : $256,600','300k':'Legacy : $307,600'},
       'Solde min pour payout':    {'25k':'$26,600','50k':'$52,600','75k':'Legacy : non confirmé','100k':'$103,600','150k':'$154,600','250k':'Legacy : non confirmé','300k':'Legacy : non confirmé'},
+      // ⚠️ On peut continuer à trader juste après avoir demandé un payout, MAIS il
+      // faut se comporter comme si la somme était déjà retirée : si le solde passe
+      // sous le seuil AVANT le traitement, la demande est refusée automatiquement.
+      'Trading après demande':    {'25k':'Autorisé, mais le solde est réévalué au traitement — passer sous le seuil annule la demande','50k':'idem','75k':'idem','100k':'idem','150k':'idem','250k':'idem','300k':'idem'},
       'DCA (renforcement)':       {'25k':'Eval : autorisé · PA : 🚨 INTERDIT (fail auto) depuis mars 2026','50k':'Eval autorisé · PA INTERDIT','75k':'Eval autorisé · PA INTERDIT','100k':'Eval autorisé · PA INTERDIT','150k':'Eval autorisé · PA INTERDIT','250k':'Eval autorisé · PA INTERDIT','300k':'Eval autorisé · PA INTERDIT'},
       // === CONTRATS (mini = standard · micro = 10× mini, comptent à l\'unité) ===
       'Contrats max eval (mini)': {'25k':'EOD/Intraday/Legacy : 4','50k':'EOD/Intraday/Legacy : 6','75k':'Legacy : 8','100k':'EOD/Intraday/Legacy : 8','150k':'EOD/Intraday/Legacy : 12','250k':'Legacy : 16','300k':'Legacy : 20'},
@@ -284,8 +291,15 @@ export const PROPFIRM_RULES = {
       // === PAYOUTS ===
       'Répartition gains':        {'25k':'100% trader · cappé par ladder lifetime (6 payouts) puis uncapped','50k':'100% · cappé ladder','75k':'100% · cappé ladder (legacy)','100k':'100% · cappé ladder','150k':'100% · cappé ladder','250k':'100% (legacy)','300k':'100% (legacy)'},
       'Payout minimum':           {'25k':'$500 (toutes tailles)','50k':'$500','75k':'$500','100k':'$500','150k':'$500','250k':'$500','300k':'$500'},
-      'Payout ladder (1→6)':      {'25k':'$1,000 flat (tous les 6 steps)','50k':'$1,500 → $1,750 → $2,000 → $2,500 → $2,750 → $3,000','75k':'~$1,750 step 1 (legacy, scaling proportionnel)','100k':'$2,000 → $2,500 → $3,000 → $3,000 → $3,500 → $4,000','150k':'$2,500 → $3,000 → $3,500 → $4,000 → $4,500 → $5,000','250k':'(legacy, scaling proportionnel)','300k':'(legacy, scaling proportionnel)'},
-      'Après 6 payouts':          {'25k':'Caps levés (uncapped) sur la même PA · sources contradictoires sur lifetime cap : damnpropfirms dit uncapped, autres disent PA ferme — à vérifier au checkout','50k':'Caps levés (uncapped)','75k':'Caps levés','100k':'Caps levés','150k':'Caps levés','250k':'Caps levés','300k':'Caps levés'},
+      // Tableau officiel « EOD Performance Account Max Payouts » (captures août 2026).
+      // Huit des vingt-quatre cases étaient fausses : l'échelle n'est PAS régulière,
+      // elle stagne sur certains paliers (50K reste à $1,500 puis à $2,500 ; le 150K
+      // reste à $3,000 trois fois d'affilée).
+      'Payout ladder (1→6)':      {'25k':'$1,000 aux six paliers (plat)','50k':'$1,500 → $1,500 → $2,000 → $2,500 → $2,500 → $3,000','75k':'Legacy, non confirmé','100k':'$2,000 → $2,500 → $2,500 → $3,000 → $4,000 → $4,000','150k':'$2,500 → $3,000 → $3,000 → $3,000 → $4,000 → $5,000','250k':'Legacy, non confirmé','300k':'Legacy, non confirmé'},
+      // ✅ TRANCHÉ par la page officielle : la contradiction entre sources tierces
+      //    (« caps levés » contre « PA fermé ») est réglée. Le PA FERME. Il faut
+      //    repasser une évaluation pour en obtenir un nouveau.
+      'Après 6 payouts':          {'25k':'Le PA est FERMÉ — il faut repasser une évaluation pour en obtenir un autre','50k':'PA fermé','75k':'PA fermé','100k':'PA fermé','150k':'PA fermé','250k':'PA fermé','300k':'PA fermé'},
       // ⚠ CORRIGÉ août 2026 sur le tableau officiel « EOD Payouts ». Les quatre
       //   valeurs stockées étaient fausses ($125/$200/$250/$375), et ce chiffre
       //   décide si une journée COMPTE dans les 5 jours qualifiants d'un payout.
