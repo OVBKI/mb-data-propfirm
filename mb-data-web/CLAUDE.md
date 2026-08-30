@@ -1666,6 +1666,44 @@ Deux précisions qui changent la lecture des cellules existantes :
 - Les 5 jours **se remettent à zéro** à chaque payout approuvé. Un compte qui a
   déjà retiré repart de zéro, pas de cinq.
 
+### Quatrième passe — l'article « LucidPro Payouts »
+Il publie ce que la passe précédente avait dû marquer « non publié », et il
+corrige une échelle que le catalogue avait inventée.
+
+**Le buffer de LucidPro EST publié**, et il vaut exactement celui de LucidDaily
+(26 100 / 52 100 / 103 100 / 154 600 $). Deux articles distincts, mêmes chiffres,
+tous deux conformes à la formule — un test le vérifie plutôt que de figer les
+montants. Il ne reste que **LucidDirect** sans buffer documenté.
+
+**Le plafond n'a que DEUX paliers, pas six.** Le catalogue portait
+« $2K → $3K → $4K → $5K → $6K puis déplafonné » ; l'article n'a que deux tableaux,
+« Payout 1 » et « Payouts 2+ » :
+
+| | 25K | 50K | 100K | 150K |
+|---|---|---|---|---|
+| 1ᵉʳ payout | 1 000 $ | 2 000 $ | 2 500 $ | 3 000 $ |
+| 2ᵉ et suivants | 1 500 $ | 2 500 $ | 3 000 $ | 3 500 $ |
+
+Rien ne monte au-delà, et **rien n'est jamais déplafonné** — un test refuse
+désormais le mot dans cette cellule.
+
+**Dépasser le buffer ne suffit pas à retirer.** Lucid publie deux soldes
+distincts que les comparatifs confondent : le buffer, et le solde nécessaire pour
+demander effectivement 500 $ (buffer + 500) ou le maximum (buffer + plafond). Le
+second jeu monte au deuxième payout puisque le plafond monte.
+
+**Trois conditions, toutes remises à zéro** après chaque payout approuvé :
+objectif de profit minimum (250 / 500 / 750 / 1 000 $), consistance 40 % sur le
+meilleur jour du cycle, et solde au-dessus du buffer.
+
+**Le split legacy est daté à l'heure près** : 100 % sur les premiers 10 000 $ pour
+les comptes achetés **ou reset** avant le 28 novembre 2025 à 15h00 EST.
+
+Et une consigne que seule leur page donne : *trader comme si la somme demandée
+était déjà retirée*. Un trade pris avant l'approbation qui ramène le solde dans le
+buffer fait refuser la demande ; passer sous le buffer APRÈS le débit met le
+compte en danger.
+
 ### Reste ouvert chez Lucid
 - **Prix LucidDaily** : le checkout le calcule selon les options (EOD/intraday,
   DLL ON/OFF) et n'affiche pas de tarif fixe. Le pré-remplissage retombe sur le
@@ -1674,5 +1712,7 @@ Deux précisions qui changent la lecture des cellules existantes :
   ($250 / $500 / $750 / $1,000).
 - **DLL financée de LucidFlex** : alignée sur Pro/Daily faute de ligne distincte
   dans le tableau.
-- **Buffers de LucidPro et LucidDirect** : le help center ne les publie pas.
-  LucidDaily les publie, LucidFlex déclare n'en avoir aucun.
+- **Buffer de LucidDirect** : seul programme dont le help center ne publie pas le
+  seuil. Pro et Daily le publient, Flex déclare n'en avoir aucun.
+- **Plafonds de LucidDaily et LucidDirect** : les articles « LucidPro Payouts » et
+  « LucidFlex Payouts » donnent leurs grilles ; les deux autres non.

@@ -191,7 +191,7 @@ export const FIRM_META = {
     faqs: [
       {
         q: 'Quelle est la différence entre LucidPro et LucidFlex ?',
-        a: 'LucidPro impose une règle de consistance de 40 % à chaque cycle de payout, mais n\'exige que trois jours entre deux retraits. LucidFlex supprime totalement la consistance une fois le compte financé — en échange, il faut cinq jours de profit d\'au moins 100 $ (25K) à 250 $ (150K) et attendre cinq jours. Flex est aussi le seul à proposer un plan de scaling.',
+        a: 'LucidPro impose trois conditions à chaque retrait — un objectif de profit minimum (250 $ en 25K, jusqu\'à 1 000 $ en 150K), une consistance de 40 % sur le meilleur jour, et un solde au-dessus du buffer — mais n\'exige que trois jours entre deux retraits, et son plafond monte au deuxième payout (1 000 puis 1 500 $ en 25K). LucidFlex supprime la consistance ET le buffer une fois financé : il demande à la place cinq jours de profit d\'au moins 100 $ (25K) à 250 $ (150K), et plafonne chaque demande à 50 % du profit sans jamais la faire monter. Les trois conditions de Pro comme les cinq jours de Flex se remettent à zéro après chaque retrait approuvé.',
       },
       {
         q: 'Qu\'est-ce que LucidDaily ?',

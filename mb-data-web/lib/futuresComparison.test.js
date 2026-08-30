@@ -10,7 +10,7 @@ import {
   programsForFirm,
   defaultProgramFor,
 } from './futuresComparison'
-import { FIRM_SUGGESTIONS, plansForFirm, PROPFIRM_RULES, maxDrawdown } from './constants'
+import { FIRM_SUGGESTIONS, plansForFirm, PROPFIRM_RULES, maxDrawdown, planSizeNum } from './constants'
 
 // Récupère un modèle par nom dans le résultat résolu.
 const modelOf = (firm, plan, name) => {
@@ -79,11 +79,23 @@ describe('résolution complète sur les données réelles', () => {
   // qu'aucun buffer n'est exigé — c'est un différenciateur du programme.
   // Appliquer la formule aux quatre aurait inventé un seuil de $154,600 sur un
   // compte qui n'en a pas, et affiché « pas encore éligible » à quelqu'un qui
-  // pouvait retirer. Pour Pro et Direct, le help center ne publie rien.
+  // pouvait retirer. LucidDirect, lui, reste non documenté.
   it("n'invente pas de buffer là où la firme n'en impose aucun", () => {
     for (const plan of ['25k', '50k', '100k', '150k']) {
       expect(modelOf('Lucid Trading', plan, 'LucidFlex').funded.buffer).toMatch(/aucun buffer/i)
-      expect(modelOf('Lucid Trading', plan, 'LucidPro').funded.buffer).toMatch(/non publié/i)
+      expect(modelOf('Lucid Trading', plan, 'LucidDirect').funded.buffer).toMatch(/non publié/i)
+    }
+  })
+
+  // LucidPro et LucidDaily publient les mêmes montants — deux articles distincts
+  // du help center, mêmes chiffres, tous deux conformes à la formule.
+  it('donne le même buffer à LucidPro et LucidDaily', () => {
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      const pro = modelOf('Lucid Trading', plan, 'LucidPro').funded.buffer
+      expect(pro, plan).toBe(modelOf('Lucid Trading', plan, 'LucidDaily').funded.buffer)
+      expect(Number(pro.replace(/[^0-9]/g, ''))).toBe(
+        planSizeNum(plan) + maxDrawdown('Lucid Trading', plan, 'LucidPro') + 100
+      )
     }
   })
 
@@ -428,6 +440,40 @@ describe('LucidDaily — plafond quotidien et éligibilité au payout', () => {
       const buffer = extractModelSegment(rules()['Buffer payout'][plan], 'LucidDaily')
       const attendu = size + maxDrawdown('Lucid Trading', plan, 'LucidDaily') + 100
       expect(Number(buffer.replace(/[^0-9]/g, '')), plan).toBe(attendu)
+    }
+  })
+})
+
+// ── LucidPro : deux paliers de plafond, pas six ─────────────────────────────
+// Le catalogue portait une échelle inventée (« $2K → $3K → $4K → $5K → $6K puis
+// déplafonné »). L'article officiel « LucidPro Payouts » n'a que deux tableaux :
+// « Payout 1 » et « Payouts 2+ ». Rien ne monte au-delà, rien n'est déplafonné.
+describe('LucidPro — plafonds de payout', () => {
+  const cap = plan => PROPFIRM_RULES['Lucid Trading'].rules['Cap LucidPro (1er / 2e et +)'][plan]
+
+  it('donne un plafond au 1er payout et un autre à partir du 2e', () => {
+    expect(cap('25k')).toBe('$1,000 au 1er payout, $1,500 ensuite')
+    expect(cap('50k')).toBe('$2,000 au 1er payout, $2,500 ensuite')
+    expect(cap('100k')).toBe('$2,500 au 1er payout, $3,000 ensuite')
+    expect(cap('150k')).toBe('$3,000 au 1er payout, $3,500 ensuite')
+  })
+
+  it('ne promet plus de déplafonnement', () => {
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      expect(cap(plan)).not.toMatch(/déplafonn|uncapped/i)
+    }
+  })
+
+  it('aligne le solde minimum sur buffer + montant demandé', () => {
+    // Publié par Lucid, et cohérent : $500 de plus que le buffer pour la demande
+    // minimale. C'est ce qui distingue « avoir dépassé le buffer » de « pouvoir
+    // retirer » — deux seuils que les comparatifs confondent.
+    const rules = PROPFIRM_RULES['Lucid Trading'].rules
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      const buffer = extractModelSegment(rules['Buffer payout'][plan], 'LucidPro')
+      const min500 = extractModelSegment(rules['Solde min pour un payout de $500'][plan], 'LucidPro')
+      const n = str => Number(str.replace(/[^0-9]/g, ''))
+      expect(n(min500) - n(buffer), plan).toBe(500)
     }
   })
 })
