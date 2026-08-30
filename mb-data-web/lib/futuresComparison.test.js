@@ -7,6 +7,8 @@ import {
   cleanCell,
   extractMoney,
   fmtMoney,
+  programsForFirm,
+  defaultProgramFor,
 } from './futuresComparison'
 import { FIRM_SUGGESTIONS, plansForFirm } from './constants'
 
@@ -115,14 +117,21 @@ describe('régressions extractModelSegment (données réelles)', () => {
     expect(cleanCell(m.funded.consistance, 'pct').text).toBe('35 %')
   })
 
-  it('Phidias @50k : objectif E2L = $3,000 et Fundamental = $4,000 (pas la 1re valeur pour tous)', () => {
-    expect(modelOf('Phidias Propfirm', '50k', 'Static / E2L').challenge.objectif).toBe('$3,000')
-    expect(modelOf('Phidias Propfirm', '50k', 'Fundamental / Swing').challenge.objectif).toBe('$4,000')
+  // Phidias 2.0 (2026) : la famille Static est devenue E2L et couvre les quatre
+  // tailles ; Swing est devenue Premium. Les objectifs diffèrent par programme et
+  // ne sont PAS proportionnels — E2L demande beaucoup moins parce que son
+  // drawdown est statique et minuscule.
+  it('Phidias @50k : objectif E2L = $2,500, Fundamental et Premium = $4,000', () => {
+    expect(modelOf('Phidias Propfirm', '50k', 'E2L').challenge.objectif).toBe('$2,500')
+    expect(modelOf('Phidias Propfirm', '50k', 'Fundamental').challenge.objectif).toBe('$4,000')
+    expect(modelOf('Phidias Propfirm', '50k', 'Premium').challenge.objectif).toBe('$4,000')
   })
 
-  it('Phidias : E2L indisponible en 100k, Fundamental indisponible en 25k → null', () => {
-    expect(modelOf('Phidias Propfirm', '100k', 'Static / E2L').challenge.objectif).toBeNull()
-    expect(modelOf('Phidias Propfirm', '25k', 'Fundamental / Swing').challenge.objectif).toBeNull()
+  it('Phidias : Fundamental et Premium ne sont pas vendus en 25K → null', () => {
+    // E2L, lui, existe bien aux quatre tailles depuis Phidias 2.0.
+    expect(modelOf('Phidias Propfirm', '100k', 'E2L').challenge.objectif).toBe('$3,500')
+    expect(modelOf('Phidias Propfirm', '25k', 'Fundamental').challenge.objectif).toBeNull()
+    expect(modelOf('Phidias Propfirm', '25k', 'Premium').challenge.drawdown).toBeNull()
   })
 
   it('FuturesELites @50k : objectif Starter = ~$3,000 et Pro = ~$4,000', () => {
@@ -251,5 +260,49 @@ describe('cleanCell buffer', () => {
 
   it('extrait les montants $ des règles de buffer', () => {
     expect(cleanCell('Locke à starting + $100 = $25,100 une fois atteint', 'buffer').text).toBe('100 $')
+  })
+})
+
+// ── Programmes par firme × taille ───────────────────────────────────────────
+// C'est ce qui alimente le sélecteur « type de compte » à la création. Deux
+// propriétés comptent, et les deux ont déjà été cassées :
+//   1. aucune firme ne doit se retrouver SANS programme à une de ses tailles ;
+//   2. un programme non vendu à une taille ne doit pas y apparaître.
+describe('programsForFirm', () => {
+  it('rend au moins un programme pour CHAQUE firme et CHAQUE taille', () => {
+    for (const firm of FIRM_SUGGESTIONS) {
+      for (const plan of plansForFirm(firm)) {
+        const list = programsForFirm(firm, plan)
+        expect(list.length, `${firm} ${plan}`).toBeGreaterThan(0)
+        expect(defaultProgramFor(firm, plan), `${firm} ${plan}`).toBe(list[0])
+      }
+    }
+  })
+
+  it('exclut les programmes non vendus à cette taille', () => {
+    // Apex ne vend plus que du legacy en 75K, 250K et 300K.
+    expect(programsForFirm('Apex Trader Funding', '75k')).toEqual(['Legacy'])
+    expect(programsForFirm('Apex Trader Funding', '50k')).toEqual(['EOD', 'Intraday', 'Legacy'])
+    // Phidias : Fundamental et Premium commencent à 50K, E2L couvre tout.
+    expect(programsForFirm('Phidias Propfirm', '25k')).toEqual(['E2L'])
+    // My Funded Futures : Builder est un 50K seul, Flex s'arrête à 50K.
+    expect(programsForFirm('My Funded Futures', '50k')).toContain('Builder')
+    expect(programsForFirm('My Funded Futures', '100k')).not.toContain('Builder')
+    expect(programsForFirm('My Funded Futures', '150k')).not.toContain('Flex')
+    // FundedNext : pas de Flex en 25K, rien d'autre que Flex en 150K.
+    expect(programsForFirm('FundedNext Futures', '25k')).not.toContain('Flex')
+    expect(programsForFirm('FundedNext Futures', '150k')).toEqual(['Flex'])
+  })
+
+  it('la disponibilité se juge sur le DRAWDOWN, pas sur l’objectif', () => {
+    // Beaucoup de firmes partagent le même objectif entre programmes : il
+    // résout partout et ne prouve donc rien. Tradeify Lightning n'a même aucune
+    // phase d'évaluation — c'est son drawdown de compte financé qui l'atteste.
+    expect(programsForFirm('Tradeify', '150k')).toContain('Lightning Funded')
+  })
+
+  it('sans taille, rend la liste complète des programmes de la firme', () => {
+    expect(programsForFirm('Apex Trader Funding')).toEqual(['EOD', 'Intraday', 'Legacy'])
+    expect(programsForFirm('Firme Inconnue')).toEqual([])
   })
 })

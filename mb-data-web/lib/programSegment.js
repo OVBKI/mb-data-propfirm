@@ -96,3 +96,23 @@ export function extractModelSegment(rawValue, modelLabel) {
 //   { helper: 'maxDrawdown' }  → call the named constants helper
 //   { key: 'Rule Name' }       → raw PROPFIRM_RULES value at [key][plan]
 //   { key: 'Rule Name', model: 'Premium' } → composite-string per-model segment
+
+// La cellule cible-t-elle EXPLICITEMENT des programmes ?
+//
+// Sert à distinguer deux situations que rien ne séparait :
+//   « Legacy : $2,750 »            → composite : un programme absent est ABSENT
+//   « $2,000 — EOD seulement (…) » → globale   : la valeur vaut pour tous
+//
+// Sans ce test, la seconde était prise pour la première à cause de la
+// parenthèse, et Topstep rendait null pour ses deux programmes — donc une jauge
+// de drawdown vide sur toute la firme.
+//
+// Seul le style « Étiquette : valeur » compte comme ciblage explicite. Une
+// parenthèse est trop ambiguë pour porter cette décision.
+export function hasExplicitProgramSegments(rawValue) {
+  if (rawValue === null || rawValue === undefined) return false
+  return String(rawValue).split('·').some(seg => {
+    const i = seg.indexOf(':')
+    return i > 0 && seg.slice(0, i).trim().length > 0
+  })
+}

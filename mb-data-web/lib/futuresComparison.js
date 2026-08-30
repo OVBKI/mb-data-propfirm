@@ -100,13 +100,18 @@ function resolveCell(firm, descriptor, plan) {
   if (!descriptor) return null
 
   if (descriptor.helper) {
+    // ⚠️ `descriptor.model` DOIT être transmis. Sans lui, les trois programmes de
+    // Lucid affichaient le même drawdown : le helper prenait le premier nombre de
+    // la cellule, identique pour tout le monde. Le comparateur montrait donc trois
+    // colonnes qui se distinguaient partout SAUF sur le chiffre qui compte.
+    const program = descriptor.model || null
     switch (descriptor.helper) {
       case 'maxDrawdown':
-        return maxDrawdown(firm, plan)
+        return maxDrawdown(firm, plan, program)
       case 'profitTarget':
-        return profitTarget(firm, plan)
+        return profitTarget(firm, plan, program)
       case 'defaultMinDailyProfit':
-        return defaultMinDailyProfit(firm, plan)
+        return defaultMinDailyProfit(firm, plan, program)
       default:
         return null
     }
@@ -131,23 +136,47 @@ function resolveCell(firm, descriptor, plan) {
 export const FIRM_COMPARISON_MAP = {
   // -------------------------------------------------------------------------
   'Topstep': {
+    // Un seul parcours (Combine → XFA → LFA), mais au passage en Express Funded
+    // le trader fait un choix DÉFINITIF entre deux structures de payout. Elles ne
+    // changent ni l'objectif ni le MLL — elles changent ce qu'il faut faire pour
+    // être payé, et c'est justement ce que l'app suit.
     models: [
       {
-        name: 'Combine → XFA',
-        ddType: 'EOD',   // MLL "EOD seulement (PAS intraday)" + FIRM_META 'EOD uniquement'
+        name: 'XFA Standard',
+        ddType: 'EOD',
         challenge: {
-          drawdown: { helper: 'maxDrawdown' },              // Max Loss Limit (MLL)
-          dailyDrawdown: { key: 'Daily Loss Limit (DLL)' }, // real DLL, Combine + XFA
-          objectif: { helper: 'profitTarget' },             // Profit Target (Combine)
-          consistance: { key: 'Consistency (Combine)' },    // ≤ 50%
+          drawdown: { helper: 'maxDrawdown' },
+          dailyDrawdown: { key: 'Daily Loss Limit (DLL)' },
+          objectif: { helper: 'profitTarget' },
+          consistance: { key: 'Consistency (Combine)' },       // best day <= 50 %
         },
         funded: {
-          drawdown: { helper: 'maxDrawdown' },              // MLL identical across stages
-          dailyDrawdown: { key: 'DLL Live Funded (LFA)' },  // funded DLL
-          buffer: null,                                     // no drawdown-buffer rule documented
-          jourMin: { key: 'Min trading days (XFA Standard)' }, // 5 winning days
-          minDailyProfit: { key: 'Profit min winning day' },  // $150 (XFA Standard)
-          consistance: { key: 'Consistency (XFA Standard)' }, // AUCUNE
+          drawdown: { helper: 'maxDrawdown' },
+          dailyDrawdown: { key: 'DLL Live Funded (LFA)' },
+          buffer: null,
+          jourMin: { key: 'Min trading days (XFA Standard)' }, // 5 jours gagnants
+          minDailyProfit: { key: 'Profit min winning day' },   // $150
+          consistance: { key: 'Consistency (XFA Standard)' },  // AUCUNE
+        },
+      },
+      {
+        // L'autre voie : 3 jours au lieu de 5 et un plafond de retrait plus haut,
+        // au prix d'une règle de consistance à 40 %. Le choix est IRRÉVERSIBLE.
+        name: 'XFA Consistency',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { helper: 'maxDrawdown' },
+          dailyDrawdown: { key: 'Daily Loss Limit (DLL)' },
+          objectif: { helper: 'profitTarget' },
+          consistance: { key: 'Consistency (Combine)' },
+        },
+        funded: {
+          drawdown: { helper: 'maxDrawdown' },
+          dailyDrawdown: { key: 'DLL Live Funded (LFA)' },
+          buffer: null,
+          jourMin: { key: 'Min trading days (XFA Consistency)' },
+          minDailyProfit: null,                                 // pas de plancher $ sur cette voie
+          consistance: { key: 'Consistency (XFA Consistency)' },
         },
       },
     ],
@@ -405,23 +434,46 @@ export const FIRM_COMPARISON_MAP = {
 
   // -------------------------------------------------------------------------
   'Take Profit Trader': {
+    // Parcours unique (Test → PRO → PRO+), mais les deux étages financés n'ont ni
+    // la même mécanique de drawdown ni le même split — et c'est ce qui décide de
+    // la jauge de risque. PRO+ est en plus un compte LIVE, pas simulé.
     models: [
       {
-        name: 'Test → PRO → PRO+',
-        ddType: 'EOD / Trailing',   // Test = 'Drawdown Test (EOD)' · PRO funded = 'Drawdown PRO (INTRADAY)'
+        name: 'PRO',
+        ddType: 'EOD / Trailing',   // Test en EOD, puis PRO financé en intraday
         challenge: {
-          drawdown: { key: 'Drawdown Test (EOD)' },          // Test EOD trailing
-          dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN (removed Jan 2025)
-          objectif: { helper: 'profitTarget' },              // Objectif de profit
-          consistance: { key: 'Règle de cohérence (Test)' }, // ≤ 50% (Test only)
+          drawdown: { key: 'Drawdown Test (EOD)' },
+          dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN depuis janvier 2025
+          objectif: { helper: 'profitTarget' },
+          consistance: { key: 'Règle de cohérence (Test)' }, // <= 50 %, phase Test seulement
         },
         funded: {
-          drawdown: { key: 'Drawdown PRO (INTRADAY)' },      // PRO funded = intraday trailing
-          dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN on all phases
-          buffer: { key: 'Buffer payout (PRO/PRO+)' },       // starting + MLL buffer (payout buffer)
-          jourMin: { key: 'Min entre payouts (PRO)' },       // 7 days between payouts
-          minDailyProfit: null,                              // no $ floor (just ≥1 trade/day)
-          consistance: null,                                 // no consistency on PRO/PRO+
+          drawdown: { key: 'Drawdown PRO (INTRADAY)' },      // trailing INTRADAY : plus sévère
+          dailyDrawdown: { key: 'Daily Loss Limit' },
+          buffer: { key: 'Buffer payout (PRO/PRO+)' },
+          jourMin: { key: 'Min entre payouts (PRO)' },       // 7 jours entre payouts
+          minDailyProfit: null,
+          consistance: null,
+        },
+      },
+      {
+        // Promotion automatique et gratuite depuis PRO. Le drawdown repasse en EOD
+        // (moins sévère), le split monte à 90/10, et l'exécution devient réelle.
+        name: 'PRO+',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown Test (EOD)' },
+          dailyDrawdown: { key: 'Daily Loss Limit' },
+          objectif: { helper: 'profitTarget' },
+          consistance: { key: 'Règle de cohérence (Test)' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown PRO+ (EOD)' },
+          dailyDrawdown: { key: 'Daily Loss Limit' },
+          buffer: { key: 'Buffer payout (PRO/PRO+)' },
+          jourMin: { key: 'Min entre payouts (PRO+)' },
+          minDailyProfit: null,
+          consistance: null,
         },
       },
     ],
@@ -507,41 +559,66 @@ export const FIRM_COMPARISON_MAP = {
 
   // -------------------------------------------------------------------------
   'Phidias Propfirm': {
+    // Phidias 2.0 (2026) : E2L a remplacé la famille Static et couvre les 4 tailles,
+    // Swing est devenue Premium. Les trois programmes se distinguent d'abord par la
+    // MÉCANIQUE de drawdown, pas par les montants : E2L est STATIQUE (il ne suit
+    // jamais le solde), les deux autres sont en EOD trailing.
     models: [
       {
-        name: 'Static / E2L',
-        ddType: 'Static',   // 'Drawdown Static (25K only)' ($500 STATIQUE PUR · ne trail jamais)
+        name: 'E2L',
+        ddType: 'Static',
         challenge: {
-          drawdown: { key: 'Drawdown Static (25K only)' },   // $500 static (25K only)
-          dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN (no DLL any family)
-          objectif: { key: 'Objectif de profit', model: 'E2L' }, // '$1,500 (Static/E2L)' / '$3,000 (E2L)'
-          consistance: { key: 'Consistency (eval)' },        // AUCUNE
+          drawdown: { key: 'Drawdown E2L (statique)' },
+          dailyDrawdown: { key: 'Daily Loss Limit', model: 'E2L' },
+          objectif: { key: 'Objectif de profit', model: 'E2L' },
+          consistance: { key: 'Consistency (eval)', model: 'E2L' },
         },
         funded: {
-          drawdown: { key: 'Drawdown Static (25K only)' },   // static stays static
-          dailyDrawdown: { key: 'Daily Loss Limit' },
+          drawdown: { key: 'Drawdown E2L (statique)' },
+          dailyDrawdown: { key: 'Daily Loss Limit', model: 'E2L' },
           buffer: null,
-          jourMin: null,                                     // Static: first payout = direct LIVE (no min-days)
+          jourMin: { key: 'Jours de trading min', model: 'E2L' },
           minDailyProfit: null,
-          consistance: { key: 'Consistency (LIVE)' },        // AUCUNE
+          consistance: { key: 'Consistency (CASH funded)', model: 'E2L' },
         },
       },
       {
-        name: 'Fundamental / Swing',
-        ddType: 'EOD',   // 'Drawdown Fundamental/Swing (EOD)' (EOD trailing)
+        name: 'Fundamental',
+        ddType: 'EOD',
         challenge: {
-          drawdown: { key: 'Drawdown Fundamental/Swing (EOD)' },
-          dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN
-          objectif: { key: 'Objectif de profit', model: 'Fundamental' }, // '$4,000 (Fundamental/Premium)'
-          consistance: { key: 'Consistency (eval)' },        // AUCUNE
+          drawdown: { key: 'Drawdown Fundamental/Premium (EOD)' },
+          dailyDrawdown: { key: 'Daily Loss Limit', model: 'Fundamental' },
+          objectif: { key: 'Objectif de profit', model: 'Fundamental' },
+          consistance: { key: 'Consistency (eval)', model: 'Fundamental' },
         },
         funded: {
-          drawdown: { key: 'Drawdown Fundamental/Swing (EOD)' },
-          dailyDrawdown: { key: 'Daily Loss Limit' },
+          drawdown: { key: 'Drawdown Fundamental/Premium (EOD)' },
+          dailyDrawdown: { key: 'Daily Loss Limit', model: 'Fundamental' },
           buffer: null,
-          jourMin: null,                                     // no explicit funded min-days key
+          jourMin: { key: 'Jours de trading min', model: 'Fundamental' },
           minDailyProfit: null,
-          consistance: { key: 'Consistency (CASH funded)' }, // 30% max/day (funded)
+          consistance: { key: 'Consistency (CASH funded)', model: 'Fundamental' },
+        },
+      },
+      {
+        // Manquait au catalogue alors que c'est le programme le plus distinctif :
+        // seul à autoriser l'overnight ET le week-end, et seul à monter le split
+        // jusqu'à 100 % à partir du 5e payout.
+        name: 'Premium',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown Fundamental/Premium (EOD)' },
+          dailyDrawdown: { key: 'Daily Loss Limit', model: 'Premium' },
+          objectif: { key: 'Objectif de profit', model: 'Premium' },
+          consistance: { key: 'Consistency (eval)', model: 'Premium' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown Fundamental/Premium (EOD)' },
+          dailyDrawdown: { key: 'Daily Loss Limit', model: 'Premium' },
+          buffer: null,
+          jourMin: { key: 'Jours de trading min', model: 'Premium' },
+          minDailyProfit: null,
+          consistance: { key: 'Consistency (CASH funded)', model: 'Premium' },
         },
       },
     ],
@@ -804,9 +881,11 @@ export const FIRM_COMPARISON_MAP = {
 // pour CETTE taille de compte. C'est ce que le sélecteur « type de compte »
 // affiche à la création.
 //
-// Le filtre par taille compte : proposer « Flex » sur un FundedNext 25K ou
-// « EOD » sur un Apex 75K enverrait l'utilisateur choisir un programme qui
-// n'existe pas, et toutes les valeurs dérivées retomberaient à null.
+// ⚠️ La disponibilité se décide sur les descripteurs du COMPARATEUR, pas sur
+// maxDrawdown(). Le helper balaie toutes les clés « Drawdown … » et retombe sur
+// celle d'un autre programme quand la sienne vaut 'n/a' : Phidias Fundamental
+// paraissait donc exister en 25K, où il n'est pas vendu, en héritant du chiffre
+// d'E2L. Le descripteur, lui, pointe une clé PRÉCISE par programme.
 export function programsForFirm(firmName, plan = null) {
   const entry = FIRM_COMPARISON_MAP[firmName]
   const names = entry
@@ -814,9 +893,22 @@ export function programsForFirm(firmName, plan = null) {
     : (customFirmPrograms(firmName) || []).map(m => m.name)
   if (!plan || names.length === 0) return names
 
-  // Un programme est disponible à cette taille s'il y résout un drawdown OU un
+  const cmp = getFuturesComparison(firmName, plan)
+  const byName = new Map((cmp?.models || []).map(m => [m.name, m]))
+  // Un programme est vendu à cette taille s'il y résout un drawdown OU un
   // objectif. On teste les deux : certaines firmes laissent une case vide.
-  return names.filter(n => maxDrawdown(firmName, plan, n) !== null || profitTarget(firmName, plan, n) !== null)
+  return names.filter(n => {
+    const m = byName.get(n)
+    if (!m) return false
+    // Le critère est le DRAWDOWN, jamais l'objectif : beaucoup de firmes
+    // partagent le même objectif entre tous leurs programmes, si bien qu'il
+    // résout partout et ne prouve rien. Le drawdown, lui, est propre à chaque
+    // programme et vaut 'n/a' aux tailles où il n'est pas vendu.
+    //
+    // On regarde les deux phases : les offres à financement direct (Tradeify
+    // Lightning, LucidDirect) n'ont pas de challenge du tout.
+    return m.challenge?.drawdown != null || m.funded?.drawdown != null
+  })
 }
 
 // Le programme proposé par défaut : le premier disponible à cette taille.

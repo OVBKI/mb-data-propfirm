@@ -1,7 +1,7 @@
 // PropFirm rules data — vérifiées 2024/2025 (toujours vérifier sur le site officiel)
 // La plupart des firmes utilisent un drawdown TRAILING avec lock au solde initial — mais pas toutes
 // (Phidias Static, MFFU Flex/Builder statique, FFN statique une fois financé) : voir le détail par firme.
-import { extractModelSegment } from './programSegment'
+import { extractModelSegment, hasExplicitProgramSegments } from './programSegment'
 
 // Lit une cellule de règle en tenant compte du PROGRAMME choisi.
 // Sans programme, la cellule est rendue telle quelle et l'appelant retombe sur
@@ -18,10 +18,17 @@ function cellFor(raw, program) {
 }
 
 // Premier entier d'une chaîne (« EOD/Intraday : $2,000 · Legacy : $2,500 » → 2000).
+//
+// ⚠️ Un montant PRÉFIXÉ PAR $ l'emporte toujours. Sans cette priorité, le nom du
+// programme « E2L » (Phidias) livrait un objectif de 2 $ : le chiffre collé à une
+// lettre était pris pour un montant. Et en repli, on refuse tout nombre accolé à
+// une lettre, pour la même raison.
 function firstInt(str) {
-  const m = String(str ?? '').match(/[\d,]*\d/)
-  if (!m) return null
-  const n = parseInt(m[0].replace(/,/g, ''), 10)
+  const text = String(str ?? '')
+  const money = text.match(/\$\s*([\d,]+)/)
+  const raw = money ? money[1] : (text.match(/(?<![A-Za-zÀ-ÿ])[\d,]*\d/) || [])[0]
+  if (raw === undefined) return null
+  const n = parseInt(String(raw).replace(/,/g, ''), 10)
   return Number.isFinite(n) ? n : null
 }
 
@@ -329,8 +336,8 @@ export const PROPFIRM_RULES = {
     plans: ['25k','50k','100k','150k'],
     rules: {
       // === ÉVALUATION (LucidPro one-time, profit target 6%) ===
-      'Objectif de profit':       {'25k':'$1,500 (6%) — toutes familles','50k':'$3,000 (6%)','100k':'$6,000 (6%)','150k':'$9,000 (6%)'},
-      'Drawdown trailing max':    {'25k':'$1,000 EOD trailing (recalcule à 16h45 EST close) · locke à starting','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
+      'Objectif de profit':       {'25k':'LucidPro/LucidFlex : $1,250 · LucidDirect : aucun (financé direct)','50k':'LucidPro/LucidFlex : $3,000 · LucidDirect : aucun','100k':'LucidPro/LucidFlex : $6,000 · LucidDirect : aucun','150k':'LucidPro/LucidFlex : $9,000 · LucidDirect : aucun'},
+      'Drawdown trailing max':    {'25k':'LucidPro/LucidFlex : $1,000 · LucidDirect : $1,000','50k':'LucidPro/LucidFlex : $2,000 · LucidDirect : $2,000','100k':'LucidPro/LucidFlex : $3,000 · LucidDirect : $3,500','150k':'LucidPro/LucidFlex : $4,500 · LucidDirect : $5,000'},
       'DLL LucidPro/Direct':      {'25k':'~$600 (fév 2026, soft breach halt journée)','50k':'$1,200 (~2.4%)','100k':'~$2,400 (extrapolation 2.4%)','150k':'~$3,600 (extrapolation 2.4%)'},
       'DLL LucidFlex':            {'25k':'AUCUN — différenciateur clé Flex (eval ET funded)','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'Jours de trading min (eval)':{'25k':'0 (suppr. août 2025 sur Pro · suppr. fév 2026 sur Direct)','50k':'0','100k':'0','150k':'0'},
@@ -420,7 +427,7 @@ export const PROPFIRM_RULES = {
       'Objectif de profit':       {'25k':'Lightning : n/a (instant) · Select/Growth Eval : $1,500 (6%)','50k':'$3,000 (6%) · Select hausse depuis $2,500 (Tradeify 3.0)','100k':'$6,000 (6%)','150k':'$9,000 (6%)'},
       'Drawdown Select (EOD)':    {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'Drawdown Growth (EOD)':    {'25k':'$1,000','50k':'$2,000','100k':'$3,500','150k':'$5,000'},
-      'Drawdown Lightning (EOD)': {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$5,250 (nouveaux post-mars 2026 · pre = $4,500)'},
+      'Drawdown Lightning (EOD)': {'25k':'$1,000','50k':'$2,000','100k':'$4,000','150k':'$5,250'},
       'Lock drawdown':            {'25k':'🌟 Lock +$100 above starting une fois EOD balance dépasse drawdown+$100 (RARE)','50k':'🌟 idem (ex: 50K → bloque à $50,100)','100k':'🌟 idem','150k':'🌟 idem'},
       'DLL Select Daily':         {'25k':'n/a','50k':'$1,000','100k':'$1,250','150k':'$1,750'},
       'DLL Select Flex':          {'25k':'AUCUN','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
@@ -444,9 +451,9 @@ export const PROPFIRM_RULES = {
       'Contrats max (micro)':     {'25k':'10','50k':'40','100k':'80','150k':'120'},
       'Scaling micro requis':     {'25k':'Oui pour Lightning post-12-sept-2025','50k':'idem','100k':'idem','150k':'idem'},
       // === TARIFS (one-time, codes promo permanents -33/-50%) ===
-      'Prix Select (one-time)':   {'25k':'$109 (Tradeify 3.0)','50k':'~$159 (codes DASH/PTV -33/-50%)','100k':'~$259','150k':'~$359'},
-      'Prix Growth (one-time)':   {'25k':'$99 (Tradeify 3.0)','50k':'$199 list · $59 avec code DASH','100k':'$199 / $119 code','150k':'~$299'},
-      'Prix Lightning (one-time)':{'25k':'$244','50k':'$299','100k':'$425','150k':'$510'},
+      'Prix Select (one-time)':   {'25k':'$109','50k':'$165','100k':'$265','150k':'$369'},
+      'Prix Growth (one-time)':   {'25k':'$99','50k':'$145','100k':'$255','150k':'$369'},
+      'Prix Lightning (one-time)':{'25k':'$345','50k':'$492','100k':'$660','150k':'$796'},
       'Frais activation':         {'25k':'$0 (waived sur tous plans)','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'$95 toutes tailles','50k':'$95','100k':'$95','150k':'$95'},
       'Codes promo permanents':   {'25k':'DASH, PTV (~33-50% courant)','50k':'idem','100k':'idem','150k':'idem'},
@@ -570,7 +577,7 @@ export const PROPFIRM_RULES = {
     rules: {
       // === ÉVALUATION (one-time, profit target 6%) ===
       'Objectif de profit':       {'25k':'$1,500 (6%) · Flex seulement','50k':'$3,000 (6%) · TOUS plans · Pro 1-Day Addon : $4,000','100k':'$6,000 (6%) · Rapid/Pro/Scale','150k':'$9,000 (6%) · Rapid/Pro/Scale'},
-      'Drawdown Rapid (intraday)':{'25k':'$1,000 (4% intraday trailing)','50k':'$2,000','100k':'$4,000','150k':'$6,000'},
+      'Drawdown Rapid (intraday)':{'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'Drawdown Core/Pro (EOD)':  {'25k':'n/a','50k':'$1,500 (3% EOD trailing)','100k':'$3,000','150k':'$4,500'},
       'Drawdown Flex (EOD static)':{'25k':'$1,000 (4% EOD STATIC · ne trail jamais)','50k':'$2,000','100k':'n/a','150k':'n/a'},
       'Drawdown Builder (buffer)':{'25k':'n/a','50k':'$2,000 default / $1,500 lower-price (fixed buffer, no trail)','100k':'n/a','150k':'n/a'},
@@ -656,9 +663,14 @@ export const PROPFIRM_RULES = {
     plans: ['25k','50k','100k','150k'],
     rules: {
       // === ÉVALUATION (one-time) ===
-      'Objectif de profit':       {'25k':'$1,500 (Static/E2L)','50k':'$3,000 (E2L) · $4,000 (Fundamental/Premium)','100k':'$6,000 (Fundamental/Premium)','150k':'$9,000 (Fundamental/Premium)'},
-      'Drawdown Static (25K only)':{'25k':'$500 STATIQUE PUR (ne trail jamais)','50k':'n/a','100k':'n/a','150k':'n/a'},
-      'Drawdown Fundamental/Swing (EOD)':{'25k':'n/a','50k':'$2,500 EOD trailing','100k':'$3,000 EOD','150k':'$4,500 EOD'},
+      // Les objectifs DIFFÈRENT par programme, et pas proportionnellement :
+      // E2L demande beaucoup moins parce que son drawdown est minuscule.
+      'Objectif de profit':       {'25k':'E2L : $1,500','50k':'E2L : $2,500 · Fundamental/Premium : $4,000','100k':'E2L : $3,500 · Fundamental/Premium : $6,000','150k':'E2L : $4,500 · Fundamental/Premium : $9,000'},
+      // E2L a remplacé l'ancienne famille Static et couvre désormais les 4 tailles.
+      // Son drawdown est STATIQUE : il ne suit jamais le solde, d'où des montants
+      // bien plus petits que les EOD trailing de Fundamental et Premium.
+      'Drawdown E2L (statique)':{'25k':'$500 statique (ne trail jamais)','50k':'$650 statique','100k':'$800 statique','150k':'$1,000 statique'},
+      'Drawdown Fundamental/Premium (EOD)':{'25k':'n/a','50k':'$2,500 EOD trailing','100k':'$3,000 EOD','150k':'$4,500 EOD'},
       'Daily Loss Limit':         {'25k':'AUCUN — Phidias n\'a pas de DLL sur aucune famille','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'Mécanisme trailing':       {'25k':'Static : ne trail jamais (fixé à -$500)','50k':'EOD trailing : suit le highest EOD equity FOREVER · MLL ne locke JAMAIS','100k':'idem','150k':'idem'},
       'Jours de trading min':     {'25k':'1 jour (Static/E2L)','50k':'3 jours (Fundamental/Swing)','100k':'3 jours','150k':'3 jours'},
@@ -683,9 +695,9 @@ export const PROPFIRM_RULES = {
       'Contrats max (micro)':     {'25k':'20 (Static)','50k':'50 (E2L) / 100 (Fund/Swing)','100k':'70 / 140','150k':'90 / 170'},
       // === TARIFS (en USD) ===
       'Prix mensuel Fundamental': {'25k':'n/a','50k':'$116/mois','100k':'$144-164/mois (disputé entre sources)','150k':'$173/mois'},
-      'Prix one-time E2L/Static': {'25k':'$277 (régulier) · $55.40 avec code -80%','50k':'n/a','100k':'n/a','150k':'n/a'},
+      'Prix one-time E2L': {'25k':'$277 (régulier) · $55.40 avec code -80%','50k':'n/a','100k':'n/a','150k':'n/a'},
       'Prix one-time Fundamental':{'25k':'n/a','50k':'$580','100k':'$723','150k':'$863'},
-      'Prix one-time Swing/Premium':{'25k':'n/a','50k':'$723 (premium swing pricing tiers)','100k':'$900','150k':'$1,123'},
+      'Prix one-time Premium':{'25k':'n/a','50k':'$723 (premium swing pricing tiers)','100k':'$900','150k':'$1,123'},
       'Frais activation':         {'25k':'$0 (inclus dans one-time)','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'Renouvellement (rebuy éval) · Premium a "Cash Account Reset" option','50k':'idem · Premium : Cash Reset Option','100k':'idem','150k':'idem'},
       'Codes promo permanents':   {'25k':'LASTCHANCE (-60% éval / -80% one-time) — codes circulants non vérifiés à 3 sources','50k':'idem','100k':'idem','150k':'idem'},
@@ -728,8 +740,10 @@ export const PROPFIRM_RULES = {
     plans: ['25k','50k','100k','150k','250k'],
     rules: {
       // === ÉVALUATION (Standard ou Express, abonnement mensuel récurrent) ===
-      'Objectif de profit':       {'25k':'$1,500 (6%)','50k':'$3,000 (6%)','100k':'$6,000 (6%)','150k':'$9,000 (6%)','250k':'$15,000 (6%)'},
-      'Drawdown trailing max (eval)':{'25k':'$1,500 EOD (no lock en éval)','50k':'$2,000 EOD','100k':'$3,600 EOD','150k':'~$4,500 EOD','250k':'$6,000 EOD'},
+      // ⚠ Le 25K demande $2,000, PAS 6 % : c'est la seule taille dont l'objectif
+      //   n'est pas proportionnel. Corrigé août 2026.
+      'Objectif de profit':       {'25k':'$2,000','50k':'$3,000 (6%)','100k':'$6,000 (6%)','150k':'$9,000 (6%)','250k':'$15,000 (6%)'},
+      'Drawdown trailing max (eval)':{'25k':'$1,500 EOD (no lock en éval)','50k':'$2,000 EOD','100k':'$3,600 EOD','150k':'$5,000 EOD','250k':'$6,000 EOD'},
       'Drawdown post-Exhibition': {'25k':'STATIC (ne trail plus) une fois passé en Funded','50k':'STATIC en Funded','100k':'STATIC en Funded','150k':'STATIC en Funded','250k':'STATIC en Funded'},
       'Daily Loss Limit':         {'25k':'AUCUN (FFN n\'a pas de DLL)','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN','250k':'AUCUN'},
       'Jours min Standard (eval)':{'25k':'15 jours minimum','50k':'15','100k':'15','150k':'15','250k':'15'},
@@ -795,7 +809,10 @@ export const PROPFIRM_RULES = {
     rules: {
       // === ÉVALUATION (Starter/Pro mensuel, Instant one-time) ===
       'Objectif de profit':       {'50k':'Starter ~$3,000 · Pro ~$4,000 · Instant : 5% buffer (décompo Starter vs Pro non publique)','100k':'~$6,000 / ~$7,500','150k':'~$9,000 / ~$11,000'},
-      'Drawdown trailing max':    {'50k':'$2,000 EOD (Starter/Pro) · Instant : 5% current balance (trailing dynamique)','100k':'$3,000 EOD','150k':'$5,000 EOD'},
+      // Style « Étiquette : valeur » partout : l'ancienne parenthèse (Starter/Pro)
+      // n'était pas reconnue comme ciblage, et « Instant » ne correspondait pas au
+      // nom du modèle « Instant Funded » — le programme rendait null.
+      'Drawdown trailing max':    {'50k':'Starter/Pro : $2,000 EOD · Instant Funded : 5% du solde courant (trailing dynamique)','100k':'Starter/Pro : $3,000 EOD · Instant Funded : 5% du solde courant','150k':'Starter/Pro : $5,000 EOD · Instant Funded : 5% du solde courant'},
       'Mécanisme trailing':       {'50k':'EOD trailing · LOCK à starting balance APRÈS 1er payout (différenciateur)','100k':'idem','150k':'idem'},
       'DLL Starter':              {'50k':'$1,100 (2.2%)','100k':'$2,000 (2%)','150k':'$3,000 (2%)'},
       'DLL Pro':                  {'50k':'AUCUN (différenciateur clé Pro)','100k':'AUCUN','150k':'AUCUN'},
@@ -1117,11 +1134,22 @@ export function maxDrawdown(firmName, plan, program){
   // L'ordre du fichier place le programme principal en tête ; et une clé
   // limitée à une taille (« Drawdown Static (25K only) ») est ainsi ignorée
   // sur les autres tailles au lieu de rendre null pour tout le monde.
-  for (const key of [...typed, ...candidates]) {
+  const ordered = [...typed, ...candidates]
+  for (const key of ordered) {
     const cell = cellFor(rules[key]?.[plan], program)
     if (!cell) continue
     const n = firstInt(cell)
     if (n !== null && n > 0) return n
+  }
+
+  // Rien trouvé POUR CE PROGRAMME. Deux cas très différents :
+  //   • une cellule cible explicitement des programmes (« Legacy : $2,750 ») et
+  //     le nôtre n'y est pas → il n'est pas vendu à cette taille, on rend null ;
+  //   • aucune cellule ne cite de programme → la firme ne différencie pas, la
+  //     valeur globale EST la bonne réponse. Rendre null y éteindrait la jauge.
+  if (program) {
+    const explicit = ordered.some(k => hasExplicitProgramSegments(rules[k]?.[plan]))
+    if (!explicit) return maxDrawdown(firmName, plan, null)
   }
   return null
 }

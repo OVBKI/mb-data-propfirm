@@ -344,3 +344,20 @@ describe('defaultChallengePrice', () => {
     }
   })
 })
+
+// ── Repli quand la firme ne différencie PAS ses programmes ───────────────────
+describe('maxDrawdown — programme demandé mais donnée non différenciée', () => {
+  it('rend la valeur globale plutôt que null', () => {
+    // Topstep applique le même MLL à ses deux structures de payout. Rendre null
+    // y aurait éteint la jauge de drawdown sur toute la firme.
+    expect(maxDrawdown('Topstep', '50k', 'XFA Standard')).toBe(2000)
+    expect(maxDrawdown('Topstep', '50k', 'XFA Consistency')).toBe(2000)
+  })
+
+  it('mais garde le null quand une cellule cible EXPLICITEMENT des programmes', () => {
+    // Ici la donnée dit « Legacy : $2,750 » : EOD n'y figure pas parce qu'Apex ne
+    // vend plus de 75K. Le repli ne doit pas servir le chiffre d'un autre.
+    expect(maxDrawdown('Apex Trader Funding', '75k', 'EOD')).toBeNull()
+    expect(maxDrawdown('Apex Trader Funding', '75k', 'Legacy')).toBe(2750)
+  })
+})

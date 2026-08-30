@@ -1143,3 +1143,89 @@ retirer aurait cassé ces comptes. Elles n'existent simplement que sous `Legacy`
 Le comparateur passe d'un seul modèle « Apex (EOD) » à trois : EOD, Intraday,
 Legacy — ce qui rend enfin visible que l'Intraday n'a PAS de perte journalière,
 son vrai différenciateur.
+
+
+## Programmes étendus aux 12 firmes — 2026-08
+
+Le mécanisme construit pour Apex est désormais appliqué à **tout le catalogue** :
+12 firmes, 52 combinaisons firme × taille, **129 couples (taille, programme)**.
+
+| Firme | Programmes |
+|---|---|
+| Topstep | XFA Standard · XFA Consistency |
+| Apex | EOD · Intraday · Legacy |
+| Bulenox | Option 1 (trailing intraday) · Option 2 (EOD + DLL) |
+| Lucid | LucidPro · LucidFlex · LucidDirect |
+| Tradeify | Select Daily · Select Flex · Growth · Lightning Funded |
+| Take Profit Trader | PRO · PRO+ |
+| My Funded Futures | Rapid · Pro · Flex · Builder |
+| Phidias | E2L · Fundamental · Premium |
+| Funded Futures Network | Standard · Express |
+| FuturesElite | Starter · Pro · Instant Funded |
+| Alpha Futures | Premium · Zero · Advanced |
+| FundedNext Futures | Flex · Legacy · Rapid Pro · Rapid Daily |
+
+### Programmes ajoutés
+**Phidias Premium** (overnight et week-end autorisés, split 75 → 100 %),
+**Topstep XFA Consistency** (3 jours au lieu de 5, plafond de retrait plus haut,
+consistance 40 % — choix IRRÉVERSIBLE), **TPT PRO+** (drawdown EOD au lieu
+d'intraday, 90/10, exécution LIVE).
+
+### Renommages — Phidias 2.0
+`Static / E2L` → **E2L** (couvre maintenant les 4 tailles, pas seulement 25K) et
+`Fundamental / Swing` → **Fundamental** + **Premium**, deux programmes distincts.
+
+### Données corrigées (vérifiées août 2026)
+| Firme | Correction |
+|---|---|
+| **FFN** | objectif 25K : $1,500 → **$2,000** (seule taille non proportionnelle) · drawdown 150K : $4,500 → **$5,000** |
+| **Lucid** | objectif 25K : $1,500 → **$1,250** · drawdowns LucidDirect distincts (100K $3,500, 150K $5,000) |
+| **Phidias** | drawdowns E2L réels aux 4 tailles ($500/$650/$800/$1,000 statiques) · objectifs par programme |
+| **Tradeify** | drawdown Lightning 100K $3,000 → **$4,000** · prix des trois programmes réalignés |
+| **MFFU** | drawdown Rapid 100K $4,000 → **$3,000**, 150K $6,000 → **$4,500** |
+| **FuturesElite** | cellule drawdown réécrite en style « Étiquette : valeur » |
+
+### Quatre bugs de résolution trouvés en chemin
+1. **`resolveCell` ne transmettait pas le modèle aux helpers.** Les trois
+   programmes de Lucid affichaient donc le même drawdown : le comparateur montrait
+   trois colonnes qui se distinguaient partout SAUF sur le chiffre qui compte.
+2. **`programsForFirm` s'appuyait sur `maxDrawdown`**, qui balaie toutes les clés
+   « Drawdown … » et retombe sur celle d'un autre programme. Phidias Fundamental
+   paraissait exister en 25K en héritant du chiffre d'E2L. La disponibilité se
+   décide maintenant sur les **descripteurs du comparateur**, qui pointent une clé
+   précise par programme.
+3. **La disponibilité se juge sur le DRAWDOWN, jamais sur l'objectif.** Beaucoup
+   de firmes partagent le même objectif entre programmes : il résout partout et ne
+   prouve rien. On regarde aussi la phase FINANCÉE, sans quoi les offres à
+   financement direct (Tradeify Lightning, LucidDirect) — qui n'ont pas
+   d'évaluation — disparaissaient du sélecteur.
+4. **`firstInt` lisait le « 2 » de « E2L »** comme un montant : l'objectif Phidias
+   valait 2 $. Un montant préfixé par `$` l'emporte désormais, et en repli tout
+   nombre accolé à une lettre est refusé.
+
+### Le repli quand la firme ne différencie pas
+`hasExplicitProgramSegments()` sépare deux cas que rien ne distinguait :
+
+```
+'Legacy : $2,750'             → composite : un programme absent est ABSENT   → null
+'$2,000 — EOD seulement (…)'  → globale   : la valeur vaut pour tous          → repli
+```
+
+Sans ça, la parenthèse de Topstep passait pour un ciblage de programme et la
+firme entière rendait null. Seul le style `Étiquette : valeur` compte comme
+ciblage explicite — une parenthèse est trop ambiguë pour porter cette décision.
+
+### Vérification
+**Aucun trou** : chaque couple (firme, taille, programme) résout un drawdown.
+439 tests, dont un qui parcourt tout le catalogue et échoue si une firme perd un
+programme ou si un programme non vendu réapparaît.
+
+### Reste ouvert
+- **Bulenox** : sources divergentes sur l'existence d'une taille 10K, et les
+  parcours Qualification / Momentum / Fast Track ne sont pas modélisés (seul l'axe
+  de risque Option 1 / Option 2 l'est).
+- **FFN Steady** : troisième programme lancé en juillet 2026, pas encore ajouté.
+- **Tradeify Select 300K V2** : taille non modélisée.
+- **MFFU Rapid** : classé intraday ici, EOD chez certaines sources — à trancher.
+- **26/52 couples sans profit split**, **17/52 sans jours minimum** — cellules
+  au format non lisible par les parseurs.
