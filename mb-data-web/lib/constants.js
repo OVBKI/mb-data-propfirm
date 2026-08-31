@@ -1019,14 +1019,36 @@ export const PROPFIRM_RULES = {
       'DCA (renforcement)':       {'25k':'Autorisé · scaling micro requis pour comptage','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
       'Algos / automation':       {'25k':'Full auto INTERDIT · Semi-auto OK si manual oversight','50k':'idem','100k':'idem','150k':'idem'},
       // === TARIFS (one-time partout en 2026, mensuel sur Core/Rapid uniquement) ===
-      'Prix Core (mensuel)':      {'25k':'n/a','50k':'$77/mois (cheapest 50K du marché · LEGACY)','100k':'n/a','150k':'n/a'},
-      'Prix Rapid (mensuel)':     {'25k':'~$67/mois','50k':'$129/mois','100k':'$229/mois','150k':'$329/mois'},
-      'Prix Pro (mensuel)':       {'25k':'n/a','50k':'~$219-229/mois','100k':'~$329/mois','150k':'~$477/mois'},
-      'Prix Flex (mensuel)':      {'25k':'$84/mois','50k':'$107/mois','100k':'n/a','150k':'n/a'},
+      // ⚠️ ERREUR DE MODÈLE, PAS DE MONTANT. Le catalogue vendait ces plans à
+      // l'ABONNEMENT (« $129/mois »). La page de checkout porte « One-time
+      // payment » sur les quatre plans. Un tarif mensuel présenté comme le coût
+      // d'un challenge fausse tout calcul de rentabilité — et dans le mauvais
+      // sens, puisqu'il laisse croire à une charge récurrente qui n'existe pas.
+      //
+      // Seul le 50K a été RELEVÉ sur la page. Les autres tailles gardent les
+      // montants d'avant, qui venaient de l'ancien modèle d'abonnement et ne
+      // correspondent ni au prix catalogue ni au prix promo : elles sont
+      // marquées non vérifiées plutôt que retirées, pour que le pré-remplissage
+      // du wizard reste utilisable.
+      'Prix Rapid (one-time)':    {'25k':'~$67 (non vérifié)','50k':'$209 catalogue · $105 en promotion courante','100k':'~$229 (non vérifié)','150k':'~$329 (non vérifié)'},
+      'Prix Rapid EOD (one-time)':{'25k':'n/a','50k':'$209 catalogue · $105 en promotion courante — même tarif que le Rapid intraday','100k':'n/a','150k':'n/a'},
+      'Prix Pro (one-time)':      {'25k':'n/a','50k':'$265 catalogue · $133 en promotion courante','100k':'~$329 (non vérifié)','150k':'~$477 (non vérifié)'},
+      'Prix Core (one-time)':     {'25k':'n/a','50k':'~$77 (non vérifié, plan legacy)','100k':'n/a','150k':'n/a'},
+      // Le Flex ne figure PLUS sur la page de checkout — une confirmation
+      // indirecte de son arrêt de vente. Les tarifs restent pour les porteurs.
+      'Prix Flex (one-time)':     {'25k':'~$84 (non vérifié, plan arrêté à la vente)','50k':'~$107 (non vérifié, plan arrêté à la vente)','100k':'n/a','150k':'n/a'},
+      // ⚠️ Les remises bougent : le guide Builder annonçait -30% et -40%, la page
+      // de checkout affiche environ -50%. On stocke le prix CATALOGUE, stable,
+      // et on signale que le montant payé dépend de la promotion du moment.
+      'Promotions':               {'25k':'Les tarifs affichés au checkout sont des prix promotionnels, révisés régulièrement. Le relevé d\'août montrait environ -50% sur les quatre plans, là où les guides mentionnaient -30% et -40%','50k':'idem','100k':'idem','150k':'idem'},
       // ⚠️ « Pricing non public — checkout direct » était faux : le guide Builder
       // 50K publie les deux options et leurs paliers de promo. Le tarif du 25K,
       // lui, n'est nulle part dans les deux guides.
-      'Prix Builder':             {'25k':'non publié','50k':'$153 en option par défaut, $125 en Add-On. Avec les codes courants, $107 ou $87 à -30%, et $92 ou $75 à -40% (deux utilisations seulement)','100k':'n/a','150k':'n/a'},
+      // ⚠️ Le guide donne $153 par défaut et $125 en Add-On ; la page de checkout
+      // n'affiche qu'UNE carte Builder, à $125 catalogue, avec la mention
+      // « 1.5k or 2k » de drawdown. Les deux se recoupent si le $125 est celui
+      // de l'Add-On — mais la page ne le dit pas, donc on garde les deux chiffres.
+      'Prix Builder (one-time)':  {'25k':'non publié','50k':'$153 en option par défaut et $125 en Add-On selon le guide · le checkout affiche $125 catalogue et $63 en promotion courante','100k':'n/a','150k':'n/a'},
       'Frais activation':         {'25k':'$0 (waived firm-wide depuis juillet 2025)','50k':'$0','100k':'$0','150k':'$0'},
       'Reset cost':               {'25k':'~$87 (variable selon plan)','50k':'~$157 (Rapid)','100k':'~$267 (Rapid)','150k':'~$347 (Rapid)'},
       'Data fee (Pro classifié)': {'25k':'$0 retail · $130/mois si Professional trader','50k':'idem','100k':'idem','150k':'idem'},

@@ -2587,3 +2587,66 @@ buffer.
 de vente, et une confirmation indirecte de plus.
 
 607 tests (+7).
+
+---
+
+## My Funded Futures — la page de checkout (2026-08)
+
+Capture du checkout 50K. Elle **confirme trois corrections** faites à l'aveugle
+sur les articles, et sort une erreur qu'aucun des quatorze articles n'avait
+révélée.
+
+### Ces plans ne sont PAS des abonnements
+
+La fiche portait `Prix Rapid (mensuel) — $129/mois`. Le checkout écrit
+**« One-time payment »** sur les quatre cartes. Ce n'est pas une erreur de
+montant, c'est une erreur de **modèle** : un tarif mensuel présenté comme le coût
+d'un challenge fausse tout calcul de rentabilité, et dans le mauvais sens — il
+laisse croire à une charge récurrente qui n'existe pas.
+
+| 50K | Catalogue | Promotion relevée |
+|---|---|---|
+| Builder | 125 $ | 63 $ |
+| Rapid | 209 $ | 105 $ |
+| **Rapid EOD** | 209 $ | 105 $ |
+| Pro | 265 $ | 133 $ |
+
+Le **Rapid EOD** n'avait aucun prix stocké : il coûte exactement le même que le
+Rapid intraday.
+
+Le pré-remplissage retient le tarif **catalogue**, stable, et non la promotion —
+les remises bougent (le guide Builder annonçait -30 % et -40 %, la page affiche
+environ -50 %), et ce n'est pas une caractéristique du plan. La variabilité est
+consignée dans `Promotions`.
+
+⚠️ **Seul le 50K a été relevé.** Les autres tailles gardent les montants d'avant,
+qui venaient de l'ancien modèle d'abonnement et ne correspondent ni au catalogue
+ni au promo — elles sont **marquées non vérifiées** plutôt que retirées, pour que
+le pré-remplissage reste utilisable.
+
+### Trois corrections confirmées noir sur blanc
+
+La page de vente valide ce que les articles ne disaient qu'en creux :
+
+| Confirmé | Ce que la fiche disait avant |
+|---|---|
+| Rapid — `Drawdown Mode` **EOD Trailing** en éval, **Intraday** en financé | « intraday » sur les deux phases |
+| Builder — `Drawdown Mode` **EOD Trailing**, `Consistency Rule` **50 %** en financé | « buffer fixe, ne trail jamais », aucune cohérence |
+| Pro 50K — `Max Drawdown` **2 000 $** | 1 500 $, le chiffre de Core |
+
+Les trois avaient été déduites d'articles séparés ; les voir sur la grille
+tarifaire, sous une forme entièrement différente, est la meilleure vérification
+possible.
+
+Le reste de la carte 50K correspond aussi au mot près : jours à passer (1 / 2 /
+4 / 2), objectif 3 000 $ partout, cadences (48 h / quotidien / quotidien /
+bi-hebdomadaire), splits (80/20, 90/10, 90/10, 80/20), et les cohérences
+financées (50 % Builder, aucune ailleurs).
+
+### Le Flex n'est pas sur la page
+
+Quatre cartes, et le Flex n'en fait pas partie — après son absence des deux pages
+de payout. Troisième confirmation indirecte de son arrêt de vente. Le programme
+reste dans le comparateur pour les comptes existants.
+
+616 tests (+9).

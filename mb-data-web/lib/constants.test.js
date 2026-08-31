@@ -1178,7 +1178,7 @@ describe('My Funded Futures — Builder', () => {
 
   // ⚠️ « Pricing non public » était faux : le guide 50K publie les deux options.
   it('publie le prix des deux options du 50K', () => {
-    const v = r('Prix Builder', '50k')
+    const v = r('Prix Builder (one-time)', '50k')
     expect(v).toMatch(/\$153/)
     expect(v).toMatch(/\$125/)
     expect(v).not.toMatch(/non public/i)
@@ -1451,5 +1451,84 @@ describe('My Funded Futures — processus de payout', () => {
     expect(v).toMatch(/guide dédié qui fait foi/)
     // Et la donnée retenue reste bien celle du guide dédié.
     expect(extractModelSegment(r('Daily Loss Limit', '50k'), 'Builder')).toMatch(/\$1,000/)
+  })
+})
+
+// ── My Funded Futures : la page de checkout ─────────────────────────────────
+// Capture du checkout 50K fournie par l'utilisateur. Elle CONFIRME trois
+// corrections faites à l'aveugle sur les articles, et sort une erreur de MODÈLE
+// que quatorze articles n'avaient pas révélée.
+describe('My Funded Futures — checkout 50K', () => {
+  const r = (key, plan = '50k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  // ⚠️ ERREUR DE MODÈLE : ces plans étaient stockés comme des ABONNEMENTS. La
+  // page porte « One-time payment » sur les quatre. Un tarif mensuel présenté
+  // comme le coût d'un challenge fausse tout calcul de rentabilité.
+  it('vend les plans en ONE-TIME, plus à l’abonnement', () => {
+    for (const k of ['Prix Rapid', 'Prix Pro', 'Prix Core', 'Prix Flex']) {
+      expect(PROPFIRM_RULES['My Funded Futures'].rules[`${k} (mensuel)`], k).toBeUndefined()
+      expect(PROPFIRM_RULES['My Funded Futures'].rules[`${k} (one-time)`], k).toBeDefined()
+    }
+  })
+
+  // Les quatre prix relevés sur la page, catalogue et promotion.
+  it('porte les quatre prix catalogue du 50K', () => {
+    expect(r('Prix Rapid (one-time)')).toMatch(/\$209/)
+    expect(r('Prix Rapid EOD (one-time)')).toMatch(/\$209/)
+    expect(r('Prix Pro (one-time)')).toMatch(/\$265/)
+    expect(r('Prix Builder (one-time)')).toMatch(/\$125/)
+  })
+
+  // Le pré-remplissage doit retenir le prix CATALOGUE, stable, et non la
+  // promotion du moment — qui change et n'est pas une caractéristique du plan.
+  it('pré-remplit avec le tarif catalogue, par programme', () => {
+    expect(defaultChallengePrice('My Funded Futures', '50k', 'Rapid')).toBe(209)
+    expect(defaultChallengePrice('My Funded Futures', '50k', 'Pro')).toBe(265)
+    expect(defaultChallengePrice('My Funded Futures', '50k', 'Builder')).toBe(153)
+  })
+
+  // Seul le 50K a été relevé : les autres tailles restent marquées.
+  it('marque comme non vérifiées les tailles jamais relevées', () => {
+    expect(r('Prix Rapid (one-time)', '100k')).toMatch(/non vérifié/)
+    expect(r('Prix Rapid (one-time)', '150k')).toMatch(/non vérifié/)
+    expect(r('Prix Pro (one-time)', '100k')).toMatch(/non vérifié/)
+  })
+
+  it('signale que le montant payé dépend de la promotion du moment', () => {
+    // La phrase vit en 25K, les autres tailles portent la sentinelle 'idem'.
+    expect(r('Promotions', '25k')).toMatch(/promotionnels/)
+    expect(r('Promotions', '25k')).toMatch(/-50%/)
+  })
+
+  // 🌟 LA CONFIRMATION QUI COMPTE. Trois corrections déduites d'articles sont
+  // vérifiées noir sur blanc par la page de vente elle-même.
+  it('confirme le Rapid EOD en éval et INTRADAY en financé', () => {
+    const m = PROPFIRM_RULES['My Funded Futures'].rules
+    expect(m['Drawdown Rapid — éval contre financé']['25k']).toMatch(/INTRADAY/)
+    expect(m['Drawdown Rapid — éval contre financé']['50k']).toMatch(/\$50,100/)
+    // Et l'échelle de montants, identique dans les deux phases.
+    expect(m['Drawdown Rapid (intraday)']['50k']).toBe('$2,000')
+  })
+
+  it('confirme le Builder en EOD trailing avec 50% de cohérence au payout', () => {
+    expect(r('Drawdown Builder (buffer)')).toMatch(/EOD trailing/)
+    expect(r('Cohérence Builder (payout)', '25k')).toMatch(/^50%/)
+  })
+
+  // ⚠️ La confirmation la plus utile : Pro 50K est bien à $2,000, pas au $1,500
+  // de Core avec lequel il était fusionné.
+  it('confirme le drawdown Pro 50K à $2,000', () => {
+    expect(r('Drawdown Pro (EOD)')).toBe('$2,000')
+    expect(maxDrawdown('My Funded Futures', '50k', 'Pro')).toBe(2000)
+  })
+
+  // Le Flex est ABSENT des quatre cartes du checkout — une confirmation
+  // indirecte de son arrêt de vente, après son absence des pages de payout.
+  it('garde le Flex hors des plans vendus, sans le supprimer', () => {
+    expect(r('Flex — arrêt de la vente', '25k')).toMatch(/arrêté/)
+    expect(r('Prix Flex (one-time)', '25k')).toMatch(/arrêté à la vente/)
+    // Le programme reste dans le comparateur pour les comptes existants.
+    expect(PROPFIRM_RULES['My Funded Futures'].rules['Drawdown Flex (EOD trailing)']['25k'])
+      .toBe('$1,000')
   })
 })
