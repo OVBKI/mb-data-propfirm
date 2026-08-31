@@ -732,7 +732,15 @@ export default function AppLayout({ children }) {
           onClick={() => setMobileNavOpen(o => !o)}
         >&#x2630;</button>
 
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
+        {/* ⚠️ position + zIndex OBLIGATOIRES. DashboardBackdrop est un descendant
+            POSITIONNÉ (position: fixed, zIndex: 0) : dans l'ordre de peinture
+            CSS, les descendants positionnés passent AU-DESSUS des descendants
+            de bloc non positionnés. Sans position ici, le fond animé recouvrait
+            tout ce qui n'a pas son propre `position` — titres de page, barres de
+            filtres, libellés de heatmap — pendant que le rail (sticky) et les
+            cartes (relative) restaient visibles. Et comme la vidéo monte en
+            opacité sur 1,2 s, le contenu DISPARAISSAIT progressivement. */}
+        <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
           <AppSidebar
             user={user}
             profile={profile}

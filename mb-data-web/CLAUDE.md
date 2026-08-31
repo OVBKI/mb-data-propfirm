@@ -1855,3 +1855,67 @@ convaincant. Toute campagne de mesure doit vérifier que les pages répondent 20
 avant de croire ses chiffres.
 
 485 tests (+5, sur `readableOn`).
+
+## Le fond animé recouvrait le contenu — 2026-08
+
+Symptôme rapporté : sur `/app/heatmaps`, `/app/trades` et `/app/myrules`, une
+grande zone vide en haut, et « ça apparaît et disparaît progressivement ».
+`/app/analytics` semblait intact. Aucune erreur JS dans la console.
+
+### La cause : l'ordre de peinture CSS
+`DashboardBackdrop` se rend en `position: fixed; z-index: 0` — c'est un
+descendant **POSITIONNÉ**. Le conteneur du contenu, lui, était un simple
+`<div style={{ display: 'flex', minHeight: '100vh' }}>` — **non positionné**.
+
+Dans l'ordre de peinture d'un contexte d'empilement, les descendants positionnés
+à `z-index: 0/auto` passent **au-dessus** des descendants de bloc non
+positionnés. Le fond animé recouvrait donc tout le contenu de la page.
+
+### Pourquoi seulement une PARTIE disparaissait
+C'est ce qui rendait le symptôme illisible :
+
+| Élément | Sort |
+|---|---|
+| Rail de navigation (`position: sticky`) | positionné, et APRÈS le backdrop dans le DOM → **visible** |
+| Cartes, lignes de trade, tuiles de heatmap (`position: relative`) | positionnées → **visibles** |
+| Titres de page, barres de filtres, libellés d'axes | **non positionnés → recouverts** |
+
+D'où l'impression de pages « à moitié rendues » : les blocs qui avaient déjà un
+`position` pour une autre raison survivaient, les autres non. Et `/app/analytics`
+paraissait sain parce que ses graphiques sont des `<canvas>` dans des cartes
+positionnées.
+
+### Pourquoi « progressivement »
+La vidéo de fond monte de `opacity: 0` à `1` avec `transition: opacity 1.2s ease`
+dès qu'elle commence à peindre. Le contenu ne disparaissait donc pas d'un coup :
+il s'effaçait en une seconde et demie, ce qui ressemble à un bug d'animation
+plutôt qu'à un problème d'empilement.
+
+### Le correctif
+`position: relative; z-index: 1` sur le conteneur du contenu. Une ligne.
+
+### Comment ça a été prouvé
+Deux fausses pistes d'abord, toutes deux écartées par la mesure :
+`<main>` sans `min-width: 0` (faux : `overflow: auto` neutralise déjà
+`min-width: auto`), et la classe `.reveal` à `opacity: 0` (absente des pages app).
+
+La preuve retenue est une reproduction ISOLÉE de l'empilement, avec un backdrop
+rouge vif, où l'on **compte les pixels du texte** dans la boîte du titre :
+
+```
+sans position: relative → 0 pixel de titre    (entièrement recouvert)
+avec position: relative → 1911 pixels         (visible)
+```
+
+La carte en `position: relative` et le rail donnent le MÊME chiffre dans les deux
+cas — ce qui reproduit exactement le motif des captures.
+
+⚠️ **Une sonde `elementFromPoint` ne voit pas ce défaut** : le backdrop porte
+`pointer-events: none`, donc le navigateur le saute et désigne l'élément du
+dessous. Elle m'avait fait conclure à tort que l'empilement était bon. Pour une
+question de peinture, il faut mesurer des PIXELS.
+
+### La règle à retenir
+Un frère non positionné d'un élément en `position: fixed` passe **dessous**, même
+si ce dernier a `z-index: 0`. Tout conteneur de contenu voisinant un fond fixe
+doit porter son propre `position` + `z-index`.
