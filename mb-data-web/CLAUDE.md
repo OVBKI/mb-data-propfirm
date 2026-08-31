@@ -2071,6 +2071,30 @@ réserve pour recharger après un compte cassé.
 
 Plateformes mises à jour : **Rithmic** et **Tradesea** ajoutés.
 
+### Septième article — le chemin vers Elite Live (31 mars 2026)
+Le catalogue décrivait la **cagnotte** Elite sans jamais dire **comment on y
+accède**. C'est pourtant là que se joue le passage du compte financé au capital
+réel, et l'ancien programme était bien plus fermé :
+
+| | Ancien programme | Tradeify Elite |
+|---|---|---|
+| Payouts requis | 4 | **5** |
+| Comptes live | **un seul**, tous les financés y convergeaient | **un par compte financé**, jusqu'à 5 simultanés |
+| Plafond de profit simulé | **100 000 $** | **aucun** |
+| Transitions | une | **aucune limite** |
+| Perte journalière en live | — | **aucune** |
+
+Le chemin est le même depuis Select, Growth ou Lightning.
+
+⚠️ **Les comptes anciens ne sont PAS migrés d'office.** Un trader dont le compte
+a été acheté avant le 3 décembre **choisit** entre les deux programmes. Lui
+servir les règles du nouveau serait faux : s'il reste sur l'ancien, il garde un
+seul compte live et le plafond de 100 000 $.
+
+Cet article confirme aussi, pour la **troisième fois** et dans un troisième
+document, qu'il n'y a **aucune consistance en mode financé sur Select** — la
+correction la plus importante de cette série.
+
 ### Reste ouvert
 - **Select 300K** : cinquième taille en édition limitée (KYC avant achat, aucun
   reset, 3 par personne, hors de la limite des 15 évaluations). L'article renvoie
@@ -2079,4 +2103,4 @@ Plateformes mises à jour : **Rithmic** et **Tradesea** ajoutés.
 - **Profit minimum par journée valide** (50 / 100 / 200 / 300 $) : vient d'une
   analyse tierce, aucun des cinq articles ne le mentionne.
 
-497 tests (+9).
+500 tests (+12).

@@ -524,3 +524,33 @@ describe('Tradeify — Elite Reward Pool', () => {
     }
   })
 })
+
+// ── Tradeify : le chemin vers Elite Live ────────────────────────────────────
+// Article « Introducing the New Select Plan & Changes to the Live Program »
+// (31 mars 2026). Le catalogue décrivait la cagnotte Elite sans dire comment on
+// y accède — or c'est là que se joue le passage au capital réel.
+describe('Tradeify — accès à Elite Live', () => {
+  const r = key => PROPFIRM_RULES['Tradeify'].rules[key]['25k']
+
+  it('documente les 5 payouts, les 5 comptes live et l’absence de limite de transitions', () => {
+    const v = r('Passage en Elite Live')
+    expect(v).toMatch(/5 payouts/)
+    expect(v).toMatch(/5 comptes live/)
+    expect(v).toMatch(/aucune limite/i)
+  })
+
+  it('dit qu’un compte Elite Live n’a NI plafond de profit sim NI perte journalière', () => {
+    expect(r('Elite Live — plafond de profit sim')).toMatch(/AUCUN/)
+    expect(r('Elite Live — perte journalière')).toMatch(/AUCUNE/)
+  })
+
+  // ⚠️ Les comptes anciens ne sont pas migrés d'office : le trader CHOISIT.
+  // Leur servir les règles du nouveau programme serait faux — ils gardent le
+  // plafond de $100,000 et un seul compte live s'ils restent sur l'ancien.
+  it('garde l’ancien programme comme une OPTION pour les comptes antérieurs', () => {
+    const v = r('Ancien programme Live')
+    expect(v).toMatch(/CHOISIT|choisit/)
+    expect(v).toMatch(/\$100,000/)
+    expect(v).toMatch(/4 payouts/)
+  })
+})

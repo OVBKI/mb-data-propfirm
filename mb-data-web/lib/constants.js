@@ -552,9 +552,11 @@ export const PROPFIRM_RULES = {
     // VÉRIFIÉ AOÛT 2026 sur CINQ articles du help center fournis en PDF :
     // « Select Evaluation Accounts », « Growth Evaluation Accounts »,
     // « Lightning Funded Accounts », « SELECT vs Growth » et
-    // « Rules: Consistency Rule », plus la note de version « Tradeify 3.0 –
-    // Program Updates & Improvements » (7 avril 2026). C'est une source de
-    // PREMIÈRE MAIN — help.tradeify.co bloque la récupération automatique.
+    // « Rules: Consistency Rule », la note de version « Tradeify 3.0 – Program
+    // Updates & Improvements » (7 avril 2026) et l'annonce « Introducing the New
+    // Select Plan & Changes to the Live Program » (31 mars 2026). C'est une
+    // source de PREMIÈRE MAIN — help.tradeify.co bloque la récupération
+    // automatique.
     //
     // Les TROIS échelles de drawdown stockées sont confirmées au mot près, y
     // compris leur divergence à partir du 100K (Select 3 000 / Growth 3 500 /
@@ -667,6 +669,16 @@ export const PROPFIRM_RULES = {
       'Buffer Select Daily':      {'25k':'$1,100','50k':'$2,100','100k':'$2,600','150k':'$3,600'},
       'Cadence payout':           {'25k':'Windows FIXES : 1-4 et 15-18 de chaque mois (Select/Growth) · Lightning : INSTANT dashboard (24h)','50k':'idem','100k':'idem','150k':'idem'},
       'Méthodes payout':          {'25k':'Rise (primaire crypto USDT/USDC + bank) + Plane (backup wire) — PAS PayPal/ACH direct/Wise','50k':'idem','100k':'idem','150k':'idem'},
+      // === PASSAGE EN ELITE LIVE (capital réel) ===
+      // Le catalogue décrivait la cagnotte Elite sans dire comment on y accède.
+      // C'est pourtant là que se joue la différence entre « compte financé » et
+      // « capital réel », et l'ancien système était bien plus fermé.
+      'Passage en Elite Live':    {'25k':'5 payouts sur un compte financé le rendent éligible à SON PROPRE compte Elite Live. Aucune limite au nombre de transitions, et jusqu\'à 5 comptes live simultanés. Même chemin pour Select, Growth et Lightning','50k':'idem','100k':'idem','150k':'idem'},
+      'Elite Live — plafond de profit sim':{'25k':'AUCUN. On accumule autant de profit simulé qu\'on veut avant de passer en live — l\'ancien programme plafonnait à $100,000','50k':'idem','100k':'idem','150k':'idem'},
+      'Elite Live — perte journalière':{'25k':'AUCUNE. Un compte Elite Live n\'a pas de limite de perte journalière, et chaque compte a sa propre structure de performance','50k':'idem','100k':'idem','150k':'idem'},
+      // Les porteurs de comptes anciens ne sont PAS migrés d'office : ils
+      // choisissent. Leur servir les règles du nouveau programme serait faux.
+      'Ancien programme Live':    {'25k':'Comptes achetés avant le 3 décembre : le trader CHOISIT entre le nouveau programme Elite et l\'ancien — un seul compte live et un plafond de $100,000 de profit simulé, après 4 payouts au lieu de 5','50k':'idem','100k':'idem','150k':'idem'},
       // ⚠️ La dotation dépend de la TAILLE du compte, pas du programme. Le
       // catalogue attribuait les $12,000 à « Lightning 150K » et laissait
       // « bonus proportionnel » en 50K et 100K : la note Tradeify 3.0 donne la
