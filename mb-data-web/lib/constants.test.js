@@ -1394,3 +1394,62 @@ describe('My Funded Futures — Flex', () => {
     }
   })
 })
+
+// ── My Funded Futures : les deux articles de payout transverses ─────────────
+// « Payout Policy Overview » et « Guide to Your First Payout ». Surtout des
+// confirmations — et une contradiction entre deux pages officielles.
+describe('My Funded Futures — processus de payout', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  it('dit que la plupart des demandes passent instantanément', () => {
+    const v = r('Délai payout')
+    expect(v).toMatch(/INSTANTANÉMENT/)
+    expect(v).toMatch(/6 à 12 heures ouvrées/)
+  })
+
+  // L'ordre compte : le KYC se fait AVANT de créer le compte Riseworks.
+  it('donne le chemin exact du KYC et son ordre', () => {
+    const v = r('KYC')
+    expect(v).toMatch(/Personal Settings/)
+    expect(v).toMatch(/ENSUITE/)
+  })
+
+  // Une étape que rien ne signalait, propre au tout premier retrait.
+  it('signale les accords à signer au premier payout', () => {
+    const v = r('Premier payout — accords à signer')
+    expect(v).toMatch(/Riseworks/)
+    expect(v).toMatch(/signés/)
+  })
+
+  // La bascule Rapid est AUTOMATIQUE au-delà du seuil, pas discrétionnaire.
+  it('rend la bascule Rapid automatique à $10,000 sur une journée', () => {
+    const v = r('Sim→Live trigger Rapid')
+    expect(v).toMatch(/\$10,000/)
+    expect(v).toMatch(/UNE SEULE journée/)
+    expect(v).toMatch(/AUTOMATIQUE/)
+  })
+
+  // Une demande TOUS LES 14 jours, pas seulement la première.
+  it('fait du délai Pro une cadence récurrente', () => {
+    const v = r('Pro — éligibilité au payout', '50k')
+    expect(v).toMatch(/TOUS LES 14 jours/)
+    expect(v).toMatch(/inactivité/)
+  })
+
+  it('donne au Builder les mêmes trois voies vers le live que le Flex', () => {
+    const v = r('Sim→Live trigger Flex/Builder')
+    expect(extractModelSegment(v, 'Builder')).toMatch(/\$100,000/)
+    expect(extractModelSegment(v, 'Builder')).toMatch(/équipe risque/)
+  })
+
+  // ⚠️ Deux pages officielles se contredisent sur la DLL du Builder 50K.
+  // On retient le guide DÉDIÉ, qui l'écrit quatre fois, contre l'aperçu
+  // commercial qui résume quatre plans en une ligne.
+  it('consigne la contradiction de sources sur la DLL Builder', () => {
+    const v = r('DLL — contradiction de sources', '50k')
+    expect(v).toMatch(/aperçu commercial/)
+    expect(v).toMatch(/guide dédié qui fait foi/)
+    // Et la donnée retenue reste bien celle du guide dédié.
+    expect(extractModelSegment(r('Daily Loss Limit', '50k'), 'Builder')).toMatch(/\$1,000/)
+  })
+})

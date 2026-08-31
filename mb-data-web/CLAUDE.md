@@ -2537,3 +2537,53 @@ Autres corrections et ajouts :
   toujours de sources tierces, et les deux sont des plans legacy.
 
 600 tests (+22).
+
+---
+
+## My Funded Futures — les deux articles de payout transverses (2026-08)
+
+*Payout Policy Overview* et *Guide to Your First Payout*. Surtout des
+**confirmations** de la passe précédente — et une contradiction entre deux pages
+officielles.
+
+### Deux sources officielles se contredisent sur la DLL du Builder
+
+L'aperçu affirme : *« No daily loss limits on Builder, Rapid or Pro plans »*. Le
+guide Builder 50K écrit l'inverse **quatre fois** — tableau d'évaluation, tableau
+sim funded, FAQ dédiée et tableau du compte live, tous avec 1 000 $ de pause
+douce.
+
+**On retient le guide dédié.** Il est granulaire ; l'aperçu est une page de vente
+qui résume quatre plans en une ligne, et il est d'ailleurs juste pour le Builder
+25K, qui n'a effectivement aucune DLL. Se tromper dans l'autre sens ferait
+découvrir la pause au trader en pleine séance. La divergence est consignée dans
+`DLL — contradiction de sources` plutôt que tranchée en silence.
+
+### Ce que ces deux pages ajoutent vraiment
+
+- **La plupart des demandes sont approuvées instantanément.** En cas de revue
+  manuelle, 6 à 12 heures ouvrées, jours fériés exclus. La fiche disait « Rise
+  instant - 12h manual review ».
+- **Le KYC a un chemin et un ORDRE** : tableau de bord MFFU → Personal Settings →
+  KYC, et le compte Riseworks se crée **ensuite**.
+- **Au tout premier payout, des accords sont à signer** via Riseworks, par e-mail.
+  Rien ne partait avant. Aucune source ne le mentionnait.
+- **La bascule Rapid vers le live est AUTOMATIQUE** à 10 000 $ de profit net sur
+  une seule journée — pas une décision discrétionnaire.
+- **Le délai Pro est une cadence**, pas un seuil unique : une demande **tous les
+  14 jours** calendaires depuis le premier trade. Le Pro est par ailleurs soumis à
+  la règle d'inactivité.
+- **Le Builder a les mêmes trois voies vers le live que le Flex** : 5 payouts
+  consécutifs, le plafond de 100 000 $, ou une décision de l'équipe risque. La
+  fiche n'en portait qu'une.
+
+### Confirmé sans changement
+Les buffers Rapid (2 100 / 3 100 / 4 600 $, le 50K explicitement « Intraday and
+EOD »), les minimums de retrait par plan, les splits 80/20 et 90/10, les plafonds
+Builder (1 000 / 2 000 $), le plafond Pro de 100 000 $ et le retrait de 60 % avant
+buffer.
+
+⚠️ **Le Flex n'apparaît nulle part dans ces deux pages** — cohérent avec son arrêt
+de vente, et une confirmation indirecte de plus.
+
+607 tests (+7).

@@ -964,7 +964,15 @@ export const PROPFIRM_RULES = {
       'Builder — après un breach live':{'25k':'21 jours calendaires de gel. Tout trading sur compte sim funded est interdit, et aucun achat d\'évaluation, reset ou compte supplémentaire n\'est possible. Les restrictions tombent au terme des 21 jours','50k':'idem','100k':'non dispo','150k':'non dispo'},
       // ⚠️ Le Builder 25K n'a AUCUNE DLL. La fiche lui attribuait les $1,000 du
       // 50K, soit une contrainte qui n'existe pas à cette taille.
-      'Daily Loss Limit':         {'25k':'Rapid : aucune · Pro : aucune · Flex : aucune · Builder : aucune','50k':'Rapid : aucune · Rapid EOD : aucune · Pro : aucune · Flex : aucune · Builder : $1,000 (pause douce, ne casse pas le compte)','100k':'Rapid : aucune · Pro : aucune · Builder : non dispo','150k':'Rapid : aucune · Pro : aucune · Builder : non dispo'},
+      'Daily Loss Limit':         {'25k':'Rapid : aucune · Pro : aucune · Flex : aucune · Builder : aucune','50k':'Rapid : aucune · Rapid EOD : aucune · Pro : aucune · Flex : aucune sauf add-on · Builder : $1,000 (pause douce, ne casse pas le compte)','100k':'Rapid : aucune · Pro : aucune · Builder : non dispo','150k':'Rapid : aucune · Pro : aucune · Builder : non dispo'},
+      // ⚠️ DEUX SOURCES OFFICIELLES SE CONTREDISENT. L'aperçu « Payout Policy
+      // Overview » affirme « No daily loss limits on Builder, Rapid or Pro
+      // plans ». Le guide Builder 50K écrit l'inverse QUATRE fois — tableau
+      // d'évaluation, tableau sim funded, FAQ dédiée et tableau live. On retient
+      // le guide dédié : il est granulaire, l'aperçu est une page de vente qui
+      // résume quatre plans en une ligne. Et se tromper dans ce sens-là ferait
+      // découvrir la pause au trader en pleine séance.
+      'DLL — contradiction de sources':{'25k':'Néant à cette taille, les deux sources s\'accordent','50k':'L\'aperçu commercial des payouts annonce aucune DLL sur Builder ; le guide Builder 50K en documente une de $1,000 à quatre reprises. C\'est le guide dédié qui fait foi ici','100k':'sans objet','150k':'sans objet'},
       // ⚠️ « 1 jour minimum » partout était FAUX et dangereux dans ce sens-là :
       // un trader Rapid qui atteint son objectif en une séance croyait avoir
       // fini. Seul Builder demande 1 jour. Rapid et Pro en demandent 2, et le
@@ -981,9 +989,9 @@ export const PROPFIRM_RULES = {
       'Cohérence — si dépassée':  {'25k':'Rien ne casse. Dépasser le seuil ne breach PAS le compte — il suffit de trader des journées supplémentaires jusqu\'à ce que la cohérence soit rétablie','50k':'idem','100k':'idem','150k':'idem'},
       'Cohérence en sim funded':  {'25k':'AUCUNE. La règle ne vaut qu\'en évaluation et disparaît entièrement en sim funded, y compris pour demander un payout','50k':'idem','100k':'idem','150k':'idem'},
       // === SIM FUNDED → LIVE (transitions par plan) ===
-      'Sim→Live trigger Rapid':   {'25k':'$10K single-day net profit OU approbation Risk Management','50k':'idem','100k':'idem','150k':'idem'},
+      'Sim→Live trigger Rapid':   {'25k':'$10,000 de profit net sur UNE SEULE journée de trading — la bascule est alors AUTOMATIQUE. Sinon, une performance de payouts jugée régulière par l\'équipe risque','50k':'idem','100k':'idem','150k':'idem'},
       'Sim→Live trigger Pro':     {'25k':'n/a','50k':'3 payouts consécutifs, OU le profit qui DÉPASSE le plafond de $100,000 de payouts, reversé sur le compte live jusqu\'à $5,000','100k':'3 payouts consécutifs, ou l\'excédent au-delà de $100,000 reversé jusqu\'à $7,500','150k':'3 payouts consécutifs, ou l\'excédent au-delà de $100,000 reversé jusqu\'à $10,000'},
-      'Sim→Live trigger Flex/Builder':{'25k':'Flex : 5 payouts consécutifs approuvés sur le même compte, OU le plafond cumulé de $100,000 de payouts simulés, OU une décision de l\'équipe risque · Builder : 5 payouts simulés approuvés','50k':'idem','100k':'n/a','150k':'n/a'},
+      'Sim→Live trigger Flex/Builder':{'25k':'Flex : 5 payouts consécutifs approuvés sur le même compte, OU le plafond cumulé de $100,000 de payouts simulés, OU une décision de l\'équipe risque · Builder : mêmes trois voies, 5 payouts consécutifs, le plafond de $100,000 ou la décision de l\'équipe risque','50k':'idem','100k':'n/a','150k':'n/a'},
       'LIVE Rapid spécifique':    {'25k':'EOD drawdown remplace intraday · contrats ÷2 · cooldown 21j après breach · $5K carry-over via Reserve Program','50k':'idem','100k':'idem','150k':'idem'},
       'LIVE Pro initial funding': {'25k':'n/a','50k':'Solde statique entre $2,000 et $5,000','100k':'Solde statique entre $3,000 et $7,500','150k':'Solde statique entre $4,500 et $10,000'},
       'LIVE Pro balance withdraw':{'25k':'n/a','50k':'20 journées gagnantes rapportant CHACUNE au moins 4% de la dotation initiale, plus 3 payouts. La dotation se débloque alors et se retire jusqu\'à un plancher de $140. Sur une dotation de $5,000, cela fait 20 journées à $200 minimum','100k':'idem','150k':'idem'},
@@ -1039,7 +1047,7 @@ export const PROPFIRM_RULES = {
       'Pro — retrait avant le buffer':{'25k':'n/a','50k':'Un retrait unique reste possible AVANT d\'avoir franchi le buffer, à hauteur de 60% du profit et au minimum $1,000. Les 40% restants doivent rester sur le compte','100k':'idem','150k':'idem'},
       // ⚠️ Le délai court depuis le PREMIER TRADE, pas depuis l'ouverture du
       // compte — et les deux conditions sont cumulatives.
-      'Pro — éligibilité au payout':{'25k':'n/a','50k':'14 jours calendaires depuis le premier trade ET buffer franchi. Les deux conditions, pas l\'une ou l\'autre','100k':'idem','150k':'idem'},
+      'Pro — éligibilité au payout':{'25k':'n/a','50k':'Une demande TOUS LES 14 jours calendaires, décomptés depuis le premier trade, et le buffer franchi. Les deux conditions, pas l\'une ou l\'autre. La règle d\'inactivité s\'applique aussi au Pro','100k':'idem','150k':'idem'},
       'Pro — plafond de payouts': {'25k':'n/a','50k':'$100,000 cumulés par utilisateur. Au-delà, l\'excédent bascule sur le compte live au lieu d\'être versé','100k':'idem','150k':'idem'},
       // Le verrou Pro se déclenche sur un ÉVÉNEMENT, comme celui du Flex.
       'Pro — verrouillage du max loss':{'25k':'n/a','50k':'Après le PREMIER payout, le max loss passe à $50,100 et devient statique','100k':'Après le premier payout, il passe à $100,100 et devient statique','150k':'Après le premier payout, il passe à $150,100 et devient statique'},
@@ -1048,9 +1056,12 @@ export const PROPFIRM_RULES = {
       // rien, et une bascule décidée par l'équipe risque FAIT PERDRE le surplus.
       'Pro — bascule décidée par la firme':{'25k':'n/a','50k':'Atteindre $20,000 de profit déclenche une REVUE du compte, sans garantir la bascule. L\'équipe risque peut par ailleurs la décider à tout moment — les profits sont alors transférés dans la limite du maximum du plan, et LE RESTE EST PERDU','100k':'idem','150k':'idem'},
       'Sim et live en même temps':{'25k':'INTERDIT. Dès qu\'un compte live existe, on ne peut plus trader en simulé et en réel simultanément','50k':'idem','100k':'idem','150k':'idem'},
-      'Délai payout':             {'25k':'Rise instant - 12h manual review','50k':'idem','100k':'idem','150k':'idem'},
+      'Délai payout':             {'25k':'La plupart des demandes sont approuvées INSTANTANÉMENT. Si une revue manuelle se déclenche, comptez 6 à 12 heures ouvrées, jours fériés exclus','50k':'idem','100k':'idem','150k':'idem'},
       'Méthodes payout':          {'25k':'Rise (Riseworks) PRIMAIRE : bank transfer 1-3j ou crypto en minutes · Plaid/ACH (US only) · ⚠ Wise SUPPRIMÉ en 2026','50k':'idem','100k':'idem','150k':'idem'},
-      'KYC':                      {'25k':'OBLIGATOIRE avant 1er payout (one-time, via Rise onboarding)','50k':'idem','100k':'idem','150k':'idem'},
+      'KYC':                      {'25k':'OBLIGATOIRE avant le premier payout, une seule fois. Depuis le tableau de bord MFFU, Personal Settings puis KYC. Le compte Riseworks se crée ENSUITE','50k':'idem','100k':'idem','150k':'idem'},
+      // Une étape que rien ne signalait, et qui ne concerne que le PREMIER
+      // retrait : il faut signer des accords avant de toucher quoi que ce soit.
+      'Premier payout — accords à signer':{'25k':'Au tout premier payout, un e-mail arrive pour signer des accords via Riseworks. Le versement ne part qu\'une fois signés','50k':'idem','100k':'idem','150k':'idem'},
       'Tax forms':                {'25k':'US : 1099 via Rise direct · Plaid path : 1099 mailé avant 17 fév','50k':'idem','100k':'idem','150k':'idem'},
       // === MULTI-COMPTES ===
       'Comptes funded simul.':    {'25k':'5 maximum tant que le portefeuille ne contient que du 25K et du 50K, dans n\'importe quelle combinaison. Dès qu\'un 100K ou 150K apparaît, le plafond tombe à 3 pour TOUS les comptes','50k':'idem','100k':'3 maximum, toutes tailles confondues','150k':'3 maximum, toutes tailles confondues'},
