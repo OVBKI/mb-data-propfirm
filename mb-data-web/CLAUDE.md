@@ -2721,3 +2721,22 @@ d'erreur le dit explicitement — « aucune copie créée » — pour éviter d'
 vérifier compte par compte.
 
 632 tests (+16, sur le module pur).
+
+### Correctif — la réplication manquait sur la page où l'on saisit
+
+Livrée d'abord dans `TradeEntryModal` seulement. Or **`JournalPage` ne l'utilise
+pas** : la vue calendrier a sa **propre copie du formulaire**, en ligne dans le
+composant. L'en-tête de `TradeEntryModal` affirmait pourtant « Utilisé par
+JournalPage ET TradesPage » — un commentaire périmé qui m'a fait croire le
+travail terminé alors que la fonctionnalité n'existait que sur `/app/trades`,
+c'est-à-dire **pas** sur la page que l'utilisateur appelle « le journal ».
+
+Le bloc est donc porté dans les deux, alimenté par le **même module pur**
+(`lib/tradeReplication.js`) — la logique n'est pas dupliquée, seul le rendu l'est.
+L'en-tête de `TradeEntryModal` dit maintenant la vérité et prévient que toute
+évolution du formulaire doit être portée des deux côtés.
+
+⚠️ **La vraie dette reste entière** : deux formulaires de trade coexistent, avec
+deux `saveEntry` quasi identiques. Les fusionner (faire consommer
+`TradeEntryModal` à `JournalPage`) est le correctif de fond — non fait ici pour
+ne pas mêler une refonte à une demande de fonctionnalité.

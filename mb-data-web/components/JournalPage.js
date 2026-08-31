@@ -16,6 +16,9 @@ import { fmtMoney, todayISO } from '../lib/format'
 import { cardStyle as card, panelStyle as panel, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
 import { useTheme } from './ThemeProvider'
 import { planLimitMessage } from '../lib/planLimits'
+import {
+  replicationTargets, countTargets, allTargetIds, pruneSelection, buildReplicaPayloads,
+} from '../lib/tradeReplication'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
@@ -531,6 +534,12 @@ export default function JournalPage({
     commissions:'', slippage:'',
   })
   const [uploadingScreen, setUploadingScreen] = useState(false)
+  // Comptes sur lesquels répliquer le trade — même mécanique que TradesPage.
+  // ⚠️ Cette page a sa PROPRE copie du formulaire (elle n'utilise pas
+  // TradeEntryModal) : sans ce bloc, la réplication n'existait que sur
+  // /app/trades, c'est-à-dire pas là où on saisit au quotidien.
+  const [replicaIds, setReplicaIds] = useState([])
+  const [replicaOpen, setReplicaOpen] = useState(false)
   // Lightbox pour afficher un screenshot en grand
   const [lightboxUrl, setLightboxUrl] = useState(null)
 
@@ -549,6 +558,20 @@ export default function JournalPage({
       firmColor: f.color,
     })))
   },[firms])
+
+  // Cibles de réplication — tout sauf le compte courant et les comptes échoués.
+  const replicaGroups = useMemo(
+    () => replicationTargets(firms, form.accountId, accountLabel),
+    [firms, form.accountId]
+  )
+  // Changer de compte principal peut rendre une case cochée invalide, au pire
+  // la faire pointer sur le compte courant.
+  useEffect(() => {
+    setReplicaIds(prev => {
+      const next = pruneSelection(prev, replicaGroups)
+      return next.length === prev.length ? prev : next
+    })
+  }, [replicaGroups])
 
   // Si le scope sélectionné (firme ou firme:compte) n'existe plus dans les
   // firms courantes (ex: switch de marché Futures ⇄ CFD), reset automatique
@@ -755,6 +778,9 @@ export default function JournalPage({
       commissions:'', slippage:'',
     })
     setJDetails(false)
+    // La sélection ne survit jamais à une réouverture : sinon un modal rouvert
+    // écrirait en silence sur des comptes cochés pour un trade précédent.
+    setReplicaIds([]); setReplicaOpen(false)
     setEntryModal({ defaultDate })
   }
   function openEditEntry(e){
@@ -781,6 +807,7 @@ export default function JournalPage({
       slippage:    e.slippage    != null && Number(e.slippage)    !== 0 ? String(e.slippage)    : '',
     })
     setJDetails(entryHasDetails(e))
+    setReplicaIds([]); setReplicaOpen(false)
     setEntryModal({ entry:e })
   }
   async function saveEntry(){
@@ -814,7 +841,9 @@ export default function JournalPage({
     if(entryModal?.entry){
       res = await supabase.from('journal_entries').update(payload).eq('id', entryModal.entry.id)
     } else {
-      res = await supabase.from('journal_entries').insert(payload)
+      // UN SEUL insert, avec un tableau : atomique en Postgres, donc un refus
+      // de quota n'écrit rien plutôt qu'un journal à moitié rempli.
+      res = await supabase.from('journal_entries').insert([payload, ...buildReplicaPayloads(payload, replicaIds)])
     }
     if(res.error){
       console.error('[journal save]', res.error)
@@ -828,7 +857,51 @@ export default function JournalPage({
       return
     }
     setEntryModal(null)
-    showToast?.(entryModal?.entry ? t('app.trade.toastModified') : t('app.trade.toastAdded'))
+    const n = replicaIds.length + 1
+    showToast?.(
+      entryModal?.entry ? t('app.trade.toastModified')
+        : n > 1 ? t('app.trade.toastReplicated').replace('{n}', n)
+          : t('app.trade.toastAdded')
+    )
+    await loadEntries()
+  }
+
+  // Duplication d'un trade DÉJÀ enregistré. Action distincte de « Enregistrer » :
+  // elle copie ce qui est à l'écran et ne touche pas au trade d'origine.
+  async function duplicateEntryToAccounts(){
+    if(replicaIds.length === 0) return
+    if(!form.date){ showToast?.(t('app.trade.toastDateRequired')); return }
+    if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.(t('app.trade.toastPnlRequired')); return }
+    const numOrNull = (s) => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
+    const timeStr = form.time && /^\d{2}:\d{2}$/.test(form.time) ? `${form.time}:00` : '12:00:00'
+    const base = {
+      user_id: user.id,
+      account_id: form.accountId,
+      date: form.date,
+      traded_at: `${form.date}T${timeStr}`,
+      pnl: parseFloat(form.pnl),
+      instrument: form.instrument.trim(),
+      side: form.side,
+      notes: form.notes.trim(),
+      entry_price:    numOrNull(form.entryPrice),
+      exit_price:     numOrNull(form.exitPrice),
+      stop_loss:      numOrNull(form.stopLoss),
+      take_profit:    numOrNull(form.takeProfit),
+      screenshot_url: form.screenshotUrl || null,
+      tags: Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : null,
+      commissions: Math.abs(parseFloat(form.commissions) || 0) || 0,
+      slippage:    Math.abs(parseFloat(form.slippage)    || 0) || 0,
+    }
+    const rows = buildReplicaPayloads(base, replicaIds)
+    if(rows.length === 0) return
+    const { error } = await supabase.from('journal_entries').insert(rows)
+    if(error){
+      console.error('[journal duplicate]', error)
+      showToast?.(planLimitMessage(error, locale) || t('app.trade.toastReplicateError'))
+      return
+    }
+    setEntryModal(null)
+    showToast?.(t('app.trade.toastDuplicated').replace('{n}', rows.length))
     await loadEntries()
   }
   // Upload screenshot d'un trade vers Supabase Storage
@@ -1527,6 +1600,55 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   ))}
                 </select>
               </div>
+              {/* Réplication multi-comptes — masquée s'il n'y a nulle part où
+                  répliquer. Même bloc que TradesPage, alimenté par le même
+                  module pur (lib/tradeReplication.js). */}
+              {countTargets(replicaGroups) > 0 && (
+                <div style={{gridColumn:'1/-1'}}>
+                  <button type="button" onClick={()=>setReplicaOpen(o=>!o)} aria-expanded={replicaOpen}
+                    style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 12px',background:'var(--tint1)',border:'1px solid var(--hairline)',borderRadius:8,color:'var(--text2)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'inherit',textAlign:'left',minHeight:32}}>
+                    <span aria-hidden="true" style={{color:'var(--text3)'}}>{replicaOpen?'\u25BE':'\u25B8'}</span>
+                    <span>{t('app.trade.replicateTitle')}</span>
+                    {replicaIds.length>0 && (
+                      <span style={{marginLeft:'auto',padding:'2px 8px',borderRadius:999,background:'var(--blue-bg)',color:'var(--blue-text)',fontSize:11,fontWeight:600}}>
+                        {t('app.trade.replicateSelected').replace('{n}', replicaIds.length)}
+                      </span>
+                    )}
+                  </button>
+                  {replicaOpen && (
+                    <div style={{marginTop:8,padding:'10px 12px',background:'var(--surface2)',border:'1px solid var(--hairline)',borderRadius:8}}>
+                      <p style={{fontSize:11.5,color:'var(--text3)',margin:'0 0 10px',lineHeight:1.5}}>
+                        {entryModal?.entry ? t('app.trade.replicateHintEdit') : t('app.trade.replicateHint')}
+                      </p>
+                      <div style={{display:'flex',gap:6,marginBottom:10}}>
+                        <button type="button" onClick={()=>setReplicaIds(allTargetIds(replicaGroups))}
+                          style={{...btnGhost,padding:'5px 10px',fontSize:11,minHeight:32}}>{t('app.trade.replicateAll')}</button>
+                        <button type="button" onClick={()=>setReplicaIds([])}
+                          style={{...btnGhost,padding:'5px 10px',fontSize:11,minHeight:32}}>{t('app.trade.replicateNone')}</button>
+                      </div>
+                      <div style={{display:'grid',gap:10,maxHeight:220,overflowY:'auto'}}>
+                        {replicaGroups.map(g => (
+                          <fieldset key={g.firmId} style={{border:0,padding:0,margin:0,minWidth:0}}>
+                            {/* Légende et non titre : deux comptes peuvent porter
+                                le même libellé chez deux firmes différentes. */}
+                            <legend style={{...labelS,marginBottom:6,padding:0}}>{g.firmName}</legend>
+                            {g.accounts.map(a => (
+                              <label key={a.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 4px',cursor:'pointer',fontSize:12.5,color:'var(--text)',minHeight:32}}>
+                                <input type="checkbox" checked={replicaIds.includes(a.id)}
+                                  onChange={()=>setReplicaIds(prev => prev.includes(a.id) ? prev.filter(x=>x!==a.id) : [...prev,a.id])}
+                                  style={{width:15,height:15,accentColor:'var(--blue)',cursor:'pointer'}} />
+                                <span>{a.label}</span>
+                                {a.status && <span style={{color:'var(--text3)',fontSize:11}}>{'\u00B7'} {a.status}</span>}
+                              </label>
+                            ))}
+                          </fieldset>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label style={labelS}>{t('app.trade.fieldDate')} · Heure</label>
                 <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:8}}>
@@ -1713,9 +1835,22 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                   <button onClick={()=>{deleteEntry(entryModal.entry.id);setEntryModal(null)}} style={{...btnGhost,color:'var(--red-text)',borderColor:'var(--red-bg)'}}>{t('app.trade.btnDelete')}</button>
                 )}
               </div>
-              <div style={{display:'flex',gap:'8px'}}>
+              <div style={{display:'flex',gap:'8px',flexWrap:'wrap',justifyContent:'flex-end'}}>
                 <button onClick={()=>setEntryModal(null)} style={btnGhost}>{t('app.trade.btnCancel')}</button>
-                <button onClick={saveEntry} style={btnPrimary}>{entryModal?.entry ? t('app.trade.btnSave') : t('app.trade.btnAdd')}</button>
+                {/* En édition, dupliquer est une action À PART : elle n'enregistre
+                    pas les modifications du trade courant. */}
+                {entryModal?.entry && replicaIds.length>0 && (
+                  <button onClick={duplicateEntryToAccounts} style={btnGhost}>
+                    {t('app.trade.btnDuplicate').replace('{n}', replicaIds.length)}
+                  </button>
+                )}
+                {/* Le libellé annonce le NOMBRE de comptes touchés — un
+                    « Ajouter » muet qui écrit trois lignes serait une surprise. */}
+                <button onClick={saveEntry} style={btnPrimary}>
+                  {entryModal?.entry ? t('app.trade.btnSave')
+                    : replicaIds.length>0 ? t('app.trade.btnAddMulti').replace('{n}', replicaIds.length+1)
+                      : t('app.trade.btnAdd')}
+                </button>
               </div>
             </div>
           </div>
