@@ -444,7 +444,8 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Select (EOD)' },
           dailyDrawdown: { key: 'DLL Select Daily' },
           buffer: { key: 'Lock drawdown' },                           // +$100 lock cushion
-          jourMin: { key: 'Jours de trading min', model: 'Select' },  // '3 jours (Select …)'
+          // ⚠️ Le minimum de l'ÉVALUATION (3 jours) n'est pas l'exigence de RETRAIT.
+          jourMin: { key: 'Jours min avant payout' },
           minDailyProfit: { key: 'Profit min jour valide' },          // $50/$100/$200/$300
           consistance: { key: 'Consistency Select Daily (funded)' },  // balance-based (string)
         },
@@ -462,7 +463,8 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Select (EOD)' },
           dailyDrawdown: { key: 'DLL Select Flex' },                  // AUCUN
           buffer: { key: 'Lock drawdown' },
-          jourMin: { key: 'Jours de trading min', model: 'Select' },  // '3 jours (Select …)'
+          // ⚠️ Le minimum de l'ÉVALUATION (3 jours) n'est pas l'exigence de RETRAIT.
+          jourMin: { key: 'Jours min avant payout' },
           minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Consistency Select Flex (funded)' },   // 50%
         },
@@ -480,7 +482,7 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Growth (EOD)' },
           dailyDrawdown: { key: 'DLL Growth' },
           buffer: { key: 'Lock drawdown' },
-          jourMin: { key: 'Jours de trading min', model: 'Growth' },  // '1 jour (Growth)'
+          jourMin: { key: 'Jours min avant payout' },  // '1 jour (Growth)'
           minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Consistency Growth', model: 'Funded' }, // 'Funded : 35%'
         },
@@ -499,7 +501,7 @@ export const FIRM_COMPARISON_MAP = {
           drawdown: { key: 'Drawdown Lightning (EOD)' },
           dailyDrawdown: { key: 'DLL Lightning' },
           buffer: { key: 'Lock drawdown' },
-          jourMin: { key: 'Jours de trading min', model: 'Lightning' }, // pas documenté pour Lightning → null
+          jourMin: { key: 'Jours min avant payout' }, // pas documenté pour Lightning → null
           minDailyProfit: { key: 'Profit min jour valide' },
           consistance: { key: 'Consistency Lightning' },              // 20/25/30% string
         },

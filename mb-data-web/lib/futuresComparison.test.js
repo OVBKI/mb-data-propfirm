@@ -130,15 +130,38 @@ describe('régressions extractModelSegment (données réelles)', () => {
     expect(modelOf('Alpha Futures', '25k', 'Direct').challenge.drawdown).toMatch(/^\$1,000\b/)
   })
 
-  it("Tradeify Select @25k : jours min funded = '3 jours' → '3' (pas '1')", () => {
-    const m = modelOf('Tradeify', '25k', 'Select Daily')
-    expect(m.funded.jourMin).toMatch(/^3 jours/)
-    expect(cleanCell(m.funded.jourMin, 'days').text).toBe('3')
+  // ⚠️ Ces deux tests figeaient un DÉFAUT : la colonne « jours min » du FINANCÉ
+  // affichait 3, qui est le minimum de l'ÉVALUATION Select (imposé par la règle
+  // de consistance à 40%). L'exigence pour RETIRER est tout autre, et le help
+  // center la donne par programme.
+  it('Tradeify : la colonne financée porte l’exigence de RETRAIT, pas celle de l’éval', () => {
+    // Select Flex : 5 journées gagnantes. Select Daily : aucune, éligibilité
+    // quotidienne dès le buffer atteint.
+    expect(cleanCell(modelOf('Tradeify', '25k', 'Select Flex').funded.jourMin, 'days').text).toBe('5')
+    expect(modelOf('Tradeify', '25k', 'Select Daily').funded.jourMin).toMatch(/aucune/i)
+    // Growth : 5 journées PROFITABLES — et non le « 1 jour » de son évaluation.
+    expect(cleanCell(modelOf('Tradeify', '50k', 'Growth').funded.jourMin, 'days').text).toBe('5')
   })
 
-  it("Tradeify Select @50k : 'idem' résolu puis segmenté → toujours '3'", () => {
-    const m = modelOf('Tradeify', '50k', 'Select Flex')
-    expect(cleanCell(m.funded.jourMin, 'days').text).toBe('3')
+  it("Tradeify : l’évaluation garde ses 1 jour (Growth) et 3 jours (Select)", () => {
+    const r = PROPFIRM_RULES['Tradeify'].rules['Jours de trading min']['25k']
+    expect(r).toMatch(/1 jour \(Growth\)/)
+    expect(r).toMatch(/3 jours \(Select/)
+  })
+
+  // Le help center le dit dans DEUX articles : la règle de 40% ne vaut qu'en
+  // évaluation. Le catalogue portait 50% pour Select Flex financé et
+  // « balance-based » pour Select Daily — deux contraintes inventées, sur la
+  // phase où le trader retire son argent.
+  it('Tradeify Select : AUCUNE consistance en financé, sur les deux politiques', () => {
+    for (const prog of ['Select Flex', 'Select Daily']) {
+      for (const plan of ['25k', '50k', '100k', '150k']) {
+        expect(modelOf('Tradeify', plan, prog).funded.consistance, `${prog} ${plan}`)
+          .toMatch(/aucune/i)
+        // …alors que l'ÉVALUATION, elle, est bien à 40%.
+        expect(cleanCell(modelOf('Tradeify', plan, prog).challenge.consistance, 'pct').text).toBe('40 %')
+      }
+    }
   })
 
   it("Tradeify Growth : consistance eval = AUCUNE ('—') et funded = 35 %", () => {
@@ -496,5 +519,39 @@ describe('cleanCell — buffer inconnu contre buffer absent', () => {
 
   it('garde la valeur complète en title dans les deux cas', () => {
     expect(cleanCell('non publié', 'buffer').title).toBe('non publié')
+  })
+})
+
+// ── Tradeify : les trois drawdowns ne se confondent pas ─────────────────────
+// Relevé sur les articles « Select / Growth / Lightning Funded » du help center
+// (août 2026). Les trois programmes divergent à partir du 100K — servir la
+// grille Select à un porteur Lightning lui annoncerait $3,000 de marge au lieu
+// de $4,000, soit 25% de moins sur la seule métrique qui dit si le compte saute.
+describe('Tradeify — trois échelles de drawdown distinctes', () => {
+  const dd = (plan, prog) =>
+    Number(String(modelOf('Tradeify', plan, prog).challenge.drawdown ||
+                  modelOf('Tradeify', plan, prog).funded.drawdown).replace(/[^0-9]/g, ''))
+
+  it('sépare Select, Growth et Lightning à partir du 100K', () => {
+    expect([dd('100k', 'Select Flex'), dd('100k', 'Growth'), dd('100k', 'Lightning Funded')])
+      .toEqual([3000, 3500, 4000])
+    expect([dd('150k', 'Select Flex'), dd('150k', 'Growth'), dd('150k', 'Lightning Funded')])
+      .toEqual([4500, 5000, 5250])
+  })
+
+  it('les fait coïncider en 25K et 50K, comme le publie la firme', () => {
+    for (const prog of ['Select Flex', 'Growth', 'Lightning Funded']) {
+      expect(dd('25k', prog), prog).toBe(1000)
+      expect(dd('50k', prog), prog).toBe(2000)
+    }
+  })
+
+  // Lightning 25K est le SEUL compte Tradeify sans limite de perte journalière.
+  it('donne une DLL à chaque programme sauf Select Flex et Lightning 25K', () => {
+    expect(modelOf('Tradeify', '25k', 'Lightning Funded').funded.dailyDrawdown).toMatch(/aucun/i)
+    expect(modelOf('Tradeify', '25k', 'Select Flex').challenge.dailyDrawdown).toMatch(/aucun/i)
+    // Select Daily 25K valait « n/a » : c'est $500.
+    expect(cleanCell(modelOf('Tradeify', '25k', 'Select Daily').challenge.dailyDrawdown, 'money').text)
+      .toMatch(/500/)
   })
 })

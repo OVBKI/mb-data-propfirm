@@ -293,6 +293,12 @@ export const PROPFIRM_RULES = {
       // Tableau officiel « EOD Performance Accounts » : 2 / 4 / 6 / 10.
       'Contrats PA post-safety':  {'25k':'2','50k':'4','75k':'6 (legacy)','100k':'6','150k':'10','250k':'12 (legacy)','300k':'15 (legacy)'},
       'Contrats max (micro)':     {'25k':'40 (10× mini, comptent à l\'unité)','50k':'60','75k':'80 (legacy)','100k':'80','150k':'120','250k':'160 (legacy)','300k':'200 (legacy)'},
+      // Trois précisions que seul l'article « Rules: Consistency Rule » donne, et
+      // qui changent la lecture du pourcentage affiché dans un tableau de bord.
+      'Consistency — mécanique':  {'25k':'Meilleur jour ÷ profit total. « Au niveau ou en dessous » PASSE : 19,97% satisfait une règle à 20%, et 20,00% aussi — seul un chiffre strictement au-dessus échoue','50k':'idem','100k':'idem','150k':'idem'},
+      'Consistency — remise à zéro':{'25k':'Le pourcentage se remet à zéro après CHAQUE payout approuvé : il se recalcule sur la période jusqu\'à la demande suivante','50k':'idem','100k':'idem','150k':'idem'},
+      'Consistency — jours perdants':{'25k':'Une journée PERDANTE dégrade la consistance : elle réduit le profit total, donc le dénominateur, et fait MONTER le pourcentage','50k':'idem','100k':'idem','150k':'idem'},
+      'Fraîcheur des métriques':  {'25k':'Solde, profit, perte journalière et consistance sont en TEMPS RÉEL. Seul le Trailing Max Drawdown ne bouge qu\'une fois par jour, en fin de séance','50k':'idem','100k':'idem','150k':'idem'},
       // === TRADING RESTRICTIONS ===
       'Positions overnight':      {'25k':'INTERDIT (flat à 16h59 ET impératif)','50k':'INTERDIT','75k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT','250k':'INTERDIT','300k':'INTERDIT'},
       'Trading des news':         {'25k':'Autorisé · interdit : max size, chasing, hedging des 2 côtés','50k':'Autorisé (idem)','75k':'Autorisé (idem)','100k':'Autorisé (idem)','150k':'Autorisé (idem)','250k':'Autorisé (idem)','300k':'Autorisé (idem)'},
@@ -543,7 +549,16 @@ export const PROPFIRM_RULES = {
     }
   },
   'Tradeify': {
-    // VÉRIFIÉ MAI 2026 — Refonte Tradeify 3.0 (mars 2026)
+    // VÉRIFIÉ AOÛT 2026 sur CINQ articles du help center fournis en PDF :
+    // « Select Evaluation Accounts », « Growth Evaluation Accounts »,
+    // « Lightning Funded Accounts », « SELECT vs Growth » et
+    // « Rules: Consistency Rule ». C'est une source de PREMIÈRE MAIN —
+    // help.tradeify.co bloque la récupération automatique.
+    //
+    // Les TROIS échelles de drawdown stockées sont confirmées au mot près, y
+    // compris leur divergence à partir du 100K (Select 3 000 / Growth 3 500 /
+    // Lightning 4 000). Ce qui suit liste ce que les articles ont CORRIGÉ.
+    //
     // Sources officielles : help.tradeify.co (Intercom) + tradeify.co/post/handle-tradeify-consistency-rule
     // Sources tierces vérifiées : proptradingvibes (rules + reviews), saveonpropfirms, fundedprogramfinder, pipback
     // CEO Brett Simba (Floride USA). +$100M payés (mai 2026). Trustpilot 4.8
@@ -582,18 +597,33 @@ export const PROPFIRM_RULES = {
       // Le verrou vaut pour les quatre programmes : formulé sans étiquette, sinon
       // le comparateur croit à un ciblage et n'affiche rien pour les autres.
       'Lock drawdown':            {'25k':'Se verrouille au solde initial + $100 une fois le solde EOD au-dessus du drawdown + $100 (rare)','50k':'Se verrouille à $50,100','100k':'Se verrouille à $100,100','150k':'Se verrouille à $150,100'},
-      'DLL Select Daily':         {'25k':'n/a','50k':'$1,000','100k':'$1,250','150k':'$1,750'},
+      'DLL Select Daily':         {'25k':'$500','50k':'$1,000','100k':'$1,250','150k':'$1,750'},
       'DLL Select Flex':          {'25k':'AUCUN','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'DLL Growth':               {'25k':'$600 (soft breach pause journée, pas fail)','50k':'$1,250','100k':'$2,500','150k':'$3,750'},
       'DLL Lightning':            {'25k':'AUCUN (Lightning 25K seul)','50k':'$1,250','100k':'$2,500','150k':'$3,000 (nouveaux) · $3,750 (pre-31 mars 2026)'},
       'Jours de trading min':     {'25k':'1 jour (Growth) · 3 jours (Select à cause 40% consist)','50k':'idem','100k':'idem','150k':'idem'},
+      // Le minimum de l'ÉVALUATION ne dit rien du minimum pour RETIRER. Growth
+      // exige 5 journées profitables avant un payout, Select Flex 5 journées
+      // gagnantes ; Select Daily et Lightning n'en demandent aucune.
+      'Jours min avant payout':   {'25k':'Growth : 5 journées profitables · Select Flex : 5 journées gagnantes · Select Daily : aucune, éligibilité quotidienne · Lightning Funded : aucune','50k':'idem','100k':'idem','150k':'idem'},
       'Profit min jour valide':   {'25k':'$50','50k':'$100','100k':'$200','150k':'$300'},
       // === CONSISTENCY (par famille et phase) ===
       'Consistency Select (eval)':{'25k':'40% (Best day ≤ 40% du profit total)','50k':'40%','100k':'40%','150k':'40%'},
-      'Consistency Select Flex (funded)':{'25k':'50% (Best day ≤ 50% en funded)','50k':'50%','100k':'50%','150k':'50%'},
-      'Consistency Select Daily (funded)':{'25k':'Balance-based (pas % fixe)','50k':'idem','100k':'idem','150k':'idem'},
+      // ⚠️ AUCUNE consistance en FINANCÉ sur Select — les deux politiques. Le help
+      // center le dit deux fois, dans deux articles : « the 40% consistency
+      // requirement only applies during the evaluation phase […] removed
+      // regardless of which payout policy (Flex or Daily) you choose » et « There
+      // is no consistency rule for Select accounts in funded mode ».
+      // Le catalogue portait 50% pour Flex et « balance-based » pour Daily :
+      // deux contraintes inventées, sur la phase où le trader retire son argent.
+      'Consistency Select Flex (funded)':{'25k':'AUCUNE en financé (la règle 40% ne vaut qu\'en évaluation)','50k':'AUCUNE en financé','100k':'AUCUNE en financé','150k':'AUCUNE en financé'},
+      'Consistency Select Daily (funded)':{'25k':'AUCUNE en financé (la règle 40% ne vaut qu\'en évaluation)','50k':'AUCUNE en financé','100k':'AUCUNE en financé','150k':'AUCUNE en financé'},
       'Consistency Growth':       {'25k':'Eval : AUCUNE (unrestricted) · Funded : 35%','50k':'idem','100k':'idem','150k':'idem'},
-      'Consistency Lightning':    {'25k':'Post 12 sept 2025 : 20% (1er) → 25% (2e) → 30% (3+) · Pre : 20% all · 150K : 35% from day 1','50k':'idem','100k':'idem','150k':'35% from day 1'},
+      // ⚠️ Le « 150K : 35% dès le premier jour » venait d'une analyse tierce. Les
+      // deux articles officiels (Lightning Funded, Rules: Consistency) ne font
+      // AUCUNE distinction par taille : c'est 20/25/30 progressif pour tous les
+      // comptes achetés après le 12 sept. 2025 8h00 EST, et 20% fixe avant.
+      'Consistency Lightning':    {'25k':'Après 12 sept. 2025 : 20% (1er payout) → 25% (2e) → 30% (3e et suivants) · Avant : 20% fixe sur tous les payouts','50k':'idem','100k':'idem','150k':'idem'},
       // === TRADING RESTRICTIONS ===
       'Positions overnight':      {'25k':'INTERDIT (flat fin de session)','50k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
       'Trading des news':         {'25k':'Autorisé sans restriction (NFP, FOMC, CPI, Powell)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
@@ -602,6 +632,11 @@ export const PROPFIRM_RULES = {
       // === CONTRATS ===
       'Contrats max (mini)':      {'25k':'1 (Select/Growth · Lightning n/a)','50k':'4','100k':'8','150k':'12'},
       'Contrats max (micro)':     {'25k':'10','50k':'40','100k':'80','150k':'120'},
+      // Un compte acheté avant le 12 sept. 2025 8h00 EST garde une taille de
+      // position PLUS GRANDE. Servir la grille actuelle à ces porteurs les
+      // brimerait sur une limite qui ne les concerne pas.
+      'Contrats max (avant 12 sept. 2025)':{'25k':'Inchangé : 1 mini / 10 micros','50k':'5 minis / 50 micros','100k':'10 minis / 100 micros','150k':'15 minis / 150 micros'},
+      'Minis et micros ensemble': {'25k':'Autorisé tant que la position combinée reste dans la limite (10 micros = 1 mini). En sens OPPOSÉ sur un produit identique ou corrélé, cela reste un hedge interdit','50k':'idem','100k':'idem','150k':'idem'},
       'Scaling micro requis':     {'25k':'Oui pour Lightning post-12-sept-2025','50k':'idem','100k':'idem','150k':'idem'},
       // === TARIFS (one-time, codes promo permanents -33/-50%) ===
       'Prix Select (one-time)':   {'25k':'$109','50k':'$165','100k':'$265','150k':'$369'},
@@ -616,12 +651,25 @@ export const PROPFIRM_RULES = {
       'Profit split Lightning':   {'25k':'100% premier $15,000 cumul puis 90/10','50k':'idem','100k':'idem','150k':'idem'},
       'Min payout balance':       {'25k':'$1,500 above starting (Growth/Lightning) · varies (Select)','50k':'idem','100k':'idem','150k':'idem'},
       'Cap payout Growth':        {'25k':'$1,000 par withdrawal','50k':'$1,000','100k':'$1,000','150k':'$1,000'},
-      'Cap payout Select':        {'25k':'Progressif $1,000 → $1,250 → $3,000','50k':'idem','100k':'idem','150k':'idem'},
+      // ⚠️ Le catalogue portait « Progressif $1,000 → $1,250 → $3,000 », qui ne
+      // correspond à rien de publié. L'article Select donne DEUX grilles, une par
+      // politique de retrait, et le plafond Flex est le PLUS PETIT de deux bornes
+      // (50% du profit OU le montant) — pas un montant fixe.
+      'Cap payout Select Flex':   {'25k':'50% du profit, plafonné à $1,250','50k':'50% du profit, plafonné à $3,000','100k':'50% du profit, plafonné à $4,000','150k':'50% du profit, plafonné à $5,000'},
+      'Cap payout Select Daily':  {'25k':'$600','50k':'$1,000','100k':'$1,500','150k':'$2,500'},
+      // Propre à Select Daily : un buffer conditionne l'éligibilité quotidienne.
+      // Select Flex n'en a aucun (« No minimum balance required »).
+      'Buffer Select Daily':      {'25k':'$1,100','50k':'$2,100','100k':'$2,600','150k':'$3,600'},
       'Cadence payout':           {'25k':'Windows FIXES : 1-4 et 15-18 de chaque mois (Select/Growth) · Lightning : INSTANT dashboard (24h)','50k':'idem','100k':'idem','150k':'idem'},
       'Méthodes payout':          {'25k':'Rise (primaire crypto USDT/USDC + bank) + Plane (backup wire) — PAS PayPal/ACH direct/Wise','50k':'idem','100k':'idem','150k':'idem'},
       'Elite Reward Pool':        {'25k':'$2,000 (Select · 1.5x multiplier = $3,000) · $2,000 (Growth)','50k':'Bonus proportionnel','100k':'Bonus proportionnel','150k':'$12,000 (Lightning 150K) — top tier'},
       // === MULTI-COMPTES ===
-      'Comptes simul.':           {'25k':'Funded : 5 max par foyer (toutes familles) · Eval : 15 max sur 30 jours','50k':'5 funded max','100k':'5 funded max','150k':'5 funded max'},
+      'Comptes simul.':           {'25k':'Financés : 5 max simultanés (toutes familles) · Évaluations : 15 max achetées par période de 30 jours, chacune resettable 10 fois','50k':'idem','100k':'idem','150k':'idem'},
+      'Activations par jour':     {'25k':'Growth : 5 comptes financés activables par jour (compteur remis à zéro toutes les 24 h UTC) — au-delà, il faut attendre le lendemain','50k':'idem','100k':'idem','150k':'idem'},
+      // Le 300K Select existe mais l'article renvoie ses paramètres de risque à
+      // une page dédiée qu'on n'a pas : on documente son EXISTENCE et ses
+      // conditions d'achat, sans inventer ses chiffres.
+      'Select 300K (édition limitée)':{'25k':'Cinquième taille Select, édition limitée : KYC AVANT l\'achat, aucun reset, 3 comptes maximum par personne, et elle ne compte pas dans la limite des 15 évaluations. Paramètres de risque non repris ici','50k':'idem','100k':'idem','150k':'idem'},
     }
   },
   'Take Profit Trader': {

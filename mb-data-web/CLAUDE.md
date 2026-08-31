@@ -1969,3 +1969,75 @@ sans ramener la série ni égaliser les largeurs ; il a été **retiré** plutô
 gardé sans explication. À reprendre.
 
 488 tests (+3).
+
+## Tradeify vérifié sur cinq articles du help center — 2026-08
+
+Cinq PDF fournis par l'utilisateur : « Select Evaluation Accounts », « Growth
+Evaluation Accounts », « Lightning Funded Accounts », « SELECT vs Growth » et
+« Rules: Consistency Rule ». Source de première main — help.tradeify.co bloque
+la récupération automatique.
+
+### Ce qui était déjà juste
+Les **trois échelles de drawdown** stockées correspondent au mot près, y compris
+leur divergence à partir du 100K, qui est le vrai piège de cette firme :
+
+| | 25K | 50K | 100K | 150K |
+|---|---|---|---|---|
+| Select | 1 000 | 2 000 | **3 000** | **4 500** |
+| Growth | 1 000 | 2 000 | **3 500** | **5 000** |
+| Lightning | 1 000 | 2 000 | **4 000** | **5 250** |
+
+Les DLL Growth (600 / 1 250 / 2 500 / 3 750), les DLL Lightning, le verrou de
+drawdown à +100 $ et la consistance progressive 20/25/30 % de Lightning sont
+également confirmés.
+
+### La correction qui compte : AUCUNE consistance sur Select FINANCÉ
+Le catalogue portait **50 %** pour Select Flex financé et « balance-based » pour
+Select Daily. Les deux articles disent l'inverse, explicitement :
+
+> *« the 40% consistency requirement only applies during the evaluation phase […]
+> removed regardless of which payout policy (Flex or Daily) you choose »*
+> *« There is no consistency rule for Select accounts in funded mode »*
+
+Deux contraintes inventées, sur la phase où le trader retire son argent. Un test
+parcourt les deux politiques et les quatre tailles.
+
+### Autres écarts corrigés
+| | Stocké | Officiel |
+|---|---|---|
+| DLL Select Daily 25K | « n/a » | **500 $** |
+| Consistance Lightning 150K | « 35 % dès le premier jour » | **rien de tel** — 20/25/30 % pour toutes les tailles |
+| Plafond payout Select | « Progressif 1 000 → 1 250 → 3 000 » | **deux grilles** : Flex 50 % du profit plafonné à 1 250/3 000/4 000/5 000 · Daily 600/1 000/1 500/2 500 |
+| Jours min en FINANCÉ | affichait 3, le minimum de l'ÉVALUATION | **Growth 5 journées profitables · Select Flex 5 gagnantes · Select Daily et Lightning aucune** |
+
+### Ajouté
+- **Buffer Select Daily** (1 100 / 2 100 / 2 600 / 3 600) — propre à cette
+  politique ; Select Flex n'en a aucun.
+- **Mécanique de la consistance** : « au niveau ou en dessous » PASSE (19,97 %
+  satisfait une règle à 20 %, et 20,00 % aussi) ; remise à zéro après chaque
+  payout approuvé ; une journée PERDANTE dégrade le ratio en réduisant le
+  dénominateur.
+- **Fraîcheur des métriques** : tout est en temps réel SAUF le Trailing Max
+  Drawdown, qui ne bouge qu'une fois par jour en fin de séance.
+- **Limites d'achat** : 15 évaluations par 30 jours, 10 resets chacune, 5 comptes
+  financés simultanés, et **5 activations Growth par jour** (UTC).
+- **Tailles de position legacy** (avant le 12 sept. 2025 8h00 EST) : 5/10/15 minis
+  au lieu de 4/8/12. Servir la grille actuelle à ces porteurs les brimerait.
+- **Minis et micros simultanés** autorisés dans la limite combinée (10 micros =
+  1 mini), mais en sens opposé sur un produit corrélé cela reste un hedge interdit.
+
+### Un test qui figeait un défaut
+Deux tests vérifiaient que la colonne « jours min » du FINANCÉ affichait **3** —
+c'est-à-dire le minimum de l'ÉVALUATION Select. Ils ont été réécrits sur la
+véritable exigence de retrait. Un test qui fige le comportement observé plutôt
+que la règle voulue empêche la correction au lieu de la protéger.
+
+### Reste ouvert
+- **Select 300K** : cinquième taille en édition limitée (KYC avant achat, aucun
+  reset, 3 par personne, hors de la limite des 15 évaluations). L'article renvoie
+  ses paramètres de risque à une page dédiée qu'on n'a pas : son existence est
+  documentée, ses chiffres NON inventés.
+- **Profit minimum par journée valide** (50 / 100 / 200 / 300 $) : vient d'une
+  analyse tierce, aucun des cinq articles ne le mentionne.
+
+492 tests (+4).
