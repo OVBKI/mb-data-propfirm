@@ -555,3 +555,54 @@ describe('Tradeify — trois échelles de drawdown distinctes', () => {
       .toMatch(/500/)
   })
 })
+
+// ── Tradeify : Select Daily est plus serré que Select Flex EN FINANCÉ ────────
+// L'article « Rules: Trailing Max Drawdowns » ne l'écrit pas en toutes lettres,
+// mais il publie le solde qui déclenche le verrou ET la formule qui le produit
+// (solde initial + drawdown + $100). Le calcul inverse donne $2,500 en 100K et
+// $3,500 en 150K pour Select Daily, contre $3,000 et $4,500 pour Select Flex.
+// La colonne financée servait jusqu'ici l'échelle de l'ÉVALUATION aux deux, et
+// annonçait donc à un porteur Select Daily 20% de marge qu'il n'a pas.
+describe('Tradeify — drawdown financé de Select Daily', () => {
+  const cash = v => Number(String(v).replace(/[^0-9]/g, ''))
+
+  it('diverge de Select Flex à partir du 100K, en financé seulement', () => {
+    expect(cash(modelOf('Tradeify', '100k', 'Select Daily').funded.drawdown)).toBe(2500)
+    expect(cash(modelOf('Tradeify', '150k', 'Select Daily').funded.drawdown)).toBe(3500)
+    expect(cash(modelOf('Tradeify', '100k', 'Select Flex').funded.drawdown)).toBe(3000)
+    expect(cash(modelOf('Tradeify', '150k', 'Select Flex').funded.drawdown)).toBe(4500)
+  })
+
+  // ⚠️ L'ÉVALUATION reste commune : les deux politiques de retrait ne se
+  // choisissent qu'une fois financé.
+  it('laisse l’évaluation identique pour les deux politiques', () => {
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      expect(cash(modelOf('Tradeify', plan, 'Select Daily').challenge.drawdown), plan)
+        .toBe(cash(modelOf('Tradeify', plan, 'Select Flex').challenge.drawdown))
+    }
+  })
+
+  it('reste identique aux petites tailles, où la firme ne distingue rien', () => {
+    expect(cash(modelOf('Tradeify', '25k', 'Select Daily').funded.drawdown)).toBe(1000)
+    expect(cash(modelOf('Tradeify', '50k', 'Select Daily').funded.drawdown)).toBe(2000)
+  })
+
+  // Le contrôle qui rend la déduction défendable : la formule officielle
+  // reproduit les seuils publiés des programmes dont le drawdown est, lui, écrit.
+  it('vérifie la formule sur les programmes dont le drawdown est publié', () => {
+    const seuils = PROPFIRM_RULES['Tradeify'].rules['Seuil de verrouillage']
+    const seg = (plan, prog) => {
+      const s = seuils[plan].split('·').find(x => x.includes(prog))
+      return cash(s.slice(s.indexOf(':') + 1))
+    }
+    expect(seg('100k', 'Growth')).toBe(100000 + 3500 + 100)
+    expect(seg('100k', 'Select Flex')).toBe(100000 + 3000 + 100)
+    expect(seg('150k', 'Growth')).toBe(150000 + 5000 + 100)
+    expect(seg('150k', 'Select Flex')).toBe(150000 + 4500 + 100)
+    // Et la même formule, appliquée à Select Daily, redonne bien la valeur stockée.
+    expect(seg('100k', 'Select Daily'))
+      .toBe(100000 + cash(modelOf('Tradeify', '100k', 'Select Daily').funded.drawdown) + 100)
+    expect(seg('150k', 'Select Daily'))
+      .toBe(150000 + cash(modelOf('Tradeify', '150k', 'Select Daily').funded.drawdown) + 100)
+  })
+})

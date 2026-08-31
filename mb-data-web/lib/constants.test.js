@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { extractModelSegment } from './programSegment'
 import {
   PROPFIRM_RULES,
   FIRM_SUGGESTIONS,
@@ -552,5 +553,244 @@ describe('Tradeify — accès à Elite Live', () => {
     expect(v).toMatch(/CHOISIT|choisit/)
     expect(v).toMatch(/\$100,000/)
     expect(v).toMatch(/4 payouts/)
+  })
+})
+
+// ── Tradeify : les cinq articles « Rules: » ─────────────────────────────────
+// Daily Loss Limit, Trailing Max Drawdowns, Hedging & Correlated Products,
+// News Trading, Permitted Times to Trade. Ce sont les règles qui font PERDRE
+// un compte ou BLOQUER un payout — celles qu'une fiche approximative rend
+// dangereuse.
+describe('Tradeify — Daily Loss Limit', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['Tradeify'].rules[key][plan]
+
+  // La table officielle, recopiée case par case. Lightning et Growth divergent
+  // à partir du 100K, et Lightning n'existe pas en 25K.
+  it('stocke les montants de départ publiés', () => {
+    expect(r('DLL Growth', '25k')).toMatch(/\$600/)
+    expect(r('DLL Growth', '150k')).toMatch(/\$3,750/)
+    expect(r('DLL Lightning', '25k')).toMatch(/AUCUN/)
+    expect(r('DLL Lightning', '150k')).toMatch(/\$3,000/)
+    expect(r('DLL Select Daily', '100k')).toBe('$1,250')
+    for (const p of ['25k', '50k', '100k', '150k']) {
+      expect(r('DLL Select Flex', p), p).toBe('AUCUN')
+    }
+  })
+
+  // Le seuil ne reste pas fixe : à +6% il s'aligne sur le drawdown. Servir le
+  // montant de départ à un trader déjà en profit le sous-estime d'un facteur 2.
+  it('donne la hausse à +6% avec son solde déclencheur, par programme', () => {
+    expect(r('DLL — hausse à +6% de profit', '50k')).toMatch(/\$53,000/)
+    expect(r('DLL — hausse à +6% de profit', '100k')).toMatch(/\$106,000/)
+    expect(r('DLL — hausse à +6% de profit', '150k')).toMatch(/\$159,000/)
+    // Divergence Growth / Lightning au 100K : $3,500 contre $4,000.
+    const cent = r('DLL — hausse à +6% de profit', '100k')
+    expect(extractModelSegment(cent, 'Growth')).toMatch(/\$3,500/)
+    expect(extractModelSegment(cent, 'Lightning')).toMatch(/\$4,000/)
+  })
+
+  it('précise que la hausse prend effet à la session SUIVANTE', () => {
+    expect(r("DLL — quand la hausse s'applique")).toMatch(/SUIVANTE/)
+    expect(r("DLL — quand la hausse s'applique")).toMatch(/18h00 ET/)
+  })
+
+  // ⚠️ Un compte legacy n'a pas une DLL plus grande : il n'en a PLUS.
+  it('distingue les comptes legacy — DLL supprimée, pas relevée', () => {
+    const v = r('DLL — comptes legacy')
+    expect(v).toMatch(/12 sept\. 2025/)
+    expect(v).toMatch(/SUPPRIMÉE/)
+  })
+
+  it('rappelle la remise à zéro à 18h00 ET et l’effet de soft breach', () => {
+    expect(r('DLL — réinitialisation')).toMatch(/18h00 ET/)
+    expect(r('DLL — effet quand elle tombe')).toMatch(/PAUSE|pause/)
+    expect(r('DLL — effet quand elle tombe')).toMatch(/reste actif/)
+  })
+
+  // L'avertissement que Tradeify répète dans deux articles distincts.
+  it('interdit explicitement de s’en servir comme stop loss', () => {
+    expect(r('DLL — avertissement')).toMatch(/JAMAIS/)
+    expect(r('DLL — avertissement')).toMatch(/stop loss/i)
+    expect(r('DLL contre drawdown max')).toMatch(/PREMIER|premier/)
+  })
+
+  it('limite la DLL aux trois familles qui en ont une', () => {
+    const v = r('DLL — portée')
+    expect(v).toMatch(/Growth/)
+    expect(v).toMatch(/Lightning/)
+    expect(v).toMatch(/Select Daily/)
+    expect(v).toMatch(/Select Flex n'a aucune DLL/)
+  })
+})
+
+// ── Tradeify : verrouillage du drawdown ─────────────────────────────────────
+// Deux chiffres que l'ancienne fiche confondait : le solde qui DÉCLENCHE le
+// verrou, et le plancher obtenu ensuite.
+describe('Tradeify — verrouillage du drawdown', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['Tradeify'].rules[key][plan]
+
+  it('sépare le seuil déclencheur du plancher résultant', () => {
+    expect(r('Lock drawdown', '50k')).toMatch(/\$50,100/)
+    expect(r('Seuil de verrouillage', '50k')).toMatch(/\$52,100/)
+  })
+
+  // La formule officielle : solde initial + drawdown + $100. Elle se vérifie
+  // sur les programmes dont le drawdown financé est publié.
+  it('respecte la formule solde initial + drawdown + $100', () => {
+    const seuils = r('Seuil de verrouillage', '100k')
+    const cash = s => Number(String(s).replace(/[^0-9]/g, ''))
+    expect(cash(extractModelSegment(seuils, 'Growth'))).toBe(100000 + 3500 + 100)
+    expect(cash(extractModelSegment(seuils, 'Lightning'))).toBe(100000 + 4000 + 100)
+  })
+
+  it('ne verrouille QUE les comptes financés, jamais une évaluation', () => {
+    const v = r('Verrouillage — portée')
+    expect(v).toMatch(/SIM FUNDED/)
+    expect(v).toMatch(/JAMAIS/)
+  })
+
+  it('donne les deux déclencheurs — solde de clôture OU demande de payout', () => {
+    const v = r('Verrouillage — déclencheurs')
+    expect(v).toMatch(/PAYOUT/)
+    expect(v).toMatch(/clôture/)
+  })
+
+  // Le seuil se mesure sur la NET LIQUIDATION VALUE : une position ouverte en
+  // perte casse le compte avant d'être fermée.
+  it('dit que le latent compte et que l’application est temps réel', () => {
+    const v = r('Drawdown — ce qui est mesuré')
+    expect(v).toMatch(/NET LIQUIDATION VALUE/)
+    expect(v).toMatch(/LATENT/)
+    expect(v).toMatch(/TEMPS RÉEL|EN TEMPS RÉEL/)
+  })
+})
+
+// ── Tradeify : hedging ──────────────────────────────────────────────────────
+// La règle la plus coûteuse du catalogue — elle confisque des profits déjà
+// gagnés et peut valoir un bannissement.
+describe('Tradeify — hedging et produits corrélés', () => {
+  const r = key => PROPFIRM_RULES['Tradeify'].rules[key]['25k']
+
+  it('interdit le hedge sur les trois types de comptes', () => {
+    const v = r('Hedging')
+    expect(v).toMatch(/INTERDIT/)
+    expect(v).toMatch(/évaluation/i)
+    expect(v).toMatch(/Elite Live/)
+  })
+
+  // Les huit groupes officiels. Un trader qui croit ES et NQ indépendants perd
+  // son compte sur son deuxième trade.
+  it('recopie les huit groupes de produits', () => {
+    const v = r('Hedging — groupes de produits')
+    for (const g of ['Indices actions', 'Énergie', 'Métaux', 'Devises',
+                     'Taux', 'Céréales', 'Bétail', 'Volatilité']) {
+      expect(v, g).toMatch(new RegExp(g))
+    }
+    // ES et NQ dans le MÊME groupe : c'est tout l'intérêt de la table.
+    expect(v).toMatch(/ES, MES, NQ, MNQ/)
+    expect(v).toMatch(/FVS/)
+  })
+
+  // ⚠️ Cette cellule ne doit contenir AUCUN « · ». Une parenthèse en majuscules
+  // après ce séparateur ferait croire au parseur qu'il lit un ciblage de
+  // programme, et la cellule s'annulerait pour tous les modèles.
+  it('n’utilise pas le séparateur de programme dans la table des groupes', () => {
+    const v = r('Hedging — groupes de produits')
+    expect(v).not.toContain('·')
+    expect(extractModelSegment(v, 'Select Daily')).toBe(v)
+  })
+
+  it('étend la règle à TOUS les comptes du trader', () => {
+    const v = r('Hedging — entre comptes')
+    expect(v).toMatch(/TOUS les comptes/)
+    expect(v).toMatch(/copy trading/)
+    // La taille du contrat n'exempte de rien.
+    expect(v).toMatch(/MES/)
+  })
+
+  // Les trois conditions cumulatives de la détection automatique.
+  it('donne les trois seuils de la détection automatique', () => {
+    const v = r('Hedging — détection automatique')
+    expect(v).toMatch(/TROIS/)
+    expect(v).toMatch(/10 secondes/)
+    expect(v).toMatch(/\$150/)
+  })
+
+  it('énumère les conséquences, confiscation des profits comprise', () => {
+    const v = r('Hedging — conséquences')
+    expect(v).toMatch(/confiscation/i)
+    expect(v).toMatch(/bannissement/i)
+    expect(v).toMatch(/TOUS les comptes/)
+  })
+
+  // Levée de l'ancienne interdiction : minis et micros peuvent coexister.
+  it('autorise minis et micros ensemble, sans lever l’interdit de hedge', () => {
+    const v = r('Minis et micros ensemble')
+    expect(v).toMatch(/Autorisé/)
+    expect(v).toMatch(/10 micros = 1 mini/)
+    expect(v).toMatch(/hedge interdit/)
+  })
+})
+
+// ── Tradeify : horaires et microscalping ────────────────────────────────────
+describe('Tradeify — horaires permis et microscalping', () => {
+  const r = key => PROPFIRM_RULES['Tradeify'].rules[key]['25k']
+
+  it('donne les heures de marché et la coupure de maintenance', () => {
+    const v = r('Heures de marché')
+    expect(v).toMatch(/18h00 ET/)
+    expect(v).toMatch(/17h00 ET/)
+    expect(v).toMatch(/maintenance/i)
+  })
+
+  it('donne les deux heures de clôture obligatoire', () => {
+    const v = r('Heure de clôture obligatoire')
+    expect(v).toMatch(/16h45 ET/)
+    expect(v).toMatch(/12h59 ET/)   // jours fériés écourtés
+  })
+
+  // ⚠️ Un « INTERDIT » sec sur l'overnight était FAUX : la session dure près de
+  // 23 heures et on peut y rester positionné du soir au lendemain après-midi.
+  it('nuance l’overnight — interdit entre sessions, permis dans une session', () => {
+    const v = r('Positions overnight')
+    expect(v).toMatch(/23 heures/)
+    expect(v).toMatch(/swing/i)
+    expect(v).not.toMatch(/^INTERDIT/)
+  })
+
+  // Rassurant et rarement dit : l'auto-close ne casse pas le compte.
+  it('dit que la fermeture d’office ne fait PAS échouer le compte', () => {
+    const v = r('Position ouverte à la clôture')
+    expect(v).toMatch(/automatiquement/)
+    expect(v).toMatch(/PAS échouer/)
+  })
+
+  // Décisif pour compter les journées exigées avant un payout.
+  it('définit la journée de trading de 18h00 à 17h00 le lendemain', () => {
+    const v = r('Définition du jour de trading')
+    expect(v).toMatch(/DEUX journées/)
+    expect(v).toMatch(/1h du matin/)
+  })
+
+  it('signale le décalage Rithmic des demi-journées fériées', () => {
+    const v = r('Rithmic et demi-journées fériées')
+    expect(v).toMatch(/Rithmic/)
+    expect(v).toMatch(/lundi/)
+  })
+
+  it('laisse les news libres mais avertit du slippage', () => {
+    const v = r('Trading des news')
+    expect(v).toMatch(/sans aucune restriction/)
+    expect(v).toMatch(/slippage/i)
+  })
+
+  // La règle qui bloque les PAYOUTS sans casser le compte, et qui n'existe
+  // qu'en financé : un scalpeur passe l'évaluation sans jamais la voir venir.
+  it('documente le microscalping — deux seuils de 50% et 10 secondes', () => {
+    const v = r('Microscalping (financé)')
+    expect(v).toMatch(/50%/)
+    expect(v).toMatch(/10 secondes/)
+    expect(v).toMatch(/payout/i)
+    expect(v).toMatch(/Ne s'applique pas pendant l'évaluation/)
   })
 })

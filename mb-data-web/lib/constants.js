@@ -597,13 +597,49 @@ export const PROPFIRM_RULES = {
       'Drawdown Select (EOD)':    {'25k':'$1,000','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
       'Drawdown Growth (EOD)':    {'25k':'$1,000','50k':'$2,000','100k':'$3,500','150k':'$5,000'},
       'Drawdown Lightning (EOD)': {'25k':'$1,000','50k':'$2,000','100k':'$4,000','150k':'$5,250'},
+      // ⚠️ Select DAILY a un drawdown FINANCÉ plus SERRÉ que Select Flex, à partir
+      // du 100K. L'article « Rules: Trailing Max Drawdowns » ne l'écrit pas en
+      // toutes lettres, mais il publie le solde qui déclenche le verrou ET la
+      // formule (solde initial + drawdown + $100). Le calcul inverse donne :
+      //   Select Daily 100K : 102 600 − 100 000 − 100 = $2,500
+      //   Select Daily 150K : 153 600 − 150 000 − 100 = $3,500
+      // La formule se vérifie sur 14 des 16 cases du tableau (Growth, Lightning
+      // et Select Flex tombent exactement sur les valeurs stockées), ce qui la
+      // rend fiable. On retient donc le chiffre le plus SERRÉ : se tromper dans
+      // l'autre sens afficherait une marge que le trader n'a pas.
+      'Drawdown Select Daily (financé)':{'25k':'$1,000','50k':'$2,000','100k':'$2,500 (déduit du seuil de verrou publié)','150k':'$3,500 (déduit du seuil de verrou publié)'},
       // Le verrou vaut pour les quatre programmes : formulé sans étiquette, sinon
       // le comparateur croit à un ciblage et n'affiche rien pour les autres.
-      'Lock drawdown':            {'25k':'Se verrouille au solde initial + $100 une fois le solde EOD au-dessus du drawdown + $100 (rare)','50k':'Se verrouille à $50,100','100k':'Se verrouille à $100,100','150k':'Se verrouille à $150,100'},
+      // Deux chiffres à ne pas confondre : le solde qui DÉCLENCHE le verrou, et
+      // le plancher qu'on obtient ensuite. L'ancienne cellule ne donnait que le
+      // second et le présentait comme le premier.
+      'Lock drawdown':            {'25k':'Une fois verrouillé, le plancher devient $25,100 et ne remonte plus jamais','50k':'Plancher figé à $50,100','100k':'Plancher figé à $100,100','150k':'Plancher figé à $150,100'},
+      'Seuil de verrouillage':    {'25k':'Growth : $26,100 · Lightning Funded : $26,100 · Select Flex : $26,100 · Select Daily : $26,100','50k':'Growth : $52,100 · Lightning Funded : $52,100 · Select Flex : $52,100 · Select Daily : $52,100','100k':'Growth : $103,600 · Lightning Funded : $104,100 · Select Flex : $103,100 · Select Daily : $102,600','150k':'Growth : $155,100 · Lightning Funded : $155,350 · Select Flex : $154,600 · Select Daily : $153,600'},
+      'Verrouillage — déclencheurs':{'25k':'Le verrou tombe au PREMIER des deux : soit le solde de clôture dépasse le drawdown de $100, soit une DEMANDE DE PAYOUT est déposée','50k':'idem','100k':'idem','150k':'idem'},
+      'Verrouillage — portée':    {'25k':'Comptes SIM FUNDED uniquement. Une évaluation ne verrouille JAMAIS son drawdown','50k':'idem','100k':'idem','150k':'idem'},
+      // Ce que le seuil mesure vraiment : le solde PLUS le profit latent. Une
+      // position ouverte en perte peut donc casser le compte avant d'être fermée.
+      'Drawdown — ce qui est mesuré':{'25k':'La NET LIQUIDATION VALUE : solde + profit/perte LATENT des positions ouvertes. Le seuil ne bouge qu\'en fin de journée mais il est appliqué EN TEMPS RÉEL — le toucher casse le compte définitivement, même si la journée se termine en vert','50k':'idem','100k':'idem','150k':'idem'},
       'DLL Select Daily':         {'25k':'$500','50k':'$1,000','100k':'$1,250','150k':'$1,750'},
       'DLL Select Flex':          {'25k':'AUCUN','50k':'AUCUN','100k':'AUCUN','150k':'AUCUN'},
       'DLL Growth':               {'25k':'$600 (soft breach pause journée, pas fail)','50k':'$1,250','100k':'$2,500','150k':'$3,750'},
       'DLL Lightning':            {'25k':'AUCUN (Lightning 25K seul)','50k':'$1,250','100k':'$2,500','150k':'$3,000 (nouveaux) · $3,750 (pre-31 mars 2026)'},
+      'DLL — portée':             {'25k':'Growth, Lightning et Select Daily FINANCÉS. Select Flex n\'a aucune DLL, seul le drawdown trailing s\'y applique','50k':'idem','100k':'idem','150k':'idem'},
+      // Toucher la DLL ne casse PAS le compte — c'est une « soft breach ». Le
+      // catalogue ne le disait que sur la ligne Growth, alors que ça vaut pour
+      // les trois familles qui en ont une.
+      'DLL — effet quand elle tombe':{'25k':'Le trading est mis en PAUSE pour la journée, le compte reste actif. On reprend à la session suivante, après 18h00 ET','50k':'idem','100k':'idem','150k':'idem'},
+      'DLL — réinitialisation':   {'25k':'Remise à zéro au début de chaque session de trading, à 18h00 ET. Les pertes de la veille ne comptent pas dans la limite du jour','50k':'idem','100k':'idem','150k':'idem'},
+      // Le seuil ne reste pas fixe : à +6% de profit il s'aligne sur le montant
+      // du drawdown. Les deux tables (montant de départ, montant après hausse)
+      // ne se recoupent pas — Lightning et Growth divergent à partir du 100K.
+      'DLL — hausse à +6% de profit':{'25k':'Growth : passe de $600 à $1,000 quand le solde atteint $26,500 · Lightning : pas de DLL sur le 25K · Select Daily : la hausse n\'est pas documentée','50k':'Growth : $1,250 devient $2,000 à $53,000 · Lightning : $1,250 devient $2,000 à $53,000 · Select Daily : non documenté','100k':'Growth : $2,500 devient $3,500 à $106,000 · Lightning : $2,500 devient $4,000 à $106,000 · Select Daily : non documenté','150k':'Growth : $3,750 devient $5,000 à $159,000 · Lightning : $3,000 devient $5,250 à $159,000 · Select Daily : non documenté'},
+      'DLL — quand la hausse s\'applique':{'25k':'À la session SUIVANTE, jamais dans la seconde. Franchir le seuil pendant la séance de lundi active le nouveau montant lundi soir à 18h00 ET','50k':'idem','100k':'idem','150k':'idem'},
+      // Un porteur de compte ancien n'a pas une DLL plus grande : il n'en a PLUS.
+      'DLL — comptes legacy':     {'25k':'Compte acheté avant le 12 sept. 2025 8h00 EST — à +6% de profit la DLL est purement SUPPRIMÉE, pas relevée','50k':'idem','100k':'idem','150k':'idem'},
+      // L'avertissement que Tradeify répète dans deux articles.
+      'DLL — avertissement':      {'25k':'Ne JAMAIS s\'en servir comme stop loss. Ce n\'est pas un arrêt dur — la perte peut dépasser le seuil avant que la protection ne se déclenche, et le slippage peut alors casser le drawdown max, qui lui tue le compte définitivement','50k':'idem','100k':'idem','150k':'idem'},
+      'DLL contre drawdown max':  {'25k':'Deux limites distinctes. Si le drawdown max est plus proche que la DLL, on le touche EN PREMIER et le compte échoue avant que la pause ne se déclenche','50k':'idem','100k':'idem','150k':'idem'},
       'Jours de trading min':     {'25k':'1 jour (Growth) · 3 jours (Select à cause 40% consist)','50k':'idem','100k':'idem','150k':'idem'},
       // Le minimum de l'ÉVALUATION ne dit rien du minimum pour RETIRER. Growth
       // exige 5 journées profitables avant un payout, Select Flex 5 journées
@@ -632,8 +668,23 @@ export const PROPFIRM_RULES = {
       // comptes achetés après le 12 sept. 2025 8h00 EST, et 20% fixe avant.
       'Consistency Lightning':    {'25k':'Après 12 sept. 2025 : 20% (1er payout) → 25% (2e) → 30% (3e et suivants) · Avant : 20% fixe sur tous les payouts','50k':'idem','100k':'idem','150k':'idem'},
       // === TRADING RESTRICTIONS ===
-      'Positions overnight':      {'25k':'INTERDIT (flat fin de session)','50k':'INTERDIT','100k':'INTERDIT','150k':'INTERDIT'},
-      'Trading des news':         {'25k':'Autorisé sans restriction (NFP, FOMC, CPI, Powell)','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
+      // ⚠️ « INTERDIT » tout court était trompeur. L'article consacre une FAQ
+      // entière à la nuance : on peut tenir une position 23 heures d'affilée si
+      // elle reste dans UNE session. Ce qui est interdit, c'est de traverser la
+      // clôture, la maintenance ou le week-end.
+      'Positions overnight':      {'25k':'Pas de swing d\'une journée sur l\'autre. En revanche rester positionné toute la session est autorisé — elle court de 18h00 ET à 16h45 ET le lendemain, soit près de 23 heures. Ouvrir à 20h lundi et fermer à 14h mardi est parfaitement régulier','50k':'idem','100k':'idem','150k':'idem'},
+      'Heures de marché':         {'25k':'Ouverture à 18h00 ET du dimanche au jeudi, clôture à 17h00 ET du lundi au vendredi, coupure de maintenance de 17h00 à 18h00 ET','50k':'idem','100k':'idem','150k':'idem'},
+      'Heure de clôture obligatoire':{'25k':'Tout doit être plat à 16h45 ET, avant la maintenance. Les jours fériés écourtés, c\'est 12h59 ET — les horaires sont annoncés sur le Discord et il faut les vérifier avant de trader','50k':'idem','100k':'idem','150k':'idem'},
+      // Rassurant et rarement dit : l'auto-close ne casse pas le compte.
+      'Position ouverte à la clôture':{'25k':'Tradeify la ferme automatiquement. Cette fermeture d\'office ne fait PAS échouer le compte et ne le fait pas perdre — mais le fill peut être défavorable','50k':'idem','100k':'idem','150k':'idem'},
+      // Décisif pour compter les journées de trading exigées avant un payout.
+      'Définition du jour de trading':{'25k':'De 18h00 ET à 17h00 ET le lendemain. Un trade à 1h du matin mardi et un trade à 19h mardi comptent donc pour DEUX journées différentes — le premier appartient à la session ouverte lundi 18h, le second à celle ouverte mardi 18h. Un jour férié écourté compte comme une journée entière','50k':'idem','100k':'idem','150k':'idem'},
+      'Rithmic et demi-journées fériées':{'25k':'Sur le broker Rithmic, une séance écourtée de jour férié est enregistrée à la clôture PLEINE suivante. La journée compte bien, mais le crédit — et le payout qui en dépend — n\'arrive qu\'ensuite. Un vendredi férié est enregistré à la clôture du lundi','50k':'idem','100k':'idem','150k':'idem'},
+      'Week-end':                 {'25k':'Tout doit être fermé avant la clôture du vendredi à 16h45 ET. Impossible de porter une position jusqu\'à la réouverture du dimanche soir','50k':'idem','100k':'idem','150k':'idem'},
+      'Trading des news':         {'25k':'Autorisé sans aucune restriction — Tradeify écrit n\'avoir ni règle ni consigne sur les news (NFP, FOMC, CPI, Powell). À vos risques toutefois, le slippage pouvant exécuter un ordre loin du prix attendu','50k':'idem','100k':'idem','150k':'idem'},
+      // La règle qui bloque les payouts sans casser le compte. Elle ne vaut
+      // qu'en financé — un scalpeur passe donc l'évaluation sans la voir venir.
+      'Microscalping (financé)':  {'25k':'Sur compte financé, plus de 50% des trades doivent durer PLUS de 10 secondes ET plus de 50% du profit doit venir de trades tenus plus de 10 secondes. Critère non rempli, aucune demande de payout n\'est possible. Ne s\'applique pas pendant l\'évaluation','50k':'idem','100k':'idem','150k':'idem'},
       'DCA (renforcement)':       {'25k':'Autorisé partout','50k':'Autorisé','100k':'Autorisé','150k':'Autorisé'},
       'Algos / copy trading':     {'25k':'Algos OK · HFT INTERDIT · Copy entre VOS comptes OK · pas inter-foyer','50k':'idem','100k':'idem','150k':'idem'},
       // === CONTRATS ===
@@ -643,7 +694,18 @@ export const PROPFIRM_RULES = {
       // position PLUS GRANDE. Servir la grille actuelle à ces porteurs les
       // brimerait sur une limite qui ne les concerne pas.
       'Contrats max (avant 12 sept. 2025)':{'25k':'Inchangé : 1 mini / 10 micros','50k':'5 minis / 50 micros','100k':'10 minis / 100 micros','150k':'15 minis / 150 micros'},
-      'Minis et micros ensemble': {'25k':'Autorisé tant que la position combinée reste dans la limite (10 micros = 1 mini). En sens OPPOSÉ sur un produit identique ou corrélé, cela reste un hedge interdit','50k':'idem','100k':'idem','150k':'idem'},
+      'Minis et micros ensemble': {'25k':'Autorisé — l\'ancienne interdiction de tenir minis et micros en même temps a été levée, la fongibilité côté broker ayant fermé la faille qui permettait de dépasser sa limite. Deux choses tiennent toujours, la position combinée doit rester dans la limite de contrats (10 micros = 1 mini), et en sens OPPOSÉ sur un produit identique ou corrélé cela reste un hedge interdit','50k':'idem','100k':'idem','150k':'idem'},
+      // === HEDGING (article dédié — la règle la plus sévère du catalogue) ===
+      'Hedging':                  {'25k':'INTERDIT. Aucune position opposée — une longue et une courte — sur le même instrument ni sur deux produits d\'un même groupe. Vaut en évaluation, en sim funded et en Elite Live','50k':'idem','100k':'idem','150k':'idem'},
+      // La table officielle des groupes. Écrite SANS séparateur « · » à dessein :
+      // des parenthèses en majuscules après un « · » feraient croire au parseur
+      // qu'il lit un ciblage de programme, et la cellule s'annulerait.
+      'Hedging — groupes de produits':{'25k':'Indices actions (ES, MES, NQ, MNQ, YM, MYM, RTY, M2K, EMD, NKD, FDAX, FDXM, FDXS, FESX, FSXE, FXXP) ; Énergie (CL, QM, MCL, NG, QG) ; Métaux (GC, QO, MGC, SI, HG, PL, PA) ; Devises (6E, M6E, 6B, 6J, 6A, M6A, 6C, 6S) ; Taux (FGBL, FGBM, FGBS, FGBX) ; Céréales (ZS, ZL, ZM, ZC, ZW) ; Bétail (HE, LE, GF) ; Volatilité (FVS). Un mini et son micro appartiennent toujours au même groupe. La volatilité évoluant à l\'inverse des actions, être long sur un indice ET long sur FVS est aussi traité comme compensatoire. La liste n\'est pas limitative','50k':'idem','100k':'idem','150k':'idem'},
+      // C'est le point le plus coûteux, et le moins connu : le hedge éclaté sur
+      // deux comptes est traité exactement comme le hedge sur un seul.
+      'Hedging — entre comptes':  {'25k':'La règle vaut sur TOUS les comptes que vous contrôlez, financés ou non. Long ES sur A et short ES sur B est une violation ; long ES sur A et short NQ sur B aussi, les deux étant des indices actions ; long MES contre short NQ également, la taille du contrat n\'exempte de rien. Même sens sur deux comptes en revanche est permis — c\'est ainsi que fonctionne le copy trading. Un compte cassé qui garde une position opposée à un compte actif peut suffire à déclencher l\'alerte','50k':'idem','100k':'idem','150k':'idem'},
+      'Hedging — détection automatique':{'25k':'Présente sur tous les comptes. Le contrôle automatique ne casse le compte que si les TROIS conditions sont réunies en même temps — positions opposées, hedge tenu plus de 10 secondes, et profit tiré du hedge supérieur à $150. Cette fenêtre de 10 secondes existe pour rattraper une erreur de saisie, pas pour hedger brièvement exprès. Le hedge entre comptes et entre produits corrélés est, lui, examiné à part par l\'équipe risque','50k':'idem','100k':'idem','150k':'idem'},
+      'Hedging — conséquences':   {'25k':'Disqualification en évaluation, refus de payout, compte passé en statut de violation — et pour une violation entre comptes, TOUS les comptes concernés. S\'y ajoutent la confiscation des profits générés pendant la période de violation et, pour une manœuvre délibérée ou répétée, un bannissement définitif','50k':'idem','100k':'idem','150k':'idem'},
       'Scaling micro requis':     {'25k':'Oui pour Lightning post-12-sept-2025','50k':'idem','100k':'idem','150k':'idem'},
       // === TARIFS (one-time, codes promo permanents -33/-50%) ===
       'Prix Select (one-time)':   {'25k':'$109','50k':'$165','100k':'$265','150k':'$369'},

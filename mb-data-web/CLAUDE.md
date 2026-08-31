@@ -2104,3 +2104,123 @@ correction la plus importante de cette série.
   analyse tierce, aucun des cinq articles ne le mentionne.
 
 500 tests (+12).
+
+---
+
+## Les cinq articles « Rules: » de Tradeify — 2026-08
+
+Cinq PDF du help center appliqués d'un bloc : *Daily Loss Limit*, *Trailing Max
+Drawdowns*, *Hedging & Correlated Products*, *News Trading*, *Permitted Times to
+Trade*. Ce sont les règles qui font **perdre un compte** ou **bloquer un
+payout** — celles qu'une fiche approximative rend dangereuse.
+
+### La découverte : Select Daily est plus serré que Select Flex en financé
+
+L'article *Trailing Max Drawdowns* n'écrit nulle part le drawdown financé de
+Select Daily. Il publie autre chose : le **solde qui déclenche le verrou**, et la
+formule qui le produit — `solde initial + drawdown + 100 $`. Le calcul inverse
+donne alors le drawdown manquant.
+
+| 100K | Seuil publié | Drawdown déduit |
+|---|---|---|
+| Growth | 103 600 $ | 3 500 $ ✔ (valeur déjà stockée) |
+| Lightning | 104 100 $ | 4 000 $ ✔ |
+| Select Flex | 103 100 $ | 3 000 $ ✔ |
+| **Select Daily** | **102 600 $** | **2 500 $** ← non publié ailleurs |
+
+La formule tombe juste sur **14 des 16 cases** du tableau, ce qui est ce qui rend
+la déduction défendable. Le seul écart, Lightning 150K, s'explique : la table de
+verrouillage y affiche encore l'ancien montant de 6 000 $, antérieur à mars 2026.
+
+⚠️ **C'est une déduction arithmétique, pas une citation.** Elle est signalée comme
+telle dans la cellule (« déduit du seuil de verrou publié ») et visible en
+infobulle sur la carte. On retient le chiffre **le plus serré** : se tromper dans
+l'autre sens afficherait au trader une marge qu'il n'a pas.
+
+`funded.drawdown` de Select Daily pointait jusqu'ici sur `Drawdown Select (EOD)`,
+c'est-à-dire l'échelle de l'**évaluation** — commune aux deux politiques de
+retrait, qui ne se choisissent qu'une fois financé. Le comparateur annonçait donc
+20 % de marge de trop.
+
+### Deux chiffres que la fiche confondait
+
+`Lock drawdown` donnait le **plancher obtenu** (50 100 $) en le présentant comme
+le seuil. Trois cellules distinctes désormais : `Lock drawdown` (le plancher),
+`Seuil de verrouillage` (le solde déclencheur, par programme), et
+`Verrouillage — déclencheurs` (le verrou tombe au premier des deux — solde de
+clôture au-dessus du seuil, **ou** dépôt d'une demande de payout).
+
+`Verrouillage — portée` ajoute ce que rien ne disait : **comptes sim funded
+uniquement**, une évaluation ne verrouille jamais. Et `Drawdown — ce qui est
+mesuré` précise que le seuil porte sur la **net liquidation value**, profit
+latent compris, appliquée en temps réel — une position ouverte en perte casse
+donc le compte avant d'être fermée.
+
+### La DLL n'est pas un montant fixe
+
+Elle **s'aligne sur le drawdown à +6 % de profit**, et prend effet à la session
+**suivante**, pas dans la seconde.
+
+| | Solde déclencheur | Lightning | Growth |
+|---|---|---|---|
+| 25K | 26 500 $ | — | 600 → **1 000 $** |
+| 50K | 53 000 $ | 1 250 → **2 000 $** | 1 250 → **2 000 $** |
+| 100K | 106 000 $ | 2 500 → **4 000 $** | 2 500 → **3 500 $** |
+| 150K | 159 000 $ | 3 000 → **5 250 $** | 3 750 → **5 000 $** |
+
+⚠️ Un compte acheté **avant le 12 sept. 2025 8h00 EST** ne voit pas sa DLL
+relevée : elle est **supprimée**.
+
+Trois autres points ajoutés : la remise à zéro à **18h00 ET**, le fait que la
+toucher **met en pause sans casser le compte**, et l'avertissement que Tradeify
+répète dans deux articles — **ne jamais s'en servir comme stop loss**, la perte
+pouvant dépasser le seuil et le slippage casser le drawdown max, qui lui est
+définitif.
+
+### Le hedging, la règle la plus coûteuse du catalogue
+
+Elle ne casse pas seulement le compte fautif : **tous les comptes impliqués**
+passent en statut de violation, les profits générés pendant la période sont
+**confisqués**, et une manœuvre délibérée ou répétée vaut un bannissement.
+
+Quatre cellules nouvelles : la **table des huit groupes de produits** (long ES +
+short NQ est une violation, les deux étant des indices actions), la portée
+**entre comptes** (la taille du contrat n'exempte de rien — long MES contre short
+NQ compte), la **détection automatique** (trois conditions cumulatives : positions
+opposées, hedge tenu **plus de 10 s**, profit du hedge **supérieur à 150 $**), et
+les conséquences.
+
+⚠️ **La table des groupes n'utilise volontairement aucun `·`.** Une parenthèse en
+majuscules après ce séparateur déclencherait la branche « garde-modèle » de
+`extractModelSegment`, et la cellule s'annulerait pour tous les programmes. Un
+test le verrouille.
+
+### L'overnight n'était pas « INTERDIT »
+
+La fiche disait `INTERDIT (flat fin de session)`. L'article consacre une FAQ
+entière à la nuance : une session Tradeify court de **18h00 ET à 16h45 ET**, soit
+près de **23 heures**, et on peut y rester positionné du soir au lendemain
+après-midi. Ce qui est interdit, c'est de traverser la clôture, la maintenance
+(17h–18h) ou le week-end.
+
+S'y ajoutent : la clôture obligatoire à **16h45 ET** (**12h59 ET** les jours
+fériés écourtés), le fait que la **fermeture d'office ne fait pas échouer le
+compte**, la **définition du jour de trading** (un trade à 1h du matin mardi et un
+trade à 19h mardi comptent pour deux journées — décisif pour compter les journées
+exigées avant un payout), et le décalage **Rithmic** des demi-journées fériées
+(enregistrées à la clôture pleine suivante, donc le payout attend).
+
+### Le microscalping
+
+Nouvelle cellule. Sur compte **financé** uniquement : plus de 50 % des trades
+doivent durer **plus de 10 secondes**, ET plus de 50 % du profit doit venir de
+trades tenus plus de 10 secondes. Critère non rempli, **aucune demande de payout
+n'est possible**. Elle ne s'applique pas en évaluation — un scalpeur la passe donc
+sans jamais la voir venir.
+
+### Confirmé sans changement
+Les trois échelles de DLL de départ, les groupes mini/micro (l'ancienne
+interdiction de les tenir ensemble **est bien levée**, la fongibilité côté broker
+ayant fermé la faille), et la liberté totale sur les news.
+
+531 tests (+31).

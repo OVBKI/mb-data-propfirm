@@ -441,7 +441,11 @@ export const FIRM_COMPARISON_MAP = {
           consistance: { key: 'Consistency Select (eval)' },          // 40%
         },
         funded: {
-          drawdown: { key: 'Drawdown Select (EOD)' },
+          // ⚠️ PAS 'Drawdown Select (EOD)' : c'est l'échelle de l'ÉVALUATION, et
+          // elle est commune aux deux politiques de retrait. En FINANCÉ, le
+          // tableau de verrouillage publié révèle que Select Daily est plus
+          // serré que Select Flex dès le 100K (voir constants.js).
+          drawdown: { key: 'Drawdown Select Daily (financé)' },
           dailyDrawdown: { key: 'DLL Select Daily' },
           buffer: { key: 'Lock drawdown' },                           // +$100 lock cushion
           // ⚠️ Le minimum de l'ÉVALUATION (3 jours) n'est pas l'exigence de RETRAIT.
