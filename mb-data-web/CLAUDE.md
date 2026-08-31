@@ -2032,6 +2032,45 @@ c'est-à-dire le minimum de l'ÉVALUATION Select. Ils ont été réécrits sur l
 véritable exigence de retrait. Un test qui fige le comportement observé plutôt
 que la règle voulue empêche la correction au lieu de la protéger.
 
+### Sixième article — la note de version « Tradeify 3.0 » (7 avril 2026)
+Elle confirme trois corrections déjà faites (Select 50K 2 500 → 3 000 $ sur les
+NOUVEAUX comptes seulement, Lightning 150K à 5 250/3 000, fin des abonnements)
+et donne enfin les vrais chiffres de l'**Elite Reward Pool**.
+
+**La dotation dépend de la TAILLE, pas du programme.** Le catalogue attribuait
+les 12 000 $ au seul « Lightning 150K » et laissait « bonus proportionnel » en
+50K et 100K — deux tailles sur quatre sans chiffre, et une fausse exclusivité :
+
+| | 25K | 50K | 100K | 150K |
+|---|---|---|---|---|
+| Dotation | 2 000 $ | 4 000 $ | 8 000 $ | 12 000 $ |
+| Avec multiplicateur ×1,5 | 3 000 $ | 6 000 $ | 12 000 $ | 18 000 $ |
+
+**Le multiplicateur est réservé à Select**, et il se mérite PENDANT la phase sim
+funded, pas après : score de consistance **sous 40 %** ET n'avoir **jamais dépassé
+75 % du drawdown max**. Les deux critères sont exigés.
+
+**La cagnotte se débloque mois par mois**, elle ne se touche pas d'un coup :
+plafond mensuel de 1 000 / 2 000 / 3 000 / 4 000 $, contre **5 journées
+profitables à 250 $ ou plus chacune** et un profit de fin de mois **supérieur au
+drawdown trailing** de la taille. Un compte cassé perd le solde restant de sa
+cagnotte. Un test recalcule ce seuil depuis `maxDrawdown()` au lieu de le figer.
+
+**Trois usages possibles** de la cagnotte, ce qui n'est pas anodin : retirer en
+argent réel, renforcer le compte pour élargir le buffer de drawdown, ou garder en
+réserve pour recharger après un compte cassé.
+
+### Deux autres écarts corrigés par cette note
+- **Plafond Select Daily** : c'est **2× le profit de la période** ET un maximum
+  en dollars — le plus petit des deux. Le catalogue ne portait que le maximum.
+- **Profit minimum par journée valide, 25K** : la note écrit « Flex Path : 5
+  profitable days (**$100** or more per day) ». Le catalogue portait 50 $. Les
+  trois autres tailles viennent toujours d'une analyse tierce et sont désormais
+  **marquées « non vérifié »** dans la cellule elle-même — aucun des six articles
+  ne les donne.
+
+Plateformes mises à jour : **Rithmic** et **Tradesea** ajoutés.
+
 ### Reste ouvert
 - **Select 300K** : cinquième taille en édition limitée (KYC avant achat, aucun
   reset, 3 par personne, hors de la limite des 15 évaluations). L'article renvoie
@@ -2040,4 +2079,4 @@ que la règle voulue empêche la correction au lieu de la protéger.
 - **Profit minimum par journée valide** (50 / 100 / 200 / 300 $) : vient d'une
   analyse tierce, aucun des cinq articles ne le mentionne.
 
-492 tests (+4).
+497 tests (+9).

@@ -475,3 +475,52 @@ describe('Lucid Trading — helpers par programme', () => {
     expect(profitTarget('Lucid Trading', '100k', 'LucidPro')).toBe(6000)
   })
 })
+
+// ── Tradeify Elite Live — la cagnotte dépend de la TAILLE, pas du programme ──
+// Note de version « Tradeify 3.0 » (7 avril 2026). Le catalogue attribuait les
+// $12,000 au seul « Lightning 150K » et laissait « bonus proportionnel » en 50K
+// et 100K : deux tailles sur quatre sans chiffre, et une fausse exclusivité.
+describe('Tradeify — Elite Reward Pool', () => {
+  const r = key => PROPFIRM_RULES['Tradeify'].rules[key]
+  const num = v => Number(String(v).match(/\$([\d,]+)/)[1].replace(/,/g, ''))
+
+  it('donne une dotation à chacune des quatre tailles', () => {
+    const pool = r('Elite Reward Pool')
+    expect(['25k', '50k', '100k', '150k'].map(p => num(pool[p]))).toEqual([2000, 4000, 8000, 12000])
+  })
+
+  it('applique exactement +50 % avec le multiplicateur Select', () => {
+    const base = r('Elite Reward Pool')
+    const boost = r('Elite Reward Pool ×1,5')
+    for (const p of ['25k', '50k', '100k', '150k']) {
+      expect(num(boost[p]), p).toBe(num(base[p]) * 1.5)
+    }
+  })
+
+  it('rappelle que le multiplicateur est RÉSERVÉ à Select et sous conditions', () => {
+    const c = r('Elite Reward Pool ×1,5')['25k']
+    expect(c).toMatch(/Select/)
+    expect(c).toMatch(/40%/)   // score de consistance sous 40 %
+    expect(c).toMatch(/75%/)   // jamais dépassé 75 % du drawdown max
+  })
+
+  // Le profit de fin de mois exigé est le DRAWDOWN TRAILING de la taille — pas
+  // un montant arbitraire. Le test le recalcule plutôt que de le figer.
+  it('exige un profit de fin de mois égal au drawdown trailing', () => {
+    const cond = r('Elite Live — conditions du mois')
+    // ⚠️ Viser le montant qui suit « supérieur à » : la cellule contient AUSSI
+    // le seuil de $250 par journée, et prendre le premier « $ » venu lisait 250.
+    const finDeMois = txt => Number(String(txt).match(/supérieur à \$([\d,]+)/)[1].replace(/,/g, ''))
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      // Le montant n'est pas arbitraire : c'est le drawdown trailing de la taille.
+      expect(finDeMois(cond[plan]), plan).toBe(maxDrawdown('Tradeify', plan, 'Select Flex'))
+    }
+  })
+
+  it('fixe le seuil de journée profitable à $250 sur toutes les tailles', () => {
+    const cond = r('Elite Live — conditions du mois')
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      expect(String(cond[plan]), plan).toMatch(/\$250/)
+    }
+  })
+})

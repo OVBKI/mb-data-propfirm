@@ -552,8 +552,9 @@ export const PROPFIRM_RULES = {
     // VÉRIFIÉ AOÛT 2026 sur CINQ articles du help center fournis en PDF :
     // « Select Evaluation Accounts », « Growth Evaluation Accounts »,
     // « Lightning Funded Accounts », « SELECT vs Growth » et
-    // « Rules: Consistency Rule ». C'est une source de PREMIÈRE MAIN —
-    // help.tradeify.co bloque la récupération automatique.
+    // « Rules: Consistency Rule », plus la note de version « Tradeify 3.0 –
+    // Program Updates & Improvements » (7 avril 2026). C'est une source de
+    // PREMIÈRE MAIN — help.tradeify.co bloque la récupération automatique.
     //
     // Les TROIS échelles de drawdown stockées sont confirmées au mot près, y
     // compris leur divergence à partir du 100K (Select 3 000 / Growth 3 500 /
@@ -606,7 +607,11 @@ export const PROPFIRM_RULES = {
       // exige 5 journées profitables avant un payout, Select Flex 5 journées
       // gagnantes ; Select Daily et Lightning n'en demandent aucune.
       'Jours min avant payout':   {'25k':'Growth : 5 journées profitables · Select Flex : 5 journées gagnantes · Select Daily : aucune, éligibilité quotidienne · Lightning Funded : aucune','50k':'idem','100k':'idem','150k':'idem'},
-      'Profit min jour valide':   {'25k':'$50','50k':'$100','100k':'$200','150k':'$300'},
+      // ⚠️ Seul le 25K est SOURCÉ : la note Tradeify 3.0 écrit « Flex Path : 5
+      // profitable days ($100 or more per day) ». Le catalogue portait $50.
+      // Les trois autres tailles viennent d'une analyse tierce et restent
+      // NON VÉRIFIÉES — aucun des six articles ne les donne.
+      'Profit min jour valide':   {'25k':'$100 (Select Flex, publié)','50k':'$100 (non vérifié)','100k':'$200 (non vérifié)','150k':'$300 (non vérifié)'},
       // === CONSISTENCY (par famille et phase) ===
       'Consistency Select (eval)':{'25k':'40% (Best day ≤ 40% du profit total)','50k':'40%','100k':'40%','150k':'40%'},
       // ⚠️ AUCUNE consistance en FINANCÉ sur Select — les deux politiques. Le help
@@ -656,13 +661,25 @@ export const PROPFIRM_RULES = {
       // politique de retrait, et le plafond Flex est le PLUS PETIT de deux bornes
       // (50% du profit OU le montant) — pas un montant fixe.
       'Cap payout Select Flex':   {'25k':'50% du profit, plafonné à $1,250','50k':'50% du profit, plafonné à $3,000','100k':'50% du profit, plafonné à $4,000','150k':'50% du profit, plafonné à $5,000'},
-      'Cap payout Select Daily':  {'25k':'$600','50k':'$1,000','100k':'$1,500','150k':'$2,500'},
+      'Cap payout Select Daily':  {'25k':'2× le profit de la période, plafonné à $600','50k':'2× le profit, plafonné à $1,000','100k':'2× le profit, plafonné à $1,500','150k':'2× le profit, plafonné à $2,500'},
       // Propre à Select Daily : un buffer conditionne l'éligibilité quotidienne.
       // Select Flex n'en a aucun (« No minimum balance required »).
       'Buffer Select Daily':      {'25k':'$1,100','50k':'$2,100','100k':'$2,600','150k':'$3,600'},
       'Cadence payout':           {'25k':'Windows FIXES : 1-4 et 15-18 de chaque mois (Select/Growth) · Lightning : INSTANT dashboard (24h)','50k':'idem','100k':'idem','150k':'idem'},
       'Méthodes payout':          {'25k':'Rise (primaire crypto USDT/USDC + bank) + Plane (backup wire) — PAS PayPal/ACH direct/Wise','50k':'idem','100k':'idem','150k':'idem'},
-      'Elite Reward Pool':        {'25k':'$2,000 (Select · 1.5x multiplier = $3,000) · $2,000 (Growth)','50k':'Bonus proportionnel','100k':'Bonus proportionnel','150k':'$12,000 (Lightning 150K) — top tier'},
+      // ⚠️ La dotation dépend de la TAILLE du compte, pas du programme. Le
+      // catalogue attribuait les $12,000 à « Lightning 150K » et laissait
+      // « bonus proportionnel » en 50K et 100K : la note Tradeify 3.0 donne la
+      // grille complète, valable pour tout compte passé en Elite Live.
+      'Elite Reward Pool':        {'25k':'$2,000 par compte','50k':'$4,000 par compte','100k':'$8,000 par compte','150k':'$12,000 par compte'},
+      // Le multiplicateur est RÉSERVÉ à Select, et il se mérite pendant la phase
+      // sim funded — pas après. Deux critères, les deux exigés.
+      'Elite Reward Pool ×1,5':   {'25k':'$3,000 · réservé à Select : score de consistance SOUS 40% ET jamais dépassé 75% du drawdown max','50k':'$6,000 · mêmes critères','100k':'$12,000 · mêmes critères','150k':'$18,000 · mêmes critères'},
+      // La dotation ne se touche pas d'un coup : elle se débloque MOIS PAR MOIS,
+      // et un compte qui casse perd le solde restant de sa cagnotte.
+      'Elite Live — plafond mensuel':{'25k':'jusqu\'à $1,000 par mois','50k':'jusqu\'à $2,000 par mois','100k':'jusqu\'à $3,000 par mois','150k':'jusqu\'à $4,000 par mois'},
+      'Elite Live — conditions du mois':{'25k':'5 journées profitables à $250 ou plus CHACUNE, et finir le mois avec un profit supérieur à $1,000 (le drawdown trailing). Évalué compte par compte ; un compte cassé perd le reste de sa cagnotte','50k':'5 journées à $250+ et profit de fin de mois supérieur à $2,000','100k':'5 journées à $250+ et profit de fin de mois supérieur à $3,000','150k':'5 journées à $250+ et profit de fin de mois supérieur à $4,500'},
+      'Elite Live — usage de la cagnotte':{'25k':'Trois options : retirer en argent réel à tout moment · renforcer le compte pour élargir le buffer de drawdown et scaler plus vite · garder en réserve pour recharger après un compte cassé','50k':'idem','100k':'idem','150k':'idem'},
       // === MULTI-COMPTES ===
       'Comptes simul.':           {'25k':'Financés : 5 max simultanés (toutes familles) · Évaluations : 15 max achetées par période de 30 jours, chacune resettable 10 fois','50k':'idem','100k':'idem','150k':'idem'},
       'Activations par jour':     {'25k':'Growth : 5 comptes financés activables par jour (compteur remis à zéro toutes les 24 h UTC) — au-delà, il faut attendre le lendemain','50k':'idem','100k':'idem','150k':'idem'},

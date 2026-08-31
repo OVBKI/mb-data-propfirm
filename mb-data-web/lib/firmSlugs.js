@@ -226,7 +226,7 @@ export const FIRM_META = {
     website: 'https://tradeify.co',
     founded: '2023',
     country: 'États-Unis',
-    platform: 'Rithmic · NinjaTrader · Tradovate · Quantower',
+    platform: 'Rithmic · Tradesea · NinjaTrader · Tradovate · Quantower',
     ddType: 'EOD uniquement (pas de trailing intraday)',
     splits: 'Profit split 90/10 standard.',
     keyFacts: [
