@@ -65,7 +65,24 @@ export const C = {
  * Renvoie la palette sombre côté serveur, où getComputedStyle n'existe pas.
  */
 export function chartColors() {
-  const fallback = { grid: 'rgba(159,179,200,0.09)', tick: '#8a9fb5', text: '#f0f5fa' }
+  // ⚠️ Les couleurs de SÉRIES vivent ici aussi, et ce n'est pas du confort.
+  // Chart.js peint dans un <canvas> : il ne résout PAS `var()`. Une chaîne
+  // invalide passée à un contexte 2D ne lève rien — le contexte garde son
+  // fillStyle par défaut, c'est-à-dire NOIR. C'est ainsi que /app/analytics
+  // s'était retrouvée avec trois graphiques aux aires noires et une série
+  // « Net » invisible sur son propre fond : quelqu'un avait migré
+  // `backgroundColor: '#1db87a'` en `'var(--green-bg)'` pendant le passage à
+  // Abyss, et le canvas l'a silencieusement peint en noir.
+  //
+  // Les valeurs de repli servent au rendu serveur ET au cas où un jeton
+  // manquerait : jamais de couleur invalide ne doit atteindre le canvas.
+  const fallback = {
+    grid: 'rgba(159,179,200,0.09)', tick: '#8a9fb5', text: '#f0f5fa',
+    red: '#ff7a86', green: '#3ddba8', blue: '#5ab0ff',
+    redFill: 'rgba(255,122,134,0.14)',
+    greenFill: 'rgba(61,219,168,0.14)',
+    blueFill: 'rgba(90,176,255,0.32)',
+  }
   if (typeof window === 'undefined') return fallback
   const cs = getComputedStyle(document.documentElement)
   const read = (name, dflt) => (cs.getPropertyValue(name) || '').trim() || dflt
@@ -73,6 +90,12 @@ export function chartColors() {
     grid: read('--chart-grid', fallback.grid),
     tick: read('--chart-tick', fallback.tick),
     text: read('--text', fallback.text),
+    red: read('--red', fallback.red),
+    green: read('--green', fallback.green),
+    blue: read('--blue', fallback.blue),
+    redFill: read('--red-bg', fallback.redFill),
+    greenFill: read('--green-bg', fallback.greenFill),
+    blueFill: read('--blue-border', fallback.blueFill),
   }
 }
 

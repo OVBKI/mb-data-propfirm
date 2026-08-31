@@ -10,7 +10,7 @@ import { chartColors } from '../../../../lib/theme'
 import { useTheme } from '../../../../components/ThemeProvider'
 
 // ── AnalyticsCharts (extracted from original page.js) ──
-function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPayout, yNet, mLabels, mSpent, mPayout, mNet }) {
+function AnalyticsCharts({ sym, cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPayout, yNet, mLabels, mSpent, mPayout, mNet }) {
   const { theme } = useTheme()
   const cRef = useRef(null), yRef = useRef(null), mRef = useRef(null)
   const charts = useRef({})
@@ -25,18 +25,22 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
     import('chart.js/auto').then((mod) => {
       if (destroyed) return
       const { Chart } = mod
+      // ⚠️ beginAtZero. Sur des MONTANTS, un axe qui démarre ailleurs qu'à zéro
+      // exagère les écarts et, pire, escamote les petites barres : avec une base
+      // à 7 000, une dépense de 1 596 ne dessine plus rien du tout. Le graphique
+      // annuel n'affichait donc que deux séries sur trois.
       const opts = {
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(2)} €` } } },
-        scales: { x: { grid: { display: false }, ticks: { color: CH.tick, font: { size: 10 }, maxTicksLimit: 10 } }, y: { grid: { color: CH.grid }, ticks: { color: CH.tick, font: { size: 10 }, callback: v => v + '€' } } }
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(2)} ${sym}` } } },
+        scales: { x: { grid: { display: false }, ticks: { color: CH.tick, font: { size: 10 }, maxTicksLimit: 10 } }, y: { beginAtZero: true, grid: { color: CH.grid }, ticks: { color: CH.tick, font: { size: 10 }, callback: v => v + sym } } }
       }
-      if (cRef.current) { destroy('c'); charts.current.c = new Chart(cRef.current, { type: 'line', data: { labels: cLabels, datasets: [{ label: 'Dépenses (€)', data: cSpent, borderColor: '#e8504a', backgroundColor: 'var(--red-bg)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Payouts (€)', data: cPayout, borderColor: '#1db87a', backgroundColor: 'var(--green-bg)', fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: 'Net (€)', data: cNet, borderColor: '#2d6fff', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [6, 3] }] }, options: opts }) }
-      if (yRef.current) { destroy('y'); charts.current.y = new Chart(yRef.current, { type: 'bar', data: { labels: yLabels, datasets: [{ label: 'Dépenses (€)', data: ySpent, backgroundColor: '#e8504a', borderRadius: 5 }, { label: 'Payouts (€)', data: yPayout, backgroundColor: '#1db87a', borderRadius: 5 }, { label: 'Net (€)', data: yNet, backgroundColor: yNet.map(v => v >= 0 ? 'var(--blue-border)' : 'var(--red)'), borderRadius: 5 }] }, options: opts }) }
-      if (mRef.current) { destroy('m'); charts.current.m = new Chart(mRef.current, { type: 'bar', data: { labels: mLabels, datasets: [{ label: 'Dépenses (€)', data: mSpent, backgroundColor: '#e8504a', borderRadius: 4 }, { label: 'Payouts (€)', data: mPayout, backgroundColor: '#1db87a', borderRadius: 4 }, { label: 'Net (€)', data: mNet, backgroundColor: mNet.map(v => v >= 0 ? 'var(--blue-border)' : 'var(--red)'), borderRadius: 4 }] }, options: opts }) }
+      if (cRef.current) { destroy('c'); charts.current.c = new Chart(cRef.current, { type: 'line', data: { labels: cLabels, datasets: [{ label: `Dépenses (${sym})`, data: cSpent, borderColor: CH.red, backgroundColor: CH.redFill, fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: `Payouts (${sym})`, data: cPayout, borderColor: CH.green, backgroundColor: CH.greenFill, fill: true, tension: 0.3, pointRadius: cLabels.length > 20 ? 0 : 4, borderWidth: 2 }, { label: `Net (${sym})`, data: cNet, borderColor: CH.blue, fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2, borderDash: [6, 3] }] }, options: opts }) }
+      if (yRef.current) { destroy('y'); charts.current.y = new Chart(yRef.current, { type: 'bar', data: { labels: yLabels, datasets: [{ label: `Dépenses (${sym})`, data: ySpent, backgroundColor: CH.red, borderRadius: 5 }, { label: `Payouts (${sym})`, data: yPayout, backgroundColor: CH.green, borderRadius: 5 }, { label: `Net (${sym})`, data: yNet, backgroundColor: CH.blue, borderRadius: 5 }] }, options: opts }) }
+      if (mRef.current) { destroy('m'); charts.current.m = new Chart(mRef.current, { type: 'bar', data: { labels: mLabels, datasets: [{ label: `Dépenses (${sym})`, data: mSpent, backgroundColor: CH.red, borderRadius: 4 }, { label: `Payouts (${sym})`, data: mPayout, backgroundColor: CH.green, borderRadius: 4 }, { label: `Net (${sym})`, data: mNet, backgroundColor: CH.blue, borderRadius: 4 }] }, options: opts }) }
     }).catch(e => console.error('Chart.js:', e))
     return () => { destroyed = true; Object.values(charts.current).forEach(c => c?.destroy()) }
-  }, [cLabels.join(','), yLabels.join(','), mLabels.join(','), theme])
+  }, [cLabels.join(','), yLabels.join(','), mLabels.join(','), theme, sym])
 
   const leg = (items) => <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>{items.map(it => <div key={it.l} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text2)' }}><div style={{ width: '10px', height: '3px', borderRadius: '2px', background: it.c }}></div>{it.l}</div>)}</div>
 
@@ -44,7 +48,7 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
     <div style={{ ...cardS, padding: '18px', marginBottom: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text2)' }}>Évolution cumulée</div>
-        {leg([{ l: 'Dépenses', c: '#e8504a' }, { l: 'Payouts', c: '#1db87a' }, { l: 'Net', c: '#2d6fff' }])}
+        {leg([{ l: 'Dépenses', c: 'var(--red)' }, { l: 'Payouts', c: 'var(--green)' }, { l: 'Net', c: 'var(--blue)' }])}
       </div>
       <div style={{ position: 'relative', height: '240px' }}><canvas ref={cRef} /></div>
     </div>
@@ -52,14 +56,14 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
       <div style={{ ...cardS, padding: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text2)' }}>Performance annuelle</div>
-          {leg([{ l: 'Dépenses', c: '#e8504a' }, { l: 'Payouts', c: '#1db87a' }, { l: 'Net', c: 'var(--blue-border)' }])}
+          {leg([{ l: 'Dépenses', c: 'var(--red)' }, { l: 'Payouts', c: 'var(--green)' }, { l: 'Net', c: 'var(--blue)' }])}
         </div>
         <div style={{ position: 'relative', height: '220px' }}><canvas ref={yRef} /></div>
       </div>
       <div style={{ ...cardS, padding: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text2)' }}>Performance mensuelle</div>
-          {leg([{ l: 'Dépenses', c: '#e8504a' }, { l: 'Payouts', c: '#1db87a' }, { l: 'Net', c: 'var(--blue-border)' }])}
+          {leg([{ l: 'Dépenses', c: 'var(--red)' }, { l: 'Payouts', c: 'var(--green)' }, { l: 'Net', c: 'var(--blue)' }])}
         </div>
         <div style={{ position: 'relative', height: '220px' }}><canvas ref={mRef} /></div>
       </div>
@@ -70,7 +74,7 @@ function AnalyticsCharts({ cLabels, cSpent, cPayout, cNet, yLabels, ySpent, yPay
 export default function AnalyticsPage() {
   const t = useT()
   const {
-    user, firms, rates, S,
+    user, firms, rates, S, currency,
     toEUR, fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount,
     totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
@@ -104,6 +108,17 @@ export default function AnalyticsPage() {
   const mLabels = mSlice.map(ym => { const p = ym.split('-'); return MONTHS_FR[parseInt(p[1]) - 1] + ' ' + p[0].slice(2) })
   const mSpent = mSlice.map(ym => +byMonth[ym].spent.toFixed(2)), mPayout = mSlice.map(ym => +byMonth[ym].payout.toFixed(2)), mNet = mSlice.map(ym => +(byMonth[ym].payout - byMonth[ym].spent).toFixed(2))
 
+  // ⚠️ Les séries sont calculées en EUR (toEUR), mais les CARTES du haut suivent
+  // la devise choisie dans les réglages. La page affichait donc « +9057.38 $ »
+  // au-dessus de graphiques gradués en « 18000€ » — les mêmes montants, deux
+  // unités, sur le même écran. On convertit les séries plutôt que de se contenter
+  // de changer le symbole : sinon l'axe porterait un « $ » sur des chiffres en euros.
+  const sym = currency === 'eur' ? '€' : '$'
+  const conv = v => currency === 'eur' ? v : +(v / (rates.USD || 1)).toFixed(2)
+  const cSpentD = cSpent.map(conv), cPayoutD = cPayout.map(conv), cNetD = cNet.map(conv)
+  const ySpentD = ySpent.map(conv), yPayoutD = yPayout.map(conv), yNetD = yNet.map(conv)
+  const mSpentD = mSpent.map(conv), mPayoutD = mPayout.map(conv), mNetD = mNet.map(conv)
+
   return (
     <div className="page-pad" style={{ maxWidth: '1160px', margin: '0 auto', padding: '32px 24px 60px' }}>
       <div style={{ marginBottom: '28px' }}>
@@ -119,7 +134,7 @@ export default function AnalyticsPage() {
       {!cLabels.length
         ? <div style={{ ...S.card, padding: '60px', textAlign: 'center', color: 'var(--text3)' }}>{t('app.analytics.empty')}</div>
         : <>
-          <AnalyticsCharts cLabels={cLabels} cSpent={cSpent} cPayout={cPayout} cNet={cNet} yLabels={yLabels} ySpent={ySpent} yPayout={yPayout} yNet={yNet} mLabels={mLabels} mSpent={mSpent} mPayout={mPayout} mNet={mNet} />
+          <AnalyticsCharts sym={sym} cLabels={cLabels} cSpent={cSpentD} cPayout={cPayoutD} cNet={cNetD} yLabels={yLabels} ySpent={ySpentD} yPayout={yPayoutD} yNet={yNetD} mLabels={mLabels} mSpent={mSpentD} mPayout={mPayoutD} mNet={mNetD} />
           <EquityOverlayChart firms={firms} user={user} />
         </>
       }

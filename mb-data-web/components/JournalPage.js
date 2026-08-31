@@ -195,7 +195,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       const datasets = [
         {
           label:'Balance', data:data.balances,
-          borderColor:'#1db87a', backgroundColor:'var(--green-bg)',
+          borderColor: CH.green, backgroundColor: CH.greenFill,
           fill:true, tension:0.25, pointRadius:data.labels.length>30?0:3, borderWidth:2,
         },
       ]

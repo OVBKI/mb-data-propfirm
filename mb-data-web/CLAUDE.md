@@ -1919,3 +1919,53 @@ question de peinture, il faut mesurer des PIXELS.
 Un frère non positionné d'un élément en `position: fixed` passe **dessous**, même
 si ce dernier a `z-index: 0`. Tout conteneur de contenu voisinant un fond fixe
 doit porter son propre `position` + `z-index`.
+
+## /app/analytics était noire — 2026-08
+
+Constat utilisateur : « c'est noir on comprend rien ». Les trois graphiques
+avaient des aires **noir pur** et la série « Net » était noire sur fond noir.
+
+### La cause : un `var()` passé à un canvas
+Pendant la migration Abyss, les couleurs de séries ont été migrées vers des
+jetons — `backgroundColor: '#1db87a'` est devenu `'var(--green-bg)'`. Mais
+**Chart.js peint dans un `<canvas>`, qui ne résout pas `var()`**. Une couleur
+invalide n'y lève AUCUNE erreur : le contexte 2D garde son `fillStyle` par
+défaut, c'est-à-dire **noir**. Quatre occurrences dans `/app/analytics`, une
+cinquième sur la courbe d'equity de `JournalPage`.
+
+C'est exactement le piège que CLAUDE.md documentait déjà (« Chart.js est une
+exception… utiliser `chartColors()` ») — sauf que `chartColors()` ne rendait que
+la grille, les graduations et le texte. **Aucune couleur de SÉRIE.** Le helper
+existait donc, mais il ne couvrait pas ce dont les graphiques avaient besoin, et
+la migration a fait ce qui semblait naturel.
+
+`chartColors()` rend désormais aussi `red / green / blue` et leurs variantes
+translucides `redFill / greenFill / blueFill`, lues sur les jetons calculés.
+Trois tests figent le contrat : toutes les clés présentes, **jamais un `var()`**,
+et uniquement des couleurs qu'un canvas sait lire (`#…` ou `rgb(a)…`).
+
+### Trois autres défauts de lecture corrigés au passage
+1. **Dollars et euros sur le même écran.** Les cartes du haut suivent la devise
+   choisie dans les réglages (« +9057.38 $ ») pendant que les axes étaient
+   gradués en euros en dur (« 18000€ ») — les mêmes montants, deux unités. Les
+   séries sont maintenant CONVERTIES (pas seulement re-symbolisées : mettre un
+   « $ » sur des chiffres en euros aurait été pire), et `sym` est en dépendance
+   de l'effet pour que changer de devise redessine.
+2. **`beginAtZero: true`.** Sur des montants, un axe qui ne part pas de zéro
+   exagère les écarts et, surtout, escamote les petites barres : avec une base à
+   7 000 (ce que Chart.js choisissait), une dépense de 1 596 ne dessine plus rien.
+3. **Une série = une couleur.** « Net » virait au ROUGE quand il était négatif —
+   le rouge exact de « Dépenses ». Sur un mois sans payout, la seule barre rouge
+   visible était donc le Net, qu'on lisait comme une dépense. Le signe se lit déjà
+   au sens de la barre ; la couleur n'a pas à le redire.
+
+### Reste ouvert
+**Le graphique « Performance annuelle » perd la série « Dépenses »** quand il n'y
+a qu'UNE année : les deux autres barres se dessinent, avec des largeurs inégales
+et calées à gauche. Le graphique mensuel, lui, dessine bien les trois séries —
+c'est donc propre au cas « une seule catégorie ». Un essai de calibrage explicite
+(`categoryPercentage` / `barPercentage` / `maxBarThickness`) a rétréci les barres
+sans ramener la série ni égaliser les largeurs ; il a été **retiré** plutôt que
+gardé sans explication. À reprendre.
+
+488 tests (+3).

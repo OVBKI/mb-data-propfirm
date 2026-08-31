@@ -1,6 +1,6 @@
 // lib/theme.test.js — helpers de thème.
 import { describe, it, expect } from 'vitest'
-import { readableOn } from './theme'
+import { readableOn, chartColors } from './theme'
 
 // Une couleur de MARQUE ne suit pas le thème : ni '#fff' ni --text-inverse ne
 // conviennent. C'est la luminance du fond qui décide.
@@ -66,6 +66,33 @@ describe('readableOn', () => {
     }
     for (const brand of OK) {
       expect(ratio2(brand, readableOn(brand)), brand).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+})
+
+// ── Aucune couleur de graphique ne doit être un var() ───────────────────────
+// Chart.js peint dans un <canvas>, qui ne résout PAS `var()`. Une chaîne
+// invalide n'y lève aucune erreur : le contexte 2D garde son fillStyle par
+// défaut, c'est-à-dire NOIR. C'est ainsi que /app/analytics s'était retrouvée
+// avec trois graphiques aux aires noires et une série invisible sur son propre
+// fond, sans le moindre message dans la console.
+describe('chartColors', () => {
+  const CLES = ['grid', 'tick', 'text', 'red', 'green', 'blue', 'redFill', 'greenFill', 'blueFill']
+
+  it('fournit toutes les couleurs dont les graphiques ont besoin', () => {
+    const CH = chartColors()
+    for (const k of CLES) expect(CH[k], k).toBeTruthy()
+  })
+
+  it('ne rend JAMAIS un var() — un canvas le peindrait en noir', () => {
+    const CH = chartColors()
+    for (const k of CLES) expect(String(CH[k]), k).not.toMatch(/var\(/)
+  })
+
+  it('ne rend que des couleurs CSS que le canvas sait lire', () => {
+    const CH = chartColors()
+    for (const k of CLES) {
+      expect(String(CH[k]), k).toMatch(/^(#[0-9a-f]{3,8}|rgba?\()/i)
     }
   })
 })
