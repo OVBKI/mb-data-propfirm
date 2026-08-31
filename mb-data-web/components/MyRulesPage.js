@@ -136,7 +136,7 @@ function PlanTab({ user, showToast }) {
         .from('trading_plan')
         .select('content, updated_at')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
       if (error && error.code !== 'PGRST116') {
         console.warn('[plan load]', error)
       }

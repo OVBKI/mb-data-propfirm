@@ -83,7 +83,7 @@ export default function ProfilePage() {
   const loadAll = useCallback(async (userId) => {
     setLoadingData(true)
     const [profRes, acctRes, payRes, jeRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('user_id', userId).single(),
+      supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('accounts').select('id, name, status, plan_size, firm_id, rithmic_account_id, liquidated_at, buy_date, firms(name, color)').eq('user_id', userId),
       supabase.from('payouts').select('id, date, amount, account_id, accounts(name, firms(name, color))').eq('user_id', userId).order('date', { ascending: false }),
       supabase.from('journal_entries').select('id, date, pnl, instrument').eq('user_id', userId),

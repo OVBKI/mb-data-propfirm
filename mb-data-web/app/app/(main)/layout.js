@@ -205,13 +205,19 @@ export default function AppLayout({ children }) {
     }
   }, [user, loading, firms.length, marketMode])
 
+  // ⚠️ maybeSingle() et NON single(). PostgREST répond 406 « Not Acceptable »
+  // quand .single() ne trouve pas EXACTEMENT une ligne — et une ligne profiles
+  // absente est un état normal (compte jamais passé par /app/profile). Le code
+  // gérait déjà le cas via le code PGRST116, mais la requête partait quand même
+  // en erreur HTTP : deux lignes rouges dans la console de chaque utilisateur
+  // concerné, à chaque chargement de page. maybeSingle() rend null sans erreur.
   async function loadProfile() {
     if (!user) return
     const { data, error } = await supabase
       .from('profiles')
       .select('username,display_name,avatar_url')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
     if (error && error.code !== 'PGRST116') console.warn('[profile load]', error)
     setProfile(data || { username: null, display_name: null, avatar_url: null })
   }

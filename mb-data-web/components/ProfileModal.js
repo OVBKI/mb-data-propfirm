@@ -45,7 +45,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
         .from('profiles')
         .select('username, display_name, bio, is_public')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
       if (!mounted) return
       if (error && error.code !== 'PGRST116') {
         // PGRST116 = no rows (le profil n'existe pas encore — le trigger doit le créer)
