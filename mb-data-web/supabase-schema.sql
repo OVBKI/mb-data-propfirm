@@ -795,9 +795,51 @@ begin
   return new;
 end $$;
 
+-- ⚠️ REMPLACÉ par le trigger de STATEMENT ci-dessous. Gardé pour mémoire : la
+-- version BEFORE ... FOR EACH ROW compte juste tant qu'un INSERT ne porte
+-- qu'UNE ligne. Depuis la réplication d'un trade sur plusieurs comptes
+-- (lib/tradeReplication.js), un seul INSERT en écrit N — et les lignes déjà
+-- traitées par la même commande ne sont PAS visibles du `select count(*)` des
+-- suivantes (règle de visibilité par command id). Les N déclenchements
+-- lisaient donc tous le MÊME compteur, et un utilisateur à 99 trades sur 100
+-- pouvait en insérer cinq d'un coup pour finir à 104.
 drop trigger if exists journal_entries_quota on journal_entries;
-create trigger journal_entries_quota before insert on journal_entries
-  for each row execute function public.enforce_trade_quota();
+
+-- Compte APRÈS l'insertion, une seule fois par statement : à ce moment toutes
+-- les lignes de la commande sont visibles, donc le total est exact quel que
+-- soit leur nombre. Lever ici annule TOUT le statement — c'est ce qu'on veut :
+-- une réplication partiellement écrite laisserait un journal incohérent, sans
+-- rien pour le signaler.
+--
+-- Le seuil passe de `>=` à `>` parce qu'on compte désormais les lignes une fois
+-- posées : à 100 trades autorisés, un compte qui en totalise exactement 100
+-- après insertion est en règle.
+create or replace function public.enforce_trade_quota_stmt()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare r record; v_max int; v_count int;
+begin
+  -- Un même statement peut toucher plusieurs mois (import) et, en théorie,
+  -- plusieurs utilisateurs : on vérifie chaque couple concerné.
+  for r in select distinct user_id, date_trunc('month', date)::date as m from new_rows loop
+    v_max := public.plan_limit_for(r.user_id, 'maxTradesPerMonth');
+    continue when v_max is null;   -- palier illimité
+    select count(*) into v_count from journal_entries
+      where user_id = r.user_id
+        and date >= r.m
+        and date <  (r.m + interval '1 month')::date;
+    if v_count > v_max then
+      raise exception 'PLAN_LIMIT_REACHED:maxTradesPerMonth:%', v_max
+        using errcode = 'check_violation';
+    end if;
+  end loop;
+  return null;
+end $$;
+
+drop trigger if exists journal_entries_quota_stmt on journal_entries;
+create trigger journal_entries_quota_stmt
+  after insert on journal_entries
+  referencing new table as new_rows
+  for each statement execute function public.enforce_trade_quota_stmt();
 
 -- Index de comptage : sans lui, chaque insert de trade scanne la table.
 create index if not exists journal_entries_user_month_idx

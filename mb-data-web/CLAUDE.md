@@ -2650,3 +2650,74 @@ de payout. Troisième confirmation indirecte de son arrêt de vente. Le programm
 reste dans le comparateur pour les comptes existants.
 
 616 tests (+9).
+
+---
+
+## Un trade, plusieurs comptes — réplication au journal (2026-08)
+
+Demande utilisateur : *« je veux que dans le journal de trading je puisse copier
+les comptes que je choisis pour éviter de noter plusieurs fois le même
+résultat »*. C'est le cas du copy trading : la même stratégie sur trois comptes
+financés donne trois fois le même résultat, saisi trois fois.
+
+La saisie répétée n'est pas seulement pénible — **c'est là que les écarts se
+glissent** (une date décalée, un montant retapé de travers), et un journal qui ne
+correspond plus aux relevés de la firme ne sert plus à rien.
+
+| Fichier | Rôle |
+|---|---|
+| `lib/tradeReplication.js` | Cibles éligibles + fabrication des payloads. **Pur, sans dépendance** |
+| `components/TradeEntryModal.js` | La section à cocher + les deux chemins d'écriture |
+
+### Deux chemins, pas un
+| | Quand | Ce que ça fait |
+|---|---|---|
+| **Création** | On coche avant d'enregistrer | Le bouton devient « Ajouter sur 3 comptes » et écrit les 3 lignes |
+| **Édition** | Le trade existe déjà | Un bouton **Dupliquer** séparé — il copie ce qui est À L'ÉCRAN et **ne touche pas** au trade d'origine |
+
+Fusionner les deux aurait rendu le bouton ambigu (« est-ce que ça enregistre
+aussi mes modifications ? ») sur une opération qui écrit plusieurs lignes.
+
+### Les copies sont INDÉPENDANTES
+Pas de lien entre elles : modifier ou supprimer l'une ne touche pas les autres.
+La demande porte sur la **saisie**, pas sur la synchronisation — et lier les
+copies ouvrirait des questions qu'il faudrait trancher (supprimer l'une
+supprime-t-elle les autres ?) pour un besoin qui n'a pas été exprimé.
+
+De même, le montant est recopié **à l'identique**. Une mise à l'échelle selon la
+taille du compte serait une invention, et elle serait invisible.
+
+### Trois garde-fous
+1. **Le compte source est exclu** de la liste — se répliquer sur soi-même
+   créerait un doublon exact que rien ne distinguerait ensuite.
+2. **Les comptes échoués sont exclus**, comme dans le sélecteur principal.
+   Proposer ici un compte absent de là-bas serait incohérent.
+3. **La sélection est nettoyée** quand le compte principal change, et **remise à
+   zéro** à chaque ouverture du modal. Un modal rouvert avec des cases encore
+   cochées écrirait en silence sur des comptes qu'on croyait laissés derrière.
+
+### ⚠️ Le quota de trades comptait faux sur un INSERT multi-lignes
+Effet de bord réel de cette fonctionnalité. Le trigger `journal_entries_quota`
+était `BEFORE INSERT … FOR EACH ROW` et faisait un `select count(*)`. Sur un
+INSERT de N lignes, les lignes déjà traitées par la **même commande** ne sont pas
+visibles des suivantes (visibilité par command id) : les N déclenchements
+lisaient donc le **même** compteur. Un utilisateur à 99 trades sur 100 pouvait en
+insérer cinq d'un coup et finir à 104.
+
+Remplacé par un trigger **de statement** (`AFTER INSERT … REFERENCING NEW TABLE
+… FOR EACH STATEMENT`) qui compte une fois, après insertion, quand toutes les
+lignes sont visibles. Le seuil passe de `>=` à `>` puisqu'on compte désormais les
+lignes une fois posées.
+
+**SQL à jouer sur Supabase** (`supabase-schema.sql`, section « Trades »). Sans
+lui la fonctionnalité marche, mais le quota reste sous-évalué du nombre de copies
+— sans effet tant que Stripe n'est pas en live, à corriger avant.
+
+### Pourquoi un INSERT unique et pas une boucle
+Un INSERT multi-lignes est **atomique** en Postgres : si le quota refuse la
+troisième copie, aucune n'est écrite. Une boucle de `insert()` séparés laisserait
+au contraire un journal à moitié rempli, sans rien pour le signaler. Le message
+d'erreur le dit explicitement — « aucune copie créée » — pour éviter d'aller
+vérifier compte par compte.
+
+632 tests (+16, sur le module pur).
