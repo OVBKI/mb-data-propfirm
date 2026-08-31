@@ -2340,3 +2340,111 @@ est un tiret, la mention exacte restant dans l'infobulle.
   catalogue, est **tranchée** : les deux, selon la phase.
 
 556 tests (+25).
+
+---
+
+## My Funded Futures — cinq articles de plus (2026-08)
+
+*Rapid Plan 150k*, *Intraday Drawdown Explained*, *Rapid EOD 50k* et les deux
+guides **Builder** (25K et 50K). Le premier ferme les réserves de la passe
+précédente ; les quatre autres ouvrent des règles que la fiche n'avait pas.
+
+### Le 150K confirme les deux valeurs qui avaient dû être déduites
+
+| | Déduit la passe précédente | Publié |
+|---|---|---|
+| Contrats sim funded | 10 minis / 100 micros | **identique** |
+| Buffer de payout | 4 600 $ (formule `max loss + 100 $`) | **identique** |
+
+La formule tient donc sur les **quatre** tailles. Les mentions « article non
+fourni » ont été retirées des cellules, et un test recalcule la formule plutôt
+que de figer les montants.
+
+### Ce que le seuil intraday mesure — dans les deux sens
+
+Le pic d'équité inclut les gains **réalisés ET latents**. Une position ouverte en
+gain fait donc monter le seuil immédiatement ; une position ouverte **en perte**
+peut casser le compte **sans jamais être fermée** — « if your equity, including
+open trades, falls below the most recently adjusted drawdown limit, your account
+will breach ». Le seuil ne redescend jamais.
+
+Ajouté aussi : où lire sa marge sur Tradovate (colonnes `DRAWDOWN AUTO LIQ LEVEL`
+et `DIST DRAWDOWN` du panneau Accounts).
+
+### Le verrou, énoncé en règle générale
+
+Les guides Builder le disent explicitement : le seuil **se fige définitivement à
+100 $ au-dessus du solde de départ**. C'est la même formule que le 25 100 $ du
+Rapid 25K, mais énoncée en général — le verrou d'évaluation est donc désormais
+chiffré aux quatre tailles au lieu de renvoyer à l'article 25K.
+
+Et une conséquence que la firme assume par écrit : le compte financé partant de
+**0 $**, le solde **peut devenir négatif** avant que le seuil ne remonte au point
+mort. « This is expected and normal ».
+
+### Rapid EOD — la seule famille qui garde l'EOD en financé
+
+C'est sa vraie différence avec le Rapid standard, qui bascule en intraday à ce
+moment-là. Sa phase financée était totalement absente de la fiche : solde de
+départ 0 $, max loss 2 000 $ **en EOD trailing**, aucune DLL, 3 minis / 30 micros,
+**news T1 interdites**, inactivité 7 jours, **3 comptes financés maximum**.
+
+Sa politique de retrait a **deux seuils distincts**, ce qu'aucune autre famille ne
+fait : le buffer de 2 100 $ ne vaut que pour le **premier** payout ; ensuite chaque
+payout se débloque dès **500 $ de profit net depuis le précédent**. Et **aucun
+plafond par cycle**.
+
+### Builder — la fiche en manquait l'essentiel
+
+⚠️ **Aucune cohérence en évaluation, mais 50 % AU PAYOUT.** Dire « aucune
+cohérence » tout court laissait croire qu'on retire librement. La meilleure
+journée ne peut pas dépasser la moitié du profit du cycle ; le calcul se fait au
+moment de la demande et **se remet à zéro après chaque payout approuvé**.
+
+| | Builder 25K | Builder 50K | Add-On 50K |
+|---|---|---|---|
+| Max loss | 1 000 $ | 2 000 $ | **1 500 $** |
+| Buffer (`MLL + 100 $`) | 1 100 $ | 2 100 $ | **1 600 $** |
+| Profit net exigé | 250 $ | 500 $ | 500 $ |
+| Plafond par cycle | 1 000 $ | 2 000 $ | 2 000 $ |
+| Minimum | 250 $ | 500 $ | 500 $ |
+| Comptes simultanés | **2** | **1** | 1 |
+| DLL | **aucune** | 1 000 $ | 1 000 $ |
+
+Communs aux deux : split **80/20**, **5 payouts simulés maximum**, **2 journées
+tradées** par cycle, premier payout **48 h** après le premier trade, puis passage
+en live après le 5ᵉ payout approuvé.
+
+⚠️ Le `jourMin` financé pointe sur ces 2 journées de cycle, **pas** sur le 1 jour
+de l'évaluation — la même confusion que celle corrigée chez Tradeify.
+
+**En live, la DLL survit en 50K mais pas en 25K.** Et casser le compte live
+déclenche **21 jours de gel** : tout trading sim est interdit, et aucun achat
+d'évaluation, reset ou compte supplémentaire n'est possible.
+
+**Le prix était marqué « non public »** — le guide 50K le publie : **153 $** en
+option par défaut, **125 $** en Add-On, avec des paliers à -30 % (107 / 87 $) et
+-40 % (92 / 75 $, deux utilisations). L'Add-On est moins cher **parce que** son
+coussin est plus serré ; c'est le seul écart entre les deux options.
+
+### Le plafond de 5 comptes financés n'est pas général
+Plusieurs plans en publient un plus bas, propre au plan : Builder 50K **1 seul**,
+Builder 25K **2**, Rapid EOD **3**, Flex 50K **3** depuis le 24 mars. Servir le 5
+à un porteur Builder 50K lui promettrait quatre comptes qu'il ne peut pas ouvrir.
+
+### Un rendu unifié pour les données absentes
+`cleanCell` écartait « non publié » vers `—`, mais pas les marqueurs
+d'indisponibilité (`n/a`, `non dispo`) : le Builder 100K affichait « non dispo »
+en toutes lettres dans une colonne de pourcentages. Le tri s'appuie désormais sur
+`isUnavailableValue`, **le même arbitre que la résolution par programme** — rendu
+et résolution partagent ainsi une seule définition. Elle laisse passer `AUCUN`,
+qui est une vraie règle et non une donnée manquante.
+
+### Reste ouvert
+- **Prix du Builder 25K** : ni l'un ni l'autre des deux guides ne le donne.
+- **Flex** reste absent de tous les articles fournis (cohérence, journées
+  minimum, contrats) — seul son plafond de 3 comptes est documenté.
+- **Pro** n'a pas d'article dédié parmi les dix reçus : ses chiffres viennent du
+  tableau récapitulatif de « Traders Evaluation Simplified ».
+
+578 tests (+22).

@@ -1002,3 +1002,196 @@ describe('My Funded Futures — Builder et news', () => {
     expect(v).toMatch(/tombe à 3 pour TOUS/)
   })
 })
+
+// ── My Funded Futures : cinq articles de plus ───────────────────────────────
+// « Rapid Plan 150k », « Intraday Drawdown Explained », « Rapid EOD 50k » et
+// les deux guides Builder (25K et 50K). Le 150K confirme deux valeurs qui
+// avaient dû être DÉDUITES faute d'article ; les quatre autres ouvrent des
+// règles que la fiche n'avait pas du tout.
+describe('My Funded Futures — le 150K confirme les déductions', () => {
+  const r = (key, plan) => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  // Contrats et buffer du 150K avaient été repris de la formule, faute
+  // d'article. L'article publié depuis donne exactement les mêmes chiffres.
+  it('confirme 10 minis / 100 micros et un buffer de $4,600', () => {
+    expect(extractModelSegment(r('Contrats max éval (mini)', '150k'), 'Rapid')).toBe('10')
+    expect(extractModelSegment(r('Contrats max éval (micro)', '150k'), 'Rapid')).toBe('100')
+    expect(r('Buffer payout (Rapid)', '150k')).toBe('$4,600')
+  })
+
+  // La mention « non confirmé » n'a plus lieu d'être sur ces deux cellules.
+  it('ne porte plus de réserve sur les valeurs du 150K', () => {
+    expect(r('Contrats sim funded', '150k')).not.toMatch(/non fourni|non confirmé/i)
+    expect(r('Buffer payout (Rapid)', '150k')).not.toMatch(/formule|non fourni/i)
+  })
+
+  // Le buffer suit la formule sur les QUATRE tailles, 150K compris.
+  it('vérifie la formule max loss + $100 sur les quatre tailles', () => {
+    const cash = s => Number(String(s).match(/\$([\d,]+)/)[1].replace(/,/g, ''))
+    for (const [plan, dd] of [['25k', 1000], ['50k', 2000], ['100k', 3000], ['150k', 4500]]) {
+      expect(cash(r('Buffer payout (Rapid)', plan)), plan).toBe(dd + 100)
+    }
+  })
+})
+
+describe('My Funded Futures — mécanique du drawdown intraday', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  // Le seuil suit le PIC d'équité, latent compris. Une position ouverte en gain
+  // le fait monter tout de suite ; une position en perte peut casser le compte
+  // sans jamais être fermée.
+  it('dit que le latent compte dans les DEUX sens', () => {
+    const v = r('Drawdown intraday — ce qui compte')
+    expect(v).toMatch(/RÉALISÉS ET LATENTS/)
+    expect(v).toMatch(/ne redescend JAMAIS/)
+    expect(v).toMatch(/positions ouvertes incluses/)
+  })
+
+  // La règle générale du verrou, énoncée telle quelle par les guides Builder.
+  it('énonce le verrou à $100 au-dessus du solde de départ', () => {
+    const v = r('Verrouillage du max loss')
+    expect(v).toMatch(/DÉFINITIVEMENT/)
+    expect(v).toMatch(/\$100 au-dessus du solde de départ/)
+  })
+
+  // Le verrou d'évaluation est désormais chiffré aux quatre tailles.
+  it('chiffre le verrou d’évaluation à chaque taille', () => {
+    for (const [plan, seuil] of [['25k', '25,100'], ['50k', '50,100'],
+                                 ['100k', '100,100'], ['150k', '150,100']]) {
+      expect(r('Drawdown Rapid — éval contre financé', plan), plan)
+        .toMatch(new RegExp('\\$' + seuil))
+    }
+  })
+
+  // Un solde financé qui part de $0 PEUT devenir négatif — la firme le dit.
+  it('prévient que le solde financé peut passer négatif', () => {
+    expect(r('Solde de départ sim funded')).toMatch(/NÉGATIF/)
+  })
+
+  it('explique où lire le drawdown sur Tradovate', () => {
+    const v = r('Suivi du drawdown sur Tradovate')
+    expect(v).toMatch(/DRAWDOWN AUTO LIQ LEVEL/)
+    expect(v).toMatch(/DIST DRAWDOWN/)
+  })
+})
+
+// Le Rapid EOD est la seule famille qui garde son drawdown de CLÔTURE en
+// financé — le Rapid standard, lui, bascule en intraday à ce moment-là.
+describe('My Funded Futures — Rapid EOD', () => {
+  const r = key => PROPFIRM_RULES['My Funded Futures'].rules[key]['50k']
+
+  it('garde l’EOD en phase financée, contrairement au Rapid standard', () => {
+    const v = r('Rapid EOD — phase financée')
+    expect(v).toMatch(/EOD trailing/)
+    expect(v).toMatch(/jamais en séance/)
+    expect(v).toMatch(/3 comptes financés/)
+  })
+
+  // Deux seuils distincts : le buffer ne vaut que pour le PREMIER payout.
+  it('distingue le buffer du premier payout du seuil des suivants', () => {
+    const v = r('Rapid EOD — payouts')
+    expect(v).toMatch(/\$2,100/)
+    expect(v).toMatch(/PREMIER payout/)
+    expect(v).toMatch(/\$500 de profit net depuis le précédent/)
+    expect(v).toMatch(/Aucun plafond/)
+  })
+
+  it('n’existe qu’en 50K', () => {
+    for (const p of ['25k', '100k', '150k']) {
+      expect(PROPFIRM_RULES['My Funded Futures'].rules['Rapid EOD — phase financée'][p], p)
+        .toBe('non dispo')
+    }
+  })
+})
+
+// ⚠️ Builder n'a AUCUNE cohérence en ÉVALUATION — mais 50% AU PAYOUT. Dire
+// « aucune cohérence » tout court laisserait croire qu'on retire librement.
+describe('My Funded Futures — Builder', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  it('sépare l’absence de cohérence en éval du 50% au payout', () => {
+    expect(extractModelSegment(r('Règle de cohérence (eval)', '25k'), 'Builder'))
+      .toMatch(/AUCUNE/)
+    const v = r('Cohérence Builder (payout)')
+    expect(v).toMatch(/^50%/)
+    expect(v).toMatch(/remise à zéro après chaque payout/)
+    expect(v).toMatch(/Rien de tel pendant l'évaluation/)
+  })
+
+  // Le buffer suit la même formule que le Rapid, mais l'Add-On a le sien.
+  it('donne un buffer par option, formule max loss + $100', () => {
+    expect(r('Buffer payout (Builder)', '25k')).toBe('$1,100')
+    const cinquante = r('Buffer payout (Builder)', '50k')
+    expect(cinquante).toMatch(/\$2,100/)
+    expect(cinquante).toMatch(/\$1,600/)   // Add-On, max loss $1,500
+  })
+
+  // Les deux tailles n'ont ni le même plafond, ni le même minimum.
+  it('donne une politique de payout par taille', () => {
+    expect(r('Builder — politique de payout', '25k')).toMatch(/\$1,000 par cycle/)
+    expect(r('Builder — politique de payout', '25k')).toMatch(/\$250/)
+    expect(r('Builder — politique de payout', '50k')).toMatch(/\$2,000 par cycle/)
+    expect(r('Builder — politique de payout', '50k')).toMatch(/\$500/)
+    for (const p of ['25k', '50k']) {
+      expect(r('Builder — politique de payout', p), p).toMatch(/80\/20/)
+      expect(r('Builder — politique de payout', p), p).toMatch(/5 payouts simulés/)
+    }
+  })
+
+  // ⚠️ Ce n'est PAS le 1 jour de l'évaluation : c'est l'exigence de RETRAIT.
+  it('exige 2 journées tradées dans le cycle pour retirer', () => {
+    expect(r('Jours min avant payout (Builder)', '25k')).toMatch(/2 journées/)
+    expect(extractModelSegment(r('Jours de trading min (eval)', '25k'), 'Builder'))
+      .toMatch(/1 jour/)
+  })
+
+  it('permet le premier payout 48 h après le premier trade', () => {
+    expect(r('Builder — premier payout')).toMatch(/48 heures/)
+  })
+
+  // Le nombre de comptes simultanés n'est PAS le même entre les deux tailles.
+  it('limite à 2 comptes en 25K et à UN SEUL en 50K', () => {
+    expect(r('Builder — comptes simultanés', '25k')).toMatch(/2 comptes/)
+    expect(r('Builder — comptes simultanés', '50k')).toMatch(/UN SEUL/)
+  })
+
+  it('décrit le passage en live après le 5e payout', () => {
+    expect(r('Builder — passage en live', '25k')).toMatch(/5e payout/)
+    expect(r('Builder — passage en live', '25k')).toMatch(/AUCUNE perte journalière/)
+    // ⚠️ En 50K la DLL SURVIT au passage en live — pas en 25K.
+    expect(r('Builder — passage en live', '50k')).toMatch(/DLL de \$1,000 maintenue en live/)
+  })
+
+  // Sanction lourde et peu connue : casser le live gèle aussi le sim.
+  it('documente les 21 jours de gel après un breach live', () => {
+    const v = r('Builder — après un breach live')
+    expect(v).toMatch(/21 jours/)
+    expect(v).toMatch(/aucun achat/i)
+  })
+
+  // ⚠️ « Pricing non public » était faux : le guide 50K publie les deux options.
+  it('publie le prix des deux options du 50K', () => {
+    const v = r('Prix Builder', '50k')
+    expect(v).toMatch(/\$153/)
+    expect(v).toMatch(/\$125/)
+    expect(v).not.toMatch(/non public/i)
+  })
+})
+
+// Le plafond général de 5 comptes financés ne vaut pas partout : plusieurs
+// plans en publient un plus BAS, propre au plan.
+describe('My Funded Futures — plafonds propres à un plan', () => {
+  const r = plan => PROPFIRM_RULES['My Funded Futures'].rules['Plafonds propres à un plan'][plan]
+
+  it('donne les plafonds par plan là où ils diffèrent du général', () => {
+    expect(extractModelSegment(r('50k'), 'Builder')).toMatch(/UN SEUL/)
+    expect(extractModelSegment(r('50k'), 'Rapid EOD')).toMatch(/3 comptes/)
+    expect(extractModelSegment(r('50k'), 'Flex')).toMatch(/3 comptes/)
+    expect(extractModelSegment(r('25k'), 'Builder')).toMatch(/2 comptes/)
+  })
+
+  it('reste plus bas que le plafond général de 5', () => {
+    expect(PROPFIRM_RULES['My Funded Futures'].rules['Comptes funded simul.']['25k'])
+      .toMatch(/5 maximum/)
+  })
+})

@@ -637,11 +637,15 @@ export const FIRM_COMPARISON_MAP = {
           dailyDrawdown: { key: 'Daily Loss Limit' },
           // ⚠️ Plus de repli sur le drawdown. Il servait quand on croyait le
           // Builder à buffer fixe ; le drawdown trail, ce n'est donc pas un
-          // coussin de retrait. Aucun buffer Builder n'est publié.
-          buffer: null,
-          jourMin: null,
+          // coussin de retrait. Le vrai buffer est publié à part.
+          buffer: { key: 'Buffer payout (Builder)' },
+          // Le cycle de payout exige 2 journées tradées — ce n'est pas le
+          // minimum de l'évaluation (1 jour), c'est l'exigence de RETRAIT.
+          jourMin: { key: 'Jours min avant payout (Builder)' },
           minDailyProfit: null,
-          consistance: null,
+          // ⚠️ PAS null. Builder n'a aucune cohérence en ÉVALUATION, mais 50%
+          // au PAYOUT — laisser vide laisserait croire qu'on retire librement.
+          consistance: { key: 'Cohérence Builder (payout)' },
         },
       },
     ],
@@ -1147,6 +1151,17 @@ export function cleanCell(value, kind) {
   // rendu honnête d'une donnée que la firme ne publie pas est un tiret, la
   // mention exacte restant dans l'infobulle.
   if (/^non\s+(publi|document|pr[ée]cis|renseign|communiqu|repris)/i.test(raw)) {
+    return { text: '—', title: rawTitle }
+  }
+
+  // Même raisonnement pour les marqueurs d'INDISPONIBILITÉ — 'n/a', 'non dispo',
+  // '-'. Ils veulent dire « ce programme n'existe pas à cette taille », ce qui se
+  // rend par un tiret, pas par les mots eux-mêmes dans une colonne de
+  // pourcentages. `isUnavailableValue` sert déjà d'arbitre à la résolution par
+  // programme : le rendu et la résolution s'accordent ainsi sur une seule
+  // définition. Elle laisse volontairement passer 'AUCUN', qui est une VRAIE
+  // règle (« pas de buffer exigé ») et non une donnée manquante.
+  if (isUnavailableValue(raw)) {
     return { text: '—', title: rawTitle }
   }
 
