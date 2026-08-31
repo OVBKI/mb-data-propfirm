@@ -565,7 +565,10 @@ export const FIRM_COMPARISON_MAP = {
     models: [
       {
         name: 'Rapid',
-        ddType: 'Trailing',   // 'Drawdown Rapid (intraday)' (4% intraday trailing)
+        // ⚠️ Le Rapid change de MÉCANIQUE entre les deux phases, pas de montant :
+        // « Maximum Loss Limit (EOD) » dans les tableaux d'évaluation,
+        // « Drawdown Type : Intra-day trailing » dans la section sim funded.
+        ddType: 'EOD / Intraday',
         challenge: {
           drawdown: { key: 'Drawdown Rapid (intraday)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },        // AUCUN (string notes Builder/LIVE exceptions)
@@ -619,7 +622,10 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Builder',
-        ddType: 'Static',   // 'Drawdown Builder (buffer)' (fixed buffer, no trail)
+        // ⚠️ PAS 'Static'. Le tableau officiel donne « Drawdown Type : EOD
+        // Trailing » pour les trois Builder. La fiche le décrivait comme un
+        // buffer fixe qui ne trail jamais — l'inverse de la réalité.
+        ddType: 'EOD',
         challenge: {
           drawdown: { key: 'Drawdown Builder (buffer)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },        // Builder: $1,000 soft pause (in string)
@@ -627,9 +633,12 @@ export const FIRM_COMPARISON_MAP = {
           consistance: { key: 'Règle de cohérence (eval)' },
         },
         funded: {
-          drawdown: { key: 'Drawdown Builder (buffer)' },    // fixed buffer DD itself
+          drawdown: { key: 'Drawdown Builder (buffer)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
-          buffer: { key: 'Drawdown Builder (buffer)' },      // the fixed $2K/$1.5K buffer IS the cushion
+          // ⚠️ Plus de repli sur le drawdown. Il servait quand on croyait le
+          // Builder à buffer fixe ; le drawdown trail, ce n'est donc pas un
+          // coussin de retrait. Aucun buffer Builder n'est publié.
+          buffer: null,
           jourMin: null,
           minDailyProfit: null,
           consistance: null,
@@ -1131,6 +1140,16 @@ export function cleanCell(value, kind) {
     return { text: raw, title: rawTitle }
   }
 
+  // ⚠️ « non publié » n'est pas une valeur, c'est son absence. Ce test était
+  // propre au kind 'buffer' ; il est remonté ici parce que le problème n'a rien
+  // de spécifique au buffer. La colonne cohérence de MFFU Flex affichait
+  // « non publié » en toutes lettres là où on attend un pourcentage — le seul
+  // rendu honnête d'une donnée que la firme ne publie pas est un tiret, la
+  // mention exacte restant dans l'infobulle.
+  if (/^non\s+(publi|document|pr[ée]cis|renseign|communiqu|repris)/i.test(raw)) {
+    return { text: '—', title: rawTitle }
+  }
+
   const trunc = (s, n = 18) =>
     s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s
 
@@ -1169,13 +1188,11 @@ export function cleanCell(value, kind) {
   }
 
   if (kind === 'buffer') {
-    // ⚠️ « non publié » n'est PAS « pas de buffer », c'est son contraire : on
-    // ignore la valeur. Le motif `^non\b` l'attrapait et affichait « Non », ce
-    // qui disait à un porteur de compte LucidDirect qu'il n'a aucun seuil à
-    // franchir alors que la firme n'a simplement rien publié.
-    if (/^non\s+(publi|document|pr[ée]cis|renseign|communiqu)/i.test(raw)) {
-      return { text: '—', title: rawTitle }
-    }
+    // ⚠️ « non publié » n'est PAS « pas de buffer », c'est son contraire — il
+    // est écarté plus haut, avant d'arriver ici. Sans ce tri, le motif `^non\b`
+    // ci-dessous affichait « Non », ce qui disait à un porteur de compte
+    // LucidDirect qu'il n'a aucun seuil à franchir alors que la firme n'a
+    // simplement rien publié.
     // 'AUCUN' / 'Non …' explicites = un vrai « pas de buffer » → 'Non'.
     if (/aucun|^non\b/i.test(raw)) return { text: 'Non', title: rawTitle }
     if (typeof value === 'number') return { text: fmtMoney(value), title: rawTitle }

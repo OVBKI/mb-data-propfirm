@@ -794,3 +794,211 @@ describe('Tradeify — horaires permis et microscalping', () => {
     expect(v).toMatch(/Ne s'applique pas pendant l'évaluation/)
   })
 })
+
+// ── My Funded Futures : cinq articles du help center ────────────────────────
+// « Traders Evaluation Simplified », « Consistency Rule at My FundedFutures »
+// et les trois « Rapid Plan — A Comprehensive Look » (25K, 50K, 100K).
+// Source de première main. Cette série corrige surtout des chiffres qui étaient
+// faux DANS LE SENS GÉNÉREUX — le pire sens pour une règle de risque.
+describe('My Funded Futures — jours de trading minimum', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  // ⚠️ « 1 jour minimum » partout laissait croire qu'atteindre l'objectif en une
+  // séance suffisait. Seul Builder est à 1 jour.
+  it('distingue Builder (1 jour) de Rapid et Pro (2 jours)', () => {
+    const v = r('Jours de trading min (eval)', '50k')
+    expect(extractModelSegment(v, 'Builder')).toMatch(/1 jour/)
+    expect(extractModelSegment(v, 'Rapid')).toMatch(/2 jours/)
+    expect(extractModelSegment(v, 'Pro')).toMatch(/2 jours/)
+  })
+
+  it('donne au Rapid EOD ses 4 journées, le maximum de la firme', () => {
+    expect(extractModelSegment(r('Jours de trading min (eval)', '50k'), 'Rapid EOD'))
+      .toMatch(/4 jours/)
+  })
+
+  it('garde les 2 jours du Rapid à toutes les tailles', () => {
+    for (const p of ['25k', '50k', '100k', '150k']) {
+      expect(extractModelSegment(r('Jours de trading min (eval)', p), 'Rapid'), p)
+        .toMatch(/2 jours/)
+    }
+  })
+})
+
+describe('My Funded Futures — cohérence', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  // ⚠️ L'article de cohérence nomme EXPLICITEMENT « Rapid & Pro » et personne
+  // d'autre. Le tableau Builder porte « None ». Lui attribuer 50% inventait une
+  // contrainte sur le seul plan qui n'en a pas.
+  it('n’applique le 50% qu’à Rapid et Pro', () => {
+    const v = r('Règle de cohérence (eval)', '50k')
+    expect(extractModelSegment(v, 'Rapid')).toMatch(/50%/)
+    expect(extractModelSegment(v, 'Pro')).toMatch(/50%/)
+    expect(extractModelSegment(v, 'Builder')).toMatch(/AUCUNE/)
+  })
+
+  it('donne au Rapid EOD son seuil de 30%, le plus bas de la firme', () => {
+    expect(extractModelSegment(r('Règle de cohérence (eval)', '50k'), 'Rapid EOD'))
+      .toMatch(/30%/)
+  })
+
+  // ⚠️ Ne PAS inventer pour Flex : aucun des cinq articles ne le mentionne.
+  it('ne prête aucune valeur au Flex, absent des articles', () => {
+    expect(extractModelSegment(r('Règle de cohérence (eval)', '25k'), 'Flex'))
+      .toMatch(/non publié/)
+  })
+
+  // La nuance qui change tout : dépasser ne casse rien.
+  it('dit que dépasser le seuil ne breach PAS le compte', () => {
+    const v = r('Cohérence — si dépassée')
+    expect(v).toMatch(/ne breach PAS/)
+    expect(v).toMatch(/journées supplémentaires/)
+  })
+
+  it('donne le calcul et disparaît en sim funded', () => {
+    expect(r('Cohérence — le calcul')).toMatch(/divisé par 2/)
+    expect(r('Cohérence — le calcul')).toMatch(/\$1,500/)
+    expect(r('Cohérence en sim funded')).toMatch(/^AUCUNE/)
+  })
+})
+
+// 🌟 Le Rapid ne change pas de MONTANT entre les deux phases, il change de
+// MÉCANIQUE. Un trader qui croit son drawdown figé jusqu'à la clôture le
+// découvre en pleine séance.
+describe('My Funded Futures — le Rapid change de mécanique en financé', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  it('oppose l’EOD de l’évaluation à l’intraday du sim funded', () => {
+    const v = r('Drawdown Rapid — éval contre financé')
+    expect(v).toMatch(/ÉVALUATION/)
+    expect(v).toMatch(/INTRADAY/)
+    expect(v).toMatch(/\$25,100/)   // verrou d'évaluation = départ + $100
+    expect(v).toMatch(/\$100\b/)    // verrou financé
+  })
+
+  // Conséquence jamais dite ailleurs : le compte financé démarre à ZÉRO, ce qui
+  // explique un verrou à $100 et non à la taille du compte.
+  it('dit que le compte sim funded démarre à $0', () => {
+    const v = r('Solde de départ sim funded')
+    expect(v).toMatch(/^\$0/)
+    expect(v).toMatch(/PAS à la taille nominale/)
+  })
+
+  it('garde les montants de drawdown publiés, inchangés', () => {
+    const dd = r('Drawdown Rapid (intraday)', '25k')
+    expect(dd).toBe('$1,000')
+    expect(r('Drawdown Rapid (intraday)', '50k')).toBe('$2,000')
+    expect(r('Drawdown Rapid (intraday)', '100k')).toBe('$3,000')
+  })
+
+  // Le buffer suit la formule que l'article 25K énonce : max loss + $100.
+  it('vérifie le buffer de payout contre le max loss d’évaluation', () => {
+    // Le PREMIER montant de la cellule : la note « = max loss + $100 » en
+    // contient un second, qu'un strip global recollerait au premier.
+    const cash = s => Number(String(s).match(/\$([\d,]+)/)[1].replace(/,/g, ''))
+    for (const [plan, dd] of [['25k', 1000], ['50k', 2000], ['100k', 3000]]) {
+      expect(cash(r('Buffer payout (Rapid)', plan)), plan).toBe(dd + 100)
+    }
+  })
+
+  it('documente le premier payout à 24 h et l’absence de cohérence pour retirer', () => {
+    expect(r('Premier payout (Rapid)')).toMatch(/24 heures/)
+    expect(r('Premier payout (Rapid)')).toMatch(/PREMIER trade/)
+    expect(r('Cohérence pour retirer')).toMatch(/^AUCUNE/)
+  })
+
+  it('ajoute la règle d’inactivité de 7 jours calendaires', () => {
+    expect(r('Règle d\'inactivité')).toMatch(/7 jours CALENDAIRES/)
+  })
+})
+
+// ⚠️ Les limites de contrats étaient fausses à presque toutes les tailles, et
+// toujours en annonçant PLUS que la réalité. Un trader qui suivait la fiche
+// dépassait sa limite — ce qui peut breacher le compte.
+describe('My Funded Futures — limites de contrats', () => {
+  const r = (key, plan) => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+  const rapid = (key, plan) => extractModelSegment(r(key, plan), 'Rapid')
+
+  it('corrige la grille Rapid sur les quatre tailles', () => {
+    expect(rapid('Contrats max éval (mini)', '25k')).toBe('3')    // valait 2
+    expect(rapid('Contrats max éval (mini)', '50k')).toBe('5')
+    expect(rapid('Contrats max éval (mini)', '100k')).toBe('8')   // valait 10
+    expect(rapid('Contrats max éval (mini)', '150k')).toBe('10')  // valait 15
+  })
+
+  it('donne au Pro sa propre grille, plus serrée que Rapid', () => {
+    expect(extractModelSegment(r('Contrats max éval (mini)', '50k'), 'Pro')).toBe('3')
+    expect(extractModelSegment(r('Contrats max éval (mini)', '100k'), 'Pro')).toBe('6')
+    expect(extractModelSegment(r('Contrats max éval (mini)', '150k'), 'Pro')).toBe('9')
+  })
+
+  it('garde le rapport de 10 micros pour 1 mini', () => {
+    for (const plan of ['25k', '50k', '100k', '150k']) {
+      const mini = Number(rapid('Contrats max éval (mini)', plan))
+      const micro = Number(rapid('Contrats max éval (micro)', plan))
+      expect(micro, plan).toBe(mini * 10)
+    }
+  })
+
+  // ⚠️ « étend en sim funded » était faux : la grille est IDENTIQUE.
+  it('ne fait PAS grandir la limite en sim funded', () => {
+    for (const plan of ['25k', '50k', '100k']) {
+      const evalMini = rapid('Contrats max éval (mini)', plan)
+      expect(rapid('Contrats sim funded', plan), plan)
+        .toMatch(new RegExp(`^${evalMini} minis`))
+    }
+  })
+})
+
+describe('My Funded Futures — Builder et news', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  // ⚠️ Le Builder 25K EXISTE — la fiche le donnait « n/a ».
+  it('fait exister le Builder 25K avec son max loss de $1,000', () => {
+    expect(r('Drawdown Builder (buffer)', '25k')).toMatch(/\$1,000/)
+    expect(r('Drawdown Builder (buffer)', '50k')).toMatch(/\$2,000/)
+  })
+
+  // ⚠️ Le type est EOD TRAILING, pas un buffer fixe — la fiche disait l'inverse.
+  it('classe le Builder en EOD trailing', () => {
+    expect(r('Drawdown Builder (buffer)', '25k')).toMatch(/EOD trailing/)
+  })
+
+  // ⚠️ Le « $1,500 lower-price » n'était pas un 50K moins cher : c'est l'Add-On,
+  // plus SERRÉ pour le même objectif.
+  it('sépare l’Add-On du Builder 50K standard', () => {
+    const v = r('Drawdown Builder Add-On', '50k')
+    expect(v).toMatch(/\$1,500/)
+    expect(v).toMatch(/PLUS SERRÉ/)
+  })
+
+  // ⚠️ Le Builder 25K n'a AUCUNE DLL — la fiche lui prêtait celle du 50K.
+  it('ne donne aucune DLL au Builder 25K, mais $1,000 au 50K', () => {
+    expect(extractModelSegment(r('Daily Loss Limit', '25k'), 'Builder')).toMatch(/aucune/i)
+    expect(extractModelSegment(r('Daily Loss Limit', '50k'), 'Builder')).toMatch(/\$1,000/)
+  })
+
+  // ⚠️ Une fenêtre de 2 minutes laisse croire qu'on peut trader entre deux
+  // annonces. L'article Rapid interdit les news T1 sans aucune nuance.
+  it('oppose les news T1 autorisées en éval et interdites en financé', () => {
+    const v = r('News Tier-1 (Rapid/Pro)')
+    expect(v).toMatch(/AUTORISÉES en évaluation/)
+    expect(v).toMatch(/INTERDITES en sim funded/)
+    expect(r('News T1 en évaluation')).toMatch(/AUTORISÉES/)
+  })
+
+  it('ajoute le plafond de 3 comptes 50K Flex avec son droit acquis', () => {
+    const v = r('Plafond 50K Flex', '50k')
+    expect(v).toMatch(/24 mars/)
+    expect(v).toMatch(/3 comptes/)
+    expect(v).toMatch(/droit acquis à 5/)
+  })
+
+  // Le plafond de comptes financés se contamine : un seul 100K rabaisse TOUT.
+  it('dit que le plafond tombe à 3 dès qu’un 100K ou 150K apparaît', () => {
+    const v = r('Comptes funded simul.', '25k')
+    expect(v).toMatch(/5 maximum/)
+    expect(v).toMatch(/tombe à 3 pour TOUS/)
+  })
+})

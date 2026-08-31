@@ -2224,3 +2224,119 @@ interdiction de les tenir ensemble **est bien levée**, la fongibilité côté b
 ayant fermé la faille), et la liberté totale sur les news.
 
 531 tests (+31).
+
+---
+
+## My Funded Futures repris sur cinq articles du help center — 2026-08
+
+*Traders Evaluation Simplified*, *Consistency Rule at My FundedFutures* et les
+trois *Rapid Plan — A Comprehensive Look* (25K, 50K, 100K). Source de première
+main — myfundedfutures.com bloque la récupération automatique.
+
+Cette série corrige surtout des chiffres qui étaient faux **dans le sens
+généreux**, le pire sens pour une règle de risque : un trader qui suivait la fiche
+dépassait sa limite de contrats ou croyait avoir fini son évaluation.
+
+### La découverte : le Rapid change de MÉCANIQUE, pas de montant
+
+Les tableaux d'évaluation portent `Maximum Loss Limit (EOD)`. La section sim
+funded du même article porte `Drawdown Type : Intra-day trailing`. Le montant est
+identique dans les deux phases — c'est la mécanique qui bascule.
+
+| | Évaluation | Sim funded |
+|---|---|---|
+| Type | EOD (suit la clôture) | **intraday** (suit le plus haut de l'équité) |
+| Verrou | **solde de départ + 100 $** (25 100 $ en 25K) | **100 $** |
+
+Le verrou financé à 100 $ n'a de sens qu'avec l'autre découverte : **le compte sim
+funded démarre à 0 $ de solde**, pas à la taille nominale. Rien de tout cela
+n'était dans la fiche, qui étiquetait le Rapid « intraday » sur les deux phases.
+`ddType` passe donc de `Trailing` à `EOD / Intraday`.
+
+### Les limites de contrats étaient fausses presque partout
+
+| Rapid | Fiche | Officiel |
+|---|---|---|
+| 25K | 2 minis | **3** |
+| 50K | 5 | 5 ✔ |
+| 100K | 10 | **8** |
+| 150K | 15 | **10** |
+
+Et **Pro a sa propre grille**, plus serrée que Rapid à chaque taille (3 / 6 / 9
+minis en 50K / 100K / 150K). La fiche servait la grille Rapid à tout le monde.
+
+⚠️ La mention « étend en sim funded » était fausse : la grille financée est
+**identique** à celle de l'évaluation. Dépasser l'équivalent en micros peut
+breacher le compte.
+
+### « 1 jour minimum » ne valait que pour Builder
+
+| Plan | Journées minimum |
+|---|---|
+| Builder | 1 |
+| Rapid, Pro | **2** |
+| Rapid EOD | **4** |
+
+Un trader Rapid qui atteignait son objectif en une séance croyait avoir fini.
+
+### Le 50 % de cohérence ne vaut pas partout
+
+L'article de cohérence nomme **explicitement « Rapid & Pro »** et personne
+d'autre. Le tableau Builder porte `None`. Le Rapid EOD est à **30 %**, le seuil le
+plus bas de la firme. Le **Pro One-Day Add-On** n'en a aucune.
+
+Attribuer 50 % à Builder inventait une contrainte sur le seul plan qui n'en a pas.
+Flex n'apparaît dans aucun tableau publié : la cellule dit « non publié » plutôt
+que d'extrapoler.
+
+Trois nuances ajoutées, dont une qui change la lecture : **dépasser le seuil ne
+breach PAS le compte**, il suffit de trader des journées supplémentaires jusqu'à
+ce que la cohérence soit rétablie. Le calcul officiel est `objectif ÷ 2`.
+
+### Builder — trois erreurs
+
+| | Fiche | Officiel |
+|---|---|---|
+| Builder 25K | « n/a », inexistant | **existe**, max loss 1 000 $ |
+| Type de drawdown | « buffer fixe, ne trail jamais » | **EOD trailing** |
+| « $1,500 lower-price » | un 50K moins cher | c'est l'**Add-On**, plus SERRÉ pour le même objectif de 3 000 $ |
+| DLL 25K | 1 000 $ | **aucune** — le 25K est le seul Builder sans DLL |
+
+Le `ddType` du comparateur passe de `Static` à `EOD`, et son descripteur `buffer`
+tombe à `null` : il pointait sur le drawdown, ce qui n'avait de sens que sous
+l'hypothèse du buffer fixe.
+
+### Les news T1 ne sont pas une fenêtre
+
+La fiche décrivait « flat 2 minutes avant et après ». L'article Rapid est bien
+plus tranchant : **autorisées en évaluation, interdites en sim funded**, sans
+nuance. Une fenêtre laisse croire qu'on peut trader entre deux annonces.
+
+### Confirmé au mot près
+Les drawdowns Rapid (1 000 / 2 000 / 3 000 / 4 500), les buffers de payout
+(1 100 / 2 100 / 3 100, qui vérifient exactement `max loss + 100 $`), le split
+90/10, le minimum de 500 $, la cadence quotidienne, et le premier payout **24 h
+après le premier trade**. Aucune cohérence n'est exigée pour retirer.
+
+### Ajouté
+Règle d'**inactivité de 7 jours calendaires**, le **Rapid EOD 50K** comme famille
+distincte (30 % de cohérence, 4 journées, 3 minis), et le plafond de **3 comptes
+sim funded 50K Flex** depuis le 24 mars — avec droit acquis à 5 pour les traders
+antérieurs.
+
+### Un bug d'affichage généralisé au passage
+Le tri de « non publié / documenté / précisé / renseigné » vers `—` était propre
+au kind `buffer`. La colonne cohérence de MFFU Flex affichait donc « non publié »
+en toutes lettres là où on attend un pourcentage. Le test est remonté avant les
+branches par kind : le seul rendu honnête d'une donnée que la firme ne publie pas
+est un tiret, la mention exacte restant dans l'infobulle.
+
+### Reste ouvert
+- **Article Rapid 150K non fourni** : contrats sim funded et buffer déduits de la
+  formule, signalés comme tels dans la cellule.
+- **Flex** n'apparaît dans aucun des cinq articles — ni cohérence, ni journées
+  minimum, ni contrats.
+- La question « MFFU Rapid est-il EOD ou intraday ? », ouverte depuis l'audit du
+  catalogue, est **tranchée** : les deux, selon la phase.
+
+556 tests (+25).

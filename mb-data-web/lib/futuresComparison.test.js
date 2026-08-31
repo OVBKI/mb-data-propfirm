@@ -263,7 +263,12 @@ describe('extractMoney', () => {
     expect(buffer.text).not.toBe('1 $')
     const money = cleanCell('Non documenté précisément à 3 sources', 'money')
     expect(money.text).not.toBe('3 $')
-    expect(money.text).toBe('Non documenté pré…')
+    // Le contrat est de ne PAS fabriquer un montant. Le rendu retenu est '—' :
+    // « non documenté » n'est pas une valeur, c'est son absence, et le tri est
+    // désormais fait pour toutes les colonnes et non seulement le buffer. La
+    // mention exacte reste dans l'infobulle.
+    expect(money.text).toBe('—')
+    expect(money.title).toBe('Non documenté précisément à 3 sources')
   })
 
   it('fmtMoney formate en fr', () => {
