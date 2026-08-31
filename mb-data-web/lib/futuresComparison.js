@@ -586,15 +586,15 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Pro',
-        ddType: 'EOD',   // 'Drawdown Core/Pro (EOD)' (3% EOD trailing)
+        ddType: 'EOD',   // 'Drawdown Pro (EOD)' (3% EOD trailing)
         challenge: {
-          drawdown: { key: 'Drawdown Core/Pro (EOD)' },
+          drawdown: { key: 'Drawdown Pro (EOD)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
           objectif: { helper: 'profitTarget' },
           consistance: { key: 'Règle de cohérence (eval)' },
         },
         funded: {
-          drawdown: { key: 'Drawdown Core/Pro (EOD)' },
+          drawdown: { key: 'Drawdown Pro (EOD)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
           buffer: { key: 'Buffer payout (Pro)' },            // $2,100 + 60% carve-out
           jourMin: null,                                     // payout = 14 calendar days (cadence, not min-days)
@@ -604,20 +604,27 @@ export const FIRM_COMPARISON_MAP = {
       },
       {
         name: 'Flex',
-        ddType: 'Static',   // 'Drawdown Flex (EOD static)' (4% EOD STATIC · ne trail jamais)
+        // ⚠️ PAS 'Static'. Les quatre articles Flex écrivent « Drawdown model :
+        // End-of-day (EOD) trailing ». La fiche annonçait un plancher figé à un
+        // porteur dont le seuil monte avec ses gains.
+        ddType: 'EOD',
         challenge: {
-          drawdown: { key: 'Drawdown Flex (EOD static)' },
+          drawdown: { key: 'Drawdown Flex (EOD trailing)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
           objectif: { helper: 'profitTarget' },
           consistance: { key: 'Règle de cohérence (eval)' },
         },
         funded: {
-          drawdown: { key: 'Drawdown Flex (EOD static)' },
+          drawdown: { key: 'Drawdown Flex (EOD trailing)' },
           dailyDrawdown: { key: 'Daily Loss Limit' },
-          buffer: null,                                      // no Flex-specific buffer key (static DD already)
-          jourMin: null,
-          minDailyProfit: null,
-          consistance: null,
+          // ⚠️ PAS null. Le Flex n'a pas « pas de donnée » : il n'a AUCUN
+          // buffer, et c'est un différenciateur revendiqué. Un tiret dirait
+          // qu'on ne sait pas ; la colonne doit dire « Non ».
+          buffer: { key: 'Buffer payout (Flex)' },
+          // 5 journées gagnantes au-dessus du seuil de profit du plan.
+          jourMin: { key: 'Jours min avant payout (Flex)' },
+          minDailyProfit: { key: 'Profit min jour valide (Flex)' },
+          consistance: { key: 'Cohérence Flex (payout)' },
         },
       },
       {

@@ -68,7 +68,7 @@ Cells: **CHALLENGE** = ddType · drawdown · dailyDrawdown · objectif · consis
 | Tradeify | Select Daily/Flex/Growth/Lightning | EOD | "Drawdown … (EOD)" keys + FIRM_META "EOD uniquement" |
 | Take Profit Trader | Test → PRO → PRO+ | EOD / Trailing | Test EOD → PRO funded INTRADAY |
 | My Funded Futures | Rapid | Trailing | "Drawdown Rapid (intraday)" 4% trailing |
-| My Funded Futures | Pro | EOD | "Drawdown Core/Pro (EOD)" |
+| My Funded Futures | Pro | EOD | "Drawdown Pro (EOD)" |
 | My Funded Futures | Flex | Static | "EOD STATIC · ne trail jamais" |
 | My Funded Futures | Builder | Static | "fixed buffer, no trail" |
 | Phidias Propfirm | Static / E2L | Static | "$500 STATIQUE PUR · ne trail jamais" |
@@ -194,11 +194,11 @@ segment in the source → `null`. `Consistency Growth` ("Eval : AUCUNE · Funded
 ## My Funded Futures — 4 models: `Rapid`, `Pro`, `Flex`, `Builder`
 | Cell | Rapid | Pro | Flex | Builder |
 |---|---|---|---|---|
-| chal.drawdown | `Drawdown Rapid (intraday)` | `Drawdown Core/Pro (EOD)` | `Drawdown Flex (EOD static)` | `Drawdown Builder (buffer)` |
+| chal.drawdown | `Drawdown Rapid (intraday)` | `Drawdown Pro (EOD)` | `Drawdown Flex (EOD trailing)` | `Drawdown Builder (buffer)` |
 | chal.dailyDrawdown | `Daily Loss Limit` ⚠ | same | same | same (string notes Builder $1K soft pause) |
 | chal.objectif | `profitTarget()` | `profitTarget()` | `profitTarget()` | `profitTarget()` |
 | chal.consistance | `Règle de cohérence (eval)` (50%) | same | same | same |
-| fund.drawdown | `Drawdown Rapid (intraday)` | `Drawdown Core/Pro (EOD)` | `Drawdown Flex (EOD static)` | `Drawdown Builder (buffer)` |
+| fund.drawdown | `Drawdown Rapid (intraday)` | `Drawdown Pro (EOD)` | `Drawdown Flex (EOD trailing)` | `Drawdown Builder (buffer)` |
 | fund.dailyDrawdown | `Daily Loss Limit` | same | same | same |
 | fund.buffer | `Buffer payout (Rapid)` | `Buffer payout (Pro)` (60% carve-out) | `null` | `Drawdown Builder (buffer)` (fixed $2K/$1.5K cushion) |
 | fund.jourMin | `null` | `null` | `null` | `null` |

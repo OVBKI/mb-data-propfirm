@@ -904,8 +904,40 @@ export const PROPFIRM_RULES = {
       // payout, un autre pour les suivants — et aucun plafond par cycle.
       'Rapid EOD — payouts':      {'25k':'non dispo','50k':'Buffer de $2,100 à franchir pour le PREMIER payout seulement. Ensuite, chaque payout se débloque dès $500 de profit net depuis le précédent. Aucun plafond par cycle, minimum $500, split 90/10, cadence quotidienne, aucune cohérence exigée','100k':'non dispo','150k':'non dispo'},
       'Règle d\'inactivité':       {'25k':'Au moins un trade tous les 7 jours CALENDAIRES. Sept jours consécutifs sans le moindre trade et le compte peut être fermé','50k':'idem','100k':'idem','150k':'idem'},
-      'Drawdown Core/Pro (EOD)':  {'25k':'n/a','50k':'$1,500 (3% EOD trailing)','100k':'$3,000','150k':'$4,500'},
-      'Drawdown Flex (EOD static)':{'25k':'$1,000 (4% EOD STATIC · ne trail jamais)','50k':'$2,000','100k':'n/a','150k':'n/a'},
+      // ⚠️ Core et Pro étaient FUSIONNÉS sous une seule clé, avec le chiffre de
+      // Core en 50K. Le tableau d'évaluation ET le tableau sim funded du Pro
+      // donnent tous deux $2,000 à cette taille : un porteur Pro 50K se voyait
+      // annoncer 25% de marge en MOINS qu'il n'en a. Core, lui, est bien à
+      // $1,500 — mais c'est un plan legacy, 50K uniquement.
+      'Drawdown Pro (EOD)':       {'25k':'n/a','50k':'$2,000','100k':'$3,000','150k':'$4,500'},
+      'Drawdown Core (EOD)':      {'25k':'n/a','50k':'$1,500 (3% EOD trailing, plan legacy)','100k':'n/a','150k':'n/a'},
+      // ⚠️ ERREUR DE FOND CORRIGÉE. Le Flex n'a JAMAIS été statique : les quatre
+      // articles Flex écrivent tous « Drawdown model : End-of-day (EOD)
+      // trailing ». Annoncer un plancher figé à un porteur dont le seuil monte
+      // avec ses gains est exactement l'erreur qui casse un compte.
+      'Drawdown Flex (EOD trailing)':{'25k':'$1,000','50k':'$2,000','100k':'n/a','150k':'n/a'},
+      // Le Flex se verrouille sur un ÉVÉNEMENT, pas sur un seuil de solde : le
+      // premier payout fige le seuil à $100 pour toujours.
+      'Verrouillage Flex':        {'25k':'Après le PREMIER payout, le max loss passe à $100 et y reste définitivement','50k':'idem','100k':'n/a','150k':'n/a'},
+      'Buffer payout (Flex)':     {'25k':'AUCUN buffer exigé — c\'est un différenciateur revendiqué du plan','50k':'AUCUN buffer exigé','100k':'n/a','150k':'n/a'},
+      'Jours min avant payout (Flex)':{'25k':'5 journées GAGNANTES, chacune au-dessus du seuil de profit du plan. Le compteur repart à zéro à chaque cycle','50k':'idem','100k':'n/a','150k':'n/a'},
+      // Ce que doit rapporter une journée pour COMPTER dans les cinq.
+      'Profit min jour valide (Flex)':{'25k':'$100 net','50k':'$150 net','100k':'n/a','150k':'n/a'},
+      'Cohérence Flex (payout)':  {'25k':'AUCUNE. Le 50% ne vaut qu\'en évaluation et disparaît au moment de retirer','50k':'idem','100k':'n/a','150k':'n/a'},
+      // ⚠️ Les cinq journées gagnantes ne suffisent PAS. Il faut AUSSI un profit
+      // net minimum sur le cycle — la firme consacre un exemple entier à ce
+      // piège : cinq journées à $100 après une perte de $500 ne donnent rien.
+      'Flex — profit net exigé par cycle':{'25k':'$500 de profit net total au moment de la PREMIÈRE demande, puis $250 depuis le payout précédent. Cinq journées gagnantes ne suffisent pas si une grosse perte les annule','50k':'$500 de profit net total à la première demande, puis $500 depuis le payout précédent','100k':'n/a','150k':'n/a'},
+      'Flex — scaling en sim funded':{'25k':'La limite de contrats suit le SOLDE. De $0 à $749, 1 mini ou 10 micros ; à partir de $750, 2 minis ou 20 micros. Aucun scaling pendant l\'évaluation','50k':'De $0 à $1,499, 1 mini ou 10 micros ; de $1,500 à $1,999, 2 minis ou 20 micros ; à partir de $2,000, 3 minis ou 30 micros. Aucun scaling pendant l\'évaluation','100k':'n/a','150k':'n/a'},
+      'Flex — compte live':       {'25k':'Solde initial de $1,000, solde plancher de $156, aucune DLL, drawdown EOD, retrait minimum $250, 2 minis / 20 micros, split 80/20, payouts quotidiens','50k':'Solde initial de $2,000, solde plancher de $156, aucune DLL, drawdown EOD, retrait minimum $250, 3 minis / 30 micros (4/40 en génération legacy), split 80/20, payouts quotidiens','100k':'n/a','150k':'n/a'},
+      // ⚠️ LE PLAN EST EN FIN DE VIE. Le guide 25K l'annonce en tête d'article.
+      // Les comptes existants continuent, mais plus aucun ne se vend.
+      'Flex — arrêt de la vente': {'25k':'Le plan Flex est arrêté au 5 août à 22h00 EST (l\'article ne précise pas l\'année). Les comptes déjà ouverts continuent de tourner sous leurs règles','50k':'idem','100k':'n/a','150k':'n/a'},
+      // Deux générations coexistent, et TOUS les plafonds ont été rabaissés.
+      // Servir la grille legacy à un porteur récent lui promettrait le triple.
+      'Flex — génération legacy':  {'25k':'Contrats d\'évaluation 3 minis / 30 micros contre 2 aujourd\'hui, palier de scaling montant jusqu\'à 3 minis, plafond de retrait à 50% du profit jusqu\'à $3,000, et compte live à 2 minis / 20 micros','50k':'Contrats d\'évaluation 5 minis / 50 micros contre 3 aujourd\'hui, scaling montant jusqu\'à 5 minis, plafond de retrait à 50% du profit jusqu\'à $5,000, minimum de retrait $250 au lieu de $500, et compte live à 4 minis / 40 micros','100k':'n/a','150k':'n/a'},
+      // Propre au 50K, et absent de la fiche : une DLL qu'on ACHÈTE.
+      'Flex — option DLL':        {'25k':'non publié','50k':'Add-on facultatif pris au checkout, à prix réduit. Il ajoute une pause douce de $1,000 en intraday, valable en évaluation ET en sim funded. Atteindre le seuil met le trading en pause pour la journée sans casser le compte','100k':'n/a','150k':'n/a'},
       // ⚠️ DEUX erreurs corrigées ici. Le Builder 25K EXISTE (le catalogue le
       // donnait « n/a ») avec un max loss de $1,000. Et le « $1,500 lower-price »
       // n'était pas un 50K moins cher : c'est l'ADD-ON, qui a un max loss plus
@@ -937,12 +969,12 @@ export const PROPFIRM_RULES = {
       // un trader Rapid qui atteint son objectif en une séance croyait avoir
       // fini. Seul Builder demande 1 jour. Rapid et Pro en demandent 2, et le
       // Rapid EOD 4. Flex n'apparaît dans aucun des tableaux publiés.
-      'Jours de trading min (eval)':{'25k':'Builder : 1 jour · Rapid : 2 jours · Flex : non publié','50k':'Builder : 1 jour · Rapid : 2 jours · Rapid EOD : 4 jours · Pro : 2 jours · Flex : non publié','100k':'Rapid : 2 jours · Pro : 2 jours','150k':'Rapid : 2 jours · Pro : 2 jours'},
+      'Jours de trading min (eval)':{'25k':'Builder : 1 jour · Rapid : 2 jours · Flex : 2 jours','50k':'Builder : 1 jour · Rapid : 2 jours · Rapid EOD : 4 jours · Pro : 2 jours · Flex : 2 jours','100k':'Rapid : 2 jours · Pro : 2 jours','150k':'Rapid : 2 jours · Pro : 2 jours'},
       // ⚠️ Le 50% n'est pas universel. L'article de cohérence nomme EXPLICITEMENT
       // « Rapid & Pro » et personne d'autre ; le tableau Builder porte « None » ;
       // le Rapid EOD est à 30% ; le Pro One-Day Add-On n'en a aucune. Attribuer
       // 50% à Builder inventait une contrainte sur le plan qui n'en a pas.
-      'Règle de cohérence (eval)':{'25k':'Rapid : 50% · Builder : AUCUNE · Flex : non publié','50k':'Rapid : 50% · Rapid EOD : 30% · Pro : 50% · Builder : AUCUNE · Pro One-Day Add-On : aucune','100k':'Rapid : 50% · Pro : 50%','150k':'Rapid : 50% · Pro : 50%'},
+      'Règle de cohérence (eval)':{'25k':'Rapid : 50% · Flex : 50% · Builder : AUCUNE','50k':'Rapid : 50% · Rapid EOD : 30% · Pro : 50% · Flex : 50% · Builder : AUCUNE · Pro One-Day Add-On : aucune','100k':'Rapid : 50% · Pro : 50%','150k':'Rapid : 50% · Pro : 50%'},
       // Le calcul, et surtout ce qui arrive quand on dépasse. Beaucoup de fiches
       // laissent croire à un breach : c'est faux, on trade simplement plus.
       'Cohérence — le calcul':    {'25k':'Objectif de profit divisé par 2 égale le profit maximum sur une seule journée. Sur un 50K à $3,000 d\'objectif, aucune journée ne doit dépasser $1,500','50k':'idem','100k':'idem','150k':'idem'},
@@ -950,23 +982,23 @@ export const PROPFIRM_RULES = {
       'Cohérence en sim funded':  {'25k':'AUCUNE. La règle ne vaut qu\'en évaluation et disparaît entièrement en sim funded, y compris pour demander un payout','50k':'idem','100k':'idem','150k':'idem'},
       // === SIM FUNDED → LIVE (transitions par plan) ===
       'Sim→Live trigger Rapid':   {'25k':'$10K single-day net profit OU approbation Risk Management','50k':'idem','100k':'idem','150k':'idem'},
-      'Sim→Live trigger Pro':     {'25k':'n/a','50k':'3 payouts consécutifs OU $100K cumulative sim payouts','100k':'3 payouts OU $100K cumulative','150k':'3 payouts OU $100K cumulative'},
-      'Sim→Live trigger Flex/Builder':{'25k':'Flex : 5 payouts consécutifs · 10K sim cap · Risk discretion','50k':'Flex : idem · Builder : 5 sim payouts','100k':'n/a','150k':'n/a'},
+      'Sim→Live trigger Pro':     {'25k':'n/a','50k':'3 payouts consécutifs, OU le profit qui DÉPASSE le plafond de $100,000 de payouts, reversé sur le compte live jusqu\'à $5,000','100k':'3 payouts consécutifs, ou l\'excédent au-delà de $100,000 reversé jusqu\'à $7,500','150k':'3 payouts consécutifs, ou l\'excédent au-delà de $100,000 reversé jusqu\'à $10,000'},
+      'Sim→Live trigger Flex/Builder':{'25k':'Flex : 5 payouts consécutifs approuvés sur le même compte, OU le plafond cumulé de $100,000 de payouts simulés, OU une décision de l\'équipe risque · Builder : 5 payouts simulés approuvés','50k':'idem','100k':'n/a','150k':'n/a'},
       'LIVE Rapid spécifique':    {'25k':'EOD drawdown remplace intraday · contrats ÷2 · cooldown 21j après breach · $5K carry-over via Reserve Program','50k':'idem','100k':'idem','150k':'idem'},
-      'LIVE Pro initial funding': {'25k':'n/a','50k':'$2K-$5K initial balance','100k':'$3K-$7.5K initial balance','150k':'$4K-$10K initial balance'},
-      'LIVE Pro balance withdraw':{'25k':'n/a','50k':'Après 20 winning days + 3 funded payouts','100k':'idem','150k':'idem'},
+      'LIVE Pro initial funding': {'25k':'n/a','50k':'Solde statique entre $2,000 et $5,000','100k':'Solde statique entre $3,000 et $7,500','150k':'Solde statique entre $4,500 et $10,000'},
+      'LIVE Pro balance withdraw':{'25k':'n/a','50k':'20 journées gagnantes rapportant CHACUNE au moins 4% de la dotation initiale, plus 3 payouts. La dotation se débloque alors et se retire jusqu\'à un plancher de $140. Sur une dotation de $5,000, cela fait 20 journées à $200 minimum','100k':'idem','150k':'idem'},
       // === CONTRATS ===
       // ⚠️ Les limites de contrats étaient fausses à presque toutes les tailles,
       // et toujours dans le sens généreux — un trader qui suivait la fiche
       // dépassait sa limite, ce qui peut breacher le compte. Rapid 25K vaut 3
       // minis et non 2, Rapid 100K en vaut 8 et non 10, Rapid 150K en vaut 10 et
       // non 15. Pro a sa propre grille, plus serrée que Rapid partout.
-      'Contrats max éval (mini)': {'25k':'Rapid : 3 · Builder : 2 · Flex : 2','50k':'Rapid : 5 · Rapid EOD : 3 · Pro : 3 · Builder : 4 · Core : 5 · Scale : 3','100k':'Rapid : 8 · Pro : 6','150k':'Rapid : 10 · Pro : 9 · Scale : 9'},
-      'Contrats max éval (micro)':{'25k':'Rapid : 30 · Builder : 20 · Flex : 20','50k':'Rapid : 50 · Rapid EOD : 30 · Pro : 30 · Builder : 40 · Scale : 15','100k':'Rapid : 80 · Pro : 60','150k':'Rapid : 100 · Pro : 90 · Scale : 45'},
+      'Contrats max éval (mini)': {'25k':'Rapid : 3 · Builder : 2 · Flex : 2','50k':'Rapid : 5 · Rapid EOD : 3 · Pro : 3 · Flex : 3 · Builder : 4 · Core : 5 · Scale : 3','100k':'Rapid : 8 · Pro : 6','150k':'Rapid : 10 · Pro : 9 · Scale : 9'},
+      'Contrats max éval (micro)':{'25k':'Rapid : 30 · Builder : 20 · Flex : 20','50k':'Rapid : 50 · Rapid EOD : 30 · Pro : 30 · Flex : 30 · Builder : 40 · Scale : 15','100k':'Rapid : 80 · Pro : 60','150k':'Rapid : 100 · Pro : 90 · Scale : 45'},
       // ⚠️ « étend en sim funded » était faux : la grille est IDENTIQUE à celle de
       // l'évaluation. Dépasser l'équivalent en micros peut breacher le compte.
-      'Contrats sim funded':      {'25k':'Rapid : 3 minis / 30 micros (identique à l\'évaluation) · Builder : 2 minis / 20 micros','50k':'Rapid : 5 minis / 50 micros · Rapid EOD : 3 minis / 30 micros · Builder : 4 minis / 40 micros','100k':'Rapid : 8 minis / 80 micros','150k':'Rapid : 10 minis / 100 micros'},
-      'Contrats LIVE':            {'25k':'÷2 vs éval (Rapid)','50k':'÷2 · Flex live = 4 mini / 40 micro','100k':'÷2','150k':'÷2'},
+      'Contrats sim funded':      {'25k':'Rapid : 3 minis / 30 micros (identique à l\'évaluation) · Builder : 2 minis / 20 micros · Flex : selon le solde, voir le scaling','50k':'Rapid : 5 minis / 50 micros · Rapid EOD : 3 minis / 30 micros · Builder : 4 minis / 40 micros · Flex : selon le solde · Pro : 5 minis / 5 micros','100k':'Rapid : 8 minis / 80 micros · Pro : 10 minis / 10 micros','150k':'Rapid : 10 minis / 100 micros · Pro : 15 minis / 15 micros'},
+      'Contrats LIVE':            {'25k':'Rapid : moitié de la grille d\'évaluation · Flex : 2 minis / 20 micros','50k':'Rapid : moitié de la grille · Flex : 3 minis / 30 micros (4/40 en génération legacy) · Pro : 2 à 4 selon la dotation','100k':'Pro : 3 à 5 selon la dotation','150k':'Pro : 4 à 6 selon la dotation'},
       // === TRADING RESTRICTIONS ===
       'Positions overnight':      {'25k':'INTERDIT (Rapid/Core/Flex/Builder) · Pro AUTORISÉ (swing-friendly)','50k':'INTERDIT sauf Pro','100k':'INTERDIT sauf Pro','150k':'INTERDIT sauf Pro'},
       'Auto-liquidation':         {'25k':'16:10 EST (positions auto-close) · breach après = payout denial','50k':'16:10 EST','100k':'16:10 EST','150k':'16:10 EST'},
@@ -993,15 +1025,29 @@ export const PROPFIRM_RULES = {
       'Codes promo permanents':   {'25k':'SAVE40 (-40%) · IMAN (20% Rapid, 30% Pro, 50% Flex)','50k':'idem','100k':'idem','150k':'idem'},
       // === PAYOUTS (très variable par plan) ===
       'Répartition gains':        {'25k':'Rapid 90/10 (depuis 12 jan 2026) · Flex 80/20','50k':'Core 80/20 · Rapid 90/10 · Pro 80/20 · Flex 80/20 · Builder 80/20','100k':'Rapid 90/10 · Pro 80/20 · Scale 80/20','150k':'idem 100K'},
-      'Payout minimum':           {'25k':'Rapid : $500 · Flex : $250','50k':'Core/Flex/Scale : $250 · Rapid : $500 · Pro : $1,000 · Builder : $500','100k':'Rapid : $500 · Pro : $1,000 · Scale : $250','150k':'idem 100K'},
-      'Cadence payout':           {'25k':'Rapid : DAILY 24h après 1er trade · Flex : 5 winning days','50k':'Core : 5 winning days · Rapid : DAILY 24h · Pro : 14 jours calendaires · Builder : 48h · Flex : 5 winning days','100k':'Rapid : DAILY · Pro : 14 cal days · Scale : 5 winning days','150k':'idem 100K'},
-      'Cap par cycle':            {'25k':'Rapid : aucun (post buffer) · Flex : 50% profits jusque $3K','50k':'Core : $1K (5 premiers cycles) · Rapid : aucun · Pro : aucun · Flex : 50% jusque $5K · Builder : $2K flat · Scale : $1.5K→$3.5K escalating','100k':'Rapid : aucun · Pro : aucun · Scale : $1.5K→$3.5K','150k':'idem 100K'},
+      'Payout minimum':           {'25k':'Rapid : $500 · Flex : $250 · Builder : $250','50k':'Rapid : $500 · Flex : $500 (relevé depuis $250 en legacy) · Pro : $1,000 · Builder : $500 · Core : $250 · Scale : $250','100k':'Rapid : $500 · Pro : $1,000 · Scale : $250','150k':'idem 100K'},
+      'Cadence payout':           {'25k':'Rapid : quotidienne, 24 h après le premier trade · Flex : 5 journées gagnantes à $100 · Builder : 48 h après le premier trade','50k':'Rapid : quotidienne · Rapid EOD : quotidienne · Flex : 5 journées gagnantes à $150 · Builder : 48 h · Pro : 14 jours calendaires depuis le premier trade · Core : 5 journées gagnantes','100k':'Rapid : quotidienne · Pro : 14 jours calendaires · Scale : 5 journées gagnantes','150k':'idem 100K'},
+      'Cap par cycle':            {'25k':'Rapid : aucun une fois le buffer franchi · Flex : 50% du profit, plafonné à $1,000 (abaissé depuis $3,000) · Builder : $1,000','50k':'Rapid : aucun · Rapid EOD : aucun · Pro : aucun · Flex : 50% du profit, plafonné à $2,000 (abaissé depuis $5,000) · Builder : $2,000 · Core : $1,000 sur les 5 premiers cycles · Scale : $1,500 à $3,500 progressif','100k':'Rapid : aucun · Pro : aucun · Scale : $1,500 à $3,500','150k':'idem 100K'},
       // Confirmé au mot près sur les QUATRE articles Rapid. Le $4,600 du 150K
       // avait d'abord été déduit de la formule ; l'article l'a confirmé depuis.
       'Buffer payout (Rapid)':    {'25k':'$1,100 (= max loss d\'évaluation + $100)','50k':'$2,100','100k':'$3,100','150k':'$4,600'},
       'Premier payout (Rapid)':   {'25k':'Disponible exactement 24 heures après le PREMIER trade sur le compte sim funded, sous réserve du buffer et du minimum','50k':'idem','100k':'idem','150k':'idem'},
       'Cohérence pour retirer':   {'25k':'AUCUNE sur Rapid. Le buffer et le minimum de $500 sont les deux seules conditions','50k':'idem','100k':'idem','150k':'idem'},
-      'Buffer payout (Pro)':      {'25k':'n/a','50k':'$2,100 · 60% PRE-BUFFER carve-out (unique !)','100k':'$3,100 · 60% carve-out','150k':'$4,600 · 60% carve-out'},
+      'Buffer payout (Pro)':      {'25k':'n/a','50k':'$2,100','100k':'$3,100','150k':'$4,600'},
+      // Le carve-out mérite sa propre ligne : c'est une SORTIE anticipée du
+      // buffer, à ne pas confondre avec le buffer lui-même.
+      'Pro — retrait avant le buffer':{'25k':'n/a','50k':'Un retrait unique reste possible AVANT d\'avoir franchi le buffer, à hauteur de 60% du profit et au minimum $1,000. Les 40% restants doivent rester sur le compte','100k':'idem','150k':'idem'},
+      // ⚠️ Le délai court depuis le PREMIER TRADE, pas depuis l'ouverture du
+      // compte — et les deux conditions sont cumulatives.
+      'Pro — éligibilité au payout':{'25k':'n/a','50k':'14 jours calendaires depuis le premier trade ET buffer franchi. Les deux conditions, pas l\'une ou l\'autre','100k':'idem','150k':'idem'},
+      'Pro — plafond de payouts': {'25k':'n/a','50k':'$100,000 cumulés par utilisateur. Au-delà, l\'excédent bascule sur le compte live au lieu d\'être versé','100k':'idem','150k':'idem'},
+      // Le verrou Pro se déclenche sur un ÉVÉNEMENT, comme celui du Flex.
+      'Pro — verrouillage du max loss':{'25k':'n/a','50k':'Après le PREMIER payout, le max loss passe à $50,100 et devient statique','100k':'Après le premier payout, il passe à $100,100 et devient statique','150k':'Après le premier payout, il passe à $150,100 et devient statique'},
+      'Pro — compte live':        {'25k':'n/a','50k':'Perte journalière comprise entre $700 et $1,800 selon la dotation, 2 à 4 contrats, retrait minimum $250. Un trader live ne peut demander que les fonds AU-DESSUS de sa dotation initiale','100k':'DLL entre $1,000 et $2,000, 3 à 5 contrats, retrait minimum $250','150k':'DLL entre $1,300 et $3,000, 4 à 6 contrats, retrait minimum $250'},
+      // ⚠️ Deux pièges dans la même phrase officielle : le jalon ne GARANTIT
+      // rien, et une bascule décidée par l'équipe risque FAIT PERDRE le surplus.
+      'Pro — bascule décidée par la firme':{'25k':'n/a','50k':'Atteindre $20,000 de profit déclenche une REVUE du compte, sans garantir la bascule. L\'équipe risque peut par ailleurs la décider à tout moment — les profits sont alors transférés dans la limite du maximum du plan, et LE RESTE EST PERDU','100k':'idem','150k':'idem'},
+      'Sim et live en même temps':{'25k':'INTERDIT. Dès qu\'un compte live existe, on ne peut plus trader en simulé et en réel simultanément','50k':'idem','100k':'idem','150k':'idem'},
       'Délai payout':             {'25k':'Rise instant - 12h manual review','50k':'idem','100k':'idem','150k':'idem'},
       'Méthodes payout':          {'25k':'Rise (Riseworks) PRIMAIRE : bank transfer 1-3j ou crypto en minutes · Plaid/ACH (US only) · ⚠ Wise SUPPRIMÉ en 2026','50k':'idem','100k':'idem','150k':'idem'},
       'KYC':                      {'25k':'OBLIGATOIRE avant 1er payout (one-time, via Rise onboarding)','50k':'idem','100k':'idem','150k':'idem'},
@@ -1527,7 +1573,7 @@ export function maxDrawdown(firmName, plan, program){
   // Quand une firme a plusieurs programmes, le MONTANT doit venir du programme
   // dont le TYPE correspond à celui que defaultDdType() annonce — sinon la jauge
   // affiche « EOD » au-dessus d'un chiffre intraday. C'est le cas de My Funded
-  // Futures : Rapid est intraday ($2,000 en 50K), Core/Pro est EOD ($1,500).
+  // Futures : Rapid bascule en intraday une fois financé, Pro reste EOD.
   const wantEod = defaultDdType(firmName) === 'eod'
   const typed = candidates.filter(k => wantEod ? /\bEOD\b/i.test(k) : /intraday/i.test(k))
 
@@ -1582,7 +1628,7 @@ const EOD_TRAILING_FIRMS = new Set([
   'Lucid Trading',          // EOD avec MLL check à la cloture
   'Tradeify',               // Select Eval = EOD
   'Take Profit Trader',     // EOD trailing
-  'My Funded Futures',      // Core/Pro = EOD (Rapid = intraday mais on prend le default)
+  'My Funded Futures',      // Pro / Flex / Builder = EOD (le Rapid ne passe en intraday qu'en financé)
   'Phidias Propfirm',       // Fundamental = EOD (Static = static)
   'Funded Futures Network', // EOD
   'FuturesELites',          // EOD

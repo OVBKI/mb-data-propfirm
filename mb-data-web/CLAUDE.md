@@ -2448,3 +2448,92 @@ qui est une vraie règle et non une donnée manquante.
   tableau récapitulatif de « Traders Evaluation Simplified ».
 
 578 tests (+22).
+
+---
+
+## My Funded Futures — Pro et Flex, enfin sourcés (2026-08)
+
+*Pro Plan Sim-Funded and Live Account Highlights* et les **quatre** articles Flex
+(les deux guides courants, les deux versions legacy). C'étaient précisément les
+deux familles sans article dédié dans les dix PDF précédents.
+
+### Le Flex n'a jamais été « statique »
+
+La fiche portait `Drawdown Flex (EOD static) — 4% EOD STATIC · ne trail jamais`.
+Les **quatre** articles Flex écrivent tous `Drawdown model: End-of-day (EOD)
+trailing`. Annoncer un plancher figé à un porteur dont le seuil monte avec ses
+gains est exactement l'erreur qui casse un compte : il croit sa marge constante
+alors qu'elle se referme derrière lui. Clé renommée, `ddType` du comparateur
+passé de `Static` à `EOD`.
+
+Le Flex se verrouille bien — mais sur un **événement**, pas sur un seuil : le
+**premier payout** fige le max loss à 100 $ pour toujours. Même mécanique chez
+Pro (50 100 / 100 100 / 150 100 $).
+
+### Deux générations de Flex, et tous les plafonds ont été rabaissés
+
+| | 25K legacy → courant | 50K legacy → courant |
+|---|---|---|
+| Contrats d'évaluation | 3 minis → **2** | 5 minis → **3** |
+| Plafond de retrait | 3 000 $ → **1 000 $** | 5 000 $ → **2 000 $** |
+| Minimum de retrait | 250 $ | 250 $ → **500 $** |
+| Compte live | 2 minis | 4 minis → **3** |
+
+La fiche portait les chiffres **legacy** : elle promettait le triple à un porteur
+récent. Les deux générations sont désormais séparées, la courante dans les
+cellules, la legacy dans `Flex — génération legacy`.
+
+⚠️ **Le plan est en fin de vie** — « Effective August 5th, at 10 pm est the Flex
+plan will be discontinued » (l'article ne donne pas l'année). Les comptes ouverts
+continuent ; plus rien ne se vend. Consigné dans `Flex — arrêt de la vente`, sans
+retirer le programme : des comptes existants le portent.
+
+### Le piège que la firme documente par l'exemple
+
+Cinq journées gagnantes **ne suffisent pas**. Il faut aussi un profit net minimum
+sur le cycle — les articles consacrent un exemple entier au cas « cinq journées à
+100 $ après une perte de 500 $ », qui ne donne droit à rien. Le seuil par journée
+(100 $ en 25K, 150 $ en 50K) et le profit net exigé (500 $ à la première demande,
+puis 250 / 500 $ par cycle) sont maintenant des cellules distinctes.
+
+Et une DLL **qu'on achète** : le 50K propose un add-on facultatif au checkout, à
+prix réduit, qui ajoute une pause douce de 1 000 $ en évaluation *et* en financé.
+
+### Pro — Core et Pro étaient fusionnés sous une seule clé
+
+`Drawdown Core/Pro (EOD)` donnait **1 500 $** en 50K : c'est le chiffre de
+**Core**. Le tableau d'évaluation et le tableau sim funded du Pro donnent tous
+deux **2 000 $**. Un porteur Pro 50K se voyait annoncer **25 % de marge en moins**
+qu'il n'en a. Les clés sont séparées ; Core reste à 1 500 $ mais n'existe qu'en
+50K et en legacy.
+
+Autres corrections et ajouts :
+
+- **Éligibilité au payout** : 14 jours calendaires **depuis le premier trade**
+  *et* buffer franchi — les deux, pas l'une ou l'autre.
+- Le **carve-out de 60 %** était collé au buffer dans la même cellule. C'est une
+  *sortie anticipée* du buffer (retrait unique, 60 % du profit, minimum 1 000 $) :
+  il a sa ligne, et le buffer redevient un montant net.
+- **Plafond de 100 000 $ de payouts par utilisateur** ; au-delà l'excédent
+  bascule sur le compte live (jusqu'à 5 000 / 7 500 / 10 000 $).
+- **Dotation live du 150K** : 4 500 $ et non 4 000 $.
+- **Déverrouillage de la dotation**, réduit jusqu'ici à « 20 winning days » :
+  20 journées gagnantes rapportant **chacune au moins 4 % de la dotation**, plus
+  3 payouts, et le retrait descend alors jusqu'à un plancher de **140 $**.
+- ⚠️ **Le jalon de 20 000 $ déclenche une revue, sans rien garantir** — et une
+  bascule décidée par l'équipe risque transfère les profits dans la limite du
+  plan, **le reste étant perdu**.
+- La grille de contrats financée du Pro ne suit **pas** le rapport 10 micros =
+  1 mini : c'est **5 minis / 5 micros**, 10/10, 15/15.
+
+### Une coquille à trois zéros
+`Sim→Live trigger Flex/Builder` portait « 10K sim cap ». Le plafond est
+**100 000 $**. Un facteur dix sur le critère qui décide du passage au capital réel.
+
+### Reste ouvert
+- **Prix du Builder 25K** et **prix du Flex** : aucun des quatorze articles reçus
+  ne les donne.
+- **Core** et **Scale** n'ont pas d'article dédié ; leurs chiffres viennent
+  toujours de sources tierces, et les deux sont des plans legacy.
+
+600 tests (+22).

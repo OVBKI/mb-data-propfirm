@@ -143,13 +143,17 @@ describe('maxDrawdown', () => {
   })
 
   it('choisit le programme dont le TYPE correspond à defaultDdType', () => {
-    // My Funded Futures a deux programmes : Rapid en intraday ($2,000 en 50K) et
-    // Core/Pro en EOD ($1,500). defaultDdType annonce 'eod' — le montant doit
-    // suivre, sinon la jauge affiche « EOD » au-dessus d'un chiffre intraday.
+    // defaultDdType annonce 'eod' — le montant doit suivre, sinon la jauge
+    // affiche « EOD » au-dessus d'un chiffre intraday.
+    //
+    // ⚠️ Ce test attendait 1500, la valeur de CORE. Core et Pro partageaient une
+    // seule clé, avec le chiffre de Core en 50K ; les articles officiels donnent
+    // $2,000 au Pro à cette taille. Les clés sont désormais séparées, et Core
+    // n'existe plus qu'en legacy — c'est le Pro qui doit sortir ici.
     expect(defaultDdType('My Funded Futures')).toBe('eod')
-    expect(maxDrawdown('My Funded Futures', '50k')).toBe(1500)
-    // En 25K, Core/Pro n'existe pas ('n/a') : on retombe sur Rapid, seule offre
-    // à cette taille.
+    expect(maxDrawdown('My Funded Futures', '50k')).toBe(2000)
+    // En 25K, ni Pro ni Core n'existent ('n/a') : on retombe sur Rapid, seule
+    // offre EOD à cette taille.
     expect(maxDrawdown('My Funded Futures', '25k')).toBe(1000)
   })
 
@@ -843,10 +847,13 @@ describe('My Funded Futures — cohérence', () => {
       .toMatch(/30%/)
   })
 
-  // ⚠️ Ne PAS inventer pour Flex : aucun des cinq articles ne le mentionne.
-  it('ne prête aucune valeur au Flex, absent des articles', () => {
-    expect(extractModelSegment(r('Règle de cohérence (eval)', '25k'), 'Flex'))
-      .toMatch(/non publié/)
+  // Flex était marqué « non publié » tant qu'aucun de ses articles n'avait été
+  // fourni. Les quatre guides Flex le donnent : 50%, en évaluation seulement,
+  // et une évaluation qui se passe en 2 journées.
+  it('donne au Flex son 50% d’évaluation, aux deux tailles', () => {
+    expect(extractModelSegment(r('Règle de cohérence (eval)', '25k'), 'Flex')).toMatch(/50%/)
+    expect(extractModelSegment(r('Règle de cohérence (eval)', '50k'), 'Flex')).toMatch(/50%/)
+    expect(extractModelSegment(r('Jours de trading min (eval)', '25k'), 'Flex')).toMatch(/2 jours/)
   })
 
   // La nuance qui change tout : dépasser ne casse rien.
@@ -1193,5 +1200,197 @@ describe('My Funded Futures — plafonds propres à un plan', () => {
   it('reste plus bas que le plafond général de 5', () => {
     expect(PROPFIRM_RULES['My Funded Futures'].rules['Comptes funded simul.']['25k'])
       .toMatch(/5 maximum/)
+  })
+})
+
+// ── My Funded Futures : Pro et Flex, enfin sourcés ──────────────────────────
+// « Pro Plan Sim-Funded and Live Account Highlights » et les quatre articles
+// Flex (les deux guides courants et les deux versions legacy). C'étaient les
+// deux familles sans article dédié dans les dix PDF précédents.
+describe('My Funded Futures — Pro', () => {
+  const r = (key, plan = '50k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  // ⚠️ Core et Pro partageaient une seule clé, avec le chiffre de CORE en 50K.
+  // Un porteur Pro 50K se voyait annoncer 25% de marge en moins qu'il n'en a.
+  it('sépare le drawdown de Pro de celui de Core', () => {
+    expect(r('Drawdown Pro (EOD)', '50k')).toBe('$2,000')
+    expect(r('Drawdown Pro (EOD)', '100k')).toBe('$3,000')
+    expect(r('Drawdown Pro (EOD)', '150k')).toBe('$4,500')
+    expect(r('Drawdown Core (EOD)', '50k')).toMatch(/\$1,500/)
+    expect(r('Drawdown Core (EOD)', '50k')).toMatch(/legacy/)
+    // Core n'existe qu'en 50K.
+    for (const p of ['25k', '100k', '150k']) {
+      expect(r('Drawdown Core (EOD)', p), p).toBe('n/a')
+    }
+  })
+
+  // Le délai court depuis le PREMIER TRADE, et les deux conditions sont
+  // cumulatives — pas l'une ou l'autre.
+  it('exige 14 jours depuis le premier trade ET le buffer', () => {
+    const v = r('Pro — éligibilité au payout')
+    expect(v).toMatch(/14 jours calendaires/)
+    expect(v).toMatch(/premier trade/)
+    expect(v).toMatch(/Les deux conditions/)
+  })
+
+  // Le carve-out est une SORTIE anticipée du buffer, pas le buffer lui-même.
+  it('documente le retrait unique avant le buffer', () => {
+    const v = r('Pro — retrait avant le buffer')
+    expect(v).toMatch(/60%/)
+    expect(v).toMatch(/\$1,000/)
+    expect(v).toMatch(/40% restants/)
+    // Et le buffer redevient un montant net, sans la note collée dessus.
+    expect(r('Buffer payout (Pro)', '50k')).toBe('$2,100')
+    expect(r('Buffer payout (Pro)', '150k')).toBe('$4,600')
+  })
+
+  // Le verrou Pro se déclenche sur un ÉVÉNEMENT — le premier payout —, pas sur
+  // un seuil de solde atteint en trailing.
+  it('verrouille le max loss au solde initial + $100 après le premier payout', () => {
+    expect(r('Pro — verrouillage du max loss', '50k')).toMatch(/\$50,100/)
+    expect(r('Pro — verrouillage du max loss', '100k')).toMatch(/\$100,100/)
+    expect(r('Pro — verrouillage du max loss', '150k')).toMatch(/\$150,100/)
+    expect(r('Pro — verrouillage du max loss', '50k')).toMatch(/PREMIER payout/)
+  })
+
+  it('plafonne les payouts à $100,000 par utilisateur', () => {
+    expect(r('Pro — plafond de payouts')).toMatch(/\$100,000/)
+    expect(r('Sim→Live trigger Pro', '50k')).toMatch(/\$5,000/)
+    expect(r('Sim→Live trigger Pro', '150k')).toMatch(/\$10,000/)
+  })
+
+  // ⚠️ La dotation live du 150K démarre à $4,500, pas $4,000.
+  it('corrige la dotation live du 150K', () => {
+    expect(r('LIVE Pro initial funding', '150k')).toMatch(/\$4,500/)
+    expect(r('LIVE Pro initial funding', '50k')).toMatch(/\$2,000 et \$5,000/)
+  })
+
+  // Le déverrouillage de la dotation était réduit à « 20 winning days ».
+  it('donne les vrais critères de déverrouillage de la dotation', () => {
+    const v = r('LIVE Pro balance withdraw')
+    expect(v).toMatch(/4% de la dotation/)
+    expect(v).toMatch(/3 payouts/)
+    expect(v).toMatch(/\$140/)
+  })
+
+  // Deux pièges dans une seule phrase officielle.
+  it('dit que le jalon ne garantit rien et que le surplus est PERDU', () => {
+    const v = r('Pro — bascule décidée par la firme')
+    expect(v).toMatch(/\$20,000/)
+    expect(v).toMatch(/sans garantir/)
+    expect(v).toMatch(/PERDU/)
+  })
+
+  // La grille de contrats financée du Pro ne suit PAS le rapport 10 micros
+  // = 1 mini : elle donne autant de minis que de micros.
+  it('donne au Pro une grille financée à part', () => {
+    expect(extractModelSegment(r('Contrats sim funded', '50k'), 'Pro')).toMatch(/5 minis \/ 5 micros/)
+    expect(extractModelSegment(r('Contrats sim funded', '100k'), 'Pro')).toMatch(/10 minis \/ 10 micros/)
+    expect(extractModelSegment(r('Contrats sim funded', '150k'), 'Pro')).toMatch(/15 minis \/ 15 micros/)
+  })
+})
+
+// ⚠️ ERREUR DE FOND : le Flex n'a jamais été STATIQUE. Annoncer un plancher figé
+// à un porteur dont le seuil monte avec ses gains est exactement l'erreur qui
+// casse un compte.
+describe('My Funded Futures — Flex', () => {
+  const r = (key, plan = '25k') => PROPFIRM_RULES['My Funded Futures'].rules[key][plan]
+
+  it('classe le Flex en EOD TRAILING, pas en statique', () => {
+    expect(r('Drawdown Flex (EOD trailing)', '25k')).toBe('$1,000')
+    expect(r('Drawdown Flex (EOD trailing)', '50k')).toBe('$2,000')
+    // L'ancienne clé, qui portait le mot « static », ne doit plus exister.
+    expect(PROPFIRM_RULES['My Funded Futures'].rules['Drawdown Flex (EOD static)'])
+      .toBeUndefined()
+  })
+
+  // Comme le Pro, le Flex se verrouille sur un ÉVÉNEMENT.
+  it('verrouille le max loss à $100 après le premier payout', () => {
+    expect(r('Verrouillage Flex')).toMatch(/PREMIER payout/)
+    expect(r('Verrouillage Flex')).toMatch(/\$100/)
+  })
+
+  // L'absence de buffer est un différenciateur revendiqué, pas une donnée
+  // manquante : la colonne doit dire « Non », jamais un tiret.
+  it('déclare AUCUN buffer, sans ambiguïté', () => {
+    for (const p of ['25k', '50k']) {
+      expect(r('Buffer payout (Flex)', p), p).toMatch(/^AUCUN/)
+    }
+  })
+
+  // Les cinq journées gagnantes ne suffisent pas — la firme consacre un exemple
+  // entier à ce piège.
+  it('exige AUSSI un profit net minimum sur le cycle', () => {
+    expect(r('Jours min avant payout (Flex)')).toMatch(/5 journées GAGNANTES/)
+    expect(r('Profit min jour valide (Flex)', '25k')).toBe('$100 net')
+    expect(r('Profit min jour valide (Flex)', '50k')).toBe('$150 net')
+    expect(r('Flex — profit net exigé par cycle', '25k')).toMatch(/\$500 de profit net total/)
+    expect(r('Flex — profit net exigé par cycle', '25k')).toMatch(/\$250 depuis le payout/)
+    expect(r('Flex — profit net exigé par cycle', '50k')).toMatch(/\$500 depuis le payout/)
+  })
+
+  it('n’a aucune cohérence au moment de retirer', () => {
+    expect(r('Cohérence Flex (payout)')).toMatch(/^AUCUNE/)
+  })
+
+  // ⚠️ Les DEUX plafonds ont été RABAISSÉS. Servir la grille legacy promettrait
+  // le triple à un porteur récent.
+  it('porte les plafonds COURANTS, pas ceux de la génération legacy', () => {
+    expect(extractModelSegment(r('Cap par cycle', '25k'), 'Flex')).toMatch(/\$1,000/)
+    expect(extractModelSegment(r('Cap par cycle', '50k'), 'Flex')).toMatch(/\$2,000/)
+    // Les montants legacy ne doivent plus figurer comme valeur courante.
+    expect(extractModelSegment(r('Cap par cycle', '25k'), 'Flex')).toMatch(/abaissé depuis \$3,000/)
+    expect(extractModelSegment(r('Cap par cycle', '50k'), 'Flex')).toMatch(/abaissé depuis \$5,000/)
+  })
+
+  it('garde la génération legacy dans une cellule à part', () => {
+    expect(r('Flex — génération legacy', '25k')).toMatch(/\$3,000/)
+    expect(r('Flex — génération legacy', '50k')).toMatch(/\$5,000/)
+    expect(r('Flex — génération legacy', '50k')).toMatch(/4 minis \/ 40 micros/)
+  })
+
+  // Le minimum de retrait du 50K est passé de $250 à $500.
+  it('relève le minimum de retrait du 50K', () => {
+    expect(extractModelSegment(r('Payout minimum', '50k'), 'Flex')).toMatch(/\$500/)
+    expect(extractModelSegment(r('Payout minimum', '25k'), 'Flex')).toMatch(/\$250/)
+  })
+
+  // ⚠️ « 10K sim cap » était une coquille : le plafond est de $100,000.
+  it('corrige le plafond de bascule en live', () => {
+    const v = r('Sim→Live trigger Flex/Builder', '25k')
+    expect(v).toMatch(/\$100,000/)
+    expect(v).not.toMatch(/10K/)
+  })
+
+  // Une DLL qu'on ACHÈTE — propre au 50K.
+  it('documente l’add-on DLL du 50K', () => {
+    expect(r('Flex — option DLL', '50k')).toMatch(/\$1,000/)
+    expect(r('Flex — option DLL', '50k')).toMatch(/pause douce/)
+    expect(r('Flex — option DLL', '50k')).toMatch(/sans casser le compte/)
+    expect(r('Flex — option DLL', '25k')).toMatch(/non publié/)
+  })
+
+  it('fait scaler la limite de contrats sur le SOLDE en sim funded', () => {
+    expect(r('Flex — scaling en sim funded', '25k')).toMatch(/\$749/)
+    expect(r('Flex — scaling en sim funded', '50k')).toMatch(/\$1,499/)
+    for (const p of ['25k', '50k']) {
+      expect(r('Flex — scaling en sim funded', p), p).toMatch(/Aucun scaling pendant l'évaluation/)
+    }
+  })
+
+  // Le plan est en fin de vie : les comptes existants continuent, plus rien ne
+  // se vend.
+  it('signale l’arrêt de la vente', () => {
+    expect(r('Flex — arrêt de la vente')).toMatch(/arrêté/)
+    expect(r('Flex — arrêt de la vente')).toMatch(/5 août/)
+    expect(r('Flex — arrêt de la vente')).toMatch(/comptes déjà ouverts continuent/)
+  })
+
+  it('donne les paramètres du compte live', () => {
+    expect(r('Flex — compte live', '25k')).toMatch(/\$1,000/)
+    expect(r('Flex — compte live', '50k')).toMatch(/\$2,000/)
+    for (const p of ['25k', '50k']) {
+      expect(r('Flex — compte live', p), p).toMatch(/\$156/)   // solde plancher
+    }
   })
 })
