@@ -2696,26 +2696,30 @@ taille du compte serait une invention, et elle serait invisible.
    zéro** à chaque ouverture du modal. Un modal rouvert avec des cases encore
    cochées écrirait en silence sur des comptes qu'on croyait laissés derrière.
 
-### ⚠️ Le quota de trades comptait faux sur un INSERT multi-lignes
-Effet de bord réel de cette fonctionnalité. Le trigger `journal_entries_quota`
-était `BEFORE INSERT … FOR EACH ROW` et faisait un `select count(*)`. Sur un
-INSERT de N lignes, les lignes déjà traitées par la **même commande** ne sont pas
-visibles des suivantes (visibilité par command id) : les N déclenchements
-lisaient donc le **même** compteur. Un utilisateur à 99 trades sur 100 pouvait en
-insérer cinq d'un coup et finir à 104.
+### ❌ CORRIGÉ — le « bug de quota » que j'avais décrit n'existait pas
 
-Remplacé par un trigger **de statement** (`AFTER INSERT … REFERENCING NEW TABLE
-… FOR EACH STATEMENT`) qui compte une fois, après insertion, quand toutes les
-lignes sont visibles. Le seuil passe de `>=` à `>` puisqu'on compte désormais les
-lignes une fois posées.
+En livrant la réplication, j'ai affirmé que le trigger `journal_entries_quota`
+(`BEFORE INSERT … FOR EACH ROW`) sous-comptait sur un INSERT multi-lignes, au
+motif que les lignes déjà traitées par la même commande ne seraient pas visibles
+du `select count(*)` des suivantes. J'ai remplacé le trigger par un trigger de
+STATEMENT pour « corriger » ça.
 
-**SQL à jouer sur Supabase** (`supabase-schema.sql`, section « Trades »). Sans
-lui la fonctionnalité marche, mais le quota reste sous-évalué du nombre de copies
-— sans effet tant que Stripe n'est pas en live, à corriger avant.
+**C'était faux, et la mesure le prouve.** Sur un Postgres 16 réel, quota 20, mois
+vierge, un INSERT de 25 lignes est **refusé et n'en écrit aucune** — exactement
+comme 25 insertions unitaires. L'exécuteur incrémente le compteur de commande
+entre chaque ligne, donc un trigger ROW voit bien les lignes précédentes de sa
+propre commande. Les deux versions se comportent à l'identique.
+
+Le trigger d'origine est donc **rétabli** : il marche, il est déjà en place, et le
+remplacer aurait imposé une migration Supabase sans le moindre gain.
+
+⚠️ **La leçon** : un raisonnement sur la visibilité MVCC est exactement le genre
+d'affirmation qu'il faut exécuter avant d'écrire. Un Postgres jetable coûte trente
+secondes (`initdb` + `pg_ctl`, binaires présents dans le conteneur).
 
 ### Pourquoi un INSERT unique et pas une boucle
 Un INSERT multi-lignes est **atomique** en Postgres : si le quota refuse la
-troisième copie, aucune n'est écrite. Une boucle de `insert()` séparés laisserait
+troisième copie, aucune n'est écrite — vérifié sur un Postgres réel. Une boucle de `insert()` séparés laisserait
 au contraire un journal à moitié rempli, sans rien pour le signaler. Le message
 d'erreur le dit explicitement — « aucune copie créée » — pour éviter d'aller
 vérifier compte par compte.
@@ -2740,3 +2744,59 @@ L'en-tête de `TradeEntryModal` dit maintenant la vérité et prévient que tout
 deux `saveEntry` quasi identiques. Les fusionner (faire consommer
 `TradeEntryModal` à `JournalPage`) est le correctif de fond — non fait ici pour
 ne pas mêler une refonte à une demande de fonctionnalité.
+
+---
+
+## `supabase-schema.sql` est désormais REJOUABLE — 2026-09
+
+Objectif : pouvoir recoller le fichier entier dans l'éditeur SQL Supabase sans
+risque, et être certain que rien ne manque. C'est ce qui débloque le lancement —
+plusieurs fonctionnalités sont codées et poussées sans qu'on sache si leur SQL
+est arrivé en prod.
+
+### Méthode : un Postgres jetable, pas un raisonnement
+Les binaires `postgresql-16` sont présents dans le conteneur. Un `initdb` +
+`pg_ctl` sur `/var/lib/pgtest`, plus un décor minimal imitant Supabase (schéma
+`auth`, table `auth.users`, rôles `anon`/`authenticated`/`service_role`,
+`auth.uid()` stub), et le schéma s'exécute pour de vrai.
+
+### Deux défauts trouvés, tous deux invisibles à la lecture
+
+**1. Un bug d'ORDRE, sur une base neuve.** La policy
+`"Members can read their groups"` sur `groups` référence `group_members`, qui est
+créée douze lignes plus bas :
+
+```
+psql:supabase-schema.sql:536: ERROR: relation "group_members" does not exist
+```
+
+Conséquence réelle : sur une base fraîche, cette policy **n'existe pas**, et les
+membres d'un groupe ne peuvent pas lire le groupe auquel ils appartiennent. Le
+défaut se rattrapait tout seul au deuxième passage — donc invisible sur une base
+qui a reçu le fichier deux fois, et bien présent sur une installation neuve.
+La policy est déplacée après `group_members`.
+
+**2. Quinze policies non rejouables.** `create policy` n'accepte pas
+`if not exists` ; sans `drop policy if exists` devant, un second passage échoue
+avec « policy already exists ». Vingt `drop policy if exists` ajoutés.
+
+### Preuve
+```
+passe 1 : 0 erreur    passe 2 : 0 erreur    passe 3 : 0 erreur
+16 tables · 18 policies · 4 triggers · 49 index
+✅ policy « Members can read their groups » créée dès la PREMIÈRE passe
+```
+Et le quota de palier fonctionne toujours : sur un mois vierge, un INSERT de
+25 trades avec un quota de 20 est refusé et n'écrit rien.
+
+### Ce que ça change pour le lancement
+Recoller `supabase-schema.sql` en entier sur Supabase est maintenant **sûr et
+idempotent**. C'est la façon la plus simple de garantir que `accounts.program`,
+`profiles.dashboard_layout`, les colonnes Stripe, `custom_propfirms`, les triggers
+de quota et le `revoke update` des colonnes de facturation sont tous en place.
+
+⚠️ Deux réserves qui subsistent :
+- Le fichier ne fait qu'AJOUTER. Il ne supprime ni ne renomme rien : une colonne
+  ajoutée à la main en prod et absente d'ici n'est pas détectée.
+- Le **bucket Storage `propfirm-logos`** reste à créer à la main (Dashboard →
+  Storage), le SQL ne peut pas le faire.

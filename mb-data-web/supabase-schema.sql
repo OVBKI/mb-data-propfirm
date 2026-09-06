@@ -179,6 +179,7 @@ create table if not exists certificates (
   created_at timestamptz default now()
 );
 alter table certificates enable row level security;
+drop policy if exists "Users manage own certificates" on certificates;
 create policy "Users manage own certificates" on certificates
   for all using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
@@ -192,21 +193,25 @@ alter table payouts  enable row level security;
 alter table journal_entries enable row level security;
 
 -- Policies for firms
+drop policy if exists "Users manage own firms" on firms;
 create policy "Users manage own firms" on firms
   for all using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- Policies for accounts
+drop policy if exists "Users manage own accounts" on accounts;
 create policy "Users manage own accounts" on accounts
   for all using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- Policies for payouts
+drop policy if exists "Users manage own payouts" on payouts;
 create policy "Users manage own payouts" on payouts
   for all using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- Policies for journal_entries
+drop policy if exists "Users manage own journal" on journal_entries;
 create policy "Users manage own journal" on journal_entries
   for all using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
@@ -250,6 +255,7 @@ create unique index if not exists profiles_username_lower_uniq
 -- RLS : un user lit/modifie SON profil uniquement.
 -- Lecture publique des pseudos déléguée à un RPC SECURITY DEFINER (ci-dessous).
 alter table profiles enable row level security;
+drop policy if exists "Users manage own profile" on profiles;
 drop policy if exists "Users manage own profile" on profiles;
 create policy "Users manage own profile" on profiles
   for all using (auth.uid() = user_id)
@@ -440,6 +446,7 @@ create unique index if not exists push_subscriptions_user_endpoint_uniq
   on push_subscriptions(user_id, endpoint);
 
 alter table push_subscriptions enable row level security;
+drop policy if exists "Users manage own push subscriptions" on push_subscriptions;
 create policy "Users manage own push subscriptions" on push_subscriptions
   for all using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
@@ -456,6 +463,7 @@ create table if not exists waitlist (
 );
 
 alter table waitlist enable row level security;
+drop policy if exists "Anyone can insert waitlist" on waitlist;
 create policy "Anyone can insert waitlist" on waitlist for insert with check (true);
 
 -- FEEDBACK — retours beta (components/BetaFeedback.js). Insert client-side par
@@ -473,6 +481,7 @@ create table if not exists feedback (
 alter table feedback enable row level security;
 -- Un utilisateur connecté ne peut insérer que ses propres retours ; personne ne
 -- peut lire la table via l'anon key (les admins passent par le service role).
+drop policy if exists "Users insert own feedback" on feedback;
 create policy "Users insert own feedback" on feedback for insert with check (auth.uid() = user_id);
 
 -- CRON_HEARTBEAT — le dispatcher /api/cron/daily y écrit son dernier run (service
@@ -508,6 +517,7 @@ create table if not exists custom_propfirms (
 );
 alter table custom_propfirms enable row level security;
 -- Lecture publique (le merge in-app lit via l'anon key) ; écritures par le service role uniquement.
+drop policy if exists "custom_propfirms public read" on custom_propfirms;
 create policy "custom_propfirms public read" on custom_propfirms for select using (true);
 
 -- Bucket Storage requis pour les logos : Supabase Dashboard → Storage → New bucket
@@ -527,13 +537,10 @@ create table if not exists groups (
 );
 
 alter table groups enable row level security;
+drop policy if exists "Owner manages own groups" on groups;
 create policy "Owner manages own groups" on groups
   for all using (auth.uid() = owner_id)
   with check (auth.uid() = owner_id);
-create policy "Members can read their groups" on groups
-  for select using (
-    exists (select 1 from group_members gm where gm.group_id = id and gm.user_id = auth.uid())
-  );
 
 create index if not exists groups_owner_id_idx on groups(owner_id);
 create index if not exists groups_invite_code_idx on groups(invite_code);
@@ -549,10 +556,22 @@ create table if not exists group_members (
 create unique index if not exists group_members_uniq on group_members(group_id, user_id);
 
 alter table group_members enable row level security;
+drop policy if exists "Members can read own membership" on group_members;
 create policy "Members can read own membership" on group_members
   for select using (auth.uid() = user_id);
+drop policy if exists "Members can delete own membership" on group_members;
 create policy "Members can delete own membership" on group_members
   for delete using (auth.uid() = user_id);
+
+-- ⚠️ Cette policy vit ICI, pas avec les autres policies de `groups`, parce
+-- qu'elle RÉFÉRENCE group_members : déclarée plus haut, elle échouait sur une
+-- base neuve (« relation "group_members" does not exist ») et les membres ne
+-- pouvaient alors pas lire les groupes auxquels ils appartiennent.
+drop policy if exists "Members can read their groups" on groups;
+create policy "Members can read their groups" on groups
+  for select using (
+    exists (select 1 from group_members gm where gm.group_id = id and gm.user_id = auth.uid())
+  );
 
 create index if not exists group_members_group_id_idx on group_members(group_id);
 create index if not exists group_members_user_id_idx on group_members(user_id);
@@ -572,6 +591,7 @@ create table if not exists announcements (
 );
 
 alter table announcements enable row level security;
+drop policy if exists "Anyone can read active announcements" on announcements;
 create policy "Anyone can read active announcements" on announcements
   for select using (active = true);
 
@@ -585,9 +605,11 @@ create table if not exists follows (
 create unique index if not exists follows_uniq on follows(follower_id, following_id);
 
 alter table follows enable row level security;
+drop policy if exists "Users manage own follows" on follows;
 create policy "Users manage own follows" on follows
   for all using (auth.uid() = follower_id)
   with check (auth.uid() = follower_id);
+drop policy if exists "Anyone can read follows" on follows;
 create policy "Anyone can read follows" on follows
   for select using (true);
 
@@ -595,6 +617,7 @@ create index if not exists follows_follower_id_idx on follows(follower_id);
 create index if not exists follows_following_id_idx on follows(following_id);
 
 -- PUBLIC PROFILES — lecture publique des profils opt-in
+drop policy if exists "Public profiles are viewable" on profiles;
 drop policy if exists "Public profiles are viewable" on profiles;
 create policy "Public profiles are viewable" on profiles
   for select using (is_public = true);
@@ -795,51 +818,23 @@ begin
   return new;
 end $$;
 
--- ⚠️ REMPLACÉ par le trigger de STATEMENT ci-dessous. Gardé pour mémoire : la
--- version BEFORE ... FOR EACH ROW compte juste tant qu'un INSERT ne porte
--- qu'UNE ligne. Depuis la réplication d'un trade sur plusieurs comptes
--- (lib/tradeReplication.js), un seul INSERT en écrit N — et les lignes déjà
--- traitées par la même commande ne sont PAS visibles du `select count(*)` des
--- suivantes (règle de visibilité par command id). Les N déclenchements
--- lisaient donc tous le MÊME compteur, et un utilisateur à 99 trades sur 100
--- pouvait en insérer cinq d'un coup pour finir à 104.
-drop trigger if exists journal_entries_quota on journal_entries;
-
--- Compte APRÈS l'insertion, une seule fois par statement : à ce moment toutes
--- les lignes de la commande sont visibles, donc le total est exact quel que
--- soit leur nombre. Lever ici annule TOUT le statement — c'est ce qu'on veut :
--- une réplication partiellement écrite laisserait un journal incohérent, sans
--- rien pour le signaler.
+-- ⚠️ VÉRIFIÉ SUR UN POSTGRES 16 RÉEL, et c'est contre-intuitif : un trigger
+-- BEFORE ... FOR EACH ROW compte JUSTE même quand un seul INSERT porte N lignes.
+-- Les lignes déjà traitées par la même commande SONT visibles du `select count(*)`
+-- des suivantes — l'exécuteur incrémente le compteur de commande entre chaque
+-- ligne. J'avais supposé l'inverse en livrant la réplication multi-comptes
+-- (lib/tradeReplication.js) et remplacé ce trigger par un trigger de STATEMENT
+-- pour « corriger » un dépassement qui n'existait pas. Mesure à l'appui, sur un
+-- mois vierge et un quota de 20 : un INSERT de 25 lignes est REFUSÉ et n'en
+-- écrit aucune, exactement comme 25 insertions unitaires.
 --
--- Le seuil passe de `>=` à `>` parce qu'on compte désormais les lignes une fois
--- posées : à 100 trades autorisés, un compte qui en totalise exactement 100
--- après insertion est en règle.
-create or replace function public.enforce_trade_quota_stmt()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare r record; v_max int; v_count int;
-begin
-  -- Un même statement peut toucher plusieurs mois (import) et, en théorie,
-  -- plusieurs utilisateurs : on vérifie chaque couple concerné.
-  for r in select distinct user_id, date_trunc('month', date)::date as m from new_rows loop
-    v_max := public.plan_limit_for(r.user_id, 'maxTradesPerMonth');
-    continue when v_max is null;   -- palier illimité
-    select count(*) into v_count from journal_entries
-      where user_id = r.user_id
-        and date >= r.m
-        and date <  (r.m + interval '1 month')::date;
-    if v_count > v_max then
-      raise exception 'PLAN_LIMIT_REACHED:maxTradesPerMonth:%', v_max
-        using errcode = 'check_violation';
-    end if;
-  end loop;
-  return null;
-end $$;
-
+-- La version ROW est donc conservée : elle marche, elle est déjà en place, et la
+-- remplacer imposerait une migration sans le moindre gain.
 drop trigger if exists journal_entries_quota_stmt on journal_entries;
-create trigger journal_entries_quota_stmt
-  after insert on journal_entries
-  referencing new table as new_rows
-  for each statement execute function public.enforce_trade_quota_stmt();
+drop function if exists public.enforce_trade_quota_stmt();
+drop trigger if exists journal_entries_quota on journal_entries;
+create trigger journal_entries_quota before insert on journal_entries
+  for each row execute function public.enforce_trade_quota();
 
 -- Index de comptage : sans lui, chaque insert de trade scanne la table.
 create index if not exists journal_entries_user_month_idx
