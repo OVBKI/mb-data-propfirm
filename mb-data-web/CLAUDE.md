@@ -2857,3 +2857,42 @@ Les couches rendues (`public/hand.png`, `public/coin/`, ~60 Mo) sont des produit
 de build, ignorées par git ; seul le WebM final est versionné. La page assemblée
 est publiée en Artifact pour relecture ; elle n'est **pas** branchée sur
 `app/page.js` — c'est une proposition, la landing Next.js actuelle reste en place.
+
+### v2 — deux mains de bronze, d'après *La Cathédrale* de Rodin (2026-09)
+
+Retour utilisateur sur la v1 : *« le rendu n'est pas optimal, cherche-moi une
+main soit humaine soit robotique »*, puis, photo de la sculpture de Rodin à
+l'appui : *« mets ça comme mains animées qui viendront entourer la pièce, qui
+bougera en 3D légèrement »*.
+
+**Recherche GitHub** (l'API `search` est bloquée en session, recherche web +
+clones directs) — quatre candidats posés index tendu et rendus pour choix :
+
+| Candidat | Source | Licence | Verdict |
+|---|---|---|---|
+| **libhand** — main humaine riggée, 35 k sommets | `libhand/libhand` | CC BY 3.0 | **retenu** (peau, puis bronze) |
+| Shadow Dexterous Hand | `google-deepmind/mujoco_menagerie` | Apache-2.0 | la plus belle des robotiques |
+| LEAP Hand · Allegro | idem | MIT · BSD-2 | look « matériel de labo » |
+| NASA Robonaut 2 | `gkjohnson/nasa-urdf-robots` (URDF) · `nasa/NASA-3D-Resources` (GLB) | domaine public | basse résolution ; d'abord choisi, puis remplacé par la demande Rodin |
+
+Les mains robotiques ont été posées avec **MuJoCo** (`pip install mujoco`,
+`qpos` par articulation → export OBJ en coordonnées monde). Le `bpy` pip n'a pas
+d'importeur COLLADA : les `.dae` de Robonaut ont été convertis par un petit
+parseur maison — et ROS **n'applique pas** `up_axis`, il ne faut donc pas
+convertir Y-up → Z-up, sinon les pièces s'éparpillent.
+
+**La scène finale** (`mb-data-backdrop/blender/scene_hands.py`) : deux libhand
+(la seconde est le miroir de la première), matériau bronze (métal sombre, plus
+doré aux angles rasants via Layer Weight, grain de fonte léger), qui respirent
+— elles se referment de 4° vers le centre puis s'ouvrent — pendant que la pièce
+fait un tour complet, flotte et bascule de 5°. 120 images à 24 i/s, 1024×576,
+32 échantillons, ~35 min sur 4 cœurs. Plus de couches statiques : les mains
+bougent, chaque image est rendue entière.
+
+⚠️ Deux pièges du fichier libhand documentés dans le README backdrop : l'objet
+Armature est en rotation **quaternion** (poser `rotation_mode = "XYZ"` avant
+`rotation_euler`), et la flexion des doigts est **négative** sur X.
+
+**Attribution** : CC BY exige la mention — elle est dans le pied de page de la
+landing (« Mains 3D : modèle libhand, CC BY 3.0 »). À conserver si la page est
+branchée sur `app/page.js`.

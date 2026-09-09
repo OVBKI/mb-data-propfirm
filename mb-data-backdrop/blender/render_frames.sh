@@ -1,24 +1,20 @@
 #!/bin/bash
-# Rend les couches du hero avec Blender (module pip `bpy`, Cycles CPU) :
-#   • hand.png             — la main-statue, immobile : UNE image, à 160 échantillons ;
-#   • coin/coin_0000..0149 — la pièce, un tour complet sur 150 images (boucle parfaite).
-# Sortie dans ../public/, là où HeroLoop.jsx (Remotion) les recompose.
+# Rend les 120 images du hero « Cathédrale » avec Blender (module pip `bpy`,
+# Cycles CPU) : deux mains de bronze qui se referment autour de la pièce gravée.
+# Sortie dans ../public/frames/, là où HeroLoop.jsx (Remotion) les encode.
 #
-#   ./render_frames.sh            # tout
-#   ./render_frames.sh coin       # seulement la pièce (reprend où elle s'est arrêtée)
+#   ./render_frames.sh
 #
-# La pièce est rendue par 4 processus à 1 thread chacun sur des plages
-# d'images : Cycles ne monte pas linéairement avec les threads, et chaque
-# processus ne construit la scène qu'une fois. Une image existante est sautée,
-# donc on peut relancer après une interruption sans rien perdre.
+# La main est le modèle libhand (github.com/libhand/libhand, CC-BY 3.0) : son
+# .blend de 10 Mo n'est pas versionné ici, il est cloné à la première exécution.
+# Quatre processus à 1 thread sur des plages d'images : Cycles ne monte pas
+# linéairement avec les threads, et chaque processus ne construit la scène qu'une
+# fois. Une image existante est sautée : relançable après une interruption.
 set -e
-HERE=$(cd "$(dirname "$0")" && pwd); PUB="$HERE/../public"; mkdir -p "$PUB/coin"
-WHAT=${1:-all}
-if [ "$WHAT" != "coin" ]; then
-  python3 "$HERE/scene.py" -- --layer hand --samples 160 --out "$PUB/hand.png"
-fi
-for r in "0 37" "38 75" "76 112" "113 149"; do set -- $r
-  python3 "$HERE/scene.py" -- --layer coin --frame $1 --to $2 --samples 40 --threads 1 --out "$PUB/coin/coin_XXXX.png" > "$HERE/coin_$1.log" 2>&1 &
+HERE=$(cd "$(dirname "$0")" && pwd); PUB="$HERE/../public/frames"; mkdir -p "$PUB"
+[ -f "$HERE/libhand/hand_model/blender/hand.blend" ] || git clone -q --depth 1 https://github.com/libhand/libhand "$HERE/libhand"
+for r in "0 29" "30 59" "60 89" "90 119"; do set -- $r
+  python3 "$HERE/scene_hands.py" -- --frame $1 --to $2 --total 120 --samples 32 --w 1024 --h 576 --threads 1 --out "$PUB/frame_XXXX.png" > "$HERE/frames_$1.log" 2>&1 &
 done
 wait
-ls "$PUB/coin" | wc -l | xargs -I{} echo "{} images de pièce dans $PUB/coin"
+ls "$PUB" | wc -l | xargs -I{} echo "{} images dans $PUB"

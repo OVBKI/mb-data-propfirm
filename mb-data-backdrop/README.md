@@ -45,37 +45,59 @@ garde-fou contre un rendu en haute résolution livré sans qu'on s'en aperçoive
 ## HeroLoop — la boucle 3D de la landing (`mb-data-web/landing-3d`)
 
 Deuxième composition, tout autre budget : ici il y a du DÉTAIL FIN (une pièce
-gravée du logo), donc 1280×720 et un WebM VP9 **avec alpha**.
+gravée du logo, du bronze), donc 1024×576 et un WebM VP9 **avec alpha**.
 
-Le partage des rôles, qui rend le rendu faisable sur un simple CPU :
+La scène, d'après *La Cathédrale* de Rodin : deux mains de bronze qui s'élèvent
+et se referment doucement autour de la pièce, laquelle fait un tour complet en
+flottant. 120 images à 24 i/s = 5 s, boucle parfaite (toutes les animations sont
+périodiques sur la durée).
 
 | Étape | Outil | Ce qu'il produit |
 |---|---|---|
 | `blender/make_mask.py` | Blender (`pip install bpy`) | `logo_mask.png` — le relief du logo, lu dans le canal **alpha** du WebP (le fond est transparent : la luminance est vide) |
-| `blender/scene.py` | Blender, Cycles CPU | la main-statue (une image, elle ne bouge pas) et la pièce (150 images, un tour complet) |
-| `src/HeroLoop.jsx` | Remotion | recompose main + pièce, image par image — aucun rendu 3D dans le navigateur |
+| `blender/scene_hands.py` | Blender, Cycles CPU | les 120 images : mains libhand posées + pièce gravée |
+| `src/HeroLoop.jsx` | Remotion | rejoue la séquence image par image — aucun rendu 3D dans le navigateur |
 | `render_hero.sh` | Remotion CLI | `mb-data-web/landing-3d/assets/hero-loop.webm` |
 
 ```bash
 pip install bpy numpy                    # Blender en module Python, sans interface
 python3 blender/make_mask.py -- blender/logo_mask.png
-./blender/render_frames.sh               # ~1 h sur 4 cœurs ; relançable, saute l'existant
+./blender/render_frames.sh               # clone libhand, ~30 min sur 4 cœurs ; relançable
 ./render_hero.sh                         # → ../mb-data-web/landing-3d/assets/hero-loop.webm
 cd ../mb-data-web && python3 landing-3d/build_landing.py dist/index.html
 ```
 
-Ce qui a été essayé et abandonné, pour ne pas y retourner :
-- **Métaballes** pour la main : des fragments, jamais une main. La main est faite
-  de primitives (capsules, palme = cube biseauté) jointes puis **remesh voxel
-  0.022 → lissage correctif 30 → subsurf**.
-- **Gravure par luminance** du logo : pièce lisse — voir le masque alpha ci-dessus.
-- **Rendre la pièce à chaque image avec la main** : ~55 s/image. Le mode
-  `--layer coin` ne construit pas la main, rend une zone limitée à la pièce
-  (`use_border`, mesurée sur les images) et enchaîne une plage d'images par
-  processus : ~20 s/image en agrégé sur 4 processus à 1 thread.
+### La main : libhand (CC BY 3.0)
+`github.com/libhand/libhand` — une main humaine réaliste, 35 000 sommets, rig
+complet (`finger1..5joint1..3`). C'est le seul modèle de main trouvé sur GitHub
+qui soit à la fois réaliste, riggé et sous licence permissive ; la mention
+d'attribution est dans le pied de page de la landing. Le `.blend` (10 Mo) n'est
+pas versionné : `render_frames.sh` le clone.
+
+Trois pièges de ce fichier (Blender 2.5x) :
+- **L'objet Armature est en rotation QUATERNION** : `rotation_euler` est ignoré
+  sans `rotation_mode = "XYZ"` d'abord. Une heure perdue à voir des mains à
+  l'envers.
+- **Un angle NÉGATIF sur X fléchit un doigt vers la paume** ; positif, il le plie
+  en arrière.
+- Le matériau `skin` n'a plus de texture branchée après conversion : on
+  reconstruit le matériau (ici, du bronze).
+
+Repère du modèle : doigts vers -X, paume vers -Z, poignet vers +X. Avec
+`rotation_euler = (0, +90°, 0)` les doigts pointent vers +Z et la paume vers -X
+(main de droite) ; la main de gauche est son miroir (`scale.x = -1` sur le pivot).
+
+### Ce qui a été essayé et abandonné, pour ne pas y retourner
+- **Une main procédurale** (capsules + remesh voxel, `scene_pointing.py`, gardé
+  pour mémoire) : lisible mais pas belle — c'est ce qui a motivé la recherche
+  d'un vrai modèle.
+- **Mains robotiques** : Shadow Dexterous Hand, LEAP, Allegro
+  (`google-deepmind/mujoco_menagerie`, posées via MuJoCo) et NASA Robonaut 2
+  (`gkjohnson/nasa-urdf-robots`, domaine public, COLLADA converti à la main
+  faute d'importeur dans le `bpy` pip). Rendues et proposées ; l'utilisateur a
+  finalement choisi la composition Rodin avec des mains humaines.
 - **`--browser-executable` vers le Chromium de Playwright** : Remotion échoue au
   lancement ; son propre chrome-headless-shell fonctionne.
 - **Three.js dans le navigateur** (`@react-three/fiber` + `@remotion/three`) :
-  faisable, mais l'app ne charge alors pas une vidéo mais un moteur 3D et un
-  modèle — et la main procédurale n'existe qu'en Blender. Écarté ; les
-  dépendances n'ont pas été gardées.
+  faisable, mais l'app chargerait un moteur 3D et un modèle au lieu d'une vidéo
+  de quelques centaines de ko. Écarté.

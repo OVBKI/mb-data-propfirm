@@ -4,4 +4,5 @@ out/
 # build, régénérables. Seul le WebM final est versionné, côté mb-data-web.
 public/hand.png
 public/coin/
+public/frames/
 blender/*.log
