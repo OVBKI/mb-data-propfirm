@@ -1,0 +1,370 @@
+<title>Quantara — La monnaie de la discipline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   QUANTARA — landing « numismatique ».
+   Un seul monde visuel, assumé : l'Abyss sombre de l'app (globals.css), une
+   matière de métal frappé, et du laiton gravé pour les filets et les chiffres.
+   Tout est peint explicitement : la page tient sur n'importe quel fond hôte.
+   ───────────────────────────────────────────────────────────────────────── */
+:root{
+  --abyss:#0a1420; --abyss-2:#0f1c2c; --surface:rgba(24,37,53,.72); --hair:rgba(216,180,106,.28);
+  --ink:#f0f5fa; --ink-2:#c9d6e3; --slate:#8fa3b8;
+  --steel:#5ab0ff; --steel-bg:rgba(90,176,255,.12);
+  --mint:#3ddba8; --mint-bg:rgba(61,219,168,.12);
+  --amber:#ffc25c; --red:#ff7a86;
+  --brass:#d8b46a; --brass-2:#f1d99a; --brass-dim:rgba(216,180,106,.55);
+  --font-display:"Fraunces","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --font-ui:"Outfit","Segoe UI",system-ui,sans-serif;
+  --font-mono:"Roboto Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --maxw:1180px; --gutter:clamp(16px,4vw,48px);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--abyss);color:var(--ink);font-family:var(--font-ui);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+/* Le halo Abyss, comme dans l'app : trois dégradés fixés sous l'interface */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:
+ radial-gradient(60vw 50vw at 88% -8%,rgba(90,176,255,.20),transparent 60%),
+ radial-gradient(48vw 40vw at 8% 6%,rgba(61,219,168,.11),transparent 60%),
+ radial-gradient(56vw 46vw at 50% 108%,rgba(165,139,255,.13),transparent 60%)}
+/* Grain : la matière du papier de catalogue, très discret */
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.045;mix-blend-mode:overlay;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>")}
+.page{position:relative;z-index:1}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--gutter)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--steel);outline-offset:3px;border-radius:4px}
+
+/* ── Typo ── */
+h1,h2,h3{font-family:var(--font-display);font-weight:500;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,5vw,64px);line-height:1.04;font-variation-settings:"opsz" 144}
+h1 em{font-size:.78em;display:block;margin-top:.18em}
+h2{font-size:clamp(30px,4vw,48px);line-height:1.08;font-variation-settings:"opsz" 96}
+h3{font-size:22px;line-height:1.2;font-variation-settings:"opsz" 36}
+p{margin:0}
+.lede{font-size:clamp(17px,1.6vw,20px);color:var(--ink-2);max-width:56ch;font-weight:300}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+/* La légende de monnaie : petites capitales espacées, en laiton */
+.legend{font-family:var(--font-ui);font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--brass);display:inline-flex;gap:14px;align-items:center}
+.legend::before{content:"";width:22px;height:1px;background:var(--brass)}
+.rule{height:1px;border:0;margin:0;background:linear-gradient(90deg,transparent,var(--hair) 18%,var(--hair) 82%,transparent)}
+
+/* ── Barre ── */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-family:var(--font-display);font-size:22px;letter-spacing:.06em;font-weight:600}
+.brand img{width:34px;height:34px;filter:drop-shadow(0 0 10px rgba(90,176,255,.45))}
+.nav ul{display:flex;gap:26px;list-style:none;margin:0;padding:0;font-size:14px;color:var(--ink-2)}
+.nav ul a{text-decoration:none}
+.nav ul a:hover{color:var(--ink)}
+@media(max-width:820px){.nav ul{display:none}}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:999px;font-weight:500;font-size:15px;text-decoration:none;border:1px solid transparent;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;min-height:44px}
+.btn:hover{transform:translateY(-1px)}
+.btn-brass{background:linear-gradient(180deg,var(--brass-2),var(--brass));color:#1b1407;box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 10px 30px rgba(216,180,106,.22)}
+.btn-ghost{border-color:rgba(240,245,250,.18);color:var(--ink);background:rgba(240,245,250,.04)}
+.btn-ghost:hover{background:rgba(240,245,250,.08)}
+
+/* ── Hero ── */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(24px,4vw,56px);align-items:center;padding-block:clamp(28px,5vw,64px) clamp(36px,6vw,80px)}
+.hero-copy{display:grid;gap:26px}
+.hero h1 em{font-style:italic;font-weight:300;color:var(--brass-2)}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:12px}
+.hero-note{font-size:13px;color:var(--slate)}
+.hero-note b{color:var(--ink-2);font-weight:500}
+.hero-media{position:relative;aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:radial-gradient(70% 70% at 60% 45%,#1a2c44,#0a1420 70%);box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(216,180,106,.18) inset}
+.hero-media video,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+/* La légende tournante : le texte de la tranche d'une pièce */
+.ring{position:absolute;left:-9%;bottom:-13%;width:34%;aspect-ratio:1;pointer-events:none;opacity:.7;animation:spin 48s linear infinite}
+.ring text{font-family:var(--font-ui);font-size:8.6px;letter-spacing:.34em;fill:var(--brass);text-transform:uppercase}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero-caption{position:absolute;left:18px;top:16px;display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ink-2);background:rgba(10,20,32,.55);backdrop-filter:blur(8px);padding:8px 12px;border-radius:999px;border:1px solid rgba(216,180,106,.22)}
+.hero-caption i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px var(--mint-bg)}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.hero-media{aspect-ratio:16/11}}
+
+/* ── Frise de chiffres : gravés dans un bandeau ── */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-block:1px solid var(--hair);margin-block:8px 0}
+.strip>div{padding:22px 18px;border-left:1px solid var(--hair);display:grid;gap:4px}
+.strip>div:first-child{border-left:0}
+.strip .v{font-family:var(--font-display);font-size:clamp(28px,3.4vw,42px);line-height:1;color:var(--brass-2);font-variant-numeric:tabular-nums}
+.strip .l{font-size:12.5px;color:var(--slate);letter-spacing:.04em}
+@media(max-width:760px){.strip{grid-template-columns:repeat(2,1fr)}.strip>div:nth-child(3){border-left:0}.strip>div:nth-child(n+3){border-top:1px solid var(--hair)}}
+
+/* ── Sections ── */
+.section{padding-block:clamp(56px,8vw,110px)}
+.sec-head{display:grid;gap:14px;max-width:760px;margin-bottom:clamp(28px,4vw,44px)}
+.sec-head .lede{max-width:62ch}
+
+/* ── Dashboard : la vraie grille de widgets ── */
+.dash{border-radius:20px;background:var(--surface);border:1px solid rgba(240,245,250,.08);box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden}
+.dash-top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(240,245,250,.08);font-size:13px}
+.tabs{display:flex;gap:18px;color:var(--slate)}
+.tabs b{color:var(--ink);font-weight:600}
+.kbd{font-family:var(--font-mono);font-size:11px;color:var(--slate);border:1px solid rgba(240,245,250,.14);border-radius:6px;padding:3px 7px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:16px}
+.w{background:rgba(10,20,32,.55);border:1px solid rgba(240,245,250,.07);border-radius:14px;padding:14px 16px;display:grid;gap:10px;min-width:0}
+.w h4{margin:0;font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);display:flex;justify-content:space-between;gap:8px}
+.w .big{font-family:var(--font-mono);font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.w .sub{font-size:12px;color:var(--slate)}
+.w.span2{grid-column:span 2}.w.span4{grid-column:span 4}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500}
+.pill.mint{background:var(--mint-bg);color:var(--mint)}.pill.amber{background:rgba(255,194,92,.14);color:var(--amber)}.pill.red{background:rgba(255,122,134,.14);color:var(--red)}.pill.steel{background:var(--steel-bg);color:var(--steel)}
+.gauge{height:7px;border-radius:999px;background:rgba(240,245,250,.08);overflow:hidden}
+.gauge i{display:block;height:100%;border-radius:999px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
+.row .num{color:var(--ink-2)}
+.spark{width:100%;height:64px;display:block}
+.demo-tag{font-size:11px;color:var(--slate);padding:10px 18px;border-top:1px solid rgba(240,245,250,.08);display:flex;gap:8px;align-items:center}
+.demo-tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--brass)}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.w.span4{grid-column:span 2}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.w.span2,.w.span4{grid-column:span 1}.tabs{display:none}}
+
+/* ── Plaques gravées : les avantages ── */
+.plaques{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.plaque{position:relative;padding:26px 24px 24px;border-radius:16px;background:linear-gradient(180deg,rgba(24,37,53,.85),rgba(15,28,44,.85));border:1px solid rgba(216,180,106,.16);display:grid;gap:12px;align-content:start;min-height:100%}
+.plaque::before{content:"";position:absolute;inset:8px;border-radius:11px;border:1px solid rgba(216,180,106,.10);pointer-events:none}
+.plaque .glyph{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--steel-bg);color:var(--steel);font-family:var(--font-display);font-size:20px;font-weight:600}
+.plaque p{color:var(--ink-2);font-size:15px;font-weight:300}
+.plaque .fine{font-size:12.5px;color:var(--slate)}
+@media(max-width:900px){.plaques{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.plaques{grid-template-columns:1fr}}
+
+/* ── Réplication : la scène avant / après ── */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}
+.ledger{border-radius:16px;background:var(--surface);border:1px solid rgba(240,245,250,.08);overflow:hidden}
+.ledger .hd{padding:12px 16px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);border-bottom:1px solid rgba(240,245,250,.08)}
+.ledger .li{display:grid;grid-template-columns:1.2fr .9fr .8fr;gap:10px;padding:11px 16px;font-size:13.5px;border-bottom:1px solid rgba(240,245,250,.06);align-items:center}
+.ledger .li:last-child{border-bottom:0}
+.ledger .li .num{color:var(--mint)}
+.check{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2)}
+.check::before{content:"";width:16px;height:16px;border-radius:4px;border:1px solid var(--brass-dim);background:var(--brass);box-shadow:inset 0 0 0 3px var(--abyss-2)}
+@media(max-width:820px){.split{grid-template-columns:1fr}}
+
+/* ── Les firmes : la liste réelle, comme une inscription ── */
+.firms{display:flex;flex-wrap:wrap;gap:10px}
+.firm{font-family:var(--font-display);font-size:17px;padding:10px 16px;border:1px solid rgba(240,245,250,.12);border-radius:999px;color:var(--ink-2);background:rgba(240,245,250,.03)}
+.firm small{font-family:var(--font-mono);font-size:11px;color:var(--brass);margin-left:8px;letter-spacing:.06em}
+
+/* ── Preuve de rigueur ── */
+.proof{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:start}
+.proof blockquote{margin:0;padding:22px 24px;border-left:2px solid var(--brass);background:rgba(216,180,106,.06);border-radius:0 14px 14px 0;font-family:var(--font-display);font-size:19px;font-style:italic;font-weight:300;line-height:1.45;color:var(--ink-2)}
+.proof cite{display:block;margin-top:12px;font-style:normal;font-family:var(--font-ui);font-size:12.5px;color:var(--slate);letter-spacing:.06em}
+.checks{display:grid;gap:14px}
+@media(max-width:820px){.proof{grid-template-columns:1fr}}
+
+/* ── CTA final ── */
+.final{text-align:center;display:grid;gap:22px;justify-items:center;padding-block:clamp(56px,9vw,120px)}
+.final h2{max-width:18ch}
+footer{padding-block:28px 40px;font-size:12.5px;color:var(--slate);display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;border-top:1px solid var(--hair)}
+footer a{text-decoration:none}
+
+/* ── Apparition : visible au repos, se révèle en montant ── */
+.reveal{transform:translateY(14px);opacity:.001;animation:up .9s cubic-bezier(.2,.7,.2,1) forwards}
+.reveal:nth-child(2){animation-delay:.08s}.reveal:nth-child(3){animation-delay:.16s}.reveal:nth-child(4){animation-delay:.24s}
+@keyframes up{to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}.ring{animation:none}}
+</style>
+
+<div class="page">
+<div class="wrap">
+  <nav class="nav" aria-label="Principale">
+    <a class="brand" href="#top" aria-label="Quantara"><img src="{{LOGO}}" alt="">QUANTARA</a>
+    <ul>
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#journal">Journal</a></li>
+      <li><a href="#regles">Règles PropFirm</a></li>
+      <li><a href="#rigueur">Méthode</a></li>
+    </ul>
+    <a class="btn btn-ghost" href="https://quantara.tech/auth?mode=signup">Démarrer gratuitement</a>
+  </nav>
+</div>
+
+<header class="wrap hero" id="top">
+  <div class="hero-copy">
+    <span class="legend reveal">Track · Analyze · Grow</span>
+    <h1 class="reveal">Tous tes comptes PropFirm.<br>Un seul dashboard.<br><em>Et la règle exacte de chaque firme.</em></h1>
+    <p class="lede reveal">Drawdown trailing, consistency rule, payouts, buffer — Quantara suit tout, compte par compte, sur Topstep, Apex, Tradeify, My Funded Futures, Lucid et 7 autres firmes. Les règles viennent des help centers officiels, vérifiées article par article.</p>
+    <div class="hero-ctas reveal">
+      <a class="btn btn-brass" href="https://quantara.tech/auth?mode=signup">Démarrer gratuitement</a>
+      <a class="btn btn-ghost" href="https://quantara.tech/demo">Voir la démo sans compte</a>
+    </div>
+    <p class="hero-note">Gratuit pour commencer · <b>tes données t'appartiennent</b> · export CSV à tout moment · FR / EN</p>
+  </div>
+  <figure class="hero-media" aria-label="Une main de marbre pointe une pièce d'acier gravée du logo Quantara">
+    <video autoplay muted loop playsinline poster="{{HERO_POSTER}}">
+      <source src="{{HERO_VIDEO}}" type="video/webm">
+    </video>
+    <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+      <defs><path id="ringPath" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"/></defs>
+      <text><textPath href="#ringPath">12 firmes · 52 tailles · 36 programmes · 550 règles vérifiées · </textPath></text>
+    </svg>
+    <figcaption class="hero-caption"><i></i>Rendu 3D — Blender 5.0, boucle assemblée par Remotion</figcaption>
+  </figure>
+</header>
+
+<div class="wrap">
+  <div class="strip" role="list" aria-label="Le catalogue de règles en chiffres">
+    <div role="listitem"><span class="v">12</span><span class="l">PropFirms futures · 9 CFD</span></div>
+    <div role="listitem"><span class="v">52</span><span class="l">tailles de compte, 25K à 300K</span></div>
+    <div role="listitem"><span class="v">36</span><span class="l">programmes — EOD, intraday, legacy</span></div>
+    <div role="listitem"><span class="v">550</span><span class="l">lignes de règles, sourcées</span></div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ─────────────────────────────────────────────────────────── -->
+<section class="wrap section" id="dashboard">
+  <div class="sec-head">
+    <span class="legend">Vue d'ensemble</span>
+    <h2>Un tableau de bord que tu composes toi-même.</h2>
+    <p class="lede">Neuf widgets, quatre sections, et tu décides de tout : la place, la largeur, la hauteur, la période. Tu peux dupliquer une courbe d'equity pour comparer deux périodes, annuler quarante gestes, ou charger un preset. Ta disposition te suit d'un appareil à l'autre.</p>
+  </div>
+
+  <div class="dash" aria-label="Aperçu du dashboard Quantara">
+    <div class="dash-top">
+      <div class="tabs"><b>Vue d'ensemble</b><span>Performance</span><span>Payouts</span><span>Risque</span></div>
+      <div style="display:flex;gap:10px;align-items:center"><span class="kbd">⌘K</span><span class="kbd">☾</span><span class="pill red">▲ 1</span></div>
+    </div>
+    <div class="grid">
+      <div class="w span2">
+        <h4>À faire maintenant <span class="pill red">1 compte en danger</span></h4>
+        <div style="font-family:var(--font-display);font-size:20px;line-height:1.25">Apex EOD 50K est à <span class="num" style="color:var(--red)">18 %</span> de marge de drawdown.</div>
+        <div class="sub">Une séance perdante suffit à clôturer le compte. Deux autres comptes sont éligibles au payout.</div>
+      </div>
+      <div class="w">
+        <h4>Payouts <span class="pill mint">7 mois</span></h4>
+        <div class="big" style="color:var(--mint)">+9 057 $</div>
+        <div class="sub">6 payouts reçus · dernier le 28 août</div>
+      </div>
+      <div class="w">
+        <h4>Net cumulé</h4>
+        <div class="big" style="color:var(--steel)">+5 402 $</div>
+        <div class="sub">payouts − dépenses, depuis le 1ᵉʳ compte</div>
+      </div>
+
+      <div class="w span2">
+        <h4>Trajectoire <span class="sub">payouts et dépenses cumulés</span></h4>
+        <svg class="spark" viewBox="0 0 400 64" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3ddba8" stop-opacity=".35"/><stop offset="1" stop-color="#3ddba8" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,58 L40,54 L80,50 L120,44 L160,45 L200,36 L240,30 L280,26 L320,18 L360,12 L400,6 L400,64 L0,64Z" fill="url(#g1)"/>
+          <path d="M0,58 L40,54 L80,50 L120,44 L160,45 L200,36 L240,30 L280,26 L320,18 L360,12 L400,6" fill="none" stroke="#3ddba8" stroke-width="2"/>
+          <path d="M0,60 L40,58 L80,57 L120,55 L160,54 L200,52 L240,50 L280,49 L320,48 L360,47 L400,46" fill="none" stroke="#ff7a86" stroke-width="1.6" stroke-dasharray="3 3"/>
+          <circle cx="400" cy="6" r="3.5" fill="#3ddba8"/>
+        </svg>
+      </div>
+      <div class="w span2">
+        <h4>Santé des comptes <span class="sub">trié par risque</span></h4>
+        <div class="row"><span>Apex · EOD 50K</span><span class="num" style="color:var(--red)">18 %</span></div><div class="gauge"><i style="width:18%;background:var(--red)"></i></div>
+        <div class="row"><span>Tradeify · Select Daily 100K</span><span class="num" style="color:var(--amber)">54 %</span></div><div class="gauge"><i style="width:54%;background:var(--amber)"></i></div>
+        <div class="row"><span>MFFU · Rapid 50K</span><span class="num" style="color:var(--mint)">91 %</span></div><div class="gauge"><i style="width:91%;background:var(--mint)"></i></div>
+      </div>
+
+      <div class="w span2">
+        <h4>PropFirms <span class="sub">3 firmes · 6 comptes</span></h4>
+        <div class="row"><span>Apex Trader Funding</span><span><span class="pill mint">2 financés</span> <span class="pill amber">1 challenge</span></span></div>
+        <div class="row"><span>Tradeify</span><span><span class="pill mint">1 financé</span></span></div>
+        <div class="row"><span>My Funded Futures</span><span><span class="pill mint">1 financé</span> <span class="pill amber">1 challenge</span></span></div>
+      </div>
+      <div class="w">
+        <h4>Dépenses <span class="pill steel">7 mois</span></h4>
+        <div class="big" style="color:var(--ink-2)">3 655 $</div>
+        <div class="sub">évaluations, activations, resets</div>
+      </div>
+      <div class="w">
+        <h4>Calendrier</h4>
+        <div class="row"><span>Jeu. — CPI</span><span class="pill red">Fort</span></div>
+        <div class="row"><span>Ven. — NFP</span><span class="pill red">Fort</span></div>
+        <div class="row"><span>Mer. — FOMC</span><span class="pill amber">Moyen</span></div>
+      </div>
+    </div>
+    <div class="demo-tag">Chiffres de démonstration. Les widgets, les sections, les jauges et les alertes sont ceux de l'application.</div>
+  </div>
+</section>
+
+<!-- ── AVANTAGES ─────────────────────────────────────────────────────────── -->
+<section class="wrap section" id="avantages" style="padding-top:0">
+  <hr class="rule">
+  <div class="sec-head" style="margin-top:clamp(40px,6vw,72px)">
+    <span class="legend">Ce que Quantara fait pour toi</span>
+    <h2>Chaque fonction résout un problème qu'un trader PropFirm a vraiment.</h2>
+  </div>
+  <div class="plaques">
+    <article class="plaque"><div class="glyph">DD</div><h3>Jauge de drawdown, par programme</h3><p>Static, EOD ou intraday selon la firme — et selon le <em>programme</em> : un Apex Legacy 150K n'a pas la même marge qu'un Apex 4.0. Tu vois exactement combien il te reste avant de sauter.</p><p class="fine">Drawdown Guardian : alerte push quand un compte passe sous 70 %.</p></article>
+    <article class="plaque"><div class="glyph">%</div><h3>Consistency Monitor</h3><p>Le ratio meilleure journée / profit total, calculé avec le seuil de <em>ta</em> firme — 40 % chez Tradeify en évaluation, aucun en financé ; 50 % chez MFFU sur Rapid et Pro, 30 % sur Rapid EOD.</p><p class="fine">Remis à zéro après chaque payout, comme la règle le prévoit.</p></article>
+    <article class="plaque"><div class="glyph">$</div><h3>Payout Pipeline</h3><p>Setup → Building → Eligible → Received. Le buffer, les journées gagnantes minimum et le profit net exigé sont ceux publiés par la firme, pas une estimation.</p><p class="fine">Split réel appliqué au net : 90/10, 80/20, 100 % sur les premiers dollars quand la firme le fait.</p></article>
+    <article class="plaque"><div class="glyph">≡</div><h3>Journal + Trade Log</h3><p>Calendrier, R-multiple, tags, screenshots, commissions et slippage. Import CSV Rithmic. Filtre par firme, instrument, période.</p><p class="fine">Et la réplication multi-comptes — voir plus bas.</p></article>
+    <article class="plaque"><div class="glyph">▦</div><h3>Heatmaps & Analytics</h3><p>Par jour, par heure, par session. Courbes cumulées dépenses / payouts / net, bilan annuel, performance mensuelle. Tu sais si tu es rentable, et depuis quand.</p><p class="fine">Chaque compte a sa courbe d'equity avec sa ligne de drawdown.</p></article>
+    <article class="plaque"><div class="glyph">⌘</div><h3>Pensé pour l'usage quotidien</h3><p>Recherche globale ⌘K, thème clair ou sombre, FR/EN, calendrier économique, export CSV, notifications push. Sur mobile aussi.</p><p class="fine">Tes données sont isolées par utilisateur au niveau de la base (RLS).</p></article>
+  </div>
+</section>
+
+<!-- ── RÉPLICATION ───────────────────────────────────────────────────────── -->
+<section class="wrap section" id="journal" style="padding-top:0">
+  <div class="split">
+    <div class="sec-head" style="margin:0">
+      <span class="legend">Journal · copy trading</span>
+      <h2>Un trade, trois comptes, une seule saisie.</h2>
+      <p class="lede">La même stratégie sur trois comptes financés donne trois fois le même résultat. Coche les comptes, enregistre une fois : Quantara écrit les trois lignes d'un coup — et si l'une est refusée, aucune n'est écrite. Un journal qui ne colle plus aux relevés de la firme ne sert plus à rien.</p>
+      <div class="checks">
+        <span class="check">Sélection par firme, comptes échoués exclus</span>
+        <span class="check">Montant recopié à l'identique — jamais mis à l'échelle en silence</span>
+        <span class="check">Dupliquer un trade existant vers d'autres comptes, sans le modifier</span>
+      </div>
+    </div>
+    <div class="ledger" aria-label="Exemple de trade répliqué">
+      <div class="hd">Mar. 8 sept. · ES · long · +250,00 $ · Ajouter sur 3 comptes</div>
+      <div class="li"><span>Apex · EOD 50K</span><span class="sub">plan respecté</span><span class="num">+250,00 $</span></div>
+      <div class="li"><span>Tradeify · Select Daily 100K</span><span class="sub">plan respecté</span><span class="num">+250,00 $</span></div>
+      <div class="li"><span>MFFU · Rapid 50K</span><span class="sub">plan respecté</span><span class="num">+250,00 $</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RÈGLES ────────────────────────────────────────────────────────────── -->
+<section class="wrap section" id="regles" style="padding-top:0">
+  <hr class="rule">
+  <div class="sec-head" style="margin-top:clamp(40px,6vw,72px)">
+    <span class="legend">Règles PropFirm</span>
+    <h2>Douze firmes, trente-six programmes, comparés carte par carte.</h2>
+    <p class="lede">Drawdown d'évaluation et de financé, perte journalière, objectif, consistency, buffer, journées minimum avant payout — par programme, pas par firme. Parce qu'un Rapid MFFU est EOD en évaluation et intraday une fois financé, et qu'un Select Daily Tradeify est plus serré qu'un Select Flex dès le 100K.</p>
+  </div>
+  <div class="firms" aria-label="PropFirms futures couvertes">
+    <span class="firm">Topstep<small>2</small></span><span class="firm">Apex Trader Funding<small>3</small></span><span class="firm">Bulenox<small>2</small></span><span class="firm">Lucid Trading<small>4</small></span><span class="firm">Tradeify<small>4</small></span><span class="firm">Take Profit Trader<small>2</small></span><span class="firm">My Funded Futures<small>4</small></span><span class="firm">Phidias<small>3</small></span><span class="firm">Funded Futures Network<small>2</small></span><span class="firm">FuturesElite<small>3</small></span><span class="firm">Alpha Futures<small>3</small></span><span class="firm">FundedNext Futures<small>4</small></span>
+  </div>
+  <p class="hero-note" style="margin-top:16px">Le chiffre à côté du nom est le nombre de programmes modélisés. Plus 9 firmes CFD avec leurs modèles à phases.</p>
+</section>
+
+<!-- ── MÉTHODE ───────────────────────────────────────────────────────────── -->
+<section class="wrap section" id="rigueur" style="padding-top:0">
+  <div class="proof">
+    <div class="sec-head" style="margin:0">
+      <span class="legend">Méthode</span>
+      <h2>Les règles viennent des help centers. Pas des sites de review.</h2>
+      <p class="lede">Chaque fiche est reprise sur les articles officiels des firmes, article par article, et le catalogue dit « non publié » plutôt que d'inventer un chiffre. Quand deux pages officielles se contredisent, la divergence est consignée — pas tranchée en silence.</p>
+    </div>
+    <div class="checks">
+      <blockquote>« The 40 % consistency requirement only applies during the evaluation phase. There is no consistency rule for Select accounts in funded mode. »<cite>Tradeify Help Center — deux articles distincts. La fiche portait 50 % ; elle a été corrigée.</cite></blockquote>
+      <span class="check">616 tests automatisés figent le catalogue et ses parseurs</span>
+      <span class="check">Chaque montant déduit plutôt que cité est signalé comme tel dans la cellule</span>
+      <span class="check">Les prix « catalogue » sont retenus, les promos changeantes signalées</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ───────────────────────────────────────────────────────────────── -->
+<section class="wrap final">
+  <span class="legend">Beta ouverte</span>
+  <h2>Frappe ta première pièce. Le reste, Quantara le suit.</h2>
+  <p class="lede" style="text-align:center">Inscris-toi, ajoute une firme et un compte, et regarde ta jauge de drawdown se calculer avec la vraie règle. Les premiers inscrits gardent la version Founding Member.</p>
+  <div class="hero-ctas" style="justify-content:center">
+    <a class="btn btn-brass" href="https://quantara.tech/auth?mode=signup">Créer mon compte gratuit</a>
+    <a class="btn btn-ghost" href="https://quantara.tech/compare">Comparer les PropFirms</a>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <span>© 2026 Quantara Technologies LLC — Albuquerque, NM</span>
+    <span><a href="https://quantara.tech/legal/privacy">Confidentialité</a> · <a href="https://quantara.tech/legal/terms">Conditions</a> · <a href="https://quantara.tech/contact">Contact</a></span>
+  </footer>
+</div>
+</div>

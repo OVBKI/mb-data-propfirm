@@ -1,2 +1,7 @@
 node_modules/
 out/
+# Couches rendues par blender/render_frames.sh (~60 Mo de PNG) : produits de
+# build, régénérables. Seul le WebM final est versionné, côté mb-data-web.
+public/hand.png
+public/coin/
+blender/*.log

@@ -39,3 +39,43 @@ cp out/backdrop.webm ../mb-data-web/public/backdrop.webm
 
 `mb-data-web/lib/assets.test.js` échoue si le fichier dépasse 200 ko. C'est le
 garde-fou contre un rendu en haute résolution livré sans qu'on s'en aperçoive.
+
+---
+
+## HeroLoop — la boucle 3D de la landing (`mb-data-web/landing-3d`)
+
+Deuxième composition, tout autre budget : ici il y a du DÉTAIL FIN (une pièce
+gravée du logo), donc 1280×720 et un WebM VP9 **avec alpha**.
+
+Le partage des rôles, qui rend le rendu faisable sur un simple CPU :
+
+| Étape | Outil | Ce qu'il produit |
+|---|---|---|
+| `blender/make_mask.py` | Blender (`pip install bpy`) | `logo_mask.png` — le relief du logo, lu dans le canal **alpha** du WebP (le fond est transparent : la luminance est vide) |
+| `blender/scene.py` | Blender, Cycles CPU | la main-statue (une image, elle ne bouge pas) et la pièce (150 images, un tour complet) |
+| `src/HeroLoop.jsx` | Remotion | recompose main + pièce, image par image — aucun rendu 3D dans le navigateur |
+| `render_hero.sh` | Remotion CLI | `mb-data-web/landing-3d/assets/hero-loop.webm` |
+
+```bash
+pip install bpy numpy                    # Blender en module Python, sans interface
+python3 blender/make_mask.py -- blender/logo_mask.png
+./blender/render_frames.sh               # ~1 h sur 4 cœurs ; relançable, saute l'existant
+./render_hero.sh                         # → ../mb-data-web/landing-3d/assets/hero-loop.webm
+cd ../mb-data-web && python3 landing-3d/build_landing.py dist/index.html
+```
+
+Ce qui a été essayé et abandonné, pour ne pas y retourner :
+- **Métaballes** pour la main : des fragments, jamais une main. La main est faite
+  de primitives (capsules, palme = cube biseauté) jointes puis **remesh voxel
+  0.022 → lissage correctif 30 → subsurf**.
+- **Gravure par luminance** du logo : pièce lisse — voir le masque alpha ci-dessus.
+- **Rendre la pièce à chaque image avec la main** : ~55 s/image. Le mode
+  `--layer coin` ne construit pas la main, rend une zone limitée à la pièce
+  (`use_border`, mesurée sur les images) et enchaîne une plage d'images par
+  processus : ~20 s/image en agrégé sur 4 processus à 1 thread.
+- **`--browser-executable` vers le Chromium de Playwright** : Remotion échoue au
+  lancement ; son propre chrome-headless-shell fonctionne.
+- **Three.js dans le navigateur** (`@react-three/fiber` + `@remotion/three`) :
+  faisable, mais l'app ne charge alors pas une vidéo mais un moteur 3D et un
+  modèle — et la main procédurale n'existe qu'en Blender. Écarté ; les
+  dépendances n'ont pas été gardées.

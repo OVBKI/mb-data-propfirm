@@ -2800,3 +2800,60 @@ de quota et le `revoke update` des colonnes de facturation sont tous en place.
   ajoutée à la main en prod et absente d'ici n'est pas détectée.
 - Le **bucket Storage `propfirm-logos`** reste à créer à la main (Dashboard →
   Storage), le SQL ne peut pas le faire.
+
+---
+
+## Landing 3D — main-statue et pièce gravée (2026-09)
+
+Demande utilisateur : une landing HTML avec un modèle 3D fait dans Blender et
+Remotion — *une main en statue qui pointe une pièce où le logo Quantara est
+gravé* — qui donne les **vrais** chiffres du Dashboard et met en valeur les
+avantages du produit.
+
+| Fichier | Rôle |
+|---|---|
+| `landing-3d/index.html` | Le gabarit de la page (placeholders `{{LOGO}}`, `{{HERO_POSTER}}`, `{{HERO_VIDEO}}`) |
+| `landing-3d/build_landing.py` | Assemble la page en UN fichier autonome (data-URI) dans `dist/` |
+| `landing-3d/facts.mjs` | Recalcule les chiffres affichés depuis `lib/constants.js` (`npx vite-node`) |
+| `landing-3d/assets/hero-poster.png` | Image fixe du hero (repli sans vidéo, et affiche avant lecture) |
+| `landing-3d/assets/hero-loop.webm` | La boucle vidéo VP9 **avec alpha**, 150 images, 1280×720 |
+| `../mb-data-backdrop/blender/` | `make_mask.py`, `scene.py`, `render_frames.sh` — la scène Blender |
+| `../mb-data-backdrop/src/HeroLoop.jsx` | La composition Remotion qui recompose les couches |
+| `../mb-data-backdrop/render_hero.sh` | Produit le WebM |
+
+### Les chiffres de la page sont calculés, pas tapés
+`facts.mjs` : **12 firmes futures · 52 tailles de compte · 36 programmes ·
+550 lignes de règles · 9 firmes CFD**. Chaque nom de widget, de section et
+d'exemple de règle sur la page existe dans l'app (Drawdown Health, Consistency
+Monitor, Payout Pipeline, réplication multi-comptes, ⌘K, les quatre onglets du
+dashboard, la citation Tradeify sur la consistance en financé). Une landing qui
+promet une fonctionnalité absente est une dette de confiance ; on n'en met aucune.
+
+### Le partage des rôles qui rend le 3D faisable sur CPU
+Blender rend, Remotion compose, le navigateur **lit une vidéo** — il ne charge
+aucun moteur 3D. La main coûte cher (remesh voxel + subsurf) mais ne bouge pas :
+UNE image à 160 échantillons. La pièce est petite et tourne : 150 images à
+40 échantillons, sur une zone de rendu limitée à la pièce (`use_border`, mesurée
+sur les premières images), en 4 processus à 1 thread. La boucle est parfaite par
+construction : un tour complet exactement sur `durationInFrames`.
+
+### Ce que GitHub a apporté (dépôts consultés, étoiles au 2026-09)
+| Dépôt | ★ | Usage |
+|---|---|---|
+| `remotion-dev/remotion` | 58,7 k | la composition et le rendu VP9 alpha |
+| `remotion-dev/skills` (`3d.md`) | — | règles Remotion + 3D : rendre hors navigateur quand c'est possible, `--image-format=png` pour l'alpha |
+| `blender/blender` | 20,2 k | le module pip `bpy` 5.0 (Cycles CPU, headless) |
+| `mrdoob/three.js` · `pmndrs/react-three-fiber` | 115,3 k · 32,2 k | évalués pour un rendu dans le navigateur — **écartés** (voir README backdrop) |
+| `M3-org/base-meshes` · `KhronosGroup/glTF-Sample-Assets` · `madjin/awesome-cc0` | — | cherchés pour une main CC0 : **aucune main** utilisable ; la main est donc procédurale |
+
+### Trois pièges rencontrés
+1. **Le logo a un fond transparent** : un masque tiré de la luminance donnait une
+   pièce lisse. Le motif est dans le canal **alpha**.
+2. **Les métaballes** ne font pas une main ; primitives + remesh voxel, oui.
+3. **`--browser-executable` vers le Chromium de Playwright** fait échouer
+   Remotion ; son propre chrome-headless-shell marche.
+
+Les couches rendues (`public/hand.png`, `public/coin/`, ~60 Mo) sont des produits
+de build, ignorées par git ; seul le WebM final est versionné. La page assemblée
+est publiée en Artifact pour relecture ; elle n'est **pas** branchée sur
+`app/page.js` — c'est une proposition, la landing Next.js actuelle reste en place.
