@@ -9,11 +9,19 @@
 import React from 'react'
 import { AbsoluteFill, Img, staticFile, useCurrentFrame } from 'remotion'
 
+// Le « bloom » — le halo lumineux sur les hautes lumières du bronze — est fait
+// ICI, pas dans Blender : Cycles n'en a pas, et Remotion rend dans Chrome, où un
+// flou + fusion « screen » d'une copie de l'image donne exactement ça. Le halo
+// déborde sur les zones transparentes avec une alpha partielle : c'est voulu,
+// il se pose en douceur sur le fond de la page.
 export const HeroLoop = () => {
   const frame = useCurrentFrame()
+  const src = staticFile(`frames/frame_${String(frame).padStart(4, '0')}.png`)
+  const fill = { position: 'absolute', inset: 0, width: '100%', height: '100%' }
   return (
     <AbsoluteFill style={{ background: 'transparent' }}>
-      <Img src={staticFile(`frames/frame_${String(frame).padStart(4, '0')}.png`)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+      <Img src={src} style={fill} />
+      <Img src={src} style={{ ...fill, filter: 'blur(22px) brightness(1.35) saturate(1.2)', mixBlendMode: 'screen', opacity: 0.55 }} />
     </AbsoluteFill>
   )
 }

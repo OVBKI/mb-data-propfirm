@@ -14,7 +14,7 @@ set -e
 HERE=$(cd "$(dirname "$0")" && pwd); PUB="$HERE/../public/frames"; mkdir -p "$PUB"
 [ -f "$HERE/libhand/hand_model/blender/hand.blend" ] || git clone -q --depth 1 https://github.com/libhand/libhand "$HERE/libhand"
 for r in "0 29" "30 59" "60 89" "90 119"; do set -- $r
-  python3 "$HERE/scene_hands.py" -- --frame $1 --to $2 --total 120 --samples 32 --w 1024 --h 576 --threads 1 --out "$PUB/frame_XXXX.png" > "$HERE/frames_$1.log" 2>&1 &
+  python3 "$HERE/scene_hands.py" -- --frame $1 --to $2 --total 120 --samples 24 --w 1440 --h 648 --threads 1 --out "$PUB/frame_XXXX.png" > "$HERE/frames_$1.log" 2>&1 &
 done
 wait
 ls "$PUB" | wc -l | xargs -I{} echo "{} images dans $PUB"

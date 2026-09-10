@@ -2896,3 +2896,49 @@ Armature est en rotation **quaternion** (poser `rotation_mode = "XYZ"` avant
 **Attribution** : CC BY exige la mention — elle est dans le pied de page de la
 landing (« Mains 3D : modèle libhand, CC BY 3.0 »). À conserver si la page est
 branchée sur `app/page.js`.
+
+### v3 — hero plein écran, mains qui sortent du sol, lumière (2026-09)
+
+Retour utilisateur : *« crée quelque chose de premium, là c'est moche : les
+mains prennent la moitié de la page et sortent du sol, la pièce flotte en vue
+3/4, les mains viennent l'enrouler, avec des effets de lumière, la même matière
+pour les deux »*, et : *« cherche sur GitHub un dépôt qui explique le webdesign
+animé »*.
+
+**Ce que GitHub a donné** (étoiles au 2026-09) :
+| Dépôt | ★ | Retenu |
+|---|---|---|
+| `sergey-pimenov/awesome-web-animation` | 1,6 k | la carte des bibliothèques ; pointe vers GSAP pour le général et le scroll |
+| `greensock/GSAP` | 28,3 k | **oui** — ouverture en cascade, parallaxe, révélations au défilement, compteurs |
+| `darkroomengineering/lenis` | 15,8 k | **oui** — défilement lissé, monté sur le ticker GSAP comme leur README le recommande |
+| gist « Web Animation Best Practices » (uxderrick) | — | les règles appliquées : n'animer que `transform`/`opacity`, ease-out sans rebond pour les grands mouvements (`power3.out` ≈ `cubic-bezier(.16,1,.3,1)`), décalage ~80 ms, `prefers-reduced-motion` respecté |
+
+**La scène** (`scene_hands.py`, 1440×648 — 20:9) : les mains, à l'échelle 1,
+ont le poignet SOUS le cadre (elles sortent du sol) ; la pièce en vue 3/4 (lacet
+38° ± 14°) flotte et bascule ; les doigts passent d'ouverts à **enroulés** autour
+de la pièce (interpolation d'angles par articulation, `OPEN` → `WRAP`, easing
+smoothstep) ; **une seule matière bronze** partagée par les mains et la pièce
+(la gravure reste un déplacement). Lumières : clé chaude, contre-jour bleu fort,
+kicker doré derrière la pièce pour les glints.
+
+**Le bloom est fait dans Remotion, pas dans Blender** : Cycles n'en a pas, mais
+Remotion rend dans Chrome — une copie de l'image floutée (`blur(22px)`) en
+fusion `screen` donne le halo sur les hautes lumières, et il déborde sur la
+transparence avec une alpha partielle, donc se pose en douceur sur la page.
+
+**La page** : le hero fait 100svh ; sa grille **réserve** la hauteur de la scène
+(`--mh: min(50svh, 44vw)`) pour que le texte ne chevauche jamais les mains ; la
+vidéo est en `object-fit: contain` ancrée en bas, pleine largeur. Trois couches
+de lumière en CSS : un halo derrière la pièce qui respire en 5 s (la durée de la
+boucle), des rais coniques qui tournent en 90 s au-dessus, et un sol — brume +
+filet de lumière là où les mains émergent.
+
+⚠️ Deux pièges :
+- **Les révélations au défilement ne parquent rien à `opacity: 0`.** Au
+  chargement, seuls les éléments SOUS le pli sont masqués puis révélés à
+  l'arrivée (`ScrollTrigger.batch`), avec un filet de sécurité à 4 s. Sans JS,
+  tout est visible.
+- **Le Chromium de Playwright n'a pas accès au réseau** : pour la capture de
+  contrôle, les trois scripts CDN sont servis depuis le disque via `page.route`
+  (`scratchpad/vendor/`). Sans ça, `window.gsap` est absent et la capture
+  montre une page sans animation — un faux négatif silencieux.

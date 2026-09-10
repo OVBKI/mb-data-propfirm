@@ -45,18 +45,20 @@ garde-fou contre un rendu en haute résolution livré sans qu'on s'en aperçoive
 ## HeroLoop — la boucle 3D de la landing (`mb-data-web/landing-3d`)
 
 Deuxième composition, tout autre budget : ici il y a du DÉTAIL FIN (une pièce
-gravée du logo, du bronze), donc 1024×576 et un WebM VP9 **avec alpha**.
+gravée du logo, du bronze), donc 1440×648 et un WebM VP9 **avec alpha**.
 
-La scène, d'après *La Cathédrale* de Rodin : deux mains de bronze qui s'élèvent
-et se referment doucement autour de la pièce, laquelle fait un tour complet en
-flottant. 120 images à 24 i/s = 5 s, boucle parfaite (toutes les animations sont
-périodiques sur la durée).
+La scène, d'après *La Cathédrale* de Rodin : deux mains de bronze qui sortent
+du sol (poignets sous le cadre) et viennent enrouler la pièce, qui flotte en vue
+3/4 — même matière bronze pour les deux. 120 images à 24 i/s = 5 s, 1440×648
+(20:9, la vidéo court sur toute la largeur du hero), boucle parfaite (toutes les
+animations sont périodiques sur la durée). Le bloom est ajouté par Remotion
+(copie floutée en fusion « screen » dans `HeroLoop.jsx`).
 
 | Étape | Outil | Ce qu'il produit |
 |---|---|---|
 | `blender/make_mask.py` | Blender (`pip install bpy`) | `logo_mask.png` — le relief du logo, lu dans le canal **alpha** du WebP (le fond est transparent : la luminance est vide) |
-| `blender/scene_hands.py` | Blender, Cycles CPU | les 120 images : mains libhand posées + pièce gravée |
-| `src/HeroLoop.jsx` | Remotion | rejoue la séquence image par image — aucun rendu 3D dans le navigateur |
+| `blender/scene_hands.py` | Blender, Cycles CPU | les 120 images : mains libhand animées (ouvertes → enroulées) + pièce gravée en vue 3/4 |
+| `src/HeroLoop.jsx` | Remotion | rejoue la séquence image par image et ajoute le bloom — aucun rendu 3D dans le navigateur |
 | `render_hero.sh` | Remotion CLI | `mb-data-web/landing-3d/assets/hero-loop.webm` |
 
 ```bash

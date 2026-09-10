@@ -52,7 +52,7 @@ p{margin:0}
 .rule{height:1px;border:0;margin:0;background:linear-gradient(90deg,transparent,var(--hair) 18%,var(--hair) 82%,transparent)}
 
 /* ── Barre ── */
-.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
 .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-family:var(--font-display);font-size:22px;letter-spacing:.06em;font-weight:600}
 .brand img{width:34px;height:34px;filter:drop-shadow(0 0 10px rgba(90,176,255,.45))}
 .nav ul{display:flex;gap:26px;list-style:none;margin:0;padding:0;font-size:14px;color:var(--ink-2)}
@@ -65,22 +65,42 @@ p{margin:0}
 .btn-ghost{border-color:rgba(240,245,250,.18);color:var(--ink);background:rgba(240,245,250,.04)}
 .btn-ghost:hover{background:rgba(240,245,250,.08)}
 
-/* ── Hero ── */
-.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(24px,4vw,56px);align-items:center;padding-block:clamp(28px,5vw,64px) clamp(36px,6vw,80px)}
-.hero-copy{display:grid;gap:26px}
+/* ── Hero : plein écran. Le texte en haut, les mains qui sortent du sol en bas ── */
+/* --mh : la hauteur de la scène. La grille la RÉSERVE : le texte ne chevauche jamais les mains. */
+.hero{--mh:min(50svh,44vw);position:relative;min-height:100svh;display:grid;grid-template-rows:auto var(--mh);overflow:hidden;isolation:isolate}
+.hero-copy{position:relative;z-index:3;display:grid;gap:16px;justify-items:center;align-content:end;text-align:center;padding-block:clamp(12px,2.5vh,36px) 10px;max-width:880px;margin-inline:auto}
+.hero h1{max-width:24ch;font-size:clamp(30px,4.4vw,56px)}
+.hero h1 em{font-size:.72em;margin-top:.22em}
 .hero h1 em{font-style:italic;font-weight:300;color:var(--brass-2)}
-.hero-ctas{display:flex;flex-wrap:wrap;gap:12px}
+.hero .lede{text-align:center;max-width:58ch;font-size:clamp(16px,1.35vw,18px)}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 .hero-note{font-size:13px;color:var(--slate)}
 .hero-note b{color:var(--ink-2);font-weight:500}
-.hero-media{position:relative;aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:radial-gradient(70% 70% at 60% 45%,#1a2c44,#0a1420 70%);box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(216,180,106,.18) inset}
-.hero-media video,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-/* La légende tournante : le texte de la tranche d'une pièce */
-.ring{position:absolute;left:-9%;bottom:-13%;width:34%;aspect-ratio:1;pointer-events:none;opacity:.7;animation:spin 48s linear infinite}
-.ring text{font-family:var(--font-ui);font-size:8.6px;letter-spacing:.34em;fill:var(--brass);text-transform:uppercase}
-@keyframes spin{to{transform:rotate(360deg)}}
-.hero-caption{position:absolute;left:18px;top:16px;display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ink-2);background:rgba(10,20,32,.55);backdrop-filter:blur(8px);padding:8px 12px;border-radius:999px;border:1px solid rgba(216,180,106,.22)}
+/* La scène : toute la largeur, la moitié basse. Alpha : elle se pose sur le fond de la page. */
+.hero-media{position:absolute;left:0;right:0;bottom:0;height:var(--mh);z-index:2;pointer-events:none}
+.hero-media video,.hero-media>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;display:block}
+/* Lumière 1 — le halo derrière la pièce, qui respire au rythme de la boucle (5 s) */
+.glow{position:absolute;left:50%;bottom:calc(var(--mh) * .60);width:min(46vw,620px);aspect-ratio:1;transform:translate(-50%,50%);border-radius:50%;z-index:1;pointer-events:none;
+ background:radial-gradient(closest-side,rgba(241,217,154,.55),rgba(216,180,106,.22) 38%,rgba(90,176,255,.10) 62%,transparent 72%);filter:blur(18px);animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55;transform:translate(-50%,50%) scale(.94)}50%{opacity:.95;transform:translate(-50%,50%) scale(1.06)}}
+/* Lumière 2 — des rais qui tournent lentement au-dessus de la pièce, masqués vers le bas */
+.rays{position:absolute;left:50%;bottom:calc(var(--mh) * .45);width:min(140vw,1600px);aspect-ratio:1;transform:translate(-50%,50%);z-index:0;pointer-events:none;opacity:.5;
+ background:conic-gradient(from 0deg,transparent 0 9%,rgba(241,217,154,.10) 11%,transparent 14%,transparent 27%,rgba(90,176,255,.09) 30%,transparent 33%,transparent 48%,rgba(241,217,154,.08) 51%,transparent 54%,transparent 70%,rgba(241,217,154,.11) 73%,transparent 76%,transparent 88%,rgba(90,176,255,.08) 91%,transparent 94%);
+ -webkit-mask:radial-gradient(closest-side,#000 20%,transparent 68%);mask:radial-gradient(closest-side,#000 20%,transparent 68%);animation:rays 90s linear infinite}
+@keyframes rays{to{transform:translate(-50%,50%) rotate(360deg)}}
+/* Lumière 3 — le sol : une brume et un filet de lumière là où les mains émergent */
+.floor{position:absolute;left:0;right:0;bottom:0;height:22%;z-index:1;pointer-events:none;
+ background:linear-gradient(180deg,transparent,rgba(10,20,32,.85) 70%,var(--abyss))}
+.floor::before{content:"";position:absolute;left:50%;bottom:0;width:min(90vw,1100px);height:120px;transform:translateX(-50%);border-radius:50%;
+ background:radial-gradient(closest-side,rgba(216,180,106,.28),rgba(216,180,106,.08) 55%,transparent);filter:blur(14px)}
+.floor::after{content:"";position:absolute;left:50%;bottom:0;width:min(70vw,900px);height:1px;transform:translateX(-50%);
+ background:linear-gradient(90deg,transparent,rgba(241,217,154,.7),transparent)}
+.hero-caption{position:absolute;right:clamp(16px,4vw,48px);bottom:20px;z-index:4;display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ink-2);background:rgba(10,20,32,.55);backdrop-filter:blur(8px);padding:8px 12px;border-radius:999px;border:1px solid rgba(216,180,106,.22)}
 .hero-caption i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px var(--mint-bg)}
-@media(max-width:900px){.hero{grid-template-columns:1fr}.hero-media{aspect-ratio:16/11}}
+.scroll-cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:4;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--slate);display:grid;justify-items:center;gap:8px}
+.scroll-cue i{width:1px;height:34px;background:linear-gradient(180deg,var(--brass),transparent);animation:cue 2.2s ease-in-out infinite}
+@keyframes cue{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@media(max-width:700px){.hero{--mh:min(40svh,62vw)}.hero-caption{display:none}.hero h1{font-size:clamp(28px,8vw,40px)}}
 
 /* ── Frise de chiffres : gravés dans un bandeau ── */
 .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-block:1px solid var(--hair);margin-block:8px 0}
@@ -158,11 +178,8 @@ p{margin:0}
 footer{padding-block:28px 40px;font-size:12.5px;color:var(--slate);display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;border-top:1px solid var(--hair)}
 footer a{text-decoration:none}
 
-/* ── Apparition : visible au repos, se révèle en montant ── */
-.reveal{transform:translateY(14px);opacity:.001;animation:up .9s cubic-bezier(.2,.7,.2,1) forwards}
-.reveal:nth-child(2){animation-delay:.08s}.reveal:nth-child(3){animation-delay:.16s}.reveal:nth-child(4){animation-delay:.24s}
-@keyframes up{to{transform:none;opacity:1}}
-@media(prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}.ring{animation:none}}
+/* ── Apparition : tout est visible au repos ; GSAP anime ce qui est sous le pli quand il arrive ── */
+@media(prefers-reduced-motion:reduce){.glow,.rays,.scroll-cue i{animation:none}}
 </style>
 
 <div class="page">
@@ -179,27 +196,27 @@ footer a{text-decoration:none}
   </nav>
 </div>
 
-<header class="wrap hero" id="top">
-  <div class="hero-copy">
-    <span class="legend reveal">Track · Analyze · Grow</span>
-    <h1 class="reveal">Tous tes comptes PropFirm.<br>Un seul dashboard.<br><em>Et la règle exacte de chaque firme.</em></h1>
-    <p class="lede reveal">Drawdown trailing, consistency rule, payouts, buffer — Quantara suit tout, compte par compte, sur Topstep, Apex, Tradeify, My Funded Futures, Lucid et 7 autres firmes. Les règles viennent des help centers officiels, vérifiées article par article.</p>
-    <div class="hero-ctas reveal">
+<header class="hero" id="top">
+  <div class="wrap hero-copy">
+    <span class="legend rv-hero">Track · Analyze · Grow</span>
+    <h1 class="rv-hero">Tous tes comptes PropFirm. Un seul dashboard.<em>Et la règle exacte de chaque firme.</em></h1>
+    <p class="lede rv-hero">Drawdown trailing, consistency rule, payouts, buffer — suivis compte par compte sur Topstep, Apex, Tradeify, My Funded Futures, Lucid et 7 autres firmes, d'après leurs help centers officiels.</p>
+    <div class="hero-ctas rv-hero">
       <a class="btn btn-brass" href="https://quantara.tech/auth?mode=signup">Démarrer gratuitement</a>
       <a class="btn btn-ghost" href="https://quantara.tech/demo">Voir la démo sans compte</a>
     </div>
-    <p class="hero-note">Gratuit pour commencer · <b>tes données t'appartiennent</b> · export CSV à tout moment · FR / EN</p>
+    <p class="hero-note rv-hero">Gratuit pour commencer · <b>tes données t'appartiennent</b> · export CSV à tout moment · FR / EN</p>
   </div>
-  <figure class="hero-media" aria-label="Deux mains de bronze se referment autour d'une pièce d'acier gravée du logo Quantara">
+  <div class="rays" aria-hidden="true"></div>
+  <div class="glow" aria-hidden="true"></div>
+  <figure class="hero-media" aria-label="Deux mains de bronze sortent du sol et se referment autour d'une pièce de bronze gravée du logo Quantara, qui flotte">
     <video autoplay muted loop playsinline poster="{{HERO_POSTER}}">
       <source src="{{HERO_VIDEO}}" type="video/webm">
     </video>
-    <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
-      <defs><path id="ringPath" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"/></defs>
-      <text><textPath href="#ringPath">12 firmes · 52 tailles · 36 programmes · 550 règles vérifiées · </textPath></text>
-    </svg>
-    <figcaption class="hero-caption"><i></i>Rendu 3D — Blender 5.0, boucle encodée par Remotion</figcaption>
   </figure>
+  <div class="floor" aria-hidden="true"></div>
+  <figcaption class="hero-caption"><i></i>Rendu 3D — Blender 5.0, boucle encodée par Remotion</figcaption>
+  <div class="scroll-cue" aria-hidden="true"><i></i>défiler</div>
 </header>
 
 <div class="wrap">
@@ -369,3 +386,54 @@ footer a{text-decoration:none}
   </footer>
 </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+<script>
+(function(){
+  // Motion : transform + opacity seulement, easing sans rebond pour les grands
+  // mouvements (cubic-bezier .16,1,.3,1 ≈ power3.out), décalage de 80 ms entre
+  // éléments, et rien du tout si l'utilisateur a demandé moins d'animation.
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !window.gsap) return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Défilement lissé (Lenis) synchronisé sur le ticker GSAP — le montage recommandé par Lenis.
+  if (window.Lenis) {
+    var lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.95 });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(function(t){ lenis.raf(t * 1000); });
+    gsap.ticker.lagSmoothing(0);
+  }
+
+  // Ouverture : le texte du hero monte en cascade, la scène émerge du sol.
+  gsap.from('.rv-hero', { y: 22, opacity: 0, duration: 1.1, ease: 'power3.out', stagger: 0.08, delay: 0.1 });
+  gsap.from('.hero-media', { y: '14%', opacity: 0, duration: 1.6, ease: 'power3.out', delay: 0.25 });
+  gsap.from('.glow', { opacity: 0, duration: 2.2, ease: 'power2.out', delay: 0.6 });
+
+  // Parallaxe au défilement : le texte s'efface plus vite que la scène.
+  gsap.to('.hero-copy', { y: -60, opacity: 0.15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+  gsap.to('.hero-media', { y: 40, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+
+  // Sections : visibles au repos. On ne cache QUE ce qui est sous le pli au
+  // chargement, et on le révèle à l'arrivée — jamais parqué à opacity 0.
+  var targets = document.querySelectorAll('.strip>div,.sec-head>*,.plaque,.split>*,.dash,.firm,.proof>*,.final>*');
+  var below = Array.prototype.filter.call(targets, function(el){ return el.getBoundingClientRect().top > innerHeight * 0.92; });
+  gsap.set(below, { y: 24, opacity: 0 });
+  ScrollTrigger.batch(below, {
+    start: 'top 88%', once: true,
+    onEnter: function(batch){ gsap.to(batch, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.07, overwrite: true }); }
+  });
+  setTimeout(function(){ gsap.to(below, { opacity: 1, y: 0, duration: 0.6 }); }, 4000);   // filet de sécurité
+
+  // Les chiffres de la frise se comptent quand ils arrivent.
+  document.querySelectorAll('.strip .v').forEach(function(el){
+    var end = parseInt(el.textContent, 10); if (!end) return;
+    var o = { n: 0 };
+    ScrollTrigger.create({ trigger: el, start: 'top 90%', once: true, onEnter: function(){
+      gsap.to(o, { n: end, duration: 1.4, ease: 'power2.out', onUpdate: function(){ el.textContent = Math.round(o.n); } });
+    }});
+  });
+})();
+</script>
