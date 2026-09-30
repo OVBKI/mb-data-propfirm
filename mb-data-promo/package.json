@@ -1,0 +1,22 @@
+{
+  "name": "mb-data-promo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Film promo Quantara (Remotion) — toutes les pages de l'app, capturées avec un trader fictif",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts QuantaraPromo out/quantara-promo.mp4",
+    "render:nobgm": "remotion render src/index.ts QuantaraPromo out/quantara-promo-nobgm.mp4 --props=props-nobgm.json"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.515",
+    "@remotion/motion-blur": "4.0.515",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.515"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "typescript": "5.9.3"
+  }
+}

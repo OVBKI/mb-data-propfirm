@@ -2942,3 +2942,51 @@ filet de lumière là où les mains émergent.
   contrôle, les trois scripts CDN sont servis depuis le disque via `page.route`
   (`scratchpad/vendor/`). Sans ça, `window.gsap` est absent et la capture
   montre une page sans animation — un faux négatif silencieux.
+
+---
+
+## Film promo — toutes les pages de Quantara (2026-09)
+
+Demande utilisateur : *« va chercher des skills de motion design récents avec
+un nombre d'étoiles satisfaisant sur GitHub, puis présente Quantara avec toutes
+les pages pour promouvoir le SaaS »*.
+
+### Skills retenus (GitHub, 2026-09-30)
+| Dépôt | ★ | Dernier commit | Rôle |
+|---|---|---|---|
+| `Vincentwei1021/video-shotcraft` | ~10 k | 2026-09-29 | **le workflow** : 157 cartes de plans avec leur code de démo réglé, pipeline en 8 étapes, règles esthétiques issues de retours réels, sons Mixkit |
+| `remotion-dev/skills` | 4,8 k | 2026-09-29 | règles officielles Remotion (rendu, séquences, audio) |
+| `LottieFiles/motion-design-skill` | 1,8 k | 2026-05-18 | principes : durées, easing directionnel, chorégraphie, règle du 1/3 |
+| écartés | | | `heygen-com/hyperframes` (54 k, HTML→vidéo : doublon de Remotion), `calesthio/OpenMontage` (62 k, système agentique complet, disproportionné), `charlie947/motion-graphics-skills` (29 ★) |
+
+### Le projet : `mb-data-promo/` (Remotion, séparé comme `mb-data-backdrop`)
+| Fichier | Rôle |
+|---|---|
+| `DESIGN.md` | spec : produit, tokens, fonctions → cartes, storyboard frame par frame |
+| `src/timeline.ts` | **source unique** : 11 plans, 1700 f à 30 i/s (56,7 s) |
+| `src/shots/*.tsx` | un fichier par plan, chacun adapté du TSX de démo de sa carte (paramètres réglés conservés) |
+| `src/Sound.tsx` | table SFX en frames relatives + BGM (prop `bgm`) |
+| `capture/` | captures des vraies pages avec un **trader fictif** et Supabase simulé — voir `capture/README.md` |
+
+```bash
+cd mb-data-promo && npm install
+npm run render          # out/quantara-promo.mp4 (avec musique)
+npm run render:nobgm    # out/quantara-promo-nobgm.mp4 (SFX seuls)
+```
+
+### Ce que montre le film, dans l'ordre
+Ouverture (mains de bronze de la landing 3D + « QUANTARA » tracé) → carte
+« à faire maintenant » du dashboard en projecteur → les 4 vues en coupes
+accélérées → mur Health/Analytics/Heatmaps → ⌘K en crash-zoom → modal de trade
+« Ajouter sur 3 comptes » puis les 3 cartes qui s'emboîtent dans le Trade Log →
+fiche Apex qui défile et freine sur « après 6 payouts, le PA est FERMÉ » →
+« 550 lignes de règles » en compteur mécanique → mur de toutes les autres pages
+→ comparateur/simulateur/tarifs en tourbillon → « GRATUIT » → photo de groupe
+autour du logo, « quantara.tech · Démarrer gratuitement ».
+
+### Deux choses apprises en capturant
+- **La CSP de l'app bloque toute URL Supabase non `*.supabase.co`** : pour
+  simuler la base, le navigateur de capture doit tourner avec `bypassCSP`.
+- **`TradeCard` attend `side === 'Long'` (majuscule)** alors que le badge du
+  Trade Log compare en minuscules : une donnée `'long'` s'affiche « SHORT » sur
+  la carte. Incohérence réelle de l'app, notée, non corrigée ici.
