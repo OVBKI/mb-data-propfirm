@@ -9,6 +9,7 @@ import React, { useId } from 'react';
 import { AbsoluteFill, Img, useCurrentFrame, interpolate, Easing } from 'remotion';
 import { tex } from '../lib/tex';
 import { C, F } from '../brand';
+import { TunnelOut } from '../lib/TunnelOut';
 
 const WALL_UP = [6, 22] as const, FLIGHT = [10, 54] as const, CARD_OUT = [62, 72] as const;
 const RING_T0 = 70, TEXT_T0 = 84;
@@ -83,12 +84,15 @@ const spline = (k: Pose[], u: number): Pose => {
 };
 const lerpPose = (a: Pose, b: Pose, t: number): Pose => { const o = {} as Pose; for (const k of KEYS) o[k] = a[k] + (b[k] - a[k]) * t; return o; };
 const CARDS: { id: string; k: [Pose, Pose, Pose]; conv: Pose }[] = [
-  { id: 'compare', k: [{ x: -8, y: -16, rx: 9, ry: 88, rz: 12, s: 0.95 }, { x: -135, y: -92, rx: 16, ry: 44, rz: -8, s: 1.2 }, { x: -118, y: -86, rx: 4, ry: 13, rz: -2, s: 1.4 }], conv: { x: -20, y: -12, rx: 0, ry: 55, rz: 4, s: 0.1 } },
-  { id: 'dd-simulator', k: [{ x: 0, y: 0, rx: 8, ry: 89, rz: 12, s: 0.9 }, { x: -16, y: -7, rx: 13, ry: 38, rz: -7, s: 1.24 }, { x: -5, y: -2, rx: 3, ry: 11, rz: -2, s: 1.46 }], conv: { x: 0, y: 0, rx: 0, ry: 60, rz: 4, s: 0.1 } },
-  { id: 'pricing', k: [{ x: 8, y: 16, rx: 7, ry: 90, rz: 12, s: 0.86 }, { x: 112, y: 78, rx: 11, ry: 34, rz: -6, s: 1.28 }, { x: 100, y: 80, rx: 2, ry: 9, rz: -1, s: 1.52 }], conv: { x: 15, y: 10, rx: 0, ry: 65, rz: 4, s: 0.1 } },
+  { id: 'compare', k: [{ x: -8, y: -16, rx: 9, ry: 88, rz: 12, s: 0.95 }, { x: -300, y: -120, rx: 16, ry: 44, rz: -8, s: 1.1 }, { x: -360, y: -120, rx: 4, ry: 16, rz: -3, s: 1.18 }], conv: { x: -20, y: -12, rx: 0, ry: 55, rz: 4, s: 0.1 } },
+  { id: 'dd-simulator', k: [{ x: 0, y: 0, rx: 8, ry: 89, rz: 12, s: 0.9 }, { x: -16, y: -7, rx: 13, ry: 38, rz: -7, s: 1.24 }, { x: 0, y: 10, rx: 3, ry: 10, rz: -1, s: 1.22 }], conv: { x: 0, y: 0, rx: 0, ry: 60, rz: 4, s: 0.1 } },
+  { id: 'pricing', k: [{ x: 8, y: 16, rx: 7, ry: 90, rz: 12, s: 0.86 }, { x: 300, y: 110, rx: 11, ry: 34, rz: -6, s: 1.16 }, { x: 360, y: 130, rx: 2, ry: 5, rz: 1, s: 1.26 }], conv: { x: 15, y: 10, rx: 0, ry: 65, rz: 4, s: 0.1 } },
 ];
 
-export const Flock: React.FC<{ dur: number }> = () => {
+export const Flock: React.FC<{ dur: number }> = ({ dur }) => (
+  <TunnelOut dur={dur}><FlockScene /></TunnelOut>
+);
+const FlockScene: React.FC = () => {
   const f = useCurrentFrame();
   const gid = `tg${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const st = f - TEXT_T0;
@@ -102,7 +106,7 @@ export const Flock: React.FC<{ dur: number }> = () => {
         <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', perspective: 1400 }}>
           {CARDS.map((c, i) => {
             const idle = (() => { const t = Math.min(f, CARD_OUT[0]) - FLIGHT[1] * 0.86; if (t <= 0) return { ry: 0, rx: 0, rz: 0 }; const ramp = Math.min(1, t / 14) ** 2; return { ry: t * 0.34 * ramp, rx: t * -0.1 * ramp, rz: t * 0.05 * ramp }; })();
-            let pose: Pose; let op = 1;
+            let pose: Pose; let op = interpolate(f, [4, 14], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
             if (f < FLIGHT[0]) pose = c.k[0];
             else if (f < CARD_OUT[0]) { const u = Easing.out(Easing.cubic)(Math.min(1, (f - FLIGHT[0]) / (FLIGHT[1] - FLIGHT[0]))); const p = spline(c.k, u); pose = { ...p, ry: p.ry + idle.ry, rx: p.rx + idle.rx, rz: p.rz + idle.rz }; }
             else { const r = Math.min(1, (f - CARD_OUT[0]) / (CARD_OUT[1] - CARD_OUT[0])); const from = { ...c.k[2], ry: c.k[2].ry + idle.ry, rx: c.k[2].rx + idle.rx, rz: c.k[2].rz + idle.rz }; pose = lerpPose(from, c.conv, Easing.in(Easing.quad)(r)); op = 1 - Easing.in(Easing.cubic)(Math.max(0, (r - 0.55) / 0.45)); }

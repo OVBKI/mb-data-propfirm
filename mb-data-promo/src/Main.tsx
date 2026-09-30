@@ -22,7 +22,7 @@ export const Main: React.FC<{ bgm: boolean }> = ({ bgm }) => (
     <Fonts />
     <Sound bgm={bgm} />
     <Sequence from={SHOTS.open.from} durationInFrames={SHOTS.open.dur}><Open dur={SHOTS.open.dur} /></Sequence>
-    <Sequence from={SHOTS.spot.from} durationInFrames={SHOTS.spot.dur}><Spotlight /></Sequence>
+    <Sequence from={SHOTS.spot.from} durationInFrames={SHOTS.spot.dur}><Spotlight dur={SHOTS.spot.dur} /></Sequence>
     <Sequence from={SHOTS.tabs.from} durationInFrames={SHOTS.tabs.dur}><Tabs dur={SHOTS.tabs.dur} /></Sequence>
     <Sequence from={SHOTS.wall.from} durationInFrames={SHOTS.wall.dur}><Wall dur={SHOTS.wall.dur} /></Sequence>
     <Sequence from={SHOTS.palette.from} durationInFrames={SHOTS.palette.dur}><Palette dur={SHOTS.palette.dur} /></Sequence>

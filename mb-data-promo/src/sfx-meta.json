@@ -1,0 +1,104 @@
+{
+ "air-whoosh-powerful": {
+  "peakLag": 5.6,
+  "onset": 2.5,
+  "peakDb": -3.0,
+  "len": 55
+ },
+ "bass-hit-short": {
+  "peakLag": 2.6,
+  "onset": 1.9,
+  "peakDb": -0.3,
+  "len": 33
+ },
+ "clock-tick-single": {
+  "peakLag": 10.9,
+  "onset": 5.6,
+  "peakDb": -14.2,
+  "len": 25
+ },
+ "impact-cine-big": {
+  "peakLag": 65.2,
+  "onset": 34.4,
+  "peakDb": -0.5,
+  "len": 238
+ },
+ "impact-deep-whoosh": {
+  "peakLag": 16.5,
+  "onset": 8.2,
+  "peakDb": -0.9,
+  "len": 122
+ },
+ "impact-transition": {
+  "peakLag": 27.8,
+  "onset": 5.0,
+  "peakDb": -0.8,
+  "len": 146
+ },
+ "light-transition-magic": {
+  "peakLag": 79.2,
+  "onset": 48.0,
+  "peakDb": -3.2,
+  "len": 152
+ },
+ "shimmer-sparkle-sweep": {
+  "peakLag": 29.4,
+  "onset": 16.1,
+  "peakDb": -2.0,
+  "len": 90
+ },
+ "sparkle-touch": {
+  "peakLag": 14.2,
+  "onset": 7.8,
+  "peakDb": -5.2,
+  "len": 70
+ },
+ "switch-tap": {
+  "peakLag": 0.1,
+  "onset": 0.0,
+  "peakDb": -0.6,
+  "len": 33
+ },
+ "swoosh-quick": {
+  "peakLag": 8.9,
+  "onset": 4.1,
+  "peakDb": -3.9,
+  "len": 23
+ },
+ "transition-snap": {
+  "peakLag": 3.5,
+  "onset": 2.3,
+  "peakDb": -5.6,
+  "len": 17
+ },
+ "typewriter-hit-single": {
+  "peakLag": 5.1,
+  "onset": 3.5,
+  "peakDb": -0.5,
+  "len": 21
+ },
+ "warp-slide": {
+  "peakLag": 20.6,
+  "onset": 3.1,
+  "peakDb": -7.1,
+  "len": 64
+ },
+ "whoosh-fast": {
+  "peakLag": 21.4,
+  "onset": 12.7,
+  "peakDb": -6.1,
+  "len": 53
+ },
+ "whoosh-swirl": {
+  "peakLag": 59.1,
+  "onset": 31.2,
+  "peakDb": -3.8,
+  "len": 75
+ },
+ "zoom-futuristic": {
+  "peakLag": 14.9,
+  "onset": 1.4,
+  "peakDb": -5.3,
+  "len": 65
+ }
+}

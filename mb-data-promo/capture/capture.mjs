@@ -119,7 +119,8 @@ async function fillTrade(p) {
   await d.getByPlaceholder(/250/).fill('420')
   await d.getByText(/Aussi sur d.autres comptes/).click()
   await p.waitForTimeout(400)
-  for (const name of ['Apex EOD 50K', 'LucidFlex 50K']) {
+  // Deux comptes VISIBLES sans défiler dans la liste (Apex EOD 100K en tête, LucidFlex en bas).
+  for (const name of ['Apex EOD 100K', 'LucidFlex 50K']) {
     const lab = d.locator('label', { hasText: name }).first()
     if (await lab.count()) await lab.click()
   }

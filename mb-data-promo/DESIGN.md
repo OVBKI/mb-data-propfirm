@@ -67,12 +67,12 @@ mesurés sur l'image rendue.
 | 3 | 355 | 135 | 4 vues | coupes sèches 49/65/77/85/91/95, puis tenue | « Quatre vues. Un seul dashboard. » | tick par coupe |
 | 4 | 490 | 165 | Analyse | mur incliné 60°, la page glisse seule (caméra fixe), ghosting ∝ vitesse | « Drawdown, consistance, heatmaps — en temps réel. » | warp-slide |
 | 5 | 655 | 115 | ⌘K | tenue 35 f → crash-zoom 6 f sur la palette → rebond 5 f → tenue | « ⌘K — n'importe quel compte, en une touche. » | zoom, impact court |
-| 6 | 770 | 180 | Réplication | modal réel « Ajouter sur 3 comptes » ; trois lignes de trade descendent et s'emboîtent | « Un trade saisi une fois. Copié sur tous tes comptes. » | switch-tap ×3 décroissant |
-| 7 | 950 | 150 | Règles | fiche Apex complète qui défile vite (flou ∝ vitesse) et freine | « La règle exacte de chaque firme. Sourcée. » | whoosh, impact |
+| 6 | 770 | 180 | Réplication | modal réel « Ajouter sur 3 comptes » ; trois lignes de trade descendent et s'emboîtent | « Coche tes comptes. Un seul clic. » puis « Un trade saisi une fois. Copié sur tous tes comptes. » | switch-tap au clic, typewriter ×3 décroissant |
+| 7 | 950 | 150 | Règles | fiche Apex complète qui défile vite (flou ∝ vitesse) et freine | « La règle exacte, jusqu'au dernier détail. » | whoosh, impact |
 | 8 | 1100 | 135 | Chiffre | 5-5-0 roulent et se verrouillent de gauche à droite | « lignes de règles · 12 firmes · 36 programmes » | tick ×3, basse |
 | 9 | 1235 | 150 | Tout le reste | mur de pages en 3 colonnes à vitesses/sens différents, léger push | « Calendrier éco, alertes, import CSV, plan de trading, réglages… » | swirl |
 | 10 | 1385 | 150 | Public | comparateur, simulateur, tarifs tournoient en escalier → aspirés → anneau → « GRATUIT POUR COMMENCER » | (le mot géant) | whoosh puissant, impact |
-| 11 | 1535 | 165 | Clôture | éléments de chaque plan volent autour du logo ; crane 4° ; lumière de scène ; poussière bronze ; tenue ≥ 30 f | « quantara.tech · Démarrer gratuitement » | riser → impact (pic) → sparkle |
+| 11 | 1535 | 165 | Clôture | éléments de chaque plan volent autour du logo ; crane 4° ; lumière de scène ; poussière bronze ; tenue ≥ 30 f | « quantara.tech · crée ton compte » + puce « 550 lignes de règles » | riser → impact (pic) → sparkle |
 
 Total : **1700 f ≈ 56,7 s**. La table vit dans `src/timeline.ts` (source unique) ;
 SFX, sous-titres et transitions en dérivent par des frames *relatives*.
@@ -83,3 +83,26 @@ SFX, sous-titres et transitions en dérivent par des frames *relatives*.
   (« House Vibez », Mixkit, licence libre) est posée sans calage au temps près.
 - **Calendrier éco** : sans réseau, la page affiche « Aucun événement ». Elle
   n'apparaît donc que dans le mur du plan 9, jamais en gros plan.
+- **Coutures non tunnel, choisies** : coupe-flash au début du plan 6 (rupture
+  voulue avant la démonstration), fondu au noir règles → chiffre, bascule de
+  point chiffre → mur de pages. Le reste passe par le tunnel sombre.
+- **Boucle des mains ré-échantillonnée** : la boucle 3D de la landing était en
+  24 i/s ; elle est interpolée à 30 i/s (minterpolate, alpha VP9 conservé) pour
+  supprimer le saccadé relevé à la revue.
+- **Sons calés sur le pic, pas sur le début** : `src/sfx-meta.json` mesure le
+  retard du pic de chaque SFX ; `Sound.tsx` avance chaque son de ce retard plus
+  ~1,25 image de décalage AAC. Les ticks d'horloge (−14 dBFS à la source) sont
+  poussés à ×2.
+
+## Revue indépendante (étape 7) et reste à faire
+
+Première revue : **FAIL** (flou de mouvement postérisé, pièce coupée, plan
+Spotlight décalé, textes trop courts, SFX en retard…). Tout a été corrigé, sauf
+ces points mineurs, laissés tels quels :
+
+- couture visible vers y≈890 dans la pleine page du dashboard (défilement) ;
+- la page Réglages affiche « Plan actuel Free » (la page lit le plan ailleurs
+  que dans `profiles`) ;
+- le code promo public SAVENOW est lisible sur la page Tarifs ;
+- la palette ⌘K apparaît avec sa requête déjà tapée ;
+- l'anneau de fumée passe devant les lettres de « GRATUIT » pendant 4 images.

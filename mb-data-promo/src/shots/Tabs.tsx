@@ -41,7 +41,7 @@ export const Tabs: React.FC<{ dur: number }> = ({ dur }) => {
       <AbsoluteFill style={{ background: C.bg, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, filter: cut ? 'brightness(1.05)' : undefined }}><Shot v={v} extra={push} /></div>
         {cut ? <AbsoluteFill style={{ background: '#fff', opacity: 0.06 }} /> : null}
-        <Caption eyebrow="Vue d'ensemble · Performance · Payouts · Risque" text="Quatre vues. Un seul dashboard." dur={dur} delay={FINAL + 2} />
+        <Caption eyebrow="Vue d'ensemble · Performance · Payouts · Risque" text="Quatre vues. Un seul dashboard." dur={dur} delay={CUTS[1]} />
       </AbsoluteFill>
     </TunnelOut>
   );

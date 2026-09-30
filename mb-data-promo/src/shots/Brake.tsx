@@ -16,7 +16,8 @@ const CL = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 const H = pageH('firm-apex-full');
 const ROW = { x: 495, y: 2455, w: 930, h: 43 };
 const S0 = 16, S1 = 66, L0 = 70, L1 = 84;
-const Z = 2.0; // la ligne d'arrivée doit se lire (Q11) : ~28 px de texte à l'écran
+const Z = 2.5; // la ligne d'arrivée doit se lire (Q11) : ~33 px de texte à l'écran
+const END_CX = 860; // centre du texte de la ligne (label à 510, fin de valeur ~1210)
 const START_CY = 560;
 const END_CY = ROW.y + ROW.h / 2;
 const cyAt = (f: number) => interpolate(f, [S0, S1], [START_CY, END_CY], { easing: Easing.out(Easing.exp), ...CL });
@@ -27,7 +28,8 @@ const Scene: React.FC = () => {
   const v = Math.abs(cyAt(f) - cyAt(f - 1)) * Z;
   const blur = Math.min(v / 60, 1) * 6;
   const t = interpolate(f, [L0, L1], [0, 1], { easing: Easing.out(Easing.cubic), ...CL });
-  const tx = 960 - 960 * Z, ty = 540 - cy * Z;
+  const cx = interpolate(f, [S0, S1], [960, END_CX], { easing: Easing.out(Easing.exp), ...CL });
+  const tx = 960 - cx * Z, ty = 540 - cy * Z;
   return (
     <AbsoluteFill style={{ background: C.bg, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width: 1920, height: H, transform: `translate(${tx}px, ${ty}px) scale(${Z})`, transformOrigin: '0 0', filter: blur > 0.15 ? `blur(${blur}px)` : undefined }}>
@@ -53,7 +55,7 @@ export const Brake: React.FC<{ dur: number }> = ({ dur }) => {
   return (
     <AbsoluteFill>
       <TunnelIn><Scene /></TunnelIn>
-      <Caption eyebrow="Règles PropFirm · 12 firmes" text="La règle exacte de chaque firme. Sourcée." dur={dur - 10} delay={L1 - 4} />
+      <Caption eyebrow="Règles PropFirm · fiche Apex" text="La règle exacte, jusqu'au dernier détail." dur={dur - 10} delay={L1 - 4} />
       <AbsoluteFill style={{ background: C.bg, opacity: fade }} />
     </AbsoluteFill>
   );

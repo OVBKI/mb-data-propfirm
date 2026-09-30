@@ -79,7 +79,7 @@ for (let d = 92; d >= 1; d--) {
 
 // Le trade du plan « réplication » : saisi UNE fois, enregistré sur trois comptes
 // (c'est exactement ce que produit « Ajouter sur 3 comptes »).
-for (const [k, acct] of [[0, accounts[0]], [1, accounts[2]], [2, accounts[7]]]) {
+for (const [k, acct] of [[0, accounts[0]], [1, accounts[3]], [2, accounts[7]]]) {
   journal_entries.push({
     id: uid(990 + k), user_id: USER_ID, account_id: acct.id, date: '2026-09-30', traded_at: '2026-09-30T14:05:00.000Z',
     pnl: 420, instrument: 'NQ', side: 'Long', quantity: 1, notes: 'ORB 9h45 — plan respecté, sortie sur objectif.',

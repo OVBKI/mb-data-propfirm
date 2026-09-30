@@ -71,12 +71,12 @@ const Layer: React.FC<{ lx: number; shade: number; opacity: number; t: number }>
 const Scene: React.FC = () => {
   const f = useCurrentFrame();
   const glide = Easing.bezier(0.3, 0.12, 0.72, 0.9);
-  const lxAt = (x: number) => interpolate(interpolate(x, [0, 150], [0, 1], { easing: glide, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }), [0, 1], [60, -(PW - 2300)]);
+  const lxAt = (x: number) => interpolate(interpolate(x, [0, 128], [0, 1], { easing: glide, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }), [0, 1], [60, -(PW - 1250)]);
   const lx = lxAt(f);
   const shade = interpolate(f, [0, 18, 44], [0.7, 0.4, 0], { extrapolateRight: 'clamp' });
   const speed = Math.abs(lxAt(f - 1) - lxAt(f + 1)) / 2;
   const g1 = Math.min(0.42, speed * 0.03), g2 = Math.min(0.22, speed * 0.016);
-  const drop = interpolate(f, [4, 130], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const drop = interpolate(f, [4, 118], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const glow = interpolate(f, [14, 70], [0.15, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   return (
     <AbsoluteFill style={{ background: '#050a12' }}>

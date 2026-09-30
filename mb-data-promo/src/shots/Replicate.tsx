@@ -9,7 +9,7 @@
 // Couture d'entrée : flash-cut A (blanc chaud 10 f). Couture interne : C (bascule
 // de point, le modal sort du plan de netteté pendant que la page y entre).
 import React from 'react';
-import { AbsoluteFill, Img, interpolate, useCurrentFrame, Easing } from 'remotion';
+import { AbsoluteFill, Img, Sequence, interpolate, useCurrentFrame, Easing } from 'remotion';
 import { tex, box } from '../lib/tex';
 import { Caption } from '../lib/Caption';
 import { TunnelOut } from '../lib/TunnelOut';
@@ -20,17 +20,20 @@ import { C } from '../brand';
 const CL = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 const M = box('cut-trade-modal');
 const ROWS = (layout as Record<string, { boxes?: { x: number; y: number; w: number; h: number }[] }>)['rows-replicated'].boxes!.slice(0, 3);
-const SWAP = 84; // début de la bascule de point
-const PRESS = 56;
+export const SWAP = 94; // début de la bascule de point
+export const PRESS = 74;
 const FLY = Easing.bezier(0.3, 0, 0.25, 1);
 
 const PartA: React.FC<{ f: number }> = ({ f }) => {
-  // Le modal doit se LIRE : il occupe ~90 % de la hauteur, centré.
-  const z = interpolate(f, [0, 80], [1.38, 1.48], { ...CL, easing: Easing.bezier(0.33, 0, 0.15, 1) });
-  const mcx = M.x + M.w / 2, mcy = M.y + M.h / 2 - 8;
-  const press = interpolate(f, [PRESS, PRESS + 3, PRESS + 9], [1, 0.97, 1], { ...CL, easing: Easing.bezier(0.2, 0, 0, 1) });
   // bouton : ~66–95 % en largeur, 90,6–95,8 % en hauteur du modal (mesuré sur la découpe)
   const bx = M.x + M.w * 0.662, by = M.y + M.h * 0.906, bw = M.w * 0.285, bh = M.h * 0.052;
+  // 1) le modal entier, lisible, au-dessus du sous-titre ; 2) poussée sur le bouton avant
+  // le clic (le texte « Ajouter sur 3 comptes » passe de ~20 px à ~36 px).
+  const push = interpolate(f, [PRESS - 14, PRESS - 2], [0, 1], { ...CL, easing: Easing.bezier(0.35, 0, 0.2, 1) });
+  const z = interpolate(f, [0, PRESS - 14], [1.12, 1.18], CL) * (1 - push) + 2.5 * push;
+  const mcx = (M.x + M.w / 2) * (1 - push) + (bx + bw / 2 - 60) * push;
+  const mcy = (M.y + M.h / 2 + 40) * (1 - push) + (by + bh / 2 - 40) * push;
+  const press = interpolate(f, [PRESS, PRESS + 3, PRESS + 9], [1, 0.97, 1], { ...CL, easing: Easing.bezier(0.2, 0, 0, 1) });
   const ring = interpolate(f, [PRESS + 2, PRESS + 16], [0, 1], CL);
   return (
     <AbsoluteFill style={{ background: C.bg, overflow: 'hidden' }}>
@@ -90,7 +93,8 @@ export const Replicate: React.FC<{ dur: number }> = ({ dur }) => {
       {f < SWAP + 15 ? <AbsoluteFill style={{ filter: aBlur > 0 ? `blur(${aBlur}px)` : undefined, opacity: aOp }}><PartA f={f} /></AbsoluteFill> : null}
       {f >= SWAP + 3 ? <AbsoluteFill style={{ filter: bBlur > 0 ? `blur(${bBlur}px)` : undefined, opacity: bOp }}><PartB f={f - SWAP} /></AbsoluteFill> : null}
       {flash > 0 ? <AbsoluteFill style={{ background: 'radial-gradient(ellipse at 50% 45%, rgba(255,248,235,0.98), rgba(255,244,224,0.55) 55%, transparent 80%)', opacity: flash }} /> : null}
-      <Caption eyebrow="Journal · réplication" text="Un trade saisi une fois. Copié sur tous tes comptes." dur={dur - 12} delay={SWAP + 14} />
+      <Sequence durationInFrames={PRESS - 16}><Caption eyebrow="Journal · réplication" text="Coche tes comptes. Un seul clic." dur={PRESS - 16} delay={10} /></Sequence>
+      <Caption text="Un trade saisi une fois. Copié sur tous tes comptes." dur={dur - 12} delay={SWAP + 14} />
     </TunnelOut>
   );
 };

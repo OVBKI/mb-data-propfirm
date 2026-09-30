@@ -40,8 +40,11 @@ export const Open: React.FC<{ dur: number }> = ({ dur }) => {
       <AbsoluteFill style={{ transform: `translateX(${-1920 * out}px)` }}>
         {/* halo chaud derrière la pièce, comme sur la landing */}
         <div style={{ position: 'absolute', left: 960 - 330, top: 520, width: 660, height: 660, borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(241,217,154,.42), rgba(216,180,106,.16) 45%, transparent 72%)', filter: 'blur(18px)', opacity: rise * (0.75 + 0.25 * Math.sin(f / 12)) }} />
-        <div style={{ position: 'absolute', left: 240, top: 432 + (1 - rise) * 120, width: 1440, height: 648, opacity: rise }}>
-          <OffthreadVideo src={staticFile('hero-loop.webm')} transparent muted style={{ width: 1440, height: 648 }} />
+        <div style={{ position: 'absolute', left: 240, top: 452 + (1 - rise) * 120, width: 1440, height: 648, opacity: rise }}>
+          {/* Masque : le haut de la boucle est adouci — quand la pièce flotte, elle
+              touchait le bord du cadre de rendu et s'y coupait net. Boucle re-cadencée
+              24 → 30 i/s (minterpolate mci) pour ne plus doubler une image sur cinq. */}
+          <OffthreadVideo src={staticFile('hero-loop.webm')} transparent muted style={{ width: 1440, height: 648, WebkitMaskImage: 'linear-gradient(180deg, transparent 0%, #000 16%)', maskImage: 'linear-gradient(180deg, transparent 0%, #000 16%)' }} />
         </div>
         {/* le sol : brume + filet de lumière là où les mains émergent */}
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 200, background: `linear-gradient(180deg, transparent, ${C.bg} 85%)` }} />
@@ -61,7 +64,7 @@ export const Open: React.FC<{ dur: number }> = ({ dur }) => {
         </div>
         <div style={{
           position: 'absolute', top: 268, left: 0, right: 0, textAlign: 'center',
-          fontFamily: F.display, fontStyle: 'italic', fontWeight: 400, fontSize: 50, color: C.brassLight,
+          fontFamily: F.display, fontStyle: 'italic', fontWeight: 400, fontSize: 58, color: C.brassLight,
           opacity: tag, transform: `translateY(${(1 - tag) * 30}px)`, filter: `blur(${(1 - tag) * 10}px)`,
         }}>
           Le dashboard des traders PropFirm

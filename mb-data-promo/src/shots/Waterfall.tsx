@@ -19,8 +19,8 @@ const shot = (id: string) => (
 );
 const COLS: TickerColumn[] = [
   { items: ['calendar', 'alerts', 'import-lab', 'settings'].map(shot), durationInSeconds: 12, direction: -1 },
-  { items: ['myrules', 'journal', 'landing', 'compare'].map(shot), durationInSeconds: 9, direction: 1 },
-  { items: ['firm-apex', 'dd-simulator', 'pricing', 'heatmaps'].map(shot), durationInSeconds: 14, direction: -1 },
+  { items: ['myrules', 'journal', 'landing', 'rules'].map(shot), durationInSeconds: 9, direction: 1 },
+  { items: ['trades', 'dash-payouts', 'analytics', 'firm-apex'].map(shot), durationInSeconds: 14, direction: -1 },
 ];
 
 export const Waterfall: React.FC<{ dur: number }> = ({ dur }) => {

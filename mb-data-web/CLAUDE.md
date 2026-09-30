@@ -2982,7 +2982,7 @@ accélérées → mur Health/Analytics/Heatmaps → ⌘K en crash-zoom → modal
 fiche Apex qui défile et freine sur « après 6 payouts, le PA est FERMÉ » →
 « 550 lignes de règles » en compteur mécanique → mur de toutes les autres pages
 → comparateur/simulateur/tarifs en tourbillon → « GRATUIT » → photo de groupe
-autour du logo, « quantara.tech · Démarrer gratuitement ».
+autour du logo, « quantara.tech · crée ton compte ».
 
 ### Deux choses apprises en capturant
 - **La CSP de l'app bloque toute URL Supabase non `*.supabase.co`** : pour
@@ -2990,3 +2990,13 @@ autour du logo, « quantara.tech · Démarrer gratuitement ».
 - **`TradeCard` attend `side === 'Long'` (majuscule)** alors que le badge du
   Trade Log compare en minuscules : une donnée `'long'` s'affiche « SHORT » sur
   la carte. Incohérence réelle de l'app, notée, non corrigée ici.
+
+### Revue indépendante : ce qu'elle a attrapé
+La première revue (sous-agent, étape 7 du skill) a rendu **FAIL**. Corrigé :
+flou de mouvement de Remotion postérisé sur les pages (remplacé par deux
+images fantômes), pièce coupée en haut et boucle 24 i/s saccadée (masque +
+interpolation à 30 i/s), caméra du plan Spotlight décalée de son entrée,
+textes trop courts ou trop tardifs, bouton de réplication trop petit, SFX
+en retard (le pic d'un son arrive souvent 20 à 65 images après son début :
+`src/sfx-meta.json` + compensation dans `Sound.tsx`). Points mineurs
+restants listés dans `mb-data-promo/DESIGN.md`.
