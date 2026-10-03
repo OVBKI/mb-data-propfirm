@@ -12,6 +12,7 @@ import React from 'react';
 import { AbsoluteFill, Img, Sequence, interpolate, useCurrentFrame, Easing } from 'remotion';
 import { tex, box } from '../lib/tex';
 import { Caption } from '../lib/Caption';
+import type { Cap } from '../lib/format';
 import { TunnelOut } from '../lib/TunnelOut';
 import { PageCam } from '../lib/PageCam';
 import layout from '../../public/textures/layout.json';
@@ -93,8 +94,13 @@ export const Replicate: React.FC<{ dur: number }> = ({ dur }) => {
       {f < SWAP + 15 ? <AbsoluteFill style={{ filter: aBlur > 0 ? `blur(${aBlur}px)` : undefined, opacity: aOp }}><PartA f={f} /></AbsoluteFill> : null}
       {f >= SWAP + 3 ? <AbsoluteFill style={{ filter: bBlur > 0 ? `blur(${bBlur}px)` : undefined, opacity: bOp }}><PartB f={f - SWAP} /></AbsoluteFill> : null}
       {flash > 0 ? <AbsoluteFill style={{ background: 'radial-gradient(ellipse at 50% 45%, rgba(255,248,235,0.98), rgba(255,244,224,0.55) 55%, transparent 80%)', opacity: flash }} /> : null}
-      <Sequence durationInFrames={PRESS - 16}><Caption eyebrow="Journal · réplication" text="Coche tes comptes. Un seul clic." dur={PRESS - 16} delay={10} /></Sequence>
-      <Caption text="Un trade saisi une fois. Copié sur tous tes comptes." dur={dur - 12} delay={SWAP + 14} />
+      {caps(dur).map((c, i) => <Caption key={i} {...c} />)}
     </TunnelOut>
   );
 };
+
+// Sous-titres du plan : posés ici en 16:9, recomposés par src/vertical/ en 9:16.
+export const caps = (dur: number): Cap[] => [
+  { eyebrow: 'Journal · réplication', text: 'Coche tes comptes. Un seul clic.', dur: PRESS - 16, delay: 10 },
+  { text: 'Un trade saisi une fois. Copié sur tous tes comptes.', dur: dur - 12, delay: SWAP + 14 },
+];

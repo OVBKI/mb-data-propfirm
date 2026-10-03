@@ -6,7 +6,9 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts QuantaraPromo out/quantara-promo.mp4",
-    "render:nobgm": "remotion render src/index.ts QuantaraPromo out/quantara-promo-nobgm.mp4 --props=props-nobgm.json"
+    "render:nobgm": "remotion render src/index.ts QuantaraPromo out/quantara-promo-nobgm.mp4 --props=props-nobgm.json",
+    "render:vertical": "remotion render src/index.ts QuantaraVertical out/quantara-vertical.mp4",
+    "render:vertical:nobgm": "remotion render src/index.ts QuantaraVertical out/quantara-vertical-nobgm.mp4 --props=props-nobgm.json"
   },
   "dependencies": {
     "@remotion/cli": "4.0.515",

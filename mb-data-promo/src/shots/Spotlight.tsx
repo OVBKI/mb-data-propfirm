@@ -14,6 +14,7 @@ import { PageCam, CamKey } from '../lib/PageCam';
 import { TunnelIn } from '../lib/TunnelIn';
 import { TunnelOut } from '../lib/TunnelOut';
 import { Caption } from '../lib/Caption';
+import type { Cap } from '../lib/format';
 import { tex, pageH, box } from '../lib/tex';
 import { C, F } from '../brand';
 
@@ -126,6 +127,11 @@ const Scene: React.FC = () => {
 export const Spotlight: React.FC<{ dur: number }> = ({ dur }) => (
   <TunnelOut dur={dur}>
     <TunnelIn><Scene /></TunnelIn>
-    <Caption eyebrow="Dashboard · à faire maintenant" text="Ce qui compte, en premier." dur={dur - 12} delay={D + 132} />
+    {caps(dur).map((c, i) => <Caption key={i} {...c} />)}
   </TunnelOut>
 );
+
+// Sous-titres du plan : posés ici en 16:9, recomposés par src/vertical/ en 9:16.
+export const caps = (dur: number): Cap[] => [
+  { eyebrow: 'Dashboard · à faire maintenant', text: 'Ce qui compte, en premier.', dur: dur - 12, delay: D + 132 },
+];

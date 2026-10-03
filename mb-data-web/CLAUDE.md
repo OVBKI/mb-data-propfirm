@@ -2972,6 +2972,8 @@ les pages pour promouvoir le SaaS »*.
 cd mb-data-promo && npm install
 npm run render          # out/quantara-promo.mp4 (avec musique)
 npm run render:nobgm    # out/quantara-promo-nobgm.mp4 (SFX seuls)
+npm run render:vertical # out/quantara-vertical.mp4 (9:16 TikTok/Reels/Shorts)
+npm run render:vertical:nobgm
 ```
 
 ### Ce que montre le film, dans l'ordre
@@ -3000,3 +3002,11 @@ textes trop courts ou trop tardifs, bouton de réplication trop petit, SFX
 en retard (le pic d'un son arrive souvent 20 à 65 images après son début :
 `src/sfx-meta.json` + compensation dans `Sound.tsx`). Points mineurs
 restants listés dans `mb-data-promo/DESIGN.md`.
+
+### Version verticale 9:16
+Composition `QuantaraVertical` : les mêmes plans, filmés par une caméra
+verticale par plan (`mb-data-promo/src/vertical/framing.ts`), sous-titres en
+haut du cadre (le bas est couvert par l'interface TikTok). Les sous-titres ont
+une seule source : `caps(dur)` exporté par chaque plan. Pour ajouter un
+sous-titre, l'écrire là, jamais dans `src/vertical/`. Détails dans
+`mb-data-promo/DESIGN.md`.

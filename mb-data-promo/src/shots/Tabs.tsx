@@ -8,6 +8,7 @@ import React from 'react';
 import { AbsoluteFill, Img, Easing, interpolate, useCurrentFrame } from 'remotion';
 import { tex } from '../lib/tex';
 import { Caption } from '../lib/Caption';
+import type { Cap } from '../lib/format';
 import { TunnelOut } from '../lib/TunnelOut';
 import { C } from '../brand';
 
@@ -41,8 +42,13 @@ export const Tabs: React.FC<{ dur: number }> = ({ dur }) => {
       <AbsoluteFill style={{ background: C.bg, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, filter: cut ? 'brightness(1.05)' : undefined }}><Shot v={v} extra={push} /></div>
         {cut ? <AbsoluteFill style={{ background: '#fff', opacity: 0.06 }} /> : null}
-        <Caption eyebrow="Vue d'ensemble · Performance · Payouts · Risque" text="Quatre vues. Un seul dashboard." dur={dur} delay={CUTS[1]} />
+        {caps(dur).map((c, i) => <Caption key={i} {...c} />)}
       </AbsoluteFill>
     </TunnelOut>
   );
 };
+
+// Sous-titres du plan : posés ici en 16:9, recomposés par src/vertical/ en 9:16.
+export const caps = (dur: number): Cap[] => [
+  { eyebrow: "Vue d'ensemble · Performance · Payouts · Risque", text: 'Quatre vues. Un seul dashboard.', dur, delay: CUTS[1] },
+];

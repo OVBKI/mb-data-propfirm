@@ -10,6 +10,7 @@ import { AbsoluteFill, Img, interpolate, useCurrentFrame } from 'remotion';
 import { VerticalTicker, TickerColumn } from '../lib/VerticalTicker';
 import { tex } from '../lib/tex';
 import { Caption } from '../lib/Caption';
+import type { Cap } from '../lib/format';
 import { C } from '../brand';
 
 const shot = (id: string) => (
@@ -34,7 +35,12 @@ export const Waterfall: React.FC<{ dur: number }> = ({ dur }) => {
       <AbsoluteFill style={{ transform: `scale(${push})`, filter: inBlur > 0 ? `blur(${inBlur}px)` : undefined, opacity: inOp * out }}>
         <VerticalTicker columns={COLS} backgroundColor={C.bg} columnWidth={560} gap={30} />
       </AbsoluteFill>
-      <Caption eyebrow="Et tout le reste" text="Calendrier éco, alertes, import CSV, plan de trading, réglages…" dur={dur - 6} delay={12} />
+      {caps(dur).map((c, i) => <Caption key={i} {...c} />)}
     </AbsoluteFill>
   );
 };
+
+// Sous-titres du plan : posés ici en 16:9, recomposés par src/vertical/ en 9:16.
+export const caps = (dur: number): Cap[] => [
+  { eyebrow: 'Et tout le reste', text: 'Calendrier éco, alertes, import CSV, plan de trading, réglages…', dur: dur - 6, delay: 12 },
+];

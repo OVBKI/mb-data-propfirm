@@ -4,7 +4,8 @@
 // « clac ». Deux fantômes pendant la rotation (0,25 / 0,12), coupés à l'arrêt.
 // Au verrouillage général : pulsation de couleur + 1,035. Chiffres roulés = les
 // VRAIS chiffres de 550 (5, 5, 0) — calculés par facts.mjs.
-import React from 'react';
+import React, { useContext } from 'react';
+import { FormatCtx } from '../lib/format';
 import { AbsoluteFill, interpolate, interpolateColors, useCurrentFrame, Easing } from 'remotion';
 import { C, F, HALO } from '../brand';
 
@@ -37,7 +38,10 @@ const Reel: React.FC<{ f: number; i: number; color: string }> = ({ f, i, color }
   );
 };
 
+const STATS = ['12 firmes futures', '36 programmes', '9 firmes CFD'];
+
 export const Odometer: React.FC<{ dur: number }> = ({ dur }) => {
+  const vert = useContext(FormatCtx) === 'v';
   const f0 = useCurrentFrame();
   const inT = interpolate(f0, [0, 10], [0, 1], { extrapolateRight: 'clamp' });
   const f = f0 - 6;
@@ -55,7 +59,9 @@ export const Odometer: React.FC<{ dur: number }> = ({ dur }) => {
       </div>
       <div style={{ position: 'absolute', left: 0, top: 580, width: 1920, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, opacity: label, transform: `translateY(${(1 - label) * 14}px)` }}>
         <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 64, color: C.brassLight }}>lignes de règles, sourcées</div>
-        <div style={{ fontFamily: F.mono, fontSize: 34, letterSpacing: '0.12em', color: C.text2, textTransform: 'uppercase' }}>12 firmes futures · 36 programmes · 9 firmes CFD</div>
+        {vert
+          ? <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, fontFamily: F.mono, fontSize: 38, letterSpacing: '0.12em', color: C.text2, textTransform: 'uppercase' }}>{STATS.map((s) => <div key={s}>{s}</div>)}</div>
+          : <div style={{ fontFamily: F.mono, fontSize: 34, letterSpacing: '0.12em', color: C.text2, textTransform: 'uppercase' }}>{STATS.join(' · ')}</div>}
       </div>
     </AbsoluteFill>
   );

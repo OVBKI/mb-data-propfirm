@@ -5,7 +5,8 @@
 // d'un rang quand le logo entre (−12 % d'opacité), crane 4° → 0, balayage
 // lumineux, lumière de scène, 20 grains de poussière bronze déterministes, page
 // de fond floutée. Tenue ≥ 30 f à la fin. Pas de sous-titre : la clôture reste nette.
-import React from 'react';
+import React, { useContext } from 'react';
+import { FormatCtx } from '../lib/format';
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, Easing } from 'remotion';
 import { PageCam } from '../lib/PageCam';
 import { tex, pageH, box } from '../lib/tex';
@@ -31,6 +32,7 @@ const DUST = Array.from({ length: 20 }, (_, i) => ({ x: (i * 439 + 137) % 1920, 
 const WORD = 'Quantara'.split('');
 
 export const Outro: React.FC<{ dur: number }> = ({ dur }) => {
+  const vert = useContext(FormatCtx) === 'v';
   const f = useCurrentFrame();
   const blur = interpolate(f, [0, 24], [0, 14], { ...CL, easing: Easing.bezier(0.4, 0, 0.4, 1) });
   const rule = interpolate(f, [58, 70], [0, 1], { ...CL, easing: Easing.bezier(0.3, 0, 0.2, 1) });
@@ -103,9 +105,15 @@ export const Outro: React.FC<{ dur: number }> = ({ dur }) => {
               <div style={{ position: 'absolute', top: 2.5, height: 1, left: '100%', width: 190 * ext, background: C.brass, opacity: extFade }} />
             </>) : null}
           </div>
-          <div style={{ fontFamily: F.mono, fontSize: 46, letterSpacing: '0.12em', color: C.text2, marginTop: 30, opacity: tag, textTransform: 'uppercase' }}>
-            quantara.tech · <span style={{ color: C.brassLight }}>crée ton compte</span>
-          </div>
+          {vert ? (
+            <div style={{ fontFamily: F.mono, fontSize: 52, lineHeight: 1.3, letterSpacing: '0.12em', color: C.text2, marginTop: 30, opacity: tag, textTransform: 'uppercase', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span>quantara.tech</span><span style={{ color: C.brassLight }}>crée ton compte</span>
+            </div>
+          ) : (
+            <div style={{ fontFamily: F.mono, fontSize: 46, letterSpacing: '0.12em', color: C.text2, marginTop: 30, opacity: tag, textTransform: 'uppercase' }}>
+              quantara.tech · <span style={{ color: C.brassLight }}>crée ton compte</span>
+            </div>
+          )}
         </div>
       </AbsoluteFill>
     </AbsoluteFill>

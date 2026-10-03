@@ -106,3 +106,34 @@ ces points mineurs, laissés tels quels :
 - le code promo public SAVENOW est lisible sur la page Tarifs ;
 - la palette ⌘K apparaît avec sa requête déjà tapée ;
 - l'anneau de fumée passe devant les lettres de « GRATUIT » pendant 4 images.
+
+## Format vertical 9:16 (TikTok, Reels, Shorts)
+
+Composition `QuantaraVertical` (1080×1920), même timeline, même son, mêmes
+plans. Rien n'est refait à la main plan par plan : chaque scène 16:9 est
+**filmée par une caméra verticale** (`src/vertical/framing.ts`) qui suit son
+sujet, et les sous-titres sont recomposés pour un téléphone.
+
+| Zone du cadre | Contenu |
+|---|---|
+| 250 → ~520 px | surtitre mono 32 px + sous-titre Outfit 68 px, sur un voile sombre |
+| bande centrée à 1000 px | la scène, grossie de 0,66 à 1,3 selon le plan, bords fondus |
+| 1500 → 1920 px | laissé libre : l'interface TikTok / Reels / Shorts y passe |
+
+- **Une seule source pour les textes** : chaque plan exporte `caps(dur)` ; en
+  16:9 il les pose lui-même, en 9:16 `Caption` ne rend rien et
+  `src/vertical/VCaptions.tsx` les pose en haut du cadre.
+- **Netteté** : la scène est agrandie par la propriété CSS `zoom`, pas par
+  `scale()`, pour que le texte des captures soit rastérisé au bon grossissement (Q2).
+- **Trois plans changent de mise en page en vertical** (via `FormatCtx`) :
+  la règle Apex se replie (le libellé « Après 6 payouts » vient se poser
+  au-dessus de la valeur), les chiffres sous « 550 » passent sur trois lignes,
+  et « quantara.tech / crée ton compte » sur deux.
+- **Réplication** : la caméra suit chaque carte +420 $ au moment où elle
+  s'emboîte, puis recule pour montrer les trois ensemble.
+
+```bash
+npm run render:vertical          # out/quantara-vertical.mp4
+npm run render:vertical:nobgm    # out/quantara-vertical-nobgm.mp4
+COMP=QuantaraVertical ./qa.sh v1 100 300 …   # planche de contrôle 9:16
+```

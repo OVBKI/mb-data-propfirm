@@ -9,6 +9,7 @@ import React from 'react';
 import { AbsoluteFill, Img, interpolate, useCurrentFrame, Easing } from 'remotion';
 import { tex } from '../lib/tex';
 import { Caption } from '../lib/Caption';
+import type { Cap } from '../lib/format';
 import { TunnelIn } from '../lib/TunnelIn';
 import { TunnelOut } from '../lib/TunnelOut';
 import { C, F } from '../brand';
@@ -92,6 +93,11 @@ const Scene: React.FC = () => {
 export const Wall: React.FC<{ dur: number }> = ({ dur }) => (
   <TunnelOut dur={dur}>
     <TunnelIn><Scene /></TunnelIn>
-    <Caption eyebrow="Analyse" text="Drawdown, consistance, heatmaps — en temps réel." dur={dur - 12} delay={20} />
+    {caps(dur).map((c, i) => <Caption key={i} {...c} />)}
   </TunnelOut>
 );
+
+// Sous-titres du plan : posés ici en 16:9, recomposés par src/vertical/ en 9:16.
+export const caps = (dur: number): Cap[] => [
+  { eyebrow: 'Analyse', text: 'Drawdown, consistance, heatmaps — en temps réel.', dur: dur - 12, delay: 20 },
+];

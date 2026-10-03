@@ -6,6 +6,7 @@ import React from 'react';
 import { AbsoluteFill, Img, interpolate, useCurrentFrame, Easing } from 'remotion';
 import { tex, box } from '../lib/tex';
 import { Caption } from '../lib/Caption';
+import type { Cap } from '../lib/format';
 import { TunnelIn } from '../lib/TunnelIn';
 import { C } from '../brand';
 
@@ -39,7 +40,12 @@ export const Palette: React.FC<{ dur: number }> = ({ dur }) => {
             uniquement pendant les 6 f de crash-zoom */}
         {f >= P0 + 1 && f <= P0 + 6 ? <><Scene at={f - 2} opacity={0.18} /><Scene at={f - 1} opacity={0.28} /></> : null}
       </TunnelIn>
-      <Caption eyebrow="Recherche ⌘K" text="N'importe quel compte, en une touche." dur={dur} delay={P0 + 14} />
+      {caps(dur).map((c, i) => <Caption key={i} {...c} />)}
     </AbsoluteFill>
   );
 };
+
+// Sous-titres du plan : posés ici en 16:9, recomposés par src/vertical/ en 9:16.
+export const caps = (dur: number): Cap[] => [
+  { eyebrow: 'Recherche ⌘K', text: "N'importe quel compte, en une touche.", dur, delay: P0 + 14 },
+];
