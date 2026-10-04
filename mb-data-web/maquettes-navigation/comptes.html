@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quantara Comptes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Gabarit B « Comptes d'abord » : rail 64 px (5 domaines) + panneau de liste 300 px
+   (les comptes, groupés par firme, triés par risque) + détail du compte choisi.
+   Le modèle maître-détail de Linear, Vercel ou d'une boîte mail. */
+:root{
+  --bg:#0a1420; --rail:#08111b; --panel:#0d1927; --card:#122131; --card2:#172a3d; --hover:rgba(159,179,200,.07);
+  --line:rgba(159,179,200,.13); --line2:rgba(159,179,200,.22);
+  --text:#f0f5fa; --text2:#9fb3c8; --text3:#7f93a9;
+  --accent:#5ab0ff; --accent-bg:rgba(90,176,255,.14); --on-accent:#06121e;
+  --ok:#3ddba8; --ok-bg:rgba(61,219,168,.13); --warn:#ffc25c; --warn-bg:rgba(255,194,92,.13);
+  --bad:#ff7a86; --bad-bg:rgba(255,122,134,.13); --brass:#d8b46a; --muted-bg:rgba(159,179,200,.10);
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  --ui:"Outfit","Segoe UI",system-ui,sans-serif; --mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+  --ease:cubic-bezier(.2,0,0,1);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#f3f6fa; --rail:#dfe7f0; --panel:#e9eff6; --card:#ffffff; --card2:#f3f7fb; --hover:rgba(13,27,40,.05);
+  --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84;
+  --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10); --on-accent:#ffffff;
+  --ok:#0b8a66; --ok-bg:rgba(11,138,102,.10); --warn:#9a6200; --warn-bg:rgba(201,133,0,.12);
+  --bad:#cc3346; --bad-bg:rgba(204,51,70,.09); --brass:#8f6a22; --muted-bg:rgba(13,27,40,.06);
+  --shadow:0 18px 50px rgba(13,27,40,.16); color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#f3f6fa; --rail:#dfe7f0; --panel:#e9eff6; --card:#ffffff; --card2:#f3f7fb; --hover:rgba(13,27,40,.05);
+  --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84;
+  --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10); --on-accent:#ffffff;
+  --ok:#0b8a66; --ok-bg:rgba(11,138,102,.10); --warn:#9a6200; --warn-bg:rgba(201,133,0,.12);
+  --bad:#cc3346; --bad-bg:rgba(204,51,70,.09); --brass:#8f6a22; --muted-bg:rgba(13,27,40,.06);
+  --shadow:0 18px 50px rgba(13,27,40,.16); color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.app{display:grid;grid-template-columns:64px 300px minmax(0,1fr);height:100vh}
+
+/* Rail : 5 domaines, icône + libellé court (jamais d'icône seule sans nom) */
+.rail{background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0}
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--ok));color:var(--on-accent);font-weight:700;margin-bottom:12px}
+.r{width:56px;padding:8px 0 6px;border:0;background:none;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text3);cursor:pointer;font-size:10.5px;position:relative;transition:background .15s,color .15s}
+.r svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.r:hover{color:var(--text);background:var(--hover)}
+.r.on{color:var(--text);background:var(--accent-bg)}
+.r .dot{position:absolute;top:6px;right:12px;width:7px;height:7px;border-radius:50%;background:var(--bad)}
+.rail .sp{flex:1}
+.av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--card2);border:1px solid var(--line2);font-size:12px;font-weight:600}
+
+/* Panneau de liste */
+.list{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.lh{padding:16px 16px 10px;display:grid;gap:10px;border-bottom:1px solid var(--line)}
+.lh-top{display:flex;align-items:center;justify-content:space-between}
+.lh h1{margin:0;font-size:18px;font-weight:600}
+.add{width:32px;height:32px;border-radius:9px;border:0;background:var(--accent);color:var(--on-accent);font-size:20px;line-height:1;cursor:pointer}
+.find{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border-radius:9px;background:var(--card);border:1px solid var(--line);color:var(--text3)}
+.find input{border:0;background:none;outline:none;color:var(--text);font:14px var(--ui);width:100%}
+.find kbd{font:500 10.5px var(--mono);border:1px solid var(--line2);border-radius:5px;padding:0 5px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:none;border-radius:99px;padding:3px 10px;font-size:12.5px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.rows{overflow-y:auto;padding:6px 8px 16px;flex:1}
+.firm{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text3);padding:12px 8px 4px}
+.row{width:100%;text-align:left;border:0;background:none;border-radius:10px;padding:9px 10px;display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:2px 10px;align-items:center;cursor:pointer;transition:background .12s}
+.row:hover{background:var(--hover)}
+.row.on{background:var(--card);box-shadow:inset 0 0 0 1px var(--line2)}
+.row .hd{width:8px;height:8px;border-radius:50%}
+.row b{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .m{font:500 12.5px var(--mono)}
+.row .sub{grid-column:2/4;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)}
+.mini{flex:1;height:4px;border-radius:4px;background:var(--hover);overflow:hidden}
+.mini i{display:block;height:100%}
+
+/* Détail */
+.detail{overflow-y:auto;min-width:0}
+.dh{position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:16px clamp(16px,3vw,32px) 0;display:grid;gap:10px}
+.back{display:none;border:0;background:none;color:var(--accent);padding:0;cursor:pointer;font-weight:500;justify-self:start}
+.dt{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.dt h2{margin:0;font-size:24px;font-weight:600;letter-spacing:-.01em}
+.st{font-size:12.5px;padding:2px 10px;border-radius:99px;font-weight:500}
+.st.ok{background:var(--ok-bg);color:var(--ok)} .st.ch{background:var(--accent-bg);color:var(--accent)} .st.ko{background:var(--muted-bg);color:var(--text3)}
+.dt .acts{margin-left:auto;display:flex;gap:8px}
+.btn{height:34px;padding:0 14px;border-radius:9px;border:1px solid var(--line2);background:var(--card);cursor:pointer;font-weight:500;white-space:nowrap}
+.btn.pri{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.firmname{color:var(--text3);font-size:14px;margin-top:-6px}
+.tabs{display:flex;gap:2px;overflow-x:auto}
+.tab{border:0;background:none;padding:10px 12px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--text);border-color:var(--accent)}
+.body{padding:20px clamp(16px,3vw,32px) 48px;display:grid;gap:16px;max-width:1100px}
+.fade{animation:fade .18s var(--ease)}
+@keyframes fade{from{opacity:.0;transform:translateY(4px)}}
+.callout{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:14px;border:1px solid}
+.callout.bad{background:var(--bad-bg);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.callout.ok{background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok) 35%,transparent)}
+.callout.info{background:var(--accent-bg);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.callout p{margin:0}
+.callout b{font-weight:600}
+.two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
+.card h3{margin:0;font-size:15px;font-weight:600}
+.gauge{display:grid;gap:8px}
+.gauge .big{font:500 30px var(--mono);letter-spacing:-.02em}
+.gauge .scale{position:relative;height:12px;border-radius:12px;background:var(--hover);overflow:hidden}
+.gauge .scale i{position:absolute;left:0;top:0;bottom:0;border-radius:12px}
+.gauge .lbl{display:flex;justify-content:space-between;font:12px var(--mono);color:var(--text3)}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kv div{background:var(--card2);border-radius:10px;padding:10px 12px;display:grid;gap:2px}
+.kv span{font-size:12px;color:var(--text3)}
+.kv b{font:500 16px var(--mono)}
+.rules{display:grid;gap:0}
+.rule{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.rule:first-child{border-top:0;padding-top:0}
+.rule span{color:var(--text3)}
+.src{font-size:12px;color:var(--text3)}
+.tr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;align-items:center}
+.tr:first-child{border-top:0}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px}
+.pill.long{background:var(--ok-bg);color:var(--ok)} .pill.short{background:var(--bad-bg);color:var(--bad)}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.empty{color:var(--text3);font-size:14px}
+
+/* Téléphone : liste puis détail en pile, rail devenu barre d'onglets */
+@media (max-width:980px){.app{grid-template-columns:64px 270px minmax(0,1fr)}.two{grid-template-columns:1fr}}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;height:100vh}
+  .rail{grid-row:2;flex-direction:row;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line)}
+  .rail .logo,.rail .sp,.rail .av{display:none}
+  .list,.detail{grid-row:1;grid-column:1}
+  .app.show-detail .list{display:none}
+  .app:not(.show-detail) .detail{display:none}
+  .back{display:inline-block}
+  .kv{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rule{grid-template-columns:1fr;gap:2px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <nav class="rail" aria-label="Domaines">
+    <div class="logo">Q</div>
+    <button class="r" title="Accueil"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Accueil</button>
+    <button class="r on" title="Comptes"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>Comptes<span class="dot"></span></button>
+    <button class="r" title="Journal"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h6"/></svg>Journal</button>
+    <button class="r" title="Règles"><svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>Règles</button>
+    <button class="r" title="Outils"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Outils</button>
+    <div class="sp"></div>
+    <div class="av" title="Alex Demo · Plan Pro">AD</div>
+  </nav>
+
+  <section class="list" aria-label="Comptes">
+    <div class="lh">
+      <div class="lh-top"><h1>Comptes</h1><button class="add" title="Nouveau compte" aria-label="Nouveau compte">+</button></div>
+      <label class="find"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="find" placeholder="Filtrer les comptes"><kbd>/</kbd></label>
+      <div class="chips" id="chips">
+        <button class="chip on" data-f="all">Tous · 8</button><button class="chip" data-f="risk">À risque</button><button class="chip" data-f="Financé">Financés</button><button class="chip" data-f="Challenge">Challenges</button>
+      </div>
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <main class="detail" id="detail" aria-live="polite"></main>
+</div>
+
+<script>
+/* Données d'exemple : le trader fictif « Alex Demo ». Chaînes statiques uniquement ;
+   le champ de filtre ne sert qu'à comparer, jamais à construire du HTML. */
+const A = [
+  { id:'a1', n:'Apex EOD 50K', f:'Apex Trader Funding', s:'Financé', bal:52360, floor:51990, max:2500, pnl:2360, pay:3000, days:'4 / 5', next:'—',
+    note:['bad','<b>370 $ du breach.</b> Une séance à −400 $ clôture le compte. Réduis la taille jusqu\'à retrouver de la marge.'],
+    rules:[['Programme','EOD'],['Payout ladder','1 000 $ aux six paliers'],['Après 6 payouts','Le PA est fermé : il faut repasser une évaluation'],['Délai payout','24 à 48 h']] },
+  { id:'a2', n:'Apex EOD 100K', f:'Apex Trader Funding', s:'Financé', bal:104920, floor:101100, max:4000, pnl:4920, pay:2000, days:'3 / 5', next:'2 000 $',
+    note:['info','Payout possible dans <b>2 jours de trading</b> si le solde reste au-dessus du seuil.'],
+    rules:[['Programme','EOD'],['Payout ladder','1 000 $ aux six paliers'],['Après 6 payouts','Le PA est fermé : il faut repasser une évaluation']] },
+  { id:'a3', n:'Apex Intraday 25K', f:'Apex Trader Funding', s:'Échoué', bal:0, floor:0, max:1500, pnl:-167, pay:0, days:'—', next:'—',
+    note:['info','Compte échoué le 12 août. Il reste dans l\'historique et compte dans les dépenses.'], rules:[] },
+  { id:'a4', n:'TS 50K #1', f:'Topstep', s:'Financé', bal:51840, floor:50100, max:2000, pnl:1840, pay:3150, days:'5 / 5', next:'1 000 $',
+    note:['ok','<b>Payout éligible maintenant.</b> Objectif atteint et 5 jours gagnants validés.'],
+    rules:[['Programme','XFA Standard'],['Consistance','Aucune règle sur ce programme']] },
+  { id:'a5', n:'TS 150K', f:'Topstep', s:'Challenge', bal:152400, floor:145500, max:4500, pnl:2400, pay:0, days:'—', next:'—',
+    note:['info','Objectif du challenge : <b>+9 000 $</b>. Atteint à 27 %.'], rules:[['Programme','Évaluation 150K'],['Objectif','+9 000 $']] },
+  { id:'a6', n:'Tradeify Select 100K', f:'Tradeify', s:'Financé', bal:103150, floor:100100, max:3500, pnl:3150, pay:2700, days:'2 / 5', next:'3 000 $',
+    note:['info','Il manque <b>3 jours de trading</b> pour le prochain payout.'], rules:[['Programme','Select Flex']] },
+  { id:'a7', n:'MFFU Rapid 50K', f:'My Funded Futures', s:'Challenge', bal:51210, floor:49400, max:2000, pnl:1210, pay:0, days:'—', next:'—',
+    note:['info','Challenge en cours : <b>+1 210 $</b> depuis le 10 septembre.'], rules:[['Programme','Rapid']] },
+  { id:'a8', n:'LucidFlex 50K', f:'Lucid Trading', s:'Financé', bal:51720, floor:50100, max:2000, pnl:1720, pay:1000, days:'4 / 5', next:'2 000 $',
+    note:['info','Seuil de payout à <b>380 $</b> près.'], rules:[['Programme','LucidFlex']] },
+];
+const TR = { a1:[['29 sept.','ES','Short',-343],['24 sept.','NQ','Long',212],['22 sept.','MES','Long',-188]], a4:[['30 sept.','NQ','Long',420],['26 sept.','ES','Long',318]], a8:[['30 sept.','NQ','Long',420],['26 sept.','NQ','Long',509]], a2:[['30 sept.','NQ','Long',420],['30 sept.','MES','Long',312]] };
+
+const $ = (s) => document.querySelector(s);
+const usd = (v) => (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('fr-FR') + ' $';
+const margin = (a) => a.s === 'Échoué' ? 0 : a.bal - a.floor;
+const pct = (a) => Math.min(100, Math.round(margin(a) / a.max * 100));
+const tone = (a) => a.s === 'Échoué' ? 'var(--text3)' : pct(a) < 25 ? 'var(--bad)' : pct(a) < 60 ? 'var(--warn)' : 'var(--ok)';
+let cur = 'a1', filt = 'all';
+
+function renderRows() {
+  const q = $('#find').value.toLowerCase().trim();
+  const shown = A.filter((a) => (filt === 'all' || (filt === 'risk' ? a.s !== 'Échoué' && pct(a) < 25 : a.s === filt)) && (!q || (a.n + ' ' + a.f).toLowerCase().includes(q)));
+  const firms = [...new Set(shown.map((a) => a.f))];
+  $('#rows').innerHTML = firms.map((f) => `<div class="firm">${f}</div>` + shown.filter((a) => a.f === f).sort((x, y) => (x.s === 'Échoué' ? 999 : pct(x)) - (y.s === 'Échoué' ? 999 : pct(y))).map((a) =>
+    `<button class="row ${a.id === cur ? 'on' : ''}" data-id="${a.id}"><span class="hd" style="background:${tone(a)}"></span><b>${a.n}</b><span class="m" style="color:${tone(a)}">${a.s === 'Échoué' ? '—' : usd(margin(a))}</span>
+     <span class="sub">${a.s}<span class="mini"><i style="width:${a.s === 'Échoué' ? 0 : pct(a)}%;background:${tone(a)}"></i></span></span></button>`).join('')).join('') || '<p class="empty" style="padding:12px 8px">Aucun compte ne correspond.</p>';
+}
+
+function renderDetail(tab = 'Résumé') {
+  const a = A.find((x) => x.id === cur), p = pct(a), c = tone(a), stc = a.s === 'Financé' ? 'ok' : a.s === 'Challenge' ? 'ch' : 'ko';
+  const trades = TR[a.id] || [];
+  const tabs = ['Résumé', 'Trades', 'Règles', 'Payouts'].map((t) => `<button class="tab ${t === tab ? 'on' : ''}" data-tab="${t}">${t}</button>`).join('');
+  let body = '';
+  if (tab === 'Résumé') body = `
+    <div class="callout ${a.note[0]}"><p>${a.note[1]}</p></div>
+    <div class="two">
+      <div class="card"><h3>Marge de drawdown</h3>
+        <div class="gauge"><span class="big" style="color:${c}">${a.s === 'Échoué' ? '—' : usd(margin(a))}</span>
+          <div class="scale"><i style="width:${a.s === 'Échoué' ? 0 : p}%;background:${c}"></i></div>
+          <div class="lbl"><span>breach</span><span>${p} % de ${usd(a.max)}</span></div></div>
+        <div class="kv"><div><span>Solde</span><b>${a.bal ? usd(a.bal) : '—'}</b></div><div><span>Plancher</span><b>${a.floor ? usd(a.floor) : '—'}</b></div><div><span>P&amp;L</span><b class="${a.pnl >= 0 ? 'up' : 'down'}">${a.pnl >= 0 ? '+' : ''}${usd(a.pnl)}</b></div>
+          <div><span>Payouts reçus</span><b>${usd(a.pay)}</b></div><div><span>Jours validés</span><b>${a.days}</b></div><div><span>Prochain payout</span><b>${a.next}</b></div></div>
+      </div>
+      <div class="card"><h3>Règles qui s'appliquent</h3>
+        <div class="rules">${a.rules.length ? a.rules.map(([k, v]) => `<div class="rule"><span>${k}</span><div>${v}</div></div>`).join('') : '<p class="empty">Aucune règle active : le compte est clos.</p>'}</div>
+        <span class="src">Extrait de la fiche ${a.f} · toutes les règles dans l'onglet Règles</span>
+      </div>
+    </div>
+    <div class="card"><h3>Derniers trades sur ce compte</h3>${trades.length ? trades.map(([d, i, s, v]) => `<div class="tr"><span class="pill ${s.toLowerCase()}">${s}</span><span>${d} · <span class="num">${i}</span></span><span class="num ${v > 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${usd(v)}</span></div>`).join('') : '<p class="empty">Aucun trade sur les 30 derniers jours.</p>'}</div>`;
+  else body = `<div class="card"><h3>${tab}</h3><p class="empty">Même gabarit : liste filtrée sur ${a.n}, sans quitter l'écran.</p></div>`;
+  $('#detail').innerHTML = `
+    <div class="dh">
+      <button class="back" id="back">← Comptes</button>
+      <div class="dt"><h2>${a.n}</h2><span class="st ${stc}">${a.s}</span>
+        <div class="acts"><button class="btn">Ajouter un payout</button><button class="btn pri">Nouveau trade</button></div></div>
+      <div class="firmname">${a.f}</div>
+      <div class="tabs" role="tablist">${tabs}</div>
+    </div>
+    <div class="body fade">${body}</div>`;
+}
+
+$('#rows').addEventListener('click', (e) => { const b = e.target.closest('.row'); if (!b) return; cur = b.dataset.id; renderRows(); renderDetail(); $('#app').classList.add('show-detail'); $('#detail').scrollTop = 0; });
+$('#detail').addEventListener('click', (e) => { const t = e.target.closest('.tab'); if (t) renderDetail(t.dataset.tab); if (e.target.id === 'back') $('#app').classList.remove('show-detail'); });
+$('#chips').addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (!c) return; filt = c.dataset.f; document.querySelectorAll('.chip').forEach((x) => x.classList.toggle('on', x === c)); renderRows(); });
+$('#find').addEventListener('input', renderRows);
+/* Clavier : « / » pour filtrer, ↑ ↓ pour changer de compte comme dans une boîte mail */
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement !== $('#find')) { e.preventDefault(); $('#find').focus(); return; }
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && document.activeElement.tagName !== 'INPUT') {
+    const ids = [...document.querySelectorAll('.row')].map((r) => r.dataset.id), i = ids.indexOf(cur);
+    const n = ids[Math.max(0, Math.min(ids.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+    if (n && n !== cur) { cur = n; renderRows(); renderDetail(); e.preventDefault(); }
+  }
+});
+renderRows(); renderDetail();
+</script>
+</body>
+</html>

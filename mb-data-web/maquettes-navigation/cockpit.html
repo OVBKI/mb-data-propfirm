@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quantara Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Gabarit A « Cockpit » : sidebar groupée par métier (244 px, repliable en rail 68 px),
+   barre haute contextuelle, dashboard en pyramide : attention → KPI → graphique → détail. */
+:root{
+  --bg:#0a1420; --side:#0c1826; --card:#122131; --card2:#172a3d; --hover:rgba(159,179,200,.07);
+  --line:rgba(159,179,200,.13); --line2:rgba(159,179,200,.22);
+  --text:#f0f5fa; --text2:#9fb3c8; --text3:#7f93a9;
+  --accent:#5ab0ff; --accent-bg:rgba(90,176,255,.14); --on-accent:#06121e;
+  --ok:#3ddba8; --ok-bg:rgba(61,219,168,.13); --warn:#ffc25c; --warn-bg:rgba(255,194,92,.13);
+  --bad:#ff7a86; --bad-bg:rgba(255,122,134,.13); --brass:#d8b46a;
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  --ui:"Outfit","Segoe UI",system-ui,sans-serif; --mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+  --side-w:244px; --ease:cubic-bezier(.2,0,0,1);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#eef3f9; --side:#e5ecf4; --card:#ffffff; --card2:#f3f7fb; --hover:rgba(13,27,40,.05);
+  --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84;
+  --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10); --on-accent:#ffffff;
+  --ok:#0b8a66; --ok-bg:rgba(11,138,102,.10); --warn:#9a6200; --warn-bg:rgba(201,133,0,.12);
+  --bad:#cc3346; --bad-bg:rgba(204,51,70,.09); --brass:#8f6a22; --shadow:0 18px 50px rgba(13,27,40,.16);
+  color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#eef3f9; --side:#e5ecf4; --card:#ffffff; --card2:#f3f7fb; --hover:rgba(13,27,40,.05);
+  --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84;
+  --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10); --on-accent:#ffffff;
+  --ok:#0b8a66; --ok-bg:rgba(11,138,102,.10); --warn:#9a6200; --warn-bg:rgba(201,133,0,.12);
+  --bad:#cc3346; --bad-bg:rgba(204,51,70,.09); --brass:#8f6a22; --shadow:0 18px 50px rgba(13,27,40,.16);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ── Coquille : la sidebar ne bouge jamais, seule la zone de contenu change ── */
+.shell{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);min-height:100%;transition:grid-template-columns .22s var(--ease)}
+.shell.collapsed{--side-w:68px}
+aside{position:sticky;top:0;height:100vh;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px;padding:14px 10px;overflow:hidden}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 10px;min-height:44px}
+.logo{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--ok));color:var(--on-accent);font-weight:700;font-size:15px}
+.brand b{font-size:16px;font-weight:600;white-space:nowrap}
+.brand small{display:block;color:var(--text3);font-size:11.5px;white-space:nowrap;line-height:1.2}
+.new{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border-radius:10px;border:0;background:var(--accent);color:var(--on-accent);font-weight:600;cursor:pointer;white-space:nowrap;transition:filter .15s}
+.new:hover{filter:brightness(1.08)}
+.new kbd{margin-left:auto;font:500 11px var(--mono);opacity:.7}
+nav{display:flex;flex-direction:column;gap:2px;overflow-y:auto;margin-top:8px;flex:1}
+.sec{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text3);padding:14px 12px 6px;white-space:nowrap}
+.item{display:flex;align-items:center;gap:12px;height:36px;padding:0 12px;border-radius:9px;text-decoration:none;color:var(--text2);white-space:nowrap;position:relative;transition:background .15s,color .15s}
+.item:hover{background:var(--hover);color:var(--text)}
+.item.on{background:var(--accent-bg);color:var(--text)}
+.item.on::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.item svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.badge{margin-left:auto;font:500 11px var(--mono);padding:1px 7px;border-radius:99px;background:var(--bad-bg);color:var(--bad)}
+.badge.n{background:var(--hover);color:var(--text2)}
+.foot{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:2px}
+.me{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px}
+.av{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--card2);border:1px solid var(--line2);font-size:12px;font-weight:600}
+.me b{font-size:13.5px;font-weight:500;white-space:nowrap}
+.me small{display:block;font-size:11.5px;color:var(--brass);white-space:nowrap}
+.collapsed .t,.collapsed .badge,.collapsed .new kbd,.collapsed .brand-t,.collapsed .me-t{display:none}
+.collapsed .sec{height:10px;padding:0;overflow:hidden;color:transparent}
+.collapsed .item,.collapsed .new{justify-content:center;padding:0}
+.collapsed .item[data-dot]::after{content:"";position:absolute;top:7px;right:12px;width:7px;height:7px;border-radius:50%;background:var(--bad)}
+
+/* ── Barre haute : où je suis et la recherche ── */
+main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:12px clamp(16px,3vw,32px);background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:transparent;display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn:hover{background:var(--hover)}
+.icon-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round}
+.crumb{display:flex;gap:8px;align-items:baseline;min-width:0}
+.crumb span{color:var(--text3)}
+.crumb b{font-weight:600;white-space:nowrap}
+.search{margin-left:auto;display:flex;align-items:center;gap:10px;height:36px;min-width:min(280px,40vw);padding:0 10px 0 12px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text3);cursor:pointer}
+.search kbd{margin-left:auto;font:500 11px var(--mono);border:1px solid var(--line2);border-radius:5px;padding:1px 5px}
+.burger{display:none}
+
+.page{padding:22px clamp(16px,3vw,32px) 48px;display:flex;flex-direction:column;gap:18px;max-width:1360px;width:100%}
+.head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between}
+.head h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-.01em}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:0;background:none;padding:10px 12px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;margin-bottom:-1px}
+.tab.on{color:var(--text);border-color:var(--accent)}
+.seg{display:inline-flex;padding:3px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:7px;color:var(--text3);cursor:pointer;font-size:13.5px}
+.seg button.on{background:var(--card2);color:var(--text);box-shadow:0 1px 0 var(--line2)}
+
+/* Dashboard : 1 alerte, 4 KPI, 1 graphique principal, puis le détail */
+.alert{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--bad-bg);border:1px solid color-mix(in srgb,var(--bad) 35%,transparent)}
+.alert .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 4px color-mix(in srgb,var(--bad) 22%,transparent);flex:none}
+.alert p{margin:0;flex:1;min-width:220px}
+.alert b{font-weight:600}
+.btn{height:34px;padding:0 14px;border-radius:9px;border:1px solid var(--line2);background:var(--card);cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--card2)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;min-width:0;align-content:start}
+.kpi .l{font-size:13px;color:var(--text3)}
+.kpi .v{font:500 24px var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi .d{font-size:12.5px;color:var(--text3)}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.kpi svg{width:100%;height:34px;margin-top:4px}
+.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.card h2{margin:0;font-size:15px;font-weight:600;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.card h2 span{font-weight:400;color:var(--text3);font-size:13px}
+.card h2 a{margin-left:auto;font-size:13px;font-weight:500;color:var(--accent);text-decoration:none}
+.chart{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--text2)}
+.legend i{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:6px}
+.acc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 0;border-top:1px solid var(--line)}
+.acc:first-child{border-top:0;padding-top:0}
+.acc b{font-weight:500;font-size:14px}
+.acc small{color:var(--text3);font-size:12px}
+.acc .m{font:500 13px var(--mono);text-align:right}
+.bar{grid-column:1/-1;height:5px;border-radius:5px;background:var(--hover);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-weight:500;color:var(--text3);font-size:12.5px;text-align:left;padding:0 12px 8px 0;white-space:nowrap}
+.tbl td{padding:9px 12px 9px 0;border-top:1px solid var(--line);white-space:nowrap}
+.tbl td.r,.tbl th.r{text-align:right;padding-right:0}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--hover);color:var(--text2)}
+.pill.long{background:var(--ok-bg);color:var(--ok)} .pill.short{background:var(--bad-bg);color:var(--bad)}
+.scroll{overflow-x:auto}
+.sk .kpi .v,.sk .kpi .d{color:transparent;background:var(--hover);border-radius:6px;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.5}}
+
+/* ⌘K */
+dialog{border:0;padding:0;background:transparent;width:min(620px,92vw);margin-top:12vh}
+dialog::backdrop{background:rgba(4,10,18,.6);backdrop-filter:blur(3px)}
+.pal{background:var(--card);border:1px solid var(--line2);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;color:var(--text)}
+.pal input{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);font:16px var(--ui);padding:16px 18px;outline:none}
+.pal ul{list-style:none;margin:0;padding:8px;max-height:340px;overflow:auto}
+.pal li{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;cursor:pointer}
+.pal li.on{background:var(--accent-bg)}
+.pal li small{margin-left:auto;color:var(--text3);font-size:12px}
+.pal .grp{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text3);padding:10px 10px 4px;cursor:default}
+
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}}
+@media (max-width:760px){
+  .shell,.shell.collapsed{grid-template-columns:1fr;--side-w:244px}
+  .shell.collapsed .t,.shell.collapsed .badge,.shell.collapsed .brand-t,.shell.collapsed .me-t{display:revert}
+  aside{position:fixed;z-index:20;left:0;top:0;width:280px;transform:translateX(-102%);transition:transform .22s var(--ease);box-shadow:var(--shadow)}
+  .shell.drawer aside{transform:none}
+  .collapse-btn{display:none}
+  .burger{display:grid}
+  .search{min-width:0;width:36px;padding:0;justify-content:center}
+  .search span,.search kbd{display:none}
+  .crumb span{display:none}
+}
+@media (max-width:460px){.kpis{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+  <aside aria-label="Navigation principale">
+    <div class="brand"><div class="logo">Q</div><div class="brand-t"><b>Quantara</b><small>PropFirm Dashboard</small></div></div>
+    <button class="new" title="Nouveau trade (N)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="t">Nouveau trade</span><kbd>N</kbd></button>
+    <nav>
+      <a class="item on" href="#" title="Dashboard"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span class="t">Dashboard</span></a>
+      <a class="item" href="#" title="Santé des comptes" data-dot><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span class="t">Santé des comptes</span><span class="badge">1</span></a>
+      <div class="sec">Trading</div>
+      <a class="item" href="#" title="Journal"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h6"/></svg><span class="t">Journal</span></a>
+      <a class="item" href="#" title="Trade Log"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="t">Trade Log</span><span class="badge n">101</span></a>
+      <a class="item" href="#" title="Analytics"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="t">Analytics</span></a>
+      <a class="item" href="#" title="Heatmaps"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="10" y="3" width="5" height="5" rx="1"/><rect x="17" y="3" width="4" height="5" rx="1"/><rect x="3" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/><rect x="3" y="17" width="5" height="4" rx="1"/></svg><span class="t">Heatmaps</span></a>
+      <div class="sec">Règles</div>
+      <a class="item" href="#" title="Mes règles"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/></svg><span class="t">Mes règles</span></a>
+      <a class="item" href="#" title="Règles des firmes"><svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg><span class="t">Règles des firmes</span></a>
+      <div class="sec">Outils</div>
+      <a class="item" href="#" title="Calendrier éco"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="t">Calendrier éco</span></a>
+      <a class="item" href="#" title="Alertes" data-dot><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg><span class="t">Alertes</span><span class="badge">3</span></a>
+      <a class="item" href="#" title="Import CSV"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="t">Import CSV</span></a>
+    </nav>
+    <div class="foot">
+      <a class="item" href="#" title="Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span class="t">Réglages</span></a>
+      <div class="me"><div class="av">AD</div><div class="me-t"><b>Alex Demo</b><small>Plan Pro</small></div></div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="top">
+      <button class="icon-btn burger" id="burger" aria-label="Ouvrir le menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <button class="icon-btn collapse-btn" id="collapse" aria-label="Replier la sidebar" title="Replier la sidebar ( [ )"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
+      <div class="crumb"><span>Accueil /</span><b>Dashboard</b></div>
+      <button class="search" id="open-k"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Compte, firme, page…</span><kbd>⌘K</kbd></button>
+    </header>
+
+    <div class="page" id="page">
+      <div class="head">
+        <h1>Bonjour Alex</h1>
+        <div class="seg" role="group" aria-label="Période">
+          <button data-p="7">7 j</button><button data-p="30" class="on">30 j</button><button data-p="90">90 j</button><button data-p="all">Tout</button>
+        </div>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab on" role="tab">Vue d'ensemble</button><button class="tab" role="tab">Performance</button><button class="tab" role="tab">Payouts</button><button class="tab" role="tab">Risque</button>
+      </div>
+
+      <div class="alert" role="status">
+        <span class="dot"></span>
+        <p><b>Apex EOD 50K est à 370 $ du breach.</b> La marge de drawdown est tombée à 15 %. Une séance perdante suffit à clôturer le compte.</p>
+        <button class="btn">Voir le compte</button>
+      </div>
+
+      <section class="kpis" id="kpis" aria-label="Indicateurs"></section>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Résultat net cumulé <span>payouts reçus moins dépenses, 90 j</span><a href="#">Analytics →</a></h2>
+          <svg class="chart" id="chart" viewBox="0 0 720 260" role="img" aria-label="Courbe du résultat net cumulé"></svg>
+          <div class="legend"><span><i style="background:var(--accent)"></i>Résultat net</span><span><i style="background:var(--text3)"></i>Dépenses cumulées</span></div>
+        </section>
+        <section class="card">
+          <h2>Santé des comptes <span>marge de drawdown restante</span></h2>
+          <div id="accs"></div>
+        </section>
+      </div>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Derniers trades <a href="#">Trade Log →</a></h2>
+          <div class="scroll"><table class="tbl" id="trades"></table></div>
+        </section>
+        <section class="card">
+          <h2>Prochains payouts</h2>
+          <div id="payouts"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog id="k" aria-label="Recherche">
+  <div class="pal"><input id="q" placeholder="Chercher un compte, une firme, une page…" autocomplete="off"><ul id="res"></ul></div>
+</dialog>
+
+<script>
+/* Données d'exemple : le trader fictif « Alex Demo » du film promo. Toutes les
+   chaînes injectées ci-dessous sont statiques ; la saisie ⌘K ne sert qu'à filtrer. */
+const ACCS = [
+  { n:'Apex EOD 50K', f:'Apex Trader Funding', m:370, max:2500 },
+  { n:'LucidFlex 50K', f:'Lucid Trading', m:1620, max:2000 },
+  { n:'TS 50K #1', f:'Topstep', m:1740, max:2000 },
+  { n:'MFFU Rapid 50K', f:'My Funded Futures', m:1810, max:2000 },
+  { n:'Tradeify Select 100K', f:'Tradeify', m:3050, max:3500 },
+  { n:'Apex EOD 100K', f:'Apex Trader Funding', m:3820, max:4000 },
+];
+const TRADES = [
+  ['30 sept.','NQ','Long','TS 50K #1 +2 comptes', 420],
+  ['30 sept.','MES','Long','Apex EOD 100K', 312],
+  ['29 sept.','ES','Short','Apex EOD 50K', -343],
+  ['29 sept.','GC','Short','Apex Intraday 25K', -245],
+  ['26 sept.','NQ','Long','LucidFlex 50K', 509],
+  ['25 sept.','MNQ','Short','MFFU Rapid 50K', 496],
+];
+const PERIODS = {
+  '7':  { net:[9420,9600,9580,9900,10050,10200,10324], k:[['Résultat net','+10 324 $','+904 $ sur 7 j','up'],['Payouts reçus','11 850 $','1 000 $ cette semaine','up'],['Dépenses','1 526 $','0 $ sur 7 j',''],['Win rate','58 %','12 trades','up']] },
+  '30': { net:[6900,7400,7300,8100,8600,8400,9200,9600,9900,10324], k:[['Résultat net','+10 324 $','+3 424 $ sur 30 j','up'],['Payouts reçus','11 850 $','2 500 $ sur 30 j','up'],['Dépenses','1 526 $','358 $ sur 30 j','down'],['Win rate','55,4 %','38 trades','']] },
+  '90': { net:[-600,-250,400,1100,1650,2900,3400,4700,5600,6900,8100,9200,10324], k:[['Résultat net','+10 324 $','ROI +676 %','up'],['Payouts reçus','11 850 $','7 payouts','up'],['Dépenses','1 526 $','8 comptes','down'],['Win rate','55,4 %','101 trades','']] },
+};
+PERIODS.all = PERIODS['90'];
+const SPEND = [460,460,700,700,860,860,1010,1010,1168,1168,1368,1368,1526];
+
+const $ = (s) => document.querySelector(s);
+const fmt = (v) => (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('fr-FR') + ' $';
+
+function spark(vals, color) {
+  const w = 200, h = 34, mn = Math.min(...vals), mx = Math.max(...vals), sx = w / (vals.length - 1);
+  const pts = vals.map((v, i) => [i * sx, h - 3 - ((v - mn) / (mx - mn || 1)) * (h - 6)]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d} L${w} ${h} L0 ${h}Z" fill="${color}" opacity=".12"/><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+function renderKpis(p) {
+  const P = PERIODS[p];
+  $('#kpis').innerHTML = P.k.map(([l, v, d, c], i) => `<div class="kpi"><span class="l">${l}</span><span class="v">${v}</span><span class="d ${c}">${d}</span>${i === 0 ? spark(P.net, 'var(--accent)') : ''}</div>`).join('');
+}
+
+function renderChart() {
+  const net = PERIODS['90'].net, W = 720, H = 260, L = 46, R = 12, T = 22, B = 28, max = 12000, min = -2000;
+  const x = (i) => L + i * (W - L - R) / (net.length - 1), y = (v) => T + (max - v) / (max - min) * (H - T - B);
+  let g = '';
+  for (let v = min; v <= max; v += 2000) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--text3)" font-family="Roboto Mono, monospace">${v === 0 ? '0' : (v / 1000) + 'k'}</text>`;
+  [['juil.', 0], ['août', 4], ['sept.', 8], ['oct.', 12]].forEach(([m, i]) => g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text3)">${m}</text>`);
+  const path = (arr) => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  const last = net.length - 1;
+  $('#chart').innerHTML = g +
+    `<path d="${path(net)} L${x(last)} ${y(0)} L${x(0)} ${y(0)}Z" fill="var(--accent)" opacity=".10"/>` +
+    `<path d="${path(SPEND)}" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
+    `<path d="${path(net)}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>` +
+    `<circle cx="${x(last)}" cy="${y(net[last])}" r="4.5" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>` +
+    `<text x="${x(last) - 10}" y="${y(net[last]) - 10}" text-anchor="end" font-size="12" font-weight="500" fill="var(--text)" font-family="Roboto Mono, monospace">+10 324 $</text>`;
+}
+
+function renderAccs() {
+  $('#accs').innerHTML = ACCS.map((a) => {
+    const pct = Math.min(100, Math.round(a.m / a.max * 100)), c = pct < 25 ? 'var(--bad)' : pct < 60 ? 'var(--warn)' : 'var(--ok)';
+    return `<div class="acc"><div><b>${a.n}</b><small> · ${a.f}</small></div><span class="m" style="color:${c}">${fmt(a.m)}</span><div class="bar" title="${pct} % de la marge"><i style="width:${pct}%;background:${c}"></i></div></div>`;
+  }).join('');
+}
+
+function renderTables() {
+  $('#trades').innerHTML = '<thead><tr><th>Date</th><th>Instr.</th><th>Sens</th><th>Compte</th><th class="r">P&amp;L</th></tr></thead><tbody>' +
+    TRADES.map(([d, i, s, a, p]) => `<tr><td>${d}</td><td class="num">${i}</td><td><span class="pill ${s.toLowerCase()}">${s}</span></td><td>${a}</td><td class="r num ${p > 0 ? 'up' : 'down'}">${p > 0 ? '+' : ''}${fmt(p)}</td></tr>`).join('') + '</tbody>';
+  $('#payouts').innerHTML = [['TS 50K #1', 'éligible maintenant', '1 000 $', 'up'], ['Apex EOD 100K', 'dans 3 jours de trading', '2 000 $', ''], ['LucidFlex 50K', 'seuil à 380 $ près', '2 000 $', '']]
+    .map(([a, w, v, c]) => `<div class="acc"><div><b>${a}</b><small> · ${w}</small></div><span class="m ${c}">${v}</span></div>`).join('');
+}
+
+/* Changement de période : squelette 250 ms aux mêmes dimensions, donc aucun saut de mise en page */
+document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.seg button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#page').classList.add('sk'); setTimeout(() => { renderKpis(b.dataset.p); $('#page').classList.remove('sk'); }, 250);
+}));
+document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b))));
+
+/* Sidebar repliable, état mémorisé dans ce navigateur */
+const shell = $('#shell');
+try { if (localStorage.getItem('q-side') === '1') shell.classList.add('collapsed'); } catch (e) {}
+function toggleSide() { shell.classList.toggle('collapsed'); try { localStorage.setItem('q-side', shell.classList.contains('collapsed') ? '1' : '0'); } catch (e) {} }
+$('#collapse').addEventListener('click', toggleSide);
+$('#burger').addEventListener('click', (e) => { e.stopPropagation(); shell.classList.toggle('drawer'); });
+document.querySelector('main').addEventListener('click', () => shell.classList.remove('drawer'));
+
+/* ⌘K : pages, comptes et actions dans une seule liste au clavier */
+const ITEMS = [['Pages', 'Dashboard'], ['Pages', 'Santé des comptes'], ['Pages', 'Journal'], ['Pages', 'Trade Log'], ['Pages', 'Règles des firmes'], ['Pages', 'Calendrier éco'],
+  ...ACCS.map((a) => ['Comptes', a.n, a.f]), ['Actions', 'Nouveau trade', 'N'], ['Actions', 'Nouveau payout'], ['Actions', 'Importer un CSV']];
+let sel = 0;
+function renderRes() {
+  const q = $('#q').value.toLowerCase().trim(), hits = ITEMS.filter((i) => !q || (i[1] + ' ' + (i[2] || '')).toLowerCase().includes(q));
+  sel = Math.min(sel, Math.max(0, hits.length - 1));
+  let html = '', grp = '';
+  hits.forEach((h, i) => { if (h[0] !== grp) { grp = h[0]; html += `<li class="grp">${grp}</li>`; } html += `<li class="${i === sel ? 'on' : ''}">${h[1]}<small>${h[2] || ''}</small></li>`; });
+  $('#res').innerHTML = html || '<li class="grp">Aucun résultat</li>';
+  return hits.length;
+}
+function openK() { $('#q').value = ''; sel = 0; renderRes(); $('#k').showModal(); $('#q').focus(); }
+$('#open-k').addEventListener('click', openK);
+$('#q').addEventListener('input', () => { sel = 0; renderRes(); });
+$('#q').addEventListener('keydown', (e) => { const n = renderRes() || 1; if (e.key === 'ArrowDown') { sel = (sel + 1) % n; renderRes(); e.preventDefault(); } if (e.key === 'ArrowUp') { sel = (sel - 1 + n) % n; renderRes(); e.preventDefault(); } if (e.key === 'Enter') $('#k').close(); });
+$('#k').addEventListener('click', (e) => { if (e.target.id === 'k') $('#k').close(); });
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openK(); }
+  else if (e.key === '[' && !e.target.closest('input')) toggleSide();
+});
+
+renderKpis('30'); renderChart(); renderAccs(); renderTables();
+</script>
+</body>
+</html>

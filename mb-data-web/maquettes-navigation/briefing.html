@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quantara Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,400&family=Outfit:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Gabarit C « Briefing » : pas de sidebar. Navigation horizontale à 5 entrées, ⌘K au centre,
+   page d'accueil = ce qu'il faut faire aujourd'hui, puis une grille de tuiles de tailles
+   différentes. Saisie rapide d'un trade en bas d'écran, toujours à portée. */
+:root{
+  --bg:#0a1420; --card:#122131; --card2:#172a3d; --hover:rgba(159,179,200,.07);
+  --line:rgba(159,179,200,.13); --line2:rgba(159,179,200,.22);
+  --text:#f0f5fa; --text2:#9fb3c8; --text3:#7f93a9;
+  --accent:#5ab0ff; --accent-bg:rgba(90,176,255,.14); --on-accent:#06121e;
+  --ok:#3ddba8; --ok-bg:rgba(61,219,168,.13); --warn:#ffc25c; --warn-bg:rgba(255,194,92,.13);
+  --bad:#ff7a86; --bad-bg:rgba(255,122,134,.13); --brass:#d8b46a; --brass2:#f1d99a;
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  --ui:"Outfit","Segoe UI",system-ui,sans-serif; --mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+  --display:"Fraunces","Iowan Old Style",Georgia,serif; --ease:cubic-bezier(.2,0,0,1);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#f3f6fa; --card:#ffffff; --card2:#f1f5fa; --hover:rgba(13,27,40,.05);
+  --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84;
+  --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10); --on-accent:#ffffff;
+  --ok:#0b8a66; --ok-bg:rgba(11,138,102,.10); --warn:#9a6200; --warn-bg:rgba(201,133,0,.12);
+  --bad:#cc3346; --bad-bg:rgba(204,51,70,.09); --brass:#8f6a22; --brass2:#7a5714;
+  --shadow:0 18px 50px rgba(13,27,40,.16); color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#f3f6fa; --card:#ffffff; --card2:#f1f5fa; --hover:rgba(13,27,40,.05);
+  --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84;
+  --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10); --on-accent:#ffffff;
+  --ok:#0b8a66; --ok-bg:rgba(11,138,102,.10); --warn:#9a6200; --warn-bg:rgba(201,133,0,.12);
+  --bad:#cc3346; --bad-bg:rgba(204,51,70,.09); --brass:#8f6a22; --brass2:#7a5714;
+  --shadow:0 18px 50px rgba(13,27,40,.16); color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--ui);-webkit-font-smoothing:antialiased;padding-bottom:110px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,3vw,32px)}
+
+/* Barre haute : 5 destinations seulement, le reste passe par ⌘K */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:18px;height:60px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:16px}
+.logo{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--ok));color:var(--on-accent);font-weight:700;font-size:14px}
+.nav{display:flex;gap:2px}
+.nav a{padding:7px 12px;border-radius:8px;text-decoration:none;color:var(--text3);font-weight:500;transition:background .15s,color .15s}
+.nav a:hover{color:var(--text);background:var(--hover)}
+.nav a.on{color:var(--text);background:var(--hover)}
+.search{margin-left:auto;display:flex;align-items:center;gap:10px;height:36px;width:min(320px,30vw);padding:0 10px 0 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--text3);cursor:pointer}
+.search kbd{margin-left:auto;font:500 11px var(--mono);border:1px solid var(--line2);border-radius:5px;padding:1px 5px}
+.ib{position:relative;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:none;display:grid;place-items:center;cursor:pointer}
+.ib svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round}
+.ib .n{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;background:var(--bad);color:#fff;font:500 10.5px var(--mono);display:grid;place-items:center;padding:0 4px}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--card2);border:1px solid var(--line2);font-size:12px;font-weight:600}
+
+/* Accueil du jour */
+.hero{padding-block:34px 18px;display:flex;flex-wrap:wrap;gap:14px 28px;align-items:end;justify-content:space-between}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--brass)}
+h1{margin:6px 0 0;font:500 clamp(30px,4.4vw,46px)/1.08 var(--display);letter-spacing:-.015em;text-wrap:balance}
+h1 em{font-style:italic;font-weight:400;color:var(--brass2)}
+.mkt{display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-size:13.5px;color:var(--text2)}
+.mkt i{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+
+.todo-h{display:flex;align-items:baseline;justify-content:space-between;margin:8px 0 12px}
+.todo-h h2{margin:0;font-size:15px;font-weight:600}
+.todo-h span{font:13px var(--mono);color:var(--text3)}
+.todos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.todo{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;align-content:start;transition:opacity .2s,transform .2s var(--ease)}
+.todo.done{opacity:.5}
+.todo.done b{text-decoration:line-through}
+.chk{grid-row:span 3;width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line2);background:none;cursor:pointer;display:grid;place-items:center;margin-top:1px}
+.todo.done .chk{background:var(--ok);border-color:var(--ok)}
+.todo.done .chk::after{content:"";width:9px;height:5px;border-left:2px solid var(--on-accent);border-bottom:2px solid var(--on-accent);transform:rotate(-45deg) translate(1px,-1px)}
+.sev{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.sev.bad{color:var(--bad)} .sev.ok{color:var(--ok)} .sev.warn{color:var(--warn)}
+.todo b{font-weight:600;font-size:15.5px;line-height:1.3}
+.todo p{margin:0;color:var(--text2);font-size:13.5px}
+.todo .go{grid-column:2;justify-self:start;margin-top:6px;border:0;background:none;color:var(--accent);font-weight:500;padding:0;cursor:pointer}
+
+/* Tuiles : la taille d'une tuile suit son importance, pas une grille uniforme */
+.bento{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(150px,auto);gap:14px;margin-top:26px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.tile h3{margin:0;font-size:13px;font-weight:500;color:var(--text3);display:flex;justify-content:space-between;gap:8px}
+.tile h3 a{color:var(--accent);text-decoration:none}
+.w2{grid-column:span 2} .h2{grid-row:span 2}
+.big{font:500 32px var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.sub{font-size:13px;color:var(--text3)}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.days{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:end;flex:1;min-height:90px}
+.day{display:grid;gap:6px;justify-items:center;font:12px var(--mono);color:var(--text3);height:100%;grid-template-rows:1fr auto auto}
+.day .col{width:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.day .col.neg{justify-content:flex-start}
+.day i{display:block;border-radius:6px 6px 2px 2px;width:100%}
+.dots{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.dotc{display:grid;gap:4px;justify-items:center;text-align:center;font-size:11px;color:var(--text3);line-height:1.2}
+.dotc i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:500 10px var(--mono);color:var(--bg)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text3);margin-top:auto}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--c)}
+.ring{display:flex;align-items:center;gap:16px}
+.ring svg{width:84px;height:84px;flex:none}
+.ev{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.ev:first-of-type{border-top:0}
+.ev .t{font:500 13px var(--mono);color:var(--text2)}
+.imp{font:500 11px var(--mono);padding:1px 7px;border-radius:99px;background:var(--bad-bg);color:var(--bad)}
+.imp.m{background:var(--warn-bg);color:var(--warn)}
+.btn{height:34px;padding:0 14px;border-radius:9px;border:1px solid var(--line2);background:var(--card2);cursor:pointer;font-weight:500;align-self:flex-start}
+.btn.pri{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.copies{display:flex;flex-wrap:wrap;gap:8px}
+.copies span{font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--card2);border:1px solid var(--line)}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--ok-bg);color:var(--ok)}
+
+/* Saisie rapide : une phrase, l'app la découpe */
+.composer{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:12;width:min(720px,calc(100% - 32px));background:var(--card);border:1px solid var(--line2);border-radius:18px;box-shadow:var(--shadow);padding:10px 10px 10px 16px;display:grid;gap:8px}
+.cr{display:flex;align-items:center;gap:10px}
+.cr input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--text);font:15px var(--ui)}
+.cr .btn{align-self:center}
+.parsed{display:flex;flex-wrap:wrap;gap:6px;min-height:0}
+.parsed:empty{display:none}
+.tok{font-size:12.5px;padding:3px 9px;border-radius:8px;background:var(--accent-bg);color:var(--text)}
+.tok b{font-weight:500;color:var(--text3);margin-right:4px}
+.tok.miss{background:var(--warn-bg)}
+.toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom,0px));transform:translate(-50%,10px);opacity:0;transition:opacity .2s,transform .2s var(--ease);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:14px;pointer-events:none;z-index:13}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tabbar{display:none}
+
+@media (max-width:1000px){.todos{grid-template-columns:1fr}.bento{grid-template-columns:repeat(2,minmax(0,1fr))}.nav{display:none}.search{width:auto;flex:0 1 260px}}
+@media (max-width:620px){
+  body{padding-bottom:170px}
+  .search span,.search kbd{display:none}.search{width:36px;flex:none;padding:0;justify-content:center;border-radius:50%}
+  .bento{grid-template-columns:1fr}.w2{grid-column:auto}.h2{grid-row:auto}
+  .composer{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));justify-content:space-around}
+  .tabbar a{display:grid;justify-items:center;gap:2px;font-size:10.5px;color:var(--text3);text-decoration:none;padding:4px 8px}
+  .tabbar a.on{color:var(--text)}
+  .tabbar svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <div class="brand"><div class="logo">Q</div>Quantara</div>
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="#" class="on">Aujourd'hui</a><a href="#">Comptes</a><a href="#">Journal</a><a href="#">Règles</a><a href="#">Outils</a>
+    </nav>
+    <button class="search" id="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Tout chercher</span><kbd>⌘K</kbd></button>
+    <button class="ib" aria-label="3 alertes"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg><span class="n">3</span></button>
+    <div class="av" title="Alex Demo · Plan Pro">AD</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Lundi 5 octobre · exemple</div>
+      <h1>Bonjour Alex. <em>Trois choses</em> avant l'ouverture.</h1>
+    </div>
+    <div class="mkt"><i></i>Ouverture CME à 15:30, heure de Paris</div>
+  </section>
+
+  <div class="todo-h"><h2>À faire aujourd'hui</h2><span id="prog">0 / 3</span></div>
+  <section class="todos" id="todos">
+    <article class="todo"><button class="chk" aria-label="Marquer comme fait"></button><span class="sev bad">Risque</span><b>Apex EOD 50K est à 370 $ du breach</b><p>Réduis la taille sur ce compte ou laisse-le de côté aujourd'hui.</p><button class="go">Ouvrir le compte →</button></article>
+    <article class="todo"><button class="chk" aria-label="Marquer comme fait"></button><span class="sev ok">Payout</span><b>TS 50K #1 peut demander 1 000 $</b><p>Objectif atteint, 5 jours gagnants validés.</p><button class="go">Préparer la demande →</button></article>
+    <article class="todo"><button class="chk" aria-label="Marquer comme fait"></button><span class="sev warn">Plan</span><b>ISM Services à 16:00, impact fort</b><p>Ta règle : pas de trade dans les 5 minutes avant une news T1.</p><button class="go">Voir le calendrier →</button></article>
+  </section>
+
+  <section class="bento">
+    <div class="tile w2">
+      <h3>P&amp;L de la semaine dernière <a href="#">Journal →</a></h3>
+      <div><span class="big up">+1 254 $</span> <span class="sub">sur 7 comptes actifs · 12 trades</span></div>
+      <div class="days" id="days"></div>
+    </div>
+    <div class="tile h2">
+      <h3>Comptes <a href="#">Tous →</a></h3>
+      <div class="dots" id="dots"></div>
+      <div class="legend"><span style="--c:var(--ok)">sain</span><span style="--c:var(--warn)">à surveiller</span><span style="--c:var(--bad)">à risque</span></div>
+    </div>
+    <div class="tile">
+      <h3>Discipline, 30 j</h3>
+      <div class="ring">
+        <svg viewBox="0 0 84 84" aria-label="82 % des trades respectent le plan"><circle cx="42" cy="42" r="34" fill="none" stroke="var(--hover)" stroke-width="9"/><circle cx="42" cy="42" r="34" fill="none" stroke="var(--brass)" stroke-width="9" stroke-linecap="round" stroke-dasharray="175.2 213.6" transform="rotate(-90 42 42)"/><text x="42" y="47" text-anchor="middle" font-family="Roboto Mono, monospace" font-size="16" font-weight="500" fill="var(--text)">82 %</text></svg>
+        <span class="sub">des trades respectent ton plan. 7 écarts, dont 4 « revenge ».</span>
+      </div>
+    </div>
+    <div class="tile">
+      <h3>Prochain payout</h3>
+      <div class="big">1 000 $</div>
+      <span class="sub">TS 50K #1 · Topstep</span>
+      <button class="btn pri">Préparer</button>
+    </div>
+    <div class="tile w2">
+      <h3>Calendrier éco du jour <a href="#">Semaine →</a></h3>
+      <div class="ev"><span class="t">16:00</span><span>ISM Services (US)</span><span class="imp">Fort</span></div>
+      <div class="ev"><span class="t">19:00</span><span>Discours d'un membre de la Fed</span><span class="imp m">Moyen</span></div>
+      <span class="sub">Horaires de Paris. Exemple de journée.</span>
+    </div>
+    <div class="tile w2">
+      <h3>Dernier trade</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline"><span class="big up">+420 $</span><span class="num">NQ</span><span class="pill">Long</span><span class="sub">30 sept. · ORB 9h45</span></div>
+      <span class="sub">Saisi une fois, copié sur 3 comptes :</span>
+      <div class="copies"><span>TS 50K #1</span><span>Apex EOD 100K</span><span>LucidFlex 50K</span></div>
+    </div>
+  </section>
+</main>
+
+<form class="composer" id="composer" autocomplete="off">
+  <div class="cr">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brass)" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <input id="say" aria-label="Chercher ou saisir un trade" placeholder="Chercher, ou saisir un trade : « NQ long +420 sur TS 50K »">
+    <button class="btn pri" type="submit">Ajouter</button>
+  </div>
+  <div class="parsed" id="parsed" aria-live="polite"></div>
+</form>
+<div class="toast" id="toast" role="status"></div>
+
+<nav class="tabbar" aria-label="Navigation">
+  <a href="#" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Aujourd'hui</a>
+  <a href="#"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>Comptes</a>
+  <a href="#"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h6"/></svg>Journal</a>
+  <a href="#"><svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>Règles</a>
+  <a href="#"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Plus</a>
+</nav>
+
+<script>
+/* Données d'exemple (trader fictif « Alex Demo »). Le HTML injecté vient de constantes ;
+   ce que l'utilisateur tape est toujours inséré avec textContent. */
+const $ = (s) => document.querySelector(s);
+const DAYS = [['lun.', 380], ['mar.', -220], ['mer.', 512], ['jeu.', -168], ['ven.', 750]];
+const MAX = 800;
+$('#days').innerHTML = DAYS.map(([d, v]) => {
+  const h = Math.round(Math.abs(v) / MAX * 100), c = v >= 0 ? 'var(--ok)' : 'var(--bad)';
+  return `<div class="day"><div class="col"><i style="height:${Math.max(h, 4)}%;background:${c};opacity:${v >= 0 ? 1 : .8}"></i></div><span class="num" style="color:${c}">${v > 0 ? '+' : '−'}${Math.abs(v)}</span><span>${d}</span></div>`;
+}).join('');
+const ACC = [['TS 50K', 87], ['TS 150K', 100], ['Apex 50K', 15], ['Apex 100K', 96], ['Tradeify', 87], ['MFFU', 91], ['Lucid', 81], ['Apex 25K', -1]];
+$('#dots').innerHTML = ACC.map(([n, p]) => {
+  const c = p < 0 ? 'var(--line2)' : p < 25 ? 'var(--bad)' : p < 60 ? 'var(--warn)' : 'var(--ok)';
+  return `<div class="dotc"><i style="background:${c}">${p < 0 ? '—' : p + '%'}</i>${n}</div>`;
+}).join('');
+
+/* Liste du jour : cocher fait avancer le compteur */
+function prog() { $('#prog').textContent = document.querySelectorAll('.todo.done').length + ' / 3'; }
+$('#todos').addEventListener('click', (e) => { const c = e.target.closest('.chk'); if (!c) return; c.closest('.todo').classList.toggle('done'); prog(); });
+
+/* Saisie rapide : reconnaît instrument, sens, montant et compte pendant la frappe */
+const ACCOUNTS = ['TS 50K #1', 'TS 150K', 'Apex EOD 50K', 'Apex EOD 100K', 'Tradeify Select 100K', 'MFFU Rapid 50K', 'LucidFlex 50K'];
+function parse(t) {
+  const s = t.toLowerCase();
+  const ins = (t.match(/\b(MNQ|MES|NQ|ES|CL|GC|YM|RTY)\b/i) || [])[1];
+  const side = /\blong\b|\bachat\b/.test(s) ? 'Long' : /\bshort\b|\bvente\b/.test(s) ? 'Short' : null;
+  const amt = (t.match(/([+−-]\s?\d[\d\s]*)/) || [])[1];
+  const acc = ACCOUNTS.find((a) => s.includes(a.toLowerCase().replace(' #1', '')) || s.includes(a.toLowerCase()));
+  return [['Instrument', ins && ins.toUpperCase()], ['Sens', side], ['P&L', amt && amt.replace(/\s/g, '').replace('−', '-') + ' $'], ['Compte', acc]];
+}
+const isTrade = (p) => !!(p[0][1] || p[1][1]);
+function showParsed() {
+  const box = $('#parsed'); box.replaceChildren();
+  const txt = $('#say').value.trim();
+  if (!txt) return;
+  const p = parse(txt);
+  if (!isTrade(p)) { const t = document.createElement('span'); t.className = 'tok'; const b = document.createElement('b'); b.textContent = 'Chercher'; t.append(b, document.createTextNode(txt)); box.append(t); return; }
+  p.forEach(([k, v]) => {
+    const t = document.createElement('span'); t.className = 'tok' + (v ? '' : ' miss');
+    const b = document.createElement('b'); b.textContent = k; t.append(b, document.createTextNode(v || 'à préciser')); box.append(t);
+  });
+}
+$('#say').addEventListener('input', showParsed);
+$('#composer').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const txt = $('#say').value.trim(); if (!txt) return;
+  const p = parse(txt), missing = isTrade(p) ? p.filter(([, v]) => !v).map(([k]) => k.toLowerCase()) : [];
+  const toast = $('#toast');
+  toast.textContent = !isTrade(p) ? 'Recherche lancée (maquette)' : missing.length ? 'Il manque : ' + missing.join(', ') : 'Trade ajouté (maquette : rien n\'est enregistré)';
+  toast.classList.add('on'); setTimeout(() => toast.classList.remove('on'), 2200);
+  if (!missing.length) { $('#say').value = ''; showParsed(); }
+});
+/* ⌘K et la loupe ouvrent le même champ : une seule barre pour chercher et saisir */
+document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#say').focus(); } });
+$('#search').addEventListener('click', () => $('#say').focus());
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<title>Navigation Quantara</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400&family=Outfit:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Page d'index : les normes en trois colonnes, puis les trois gabarits côte à côte,
+   chacun avec un croquis de sa disposition, puis le comparatif et la recommandation. */
+:root{
+  --bg:#0a1420; --card:#122131; --card2:#172a3d; --line:rgba(159,179,200,.14); --line2:rgba(159,179,200,.24);
+  --text:#f0f5fa; --text2:#9fb3c8; --text3:#7f93a9; --accent:#5ab0ff; --accent-bg:rgba(90,176,255,.14);
+  --ok:#3ddba8; --warn:#ffc25c; --bad:#ff7a86; --brass:#d8b46a; --brass2:#f1d99a;
+  --wf:rgba(159,179,200,.16); --wf2:rgba(159,179,200,.30);
+  --ui:"Outfit","Segoe UI",system-ui,sans-serif; --mono:"Roboto Mono",ui-monospace,Menlo,monospace; --display:"Fraunces","Iowan Old Style",Georgia,serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#f3f6fa; --card:#ffffff; --card2:#eef3f8; --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84; --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10);
+  --ok:#0b8a66; --warn:#9a6200; --bad:#cc3346; --brass:#8f6a22; --brass2:#7a5714;
+  --wf:rgba(13,27,40,.08); --wf2:rgba(13,27,40,.18); color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#f3f6fa; --card:#ffffff; --card2:#eef3f8; --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.18);
+  --text:#0d1b28; --text2:#43566a; --text3:#5c6f84; --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10);
+  --ok:#0b8a66; --warn:#9a6200; --bad:#cc3346; --brass:#8f6a22; --brass2:#7a5714;
+  --wf:rgba(13,27,40,.08); --wf2:rgba(13,27,40,.18); color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:16px/1.6 var(--ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:clamp(16px,4vw,40px);padding-block:clamp(32px,6vw,64px) 56px;display:grid;gap:clamp(44px,6vw,72px)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--brass)}
+h1,h2{font-family:var(--display);font-weight:600;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,5.4vw,58px);line-height:1.04}
+h1 em{font-style:italic;font-weight:400;color:var(--brass2)}
+h2{font-size:clamp(25px,3.2vw,34px)}
+h3{margin:0;font-size:17px;font-weight:600}
+header{display:grid;gap:14px}
+header p{margin:0;color:var(--text2);max-width:64ch;font-size:17px}
+.sec{display:grid;gap:22px}
+.sec>p{margin:0;color:var(--text2);max-width:66ch}
+
+.norms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.norm{display:grid;gap:10px;align-content:start;border-top:2px solid var(--line2);padding-top:14px}
+.norm ul{margin:0;padding-left:18px;display:grid;gap:8px;color:var(--text2);font-size:15px}
+.norm li b{color:var(--text);font-weight:500}
+
+.tpls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.tpl{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:grid;grid-template-rows:auto 1fr}
+.tpl .body{padding:16px 18px 18px;display:grid;gap:10px;align-content:start}
+.tpl .tag{font:500 11.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.tpl p{margin:0;font-size:14.5px;color:var(--text2)}
+.tpl dl{margin:4px 0 0;display:grid;gap:8px;font-size:14px}
+.tpl dt{font-weight:500;color:var(--text)}
+.tpl dd{margin:0;color:var(--text2)}
+.open{justify-self:start;margin-top:6px;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;background:var(--accent);color:var(--bg);text-decoration:none;font-weight:600;font-size:14.5px}
+:root[data-theme="light"] .open{color:#fff}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .open{color:#fff}}
+
+/* Croquis de disposition, dessinés en CSS */
+.wf{aspect-ratio:16/10;max-width:100%;background:var(--card2);border-bottom:1px solid var(--line);padding:14px;display:grid;gap:6px}
+.wf div{background:var(--wf);border-radius:4px}
+.wf .hi{background:var(--accent-bg);outline:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.wf .al{background:color-mix(in srgb,var(--bad) 25%,transparent)}
+.wfa{grid-template-columns:22% 1fr;grid-template-rows:1fr}
+.wfa .side{display:grid;grid-template-rows:10px 12px repeat(8,6px) 1fr;gap:5px;padding:7px;background:var(--wf2)}
+.wfa .side i{display:block;background:var(--wf);border-radius:2px}
+.wfa .main{display:grid;grid-template-rows:9px 12px 26px 1fr 30px;gap:6px;background:none}
+.wfa .kp{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:none}
+.wfa .mid{display:grid;grid-template-columns:2fr 1fr;gap:5px;background:none}
+.wfb{grid-template-columns:8% 28% 1fr}
+.wfb .rail{background:var(--wf2)}
+.wfb .lst{display:grid;grid-auto-rows:13px;gap:4px;padding:6px;align-content:start}
+.wfb .lst i{display:block;background:var(--wf2);border-radius:3px}
+.wfb .lst i.hi{background:var(--accent-bg);outline:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.wfb .det{display:grid;grid-template-rows:14px 10px 22px 1fr;gap:6px;background:none}
+.wfb .det .two{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:none}
+.wfc{grid-template-rows:12px 22px 34px 1fr 16px}
+.wfc .tri{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;background:none}
+.wfc .bento{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:5px;background:none}
+.wfc .bento .w2{grid-column:span 2}.wfc .bento .h2{grid-row:span 2}
+.wfc .bar{width:62%;justify-self:center;border-radius:8px;background:var(--wf2)}
+
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:640px}
+th,td{text-align:left;padding:11px 14px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0;font-weight:500;color:var(--text3);font-size:13px}
+tbody th{font-weight:500;color:var(--text);white-space:nowrap}
+td{color:var(--text2)}
+.lv{display:inline-flex;align-items:center;gap:7px;color:var(--text)}
+.lv::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+
+.reco{background:var(--card);border:1px solid color-mix(in srgb,var(--brass) 40%,transparent);border-radius:18px;padding:clamp(18px,3vw,28px);display:grid;gap:14px}
+.reco p{margin:0;color:var(--text2);max-width:70ch}
+.reco ol{margin:0;padding-left:22px;display:grid;gap:10px;color:var(--text2);max-width:72ch}
+.reco li b{color:var(--text);font-weight:500}
+.now{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.now div{display:grid;gap:6px;align-content:start}
+.now b{font-weight:500}
+.now p{margin:0;color:var(--text2);font-size:14.5px}
+footer{color:var(--text3);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+@media (max-width:900px){.norms,.tpls,.now{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Maquettes · sidebar, dashboard, fluidité</span>
+    <h1>Trois façons d'organiser <em>Quantara</em></h1>
+    <p>Trois gabarits HTML cliquables, construits avec les couleurs et les polices de l'app et le trader fictif du film promo. Chacun suit les normes des SaaS actuels, avec une idée différente de ce que l'écran d'accueil doit faire.</p>
+  </header>
+
+  <section class="sec" aria-labelledby="normes">
+    <span class="eyebrow">Les normes appliquées</span>
+    <h2 id="normes">Ce que font Linear, Stripe ou Vercel, et pourquoi</h2>
+    <div class="norms">
+      <div class="norm"><h3>Sidebar</h3><ul>
+        <li><b>5 à 9 entrées visibles</b>, groupées par métier (Trading, Règles, Outils). Au-delà, l'œil ne scanne plus.</li>
+        <li><b>Une action en tête</b>, « Nouveau trade », dessinée autrement que les destinations.</li>
+        <li><b>Repliable en rail</b> d'icônes, état mémorisé. Une icône a toujours un nom, en libellé ou en infobulle.</li>
+        <li><b>Badges rares</b> : seulement pour ce qui demande une action (un compte à risque, des alertes).</li>
+        <li><b>Profil et réglages en bas</b>, hors du flux de travail.</li>
+      </ul></div>
+      <div class="norm"><h3>Dashboard</h3><ul>
+        <li><b>Ordre de lecture fixe</b> : ce qui demande une action, puis 3 ou 4 chiffres, puis un graphique, puis le détail.</li>
+        <li><b>Une seule alerte en tête</b>, la plus grave. Les autres vont dans Alertes.</li>
+        <li><b>Un sélecteur de période global</b>, pas un par widget.</li>
+        <li><b>Chaque tuile mène quelque part</b> : un lien « → » vers la page complète.</li>
+        <li><b>États vides conçus</b>, et squelettes de la taille du contenu.</li>
+      </ul></div>
+      <div class="norm"><h3>Fluidité</h3><ul>
+        <li><b>La coquille ne se recharge jamais</b> : sidebar et barre haute restent, seul le contenu change.</li>
+        <li><b>150 à 250 ms</b> par transition, courbe qui décélère. Rien au-delà de 300 ms.</li>
+        <li><b>⌘K pour tout</b> : pages, comptes et actions dans une seule liste au clavier.</li>
+        <li><b>Raccourcis</b> : N pour un trade, [ pour la sidebar, / pour filtrer, ↑ ↓ pour changer de compte.</li>
+        <li><b>Aucun saut de mise en page</b> : chiffres à chasse fixe, réserve de place pour ce qui charge.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="gabarits">
+    <span class="eyebrow">Les trois gabarits</span>
+    <h2 id="gabarits">Même app, trois logiques de navigation</h2>
+    <div class="tpls">
+      <article class="tpl">
+        <div class="wf wfa" aria-hidden="true">
+          <div class="side"><i></i><i style="background:var(--accent-bg)"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="main"><div></div><div class="al"></div><div class="kp"><div></div><div></div><div></div><div></div></div><div class="mid"><div class="hi"></div><div></div></div><div></div></div>
+        </div>
+        <div class="body">
+          <span class="tag">Gabarit A · comme Stripe, Linear</span>
+          <h3>Cockpit</h3>
+          <p>Sidebar groupée en trois sections, repliable. Le dashboard se lit de haut en bas : alerte, quatre chiffres, courbe, santé des comptes, derniers trades.</p>
+          <dl><dt>Pour qui</dt><dd>Tout le monde. C'est l'évolution naturelle de l'app actuelle.</dd>
+          <dt>Limite</dt><dd>Un compte n'est qu'une ligne parmi d'autres sur l'accueil.</dd></dl>
+          <a class="open" href="cockpit.html">Ouvrir le gabarit →</a>
+        </div>
+      </article>
+      <article class="tpl">
+        <div class="wf wfb" aria-hidden="true">
+          <div class="rail"></div>
+          <div class="lst"><i></i><i class="hi"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="det"><div></div><div></div><div class="al"></div><div class="two"><div></div><div></div></div></div>
+        </div>
+        <div class="body">
+          <span class="tag">Gabarit B · comme Linear, une boîte mail</span>
+          <h3>Comptes d'abord</h3>
+          <p>Rail à cinq domaines, liste des comptes groupés par firme et triés par risque, puis la fiche du compte choisi avec ses règles et ses trades.</p>
+          <dl><dt>Pour qui</dt><dd>Les traders à 5 comptes ou plus, qui pensent « compte par compte ».</dd>
+          <dt>Limite</dt><dd>Trois colonnes, c'est serré sur un écran de 13 pouces. Refonte des routes.</dd></dl>
+          <a class="open" href="comptes.html">Ouvrir le gabarit →</a>
+        </div>
+      </article>
+      <article class="tpl">
+        <div class="wf wfc" aria-hidden="true">
+          <div></div><div style="width:60%"></div>
+          <div class="tri"><div class="al"></div><div class="hi"></div><div></div></div>
+          <div class="bento"><div class="w2"></div><div class="h2"></div><div></div><div></div><div></div></div>
+          <div class="bar"></div>
+        </div>
+        <div class="body">
+          <span class="tag">Gabarit C · comme Superhuman, Arc</span>
+          <h3>Briefing</h3>
+          <p>Pas de sidebar. Cinq destinations en haut, une page « Aujourd'hui » qui liste trois choses à faire, des tuiles de tailles différentes, et une barre pour chercher ou saisir un trade en une phrase.</p>
+          <dl><dt>Pour qui</dt><dd>L'usage quotidien et le téléphone. La barre d'onglets du bas est native.</dd>
+          <dt>Limite</dt><dd>Moins de place pour l'analyse. Demande un moteur qui calcule les « choses à faire ».</dd></dl>
+          <a class="open" href="briefing.html">Ouvrir le gabarit →</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="comparer">
+    <span class="eyebrow">Comparatif</span>
+    <h2 id="comparer">Ce que chaque gabarit fait bien</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th scope="col">Critère</th><th scope="col">A · Cockpit</th><th scope="col">B · Comptes d'abord</th><th scope="col">C · Briefing</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Effort depuis l'app actuelle</th><td><span class="lv" style="--c:var(--ok)">Faible</span><br>regrouper la sidebar, réordonner le dashboard</td><td><span class="lv" style="--c:var(--bad)">Élevé</span><br>nouvelle page Comptes, routes par compte</td><td><span class="lv" style="--c:var(--warn)">Moyen</span><br>nouvel accueil, barre de saisie</td></tr>
+          <tr><th scope="row">Plusieurs comptes</th><td>Bien, via Santé des comptes</td><td>Excellent : chaque compte a son espace</td><td>Bien, via la tuile Comptes</td></tr>
+          <tr><th scope="row">Analyse</th><td>Excellent : graphiques en pleine largeur</td><td>Bien, par compte</td><td>Limité sur l'accueil</td></tr>
+          <tr><th scope="row">Téléphone</th><td>Tiroir derrière un bouton menu</td><td>Liste puis fiche, comme une boîte mail</td><td>Barre d'onglets en bas, le plus naturel</td></tr>
+          <tr><th scope="row">Nouvel utilisateur</th><td>Tout est visible, rien à deviner</td><td>Clair dès qu'il a des comptes</td><td>Le plus guidé : l'app dit quoi faire</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="reco" aria-labelledby="reco">
+    <span class="eyebrow">Recommandation</span>
+    <h2 id="reco">Partir de A, avec deux emprunts</h2>
+    <p>Le Cockpit est la base la plus sûre : c'est la norme que tes utilisateurs connaissent déjà, et l'app actuelle en est proche. Deux idées des autres gabarits l'améliorent sans tout refaire.</p>
+    <ol>
+      <li><b>De B, la liste maître-détail pour la page Santé.</b> Les comptes à gauche, triés par risque, la fiche à droite. On garde la sidebar.</li>
+      <li><b>De C, la liste « À faire aujourd'hui » en tête du dashboard.</b> Elle remplace la carte « à faire maintenant » actuelle, qui ne montre qu'une chose à la fois.</li>
+      <li><b>Partout, ⌘K pour les comptes et les actions</b>, pas seulement pour les pages.</li>
+    </ol>
+  </section>
+
+  <section class="sec" aria-labelledby="actuel">
+    <span class="eyebrow">Par rapport à l'app actuelle</span>
+    <h2 id="actuel">Trois écarts à corriger en premier</h2>
+    <div class="now">
+      <div><b>La sidebar aligne 11 entrées sans sections</b><p>Dont deux groupes repliables. Les regrouper en Trading, Règles et Outils la rend lisible d'un coup d'œil.</p></div>
+      <div><b>Quatre vues du dashboard au même niveau</b><p>Vue d'ensemble, Performance, Payouts et Risque. La Vue d'ensemble devrait résumer les trois autres, avec un lien vers chacune.</p></div>
+      <div><b>Créer passe par un menu</b><p>« Nouveau » ouvre un menu à trois choix. Le trade est l'action la plus fréquente : un bouton direct et la touche N.</p></div>
+    </div>
+  </section>
+
+  <footer>Maquettes Quantara · données 100 % fictives (« Alex Demo ») · les gabarits sont dans mb-data-web/maquettes-navigation/</footer>
+</div>
