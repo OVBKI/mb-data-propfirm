@@ -2,3 +2,6 @@ node_modules/
 out/
 # Textures capturées (~30 Mo, régénérables : voir capture/README) — non versionnées.
 public/textures/
+voice/models/
+voice/.*-raw.wav
+capture/textures/

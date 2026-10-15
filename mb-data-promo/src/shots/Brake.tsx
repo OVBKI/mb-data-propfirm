@@ -15,7 +15,9 @@ import { C } from '../brand';
 
 const CL = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 const H = pageH('firm-apex-full');
-const ROW = { x: 495, y: 2455, w: 930, h: 43 };
+// Mesuré dans la page (capture d'octobre 2026). Si la fiche Apex change, re-mesurer :
+// la ligne « Après 6 payouts » a déjà glissé de 41 px entre deux captures.
+const ROW = { x: 495, y: 2496, w: 930, h: 44 };
 const S0 = 16, S1 = 66, L0 = 70, L1 = 84;
 const Z = 2.5; // la ligne d'arrivée doit se lire (Q11) : ~33 px de texte à l'écran
 const END_CX = 860; // centre du texte de la ligne (label à 510, fin de valeur ~1210)

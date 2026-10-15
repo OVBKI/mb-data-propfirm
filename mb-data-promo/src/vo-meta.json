@@ -1,0 +1,42 @@
+{
+  "hook1": {
+    "sub": "Cinq comptes. Cinq firmes. Cinq règlements.",
+    "frames": 84,
+    "sec": 2.813
+  },
+  "hook2": {
+    "sub": "Et une seule règle oubliée peut te coûter un compte.",
+    "frames": 73,
+    "sec": 2.445
+  },
+  "promise": {
+    "sub": "Avec Quantara, tes comptes sont réunis dans un seul dashboard.",
+    "frames": 92,
+    "sec": 3.074
+  },
+  "risk": {
+    "sub": "Un compte proche du breach ? Tu le vois en premier.",
+    "frames": 71,
+    "sec": 2.351
+  },
+  "replicate": {
+    "sub": "Un trade, saisi une fois, copié sur chaque compte.",
+    "frames": 97,
+    "sec": 3.221
+  },
+  "rules": {
+    "sub": "Et la règle exacte de chaque firme : 550 lignes, sourcées.",
+    "frames": 122,
+    "sec": 4.075
+  },
+  "brand": {
+    "sub": "Quantara. Le dashboard des traders PropFirm.",
+    "frames": 85,
+    "sec": 2.842
+  },
+  "cta": {
+    "sub": "Commence gratuitement sur quantara.tech",
+    "frames": 73,
+    "sec": 2.449
+  }
+}

@@ -31,7 +31,8 @@ const ELS: El[] = [
 const DUST = Array.from({ length: 20 }, (_, i) => ({ x: (i * 439 + 137) % 1920, y0: (i * 613 + 271) % 1080, rise: 0.3 + (i % 5) * 0.11, amp: 9 + (i % 4) * 5, freq: 0.022 + (i % 3) * 0.008, ph: (i * 0.83) % (Math.PI * 2), size: 2 + (i % 3) * 0.5, op: 0.2 + ((i * 7) % 5) * 0.06 }));
 const WORD = 'Quantara'.split('');
 
-export const Outro: React.FC<{ dur: number }> = ({ dur }) => {
+/** `tag` remplace la ligne « quantara.tech · crée ton compte » (la pub y met le slogan). */
+export const Outro: React.FC<{ dur: number; tag?: string }> = ({ dur, tag: tagText }) => {
   const vert = useContext(FormatCtx) === 'v';
   const f = useCurrentFrame();
   const blur = interpolate(f, [0, 24], [0, 14], { ...CL, easing: Easing.bezier(0.4, 0, 0.4, 1) });
@@ -105,7 +106,9 @@ export const Outro: React.FC<{ dur: number }> = ({ dur }) => {
               <div style={{ position: 'absolute', top: 2.5, height: 1, left: '100%', width: 190 * ext, background: C.brass, opacity: extFade }} />
             </>) : null}
           </div>
-          {vert ? (
+          {tagText ? (
+            <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: vert ? 54 : 60, lineHeight: 1.2, color: C.brassLight, marginTop: 30, opacity: tag, textAlign: 'center', maxWidth: vert ? 900 : 1400 }}>{tagText}</div>
+          ) : vert ? (
             <div style={{ fontFamily: F.mono, fontSize: 52, lineHeight: 1.3, letterSpacing: '0.12em', color: C.text2, marginTop: 30, opacity: tag, textTransform: 'uppercase', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <span>quantara.tech</span><span style={{ color: C.brassLight }}>crée ton compte</span>
             </div>

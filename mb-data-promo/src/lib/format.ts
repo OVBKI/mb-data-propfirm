@@ -9,3 +9,6 @@ export const FormatCtx = React.createContext<Format>('h');
 
 /** Un sous-titre narratif. `delay` = entrée, `dur` = frame de fin (relatives au plan). */
 export type Cap = { eyebrow?: string; text: string; delay: number; dur: number };
+
+/** false = les plans ne posent pas leurs sous-titres (la pub a ceux de la voix off). */
+export const CaptionsCtx = React.createContext<boolean>(true);

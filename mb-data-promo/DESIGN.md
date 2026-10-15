@@ -137,3 +137,38 @@ npm run render:vertical          # out/quantara-vertical.mp4
 npm run render:vertical:nobgm    # out/quantara-vertical-nobgm.mp4
 COMP=QuantaraVertical ./qa.sh v1 100 300 …   # planche de contrôle 9:16
 ```
+
+## Pub de campagne avec voix off (≈ 30 s)
+
+Compositions `QuantaraAd` (16:9) et `QuantaraAdVertical` (9:16), dans `src/ad/`.
+**Le montage suit la voix** : `src/ad/timeline.ts` lit la durée de chaque
+réplique (`src/vo-meta.json`) et l'heure de chaque mot (`src/vo-words.json`).
+
+| Scène | Réplique | Image |
+|---|---|---|
+| Accroche | « Cinq comptes. Cinq firmes. Cinq règlements. » | une fiche de règlement entre par mot, le texte animé EST la réplique |
+| | « Et une seule règle oubliée peut te coûter un compte. » | une ligne s'allume, vire au rouge, tampon COMPTE PERDU |
+| Promesse | « Avec Quantara, tes comptes sont réunis dans un seul dashboard. » | les pastilles de comptes plongent dans le dashboard |
+| Risque | « Un compte proche du breach ? Tu le vois en premier. » | plan Spotlight du film, rogné |
+| Réplication | « Un trade, saisi une fois, copié sur chaque compte. » | plan Replicate, rogné |
+| Règles | « Et la règle exacte de chaque firme : 550 lignes, sourcées. » | Brake puis Odometer, coupe sur « cinq cent cinquante » |
+| Marque | « Quantara. Le dashboard des traders PropFirm. » | plan Outro, slogan à la place de l'adresse |
+| Appel | « Commence gratuitement sur quantara.tech » | mains de bronze, bouton cliqué |
+
+- **Voix** : Piper, voix française SIWIS (CC-BY 4.0), générée en local.
+  `voice/script.json` garde deux textes par réplique : le sous-titre, et une
+  graphie phonétique pour la voix (« dache borde », « britche », « trède »).
+- **Contrôle sans écouter** : chaque réplique est retranscrite par Whisper
+  (faster-whisper). Les tournures mal entendues ont été réécrites (« le compte
+  à risque » était entendu « le con à risque »).
+- **Sous-titres mot à mot** (`Subs.tsx`), la plupart des pubs étant vues sans
+  le son. Absents quand le texte à l'écran dit déjà la réplique.
+- **Musique** : baisse de 0,30 à 0,11 sous la voix.
+- **« Données de démonstration »** affiché sur les scènes qui montrent des
+  montants : ce sont ceux du trader fictif.
+
+```bash
+npm run voice                 # régénère la voix + l'horodatage des mots
+npm run render:ad             # out/quantara-pub-16x9.mp4
+npm run render:ad:vertical    # out/quantara-pub-9x16.mp4
+```

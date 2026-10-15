@@ -8,7 +8,10 @@
     "render": "remotion render src/index.ts QuantaraPromo out/quantara-promo.mp4",
     "render:nobgm": "remotion render src/index.ts QuantaraPromo out/quantara-promo-nobgm.mp4 --props=props-nobgm.json",
     "render:vertical": "remotion render src/index.ts QuantaraVertical out/quantara-vertical.mp4",
-    "render:vertical:nobgm": "remotion render src/index.ts QuantaraVertical out/quantara-vertical-nobgm.mp4 --props=props-nobgm.json"
+    "render:vertical:nobgm": "remotion render src/index.ts QuantaraVertical out/quantara-vertical-nobgm.mp4 --props=props-nobgm.json",
+    "render:ad": "remotion render src/index.ts QuantaraAd out/quantara-pub-16x9.mp4",
+    "render:ad:vertical": "remotion render src/index.ts QuantaraAdVertical out/quantara-pub-9x16.mp4",
+    "voice": "python3 voice/make_vo.py && python3 voice/align.py"
   },
   "dependencies": {
     "@remotion/cli": "4.0.515",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "@types/react": "19.2.17",
+    "playwright-core": "^1.64.1",
     "typescript": "5.9.3"
   }
 }

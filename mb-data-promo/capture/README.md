@@ -28,9 +28,8 @@ node capture.mjs palette    # une seule entrée
 cp textures/* ../public/textures/   # (le script écrit dans ./textures/)
 ```
 
-Le script importe `playwright-core` par un chemin absolu de bac à sable :
-remplace-le par `import { chromium } from 'playwright-core'` après un
-`npm i -D playwright-core` si tu le relances ailleurs.
+`playwright-core` est une devDependency du projet. Il utilise le Chromium
+installé par Playwright, ou celui que désigne `CHROMIUM=/chemin/vers/chromium`.
 
 ## Trois pièges déjà rencontrés
 
@@ -44,6 +43,11 @@ remplace-le par `import { chromium } from 'playwright-core'` après un
   (`TradeCard`), alors que le badge du Trade Log compare en minuscules. Avec
   `'long'`, les cartes affichaient « SHORT ». (Incohérence de l'app, notée,
   non corrigée ici.)
+
+- **La fiche Apex change de mise en page** : la ligne « Après 6 payouts »,
+  utilisée par le plan Brake (`ROW` dans `src/shots/Brake.tsx`), a glissé de
+  41 px entre deux captures. Après une nouvelle capture, vérifier l'image f1060
+  du film et re-mesurer la ligne si besoin.
 
 ## Données
 

@@ -2,7 +2,7 @@
 // fictif. Supabase est simulé au niveau réseau (PostgREST + auth) : aucune base,
 // aucune donnée réelle. Sortie : 1920×1080 @2x dans textures/<id>.png + layout.json.
 //   node capture.mjs [id…]
-import pkg from '/tmp/claude-0/-home-user-mb-data-propfirm/581eccfd-d9f3-56f0-a3a1-44a9ca043f90/scratchpad/pw/node_modules/playwright-core/index.js'
+import pkg from 'playwright-core'
 import fs from 'fs'
 import * as FX from './fixtures.mjs'
 const { chromium } = pkg
@@ -133,7 +133,7 @@ async function clickText(p, text) {
 }
 
 const only = process.argv.slice(2)
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const b = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {})
 const ctx = await b.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 2, locale: 'fr-FR', timezoneId: 'America/New_York', bypassCSP: true })
 await ctx.addInitScript(({ session }) => {
   try {

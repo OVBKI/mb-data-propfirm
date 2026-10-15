@@ -1,0 +1,47 @@
+{
+  "_doc": "Texte de la voix off de la pub. 'sub' = sous-titre affiché ; 'tts' = graphie phonétique lue par la voix (les mots anglais sont réécrits pour une voix française).",
+  "voice": "fr_FR-siwis-medium",
+  "length_scale": 0.94,
+  "lines": [
+    {
+      "id": "hook1",
+      "sub": "Cinq comptes. Cinq firmes. Cinq règlements.",
+      "tts": "Cinq comptes. Cinq firmes. Cinq règlements."
+    },
+    {
+      "id": "hook2",
+      "sub": "Et une seule règle oubliée peut te coûter un compte.",
+      "tts": "Et une seule règle oubliée peut te coûter un compte."
+    },
+    {
+      "id": "promise",
+      "sub": "Avec Quantara, tes comptes sont réunis dans un seul dashboard.",
+      "tts": "Avec Kwantara, tes comptes sont réunis dans un seul dache borde."
+    },
+    {
+      "id": "risk",
+      "sub": "Un compte proche du breach ? Tu le vois en premier.",
+      "tts": "Un compte proche du britche ? Tu le vois en premier."
+    },
+    {
+      "id": "replicate",
+      "sub": "Un trade, saisi une fois, copié sur chaque compte.",
+      "tts": "Un trède, saisi une fois. Copié sur chaque compte."
+    },
+    {
+      "id": "rules",
+      "sub": "Et la règle exacte de chaque firme : 550 lignes, sourcées.",
+      "tts": "Et la règle exacte de chaque firme : cinq cent cinquante lignes, sourcées."
+    },
+    {
+      "id": "brand",
+      "sub": "Quantara. Le dashboard des traders PropFirm.",
+      "tts": "Kwantara. Le dache borde des trèdeurs prop firme."
+    },
+    {
+      "id": "cta",
+      "sub": "Commence gratuitement sur quantara.tech",
+      "tts": "Commence gratuitement, sur kwantara point tèque."
+    }
+  ]
+}

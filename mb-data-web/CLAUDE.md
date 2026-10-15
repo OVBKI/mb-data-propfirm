@@ -3010,3 +3010,12 @@ haut du cadre (le bas est couvert par l'interface TikTok). Les sous-titres ont
 une seule source : `caps(dur)` exporté par chaque plan. Pour ajouter un
 sous-titre, l'écrire là, jamais dans `src/vertical/`. Détails dans
 `mb-data-promo/DESIGN.md`.
+
+### Pub de campagne avec voix off (2026-10)
+Compositions `QuantaraAd` et `QuantaraAdVertical` (30 s), dans
+`mb-data-promo/src/ad/`. Le montage est calé sur la voix : changer
+`voice/script.json` puis `npm run voice` recale tout. Voix Piper SIWIS
+(CC-BY 4.0) : mentionner « Voix de synthèse : Piper, voix SIWIS (CC-BY 4.0) »
+dans la diffusion. Pour vérifier une voix sans l'écouter, la faire retranscrire
+par Whisper : c'est ainsi qu'on a trouvé « le compte à risque » entendu
+« le con à risque ». Détails dans `mb-data-promo/DESIGN.md`.
