@@ -1,0 +1,262 @@
+<title>Audit Quantara octobre 2026</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400&family=Outfit:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Rapport d'audit : un fil de lecture unique (urgences → enlever → ajouter → technique → plan),
+   tokens repris de l'app (Abyss), sombre par défaut comme Quantara, clair redéfini. */
+:root{
+  --bg:#0a1420; --card:#122131; --card2:#172a3d; --line:rgba(159,179,200,.14); --line2:rgba(159,179,200,.26);
+  --text:#f0f5fa; --text2:#a9bccf; --text3:#8193a8; --accent:#5ab0ff; --accent-bg:rgba(90,176,255,.14);
+  --bad:#ff7a86; --bad-bg:rgba(255,122,134,.12); --warn:#ffc25c; --warn-bg:rgba(255,194,92,.12);
+  --ok:#3ddba8; --ok-bg:rgba(61,219,168,.12); --brass:#d8b46a;
+  --display:"Fraunces","Iowan Old Style",Georgia,serif; --ui:"Outfit","Segoe UI",system-ui,sans-serif; --mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#f3f6fa; --card:#ffffff; --card2:#eef3f8; --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.20);
+  --text:#0d1b28; --text2:#3d5064; --text3:#56697e; --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10);
+  --bad:#c22e42; --bad-bg:rgba(204,51,70,.08); --warn:#8a5800; --warn-bg:rgba(201,133,0,.10);
+  --ok:#0b7f5e; --ok-bg:rgba(11,138,102,.09); --brass:#8a6420; color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#f3f6fa; --card:#ffffff; --card2:#eef3f8; --line:rgba(13,27,40,.10); --line2:rgba(13,27,40,.20);
+  --text:#0d1b28; --text2:#3d5064; --text3:#56697e; --accent:#1c6fd1; --accent-bg:rgba(28,111,209,.10);
+  --bad:#c22e42; --bad-bg:rgba(204,51,70,.08); --warn:#8a5800; --warn-bg:rgba(201,133,0,.10);
+  --ok:#0b7f5e; --ok-bg:rgba(11,138,102,.09); --brass:#8a6420; color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:16px/1.6 var(--ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:clamp(28px,5vw,56px) 64px;display:grid;gap:clamp(40px,6vw,64px)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+a{color:var(--accent)}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+h1,h2{font-family:var(--display);font-weight:600;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,5vw,52px);line-height:1.06}
+h1 em{font-style:italic;font-weight:400;color:var(--brass)}
+h2{font-size:clamp(24px,3vw,32px)}
+h3{margin:0;font-size:17px;font-weight:600;line-height:1.35}
+p{margin:0}
+.lead{color:var(--text2);max-width:66ch;font-size:17px}
+header{display:grid;gap:16px}
+.strip{display:flex;flex-wrap:wrap;gap:10px}
+.strip a{display:flex;gap:10px;align-items:baseline;padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--text)}
+.strip b{font:500 22px var(--mono)}
+.strip span{color:var(--text2);font-size:14px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
+nav.toc a{color:var(--text2);text-decoration:none;border-bottom:1px solid var(--line2)}
+section{display:grid;gap:18px}
+.sec-head{display:grid;gap:8px}
+.sec-head p{color:var(--text2);max-width:68ch}
+.cards{display:grid;gap:12px}
+.issue{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px 16px 20px;display:grid;gap:8px;position:relative;overflow:hidden}
+.issue::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sev,var(--line2))}
+.issue.bad{--sev:var(--bad)} .issue.warn{--sev:var(--warn)}
+.issue .top{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.pill{font:500 11.5px var(--mono);letter-spacing:.04em;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.n{background:var(--accent-bg);color:var(--accent)}
+.issue p{color:var(--text2);font-size:15px;max-width:76ch}
+.issue p b{color:var(--text);font-weight:500}
+.ev{font:12.5px var(--mono);color:var(--text3);overflow-wrap:anywhere}
+pre{margin:0;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:13px/1.5 var(--mono);overflow-x:auto;color:var(--text)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:680px}
+th,td{text-align:left;padding:11px 14px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0;font-weight:500;color:var(--text3);font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+tbody th{font-weight:500;color:var(--text)}
+td{color:var(--text2)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--text)}
+.grp{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text3);background:var(--card2)}
+.adds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.add{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px;align-content:start}
+.add .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.add dl{margin:0;display:grid;gap:6px;font-size:14.5px}
+.add dt{font-weight:500;color:var(--text);font-size:13px}
+.add dd{margin:0;color:var(--text2)}
+.add .src{font-size:13px;color:var(--text3)}
+ol.plan{margin:0;padding-left:22px;display:grid;gap:14px;max-width:76ch}
+ol.plan li{color:var(--text2)}
+ol.plan li b{color:var(--text);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13.5px;color:var(--text2)}
+footer{color:var(--text3);font-size:13px;border-top:1px solid var(--line);padding-top:18px;display:grid;gap:6px}
+@media (max-width:760px){.adds{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Audit produit et technique · 23 octobre 2026</span>
+    <h1>Quantara fait moins que ce que le site promet, <em>et le montre deux fois.</em></h1>
+    <p class="lead">Le socle est bon : le catalogue de règles est vérifié sur les sources officielles, les 632 tests passent et le build est propre. Le problème est ailleurs. La page Tarifs vend des fonctions qui n'existent pas, plusieurs pages de l'app affichent les mêmes chiffres, et deux automatismes ne font rien en silence.</p>
+    <div class="strip">
+      <a href="#urgences"><b>6</b><span>urgences à corriger</span></a>
+      <a href="#enlever"><b>18</b><span>éléments à enlever ou fusionner</span></a>
+      <a href="#ajouter"><b>10</b><span>fonctions à ajouter</span></a>
+    </div>
+    <nav class="toc" aria-label="Sommaire"><a href="#urgences">Urgences</a><a href="#enlever">À enlever</a><a href="#ajouter">À ajouter</a><a href="#technique">État technique</a><a href="#plan">Ordre conseillé</a></nav>
+  </header>
+
+  <section id="urgences" aria-labelledby="h-urg">
+    <div class="sec-head">
+      <span class="eyebrow">1 · Urgences</span>
+      <h2 id="h-urg">Six problèmes qui touchent déjà les utilisateurs</h2>
+      <p>Chacun a été vérifié dans le code. Deux dépendent de l'état réel de la base Supabase, que je ne peux pas voir d'ici : la requête pour le vérifier est donnée.</p>
+    </div>
+    <div class="cards">
+      <article class="issue bad">
+        <div class="top"><span class="pill bad">Bloquant possible</span><h3>Les bêta-testeurs sont peut-être bridés à 1 firme, 3 comptes et 20 trades par mois</h3></div>
+        <p>Les quotas du palier gratuit sont appliqués par des triggers dans la base. Seul <b>beta_grandfather</b> les lève, et il vaut <b>false</b> par défaut. La requête qui le passe à true est commentée, et Stripe n'est pas en ligne : personne ne peut payer pour lever la limite. Si le schéma complet a été recollé en septembre, chaque inscrit est bridé aujourd'hui, alors que le site affiche « ∞ comptes et trades ».</p>
+        <p>Au-delà du bug, <b>1 firme et 3 comptes ne permettent pas de voir ce que fait Quantara</b> : sa promesse, c'est justement plusieurs comptes chez plusieurs firmes. Le palier gratuit devrait limiter autre chose, par exemple l'historique ou les alertes.</p>
+        <pre>-- À lancer dans Supabase → SQL editor
+select count(*) as inscrits, count(*) filter (where beta_grandfather) as beta_illimites from profiles;
+select tgname from pg_trigger where tgname in ('firms_quota','accounts_quota','journal_entries_quota');</pre>
+        <p class="ev">supabase-schema.sql:647, 730-760, 779-836, 847 · lib/planLimits.js:18-22 · lib/i18n.js:1748</p>
+      </article>
+      <article class="issue bad">
+        <div class="top"><span class="pill bad">Légal</span><h3>Impossible de se désabonner de l'e-mail mensuel</h3></div>
+        <p>Le lien de désinscription de l'e-mail renvoie vers les Réglages. L'interrupteur « récap mensuel » n'y enregistre le choix que dans le navigateur, et l'envoi ne le consulte jamais. Un utilisateur qui décoche continue de recevoir l'e-mail. Il faut une vraie préférence en base, lue par le cron, et un lien de désinscription en un clic.</p>
+        <p class="ev">app/app/(main)/settings/page.js:94-107 · app/api/cron/monthly-recap/route.js:200</p>
+      </article>
+      <article class="issue bad">
+        <div class="top"><span class="pill bad">En panne</span><h3>Le Drawdown Guardian n'a jamais envoyé d'alerte</h3></div>
+        <p>Le cron lit un solde et un plancher <b>stockés</b> sur chaque compte. Aucun code ne les écrit, et ils ne figurent même pas dans le schéma. Selon la base, le cron plante ou ignore tous les comptes. La page Santé, elle, calcule ces valeurs à partir des trades. Le cron doit réutiliser le même calcul. C'est pourtant l'alerte mise en avant sur la page Tarifs.</p>
+        <p class="ev">app/api/cron/drawdown-guardian/route.js:30, 40 · app/app/(main)/health/page.js:194-207</p>
+      </article>
+      <article class="issue bad">
+        <div class="top"><span class="pill bad">Confiance</span><h3>Le site vend une douzaine de fonctions qui n'existent pas</h3></div>
+        <p><b>Tarifs</b> : synchronisation broker automatique (retirée en août), import ProjectX, export PDF, AI Trade Coach, sièges d'équipe, leaderboard de groupe, journal d'audit, délais de support garantis, et des badges « Q3 2026 » déjà dépassés. <b>Sécurité</b> : un paragraphe explique que les identifiants broker sont chiffrés, alors que la synchronisation n'existe plus. <b>Partout</b> : « 3 langues (FR/EN/ES) » alors qu'il y en a deux, « 8+ », « 10+ » ou « 11 » firmes selon la page alors qu'il y en a 12, « bêta privée » alors qu'elle est ouverte, un Discord annoncé comme actif, et Lucid décrit comme « statique ».</p>
+        <p class="ev">lib/i18n.js:343-425, 1748-1758 · app/security/SecurityClient.js:62 · app/integrations/IntegrationsClient.js:26-70 · app/docs/DocsClient.js:193-220 · app/page.js:62-93 · public/llms.txt</p>
+      </article>
+      <article class="issue warn">
+        <div class="top"><span class="pill warn">Formulaire cassé</span><h3>La liste d'attente refuse les paliers Elite et Business</h3></div>
+        <p>La page Tarifs envoie « elite » ou « business ». La table n'accepte que « pro » et « lifetime » : l'inscription échoue avec une erreur serveur. Ça disparaît de lui-même si les paliers Elite et Business sont retirés, comme proposé plus bas.</p>
+        <p class="ev">supabase-schema.sql:460 · app/api/waitlist/route.js:54 · app/pricing/PricingClient.js:175-239</p>
+      </article>
+      <article class="issue warn">
+        <div class="top"><span class="pill warn">Incohérent</span><h3>Les Réglages disent « bientôt » pour des fonctions qui marchent déjà</h3></div>
+        <p>« Exporter mes données » affiche « bientôt », et la suppression de compte ouvre un e-mail. Or un export et une vraie suppression existent et fonctionnent, mais dans une fenêtre de profil qu'on n'atteint que depuis /app/profile. Il suffit de les brancher dans les Réglages.</p>
+        <p class="ev">app/app/(main)/settings/page.js:285, 327 · components/ProfileModal.js:394, 456</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="enlever" aria-labelledby="h-enl">
+    <div class="sec-head">
+      <span class="eyebrow">2 · À enlever</span>
+      <h2 id="h-enl">Ce qui encombre sans servir</h2>
+      <p>« Cacher » veut dire retirer de la navigation et du site en gardant le code pour plus tard. « Fusionner » veut dire garder la fonction, à un seul endroit.</p>
+    </div>
+    <div class="legend"><span><span class="pill bad">Supprimer</span> code mort ou promesse fausse</span><span><span class="pill warn">Cacher</span> inachevé, à reprendre plus tard</span><span><span class="pill n">Fusionner</span> doublon</span></div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th scope="col">Élément</th><th scope="col">Pourquoi</th><th scope="col">Action</th></tr></thead>
+        <tbody>
+          <tr><td class="grp" colspan="3">Offre et site public</td></tr>
+          <tr><th scope="row">Paliers Elite et Business</th><td>Presque tout ce qu'ils vendent n'est pas construit. Garder Gratuit + Pro, Pro limité à ce qui existe : comptes et trades illimités, import CSV, export, alertes.</td><td><span class="pill bad">Supprimer</span></td></tr>
+          <tr><th scope="row">Promesses de synchronisation et de ProjectX</th><td>Tarifs, Sécurité, Intégrations, Docs, landing (« Quantara track tout automatiquement »). ProjectX est réservé à Topstep depuis février 2026.</td><td><span class="pill bad">Supprimer</span></td></tr>
+          <tr><th scope="row">66 + 36 pages « firme contre firme »</th><td>Générées par gabarit, avec un verdict fabriqué à partir des deux noms et daté de mai. Risque de contenu jugé mince. Garder 5 à 10 paires à fort volume, réécrites, et passer le reste en noindex.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Page Intégrations</th><td>Répète /firms et liste surtout des intégrations qui n'existent plus.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Feuille de route des Docs</th><td>Annonce ProjectX au T3, Rithmic et Tradovate en 2027, l'espagnol. Plus rien n'est à jour.</td><td><span class="pill bad">Supprimer</span></td></tr>
+          <tr><th scope="row">« Tous les services opérationnels »</th><td>Pastille verte écrite en dur dans le pied de page, qui ne mesure rien.</td><td><span class="pill bad">Supprimer</span></td></tr>
+          <tr><td class="grp" colspan="3">Fonctions inachevées dans l'app</td></tr>
+          <tr><th scope="row">Couche sociale</th><td>Profils publics avec un bandeau 🚧, abonnés, bouton « Suivre (bientôt) », mur « bientôt », groupes réservés à l'admin mais listés dans la recherche ⌘K. L'ensemble a l'air abandonné.</td><td><span class="pill warn">Cacher</span></td></tr>
+          <tr><th scope="row">Programme de parrainage</th><td>Une route crée des codes, mais aucun écran ne les montre et aucune récompense n'existe.</td><td><span class="pill warn">Cacher</span></td></tr>
+          <tr><td class="grp" colspan="3">Doublons dans l'app</td></tr>
+          <tr><th scope="row">Trois vues des trades</th><td>Le Journal masque les trades importés, journal-sync/view ne montre qu'eux, et le Trade Log montre tout. Un seul Journal avec un filtre « origine » suffit.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Hub journal-sync</th><td>Une page qui ne contient que deux liens, vers l'import et vers la vue.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">/app/analytics et les onglets Performance et Payouts</th><td>Mêmes chiffres, deux calculs séparés. Garder les onglets du dashboard, déjà personnalisables, et faire de la courbe d'equity comparée un widget.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Onglet Risque et page Santé</th><td>Deux calculs de la marge de drawdown : le même compte peut afficher « pas de données » d'un côté et une jauge de l'autre.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Deux formulaires de trade</th><td>Le Journal a sa propre copie du formulaire. Chaque évolution doit être faite deux fois, comme pour la réplication en août.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Réglages, page Profil et fenêtre de profil</th><td>Trois endroits pour les mêmes réglages, dont un introuvable. Tout regrouper dans les Réglages.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Interrupteur des notifications push</th><td>Présent dans Alertes et dans Réglages. Le garder dans Réglages.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><th scope="row">Trois pages de stats admin</th><td>L'accueil admin, Stats et Activité comptent les mêmes tables.</td><td><span class="pill n">Fusionner</span></td></tr>
+          <tr><td class="grp" colspan="3">Code mort et dépôt</td></tr>
+          <tr><th scope="row">Routes sans appelant</th><td>Connexion ProjectX, ancienne route d'e-mails d'accueil (remplacée par le cron), parrainage si on ne le construit pas. Plus l'import inutilisé de PX_FIRMS, Counter.js, une copie de la fenêtre de profil jamais ouverte et une dizaine de clés de traduction orphelines.</td><td><span class="pill bad">Supprimer</span></td></tr>
+          <tr><th scope="row">Fichiers hors produit dans mb-data-web</th><td>Maquettes, landing-3d, seo-deliverables, business, documents d'audit et de lancement. Les déplacer dans docs/ à la racine. CLAUDE.md fait 3 000 lignes, dont des sections fausses : les crons, les paliers, « pas de framework de test ».</td><td><span class="pill n">Fusionner</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="ajouter" aria-labelledby="h-add">
+    <div class="sec-head">
+      <span class="eyebrow">3 · À ajouter</span>
+      <h2 id="h-add">Ce qui manque, par ordre de valeur pour un trader multi-comptes</h2>
+      <p>Comparé à TradeZella, TradesViz, Tradervue, TraderSync et Edgewonk. Le manque le plus visible est la synchronisation automatique : tous l'affichent. Mais Quantara a un atout qu'aucun n'a vraiment, le catalogue de règles par firme et par programme. Les meilleurs ajouts s'appuient dessus. Les efforts sont des estimations : S = un à deux jours, M = une semaine, L = plusieurs semaines.</p>
+    </div>
+    <div class="adds">
+      <article class="add"><div class="top"><h3>Plus de formats d'import</h3><span class="pill n">M</span></div>
+        <dl><dt>Manque</dt><dd>Seuls les exports Rithmic sont lus. Il faut ajouter Tradovate, NinjaTrader, TopstepX et MetaTrader 4/5 pour les firmes CFD.</dd>
+        <dt>Pourquoi d'abord</dt><dd>C'est la moitié de la valeur d'une synchronisation, sans partenariat ni identifiants à stocker.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Alertes de règles calculées côté serveur</h3><span class="pill n">M</span></div>
+        <dl><dt>Manque</dt><dd>Réparer le Guardian, puis prévenir à 80 % de la limite de drawdown et de la perte journalière, avec le même calcul que la page Santé.</dd>
+        <dt>Existe déjà</dt><dd>Push, e-mail, cron quotidien et calcul de marge.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Préparation au payout, compte par compte</h3><span class="pill n">M</span></div>
+        <dl><dt>Manque</dt><dd>« Payout possible le 28 octobre, il reste 2 jours qualifiants, plafond 1 500 $ », selon les vraies conditions de la firme et du programme.</dd>
+        <dt>Existe déjà</dt><dd>Le pipeline de payout et toutes les données nécessaires dans le catalogue : jours, buffer, consistance, plafonds.</dd>
+        <dd class="src">Le plus proche chez les concurrents : le widget « Payout Readiness » de TradesViz.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Contrôle des règles après chaque trade</h3><span class="pill n">L</span></div>
+        <dl><dt>Manque</dt><dd>Signaler tout de suite une consistance dépassée, une perte journalière touchée, trop de contrats ou un trade pendant une news interdite.</dd>
+        <dt>Pourquoi</dt><dd>TradesViz le fait de façon générique. Quantara peut le faire avec la règle exacte du programme.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Statistiques par setup</h3><span class="pill n">S</span></div>
+        <dl><dt>Manque</dt><dd>Taux de réussite, espérance et R moyen par tag ou par setup.</dd>
+        <dt>Existe déjà</dt><dd>Les tags et le R-multiple sur chaque trade. Seule l'agrégation manque.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Coût d'un compte financé, par firme</h3><span class="pill n">S</span></div>
+        <dl><dt>Manque</dt><dd>Dépenses en challenges divisées par le nombre de comptes financés, taux de réussite et délai moyen, firme par firme.</dd>
+        <dt>Pourquoi</dt><dd>Parmi les outils étudiés, aucun ne met les dépenses face aux payouts. C'est le point fort de Quantara : à mettre en avant.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Exposition totale par instrument</h3><span class="pill n">M</span></div>
+        <dl><dt>Manque</dt><dd>Combien de contrats NQ sont ouverts sur l'ensemble des comptes, au moment où on réplique un trade sur cinq comptes.</dd>
+        <dt>Pourquoi</dt><dd>Recommandé dans les guides des concurrents, implémenté par aucun des outils étudiés.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Bilan annuel exportable</h3><span class="pill n">S</span></div>
+        <dl><dt>Manque</dt><dd>Payouts reçus et frais payés, par firme et par année, en un fichier, pour préparer sa déclaration.</dd>
+        <dt>Existe déjà</dt><dd>Toutes les données et un export CSV brut.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Connexion TopstepX par clé API</h3><span class="pill n">M</span></div>
+        <dl><dt>Manque</dt><dd>Lecture seule, avec une clé que le trader génère lui-même. L'API est un abonnement de 29 $ par mois à sa charge.</dd>
+        <dt>Pourquoi pas plus</dt><dd>Rithmic et Tradovate exigent un partenariat ou une homologation. C'est ce qui a fait échouer les tentatives d'août.</dd></dl></article>
+      <article class="add"><div class="top"><h3>Revue hebdomadaire par IA</h3><span class="pill n">L</span></div>
+        <dl><dt>Manque</dt><dd>Une analyse des trades et des écarts au plan chaque semaine. TradeZella, TradesViz et TraderSync en ont une.</dd>
+        <dt>Quand</dt><dd>Après les points précédents. Elle n'a de valeur que si les données entrent sans effort, et elle coûte à chaque appel.</dd></dl></article>
+    </div>
+    <p class="lead" style="font-size:15px">Déjà présents, donc pas listés : captures d'écran et prix sur les trades, R-multiple, connexion Google, application installable sur téléphone (manifest et service worker), réplication sur plusieurs comptes.</p>
+  </section>
+
+  <section id="technique" aria-labelledby="h-tech">
+    <div class="sec-head">
+      <span class="eyebrow">4 · État technique</span>
+      <h2 id="h-tech">Mesuré le 23 octobre</h2>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th scope="col">Point</th><th scope="col">Mesure</th><th scope="col">Lecture</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Tests</th><td class="num">632 / 632</td><td><span class="pill ok">Sain</span> Surtout sur le catalogue de règles, la facturation et le dashboard.</td></tr>
+          <tr><th scope="row">Lint</th><td class="num">0 erreur · 35 avert.</td><td><span class="pill ok">Sain</span> Des dépendances de hooks React oubliées.</td></tr>
+          <tr><th scope="row">Build de production</th><td class="num">OK</td><td><span class="pill ok">Sain</span> Pages les plus lourdes : Journal 269 kB et Dashboard 261 kB au premier chargement.</td></tr>
+          <tr><th scope="row">Dépendances vulnérables</th><td class="num">13 · dont 2 critiques</td><td><span class="pill warn">À planifier</span> La faille Sentry ne s'applique pas : la route « tunnel » n'est pas activée. Les failles de Next ne se corrigent qu'en passant à la version 16, qui casse la compatibilité. Le reste se corrige avec npm audit fix.</td></tr>
+          <tr><th scope="row">Schéma SQL</th><td class="num">6 manques</td><td><span class="pill warn">À compléter</span> Utilisés par le code mais absents du fichier : tables referrals et propfirm_rules_overrides, colonnes referral_code, onboarding_emails_sent, balance et dd_floor.</td></tr>
+          <tr><th scope="row">Pages admin</th><td class="num">3 pages</td><td><span class="pill warn">À vérifier</span> Elles lisent la base avec le client utilisateur, et les policies de lecture admin sont commentées dans le schéma. Elles ne verraient alors que les données de l'admin.</td></tr>
+          <tr><th scope="row">Calendrier économique</th><td class="num">FMP puis ForexFactory</td><td><span class="pill warn">Fragile</span> Une réponse illisible de FMP saute le repli et renvoie une erreur 500.</td></tr>
+          <tr><th scope="row">Traductions</th><td class="num">5 écrans</td><td><span class="pill warn">Incomplet</span> Import, journal-sync, groupes, profil et fenêtre de profil sont en français seulement.</td></tr>
+          <tr><th scope="row">Limitation de débit</th><td class="num">en mémoire</td><td><span class="pill warn">Connu</span> Remise à zéro à chaque démarrage à froid, ouvert depuis juillet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="plan" aria-labelledby="h-plan">
+    <div class="sec-head">
+      <span class="eyebrow">5 · Ordre conseillé</span>
+      <h2 id="h-plan">Réparer, simplifier, puis construire</h2>
+    </div>
+    <ol class="plan">
+      <li><b>Cette semaine : les six urgences.</b> Vérifier les quotas avec la requête ci-dessus et lever la limite des inscrits actuels. Rendre la désinscription réelle. Réparer le Guardian. Retirer les promesses fausses. Brancher l'export et la suppression dans les Réglages.</li>
+      <li><b>Semaine 2 : simplifier.</b> Passer l'offre à Gratuit + Pro. Cacher la couche sociale. Fusionner les trois vues de trades, les deux formulaires et Analytics avec le dashboard. Supprimer le code mort. Ranger le dépôt et élaguer CLAUDE.md.</li>
+      <li><b>Semaines 3 à 6 : les ajouts qui s'appuient sur le catalogue.</b> Nouveaux formats d'import, alertes serveur à 80 %, préparation au payout, statistiques par setup, coût d'un compte financé.</li>
+      <li><b>Ensuite.</b> Contrôle des règles après chaque trade, exposition par instrument, connexion TopstepX, puis la revue par IA, qui pourra justifier un palier au-dessus de Pro.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>Méthode : quatre analyses parallèles (fonctions de l'app, site public, backend, concurrents), puis vérification à la main de chaque constat retenu. Tests, lint, build et npm audit lancés sur la branche principale. L'état réel de la base Supabase n'a pas pu être consulté.</p>
+    <p>Sources concurrents : <a href="https://www.tradezella.com/pricing">TradeZella</a> · <a href="https://www.tradesviz.com/pricing/">TradesViz</a> · <a href="https://www.tradesviz.com/blog/prop-firm-auto-sync-journal/">TradesViz, journal prop firm</a> · <a href="https://www.tradervue.com/site/pricing/">Tradervue</a> · <a href="https://edgewonk.com/pricing">Edgewonk</a> · <a href="https://www.tradesyncer.com/pricing">Tradesyncer</a> · <a href="https://fxreplay.com/pricing">FX Replay</a> · <a href="https://www.tradezella.com/blog/prop-firm-trading-journal">TradeZella, guide prop firm</a> · <a href="https://help.tradezella.com/en/articles/16074943-rithmic-r-trader-how-to-sync-your-rithmic-r-trader-account-with-tradezella">TradeZella, sync Rithmic</a> · <a href="https://partner.tradovate.com">Tradovate partenaires</a> · <a href="https://blog.traderspost.io/article/what-is-projectx-prop-firms">ProjectX en 2026</a></p>
+  </footer>
+</div>
