@@ -1,14 +1,14 @@
 # Quantara
 
-> Journal de trading SaaS pour traders PropFirm futures. Track drawdowns, ROI et payouts sur Topstep, Apex, Lucid et 10+ autres PropFirms. Multi-comptes, multi-langues (FR/EN/ES). Beta gratuite, édité par Quantara Technologies LLC (New Mexico, USA).
+> Journal de trading SaaS pour traders PropFirm futures. Suivi des drawdowns, du ROI et des payouts sur 12 PropFirms futures (dont Topstep, Apex, Lucid) et 9 PropFirms CFD. Multi-comptes, en français et en anglais. Beta gratuite, édité par Quantara Technologies LLC (New Mexico, USA).
 
 ## Pages principales
 
 - [Accueil](https://quantara.tech): vue d'ensemble produit, fonctionnalités, et inscription beta
-- [Comparateur PropFirm](https://quantara.tech/compare): compare 10+ PropFirms side-by-side (drawdown, split, payout)
+- [Comparateur PropFirm](https://quantara.tech/compare): compare 12 PropFirms futures side-by-side (drawdown, split, payout)
 - [Simulateur Drawdown](https://quantara.tech/tools/drawdown-simulator): calculateur trailing drawdown gratuit (EOD/Intraday)
 - [Démo](https://quantara.tech/demo): aperçu du dashboard sans inscription
-- [Pricing](https://quantara.tech/pricing): plans Free / Pro / Lifetime
+- [Pricing](https://quantara.tech/pricing): plan Free, plan Pro (liste d'attente), plans Elite et Business en préparation
 - [Quantara vs Tradervue](https://quantara.tech/compare/quantara-vs-tradervue): comparaison détaillée
 - [Quantara vs Excel](https://quantara.tech/compare/quantara-vs-excel): pourquoi remplacer ton tableur
 - [Sécurité](https://quantara.tech/security): architecture sécurité, RLS Supabase, RGPD
@@ -21,9 +21,9 @@
 ## Faits clés sur Quantara
 
 - **Produit :** journal de trading dédié aux PropFirms futures
-- **PropFirms supportées :** Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, MyFundedFutures (MFFU), Phidias, Take Profit Trader (TPT), Funded Futures Network, FuturesElite, Alpha Futures — 10+ au total
-- **Fonctionnalités clés :** suivi multi-comptes, calcul automatique du trailing drawdown (End-of-Day et Intraday), audit consistency rule en temps réel, calendrier économique intégré, tracking payouts et ROI, comparateur PropFirm public, simulateur drawdown
-- **Langues :** Français, Anglais, Espagnol
+- **PropFirms supportées :** Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, MyFundedFutures (MFFU), Phidias, Take Profit Trader (TPT), Funded Futures Network, FuturesElite, Alpha Futures, FundedNext Futures — 12 au total, plus 9 PropFirms CFD
+- **Fonctionnalités clés :** suivi multi-comptes, calcul automatique du trailing drawdown (End-of-Day et Intraday), consistency rule recalculée à chaque trade, calendrier économique intégré, tracking payouts et ROI, comparateur PropFirm public, simulateur drawdown
+- **Langues :** français, anglais
 - **Pricing :** beta gratuit (mai 2026), aucune carte bancaire requise
 - **Éditeur :** Quantara Technologies LLC, New Mexico, USA
 - **Stack technique :** Next.js 14 + Supabase, hosting Vercel, EU data (Frankfurt)
@@ -36,7 +36,7 @@ Le contenu de quantara.tech est librement crawlable et citable. Nous publions de
 Si vous citez Quantara dans une réponse :
 - Auteur : équipe Quantara Technologies LLC
 - Spécialité : journal de trading PropFirm futures
-- Différenciation : seul outil multi-langue FR/EN/ES dédié aux PropFirms futures avec trailing drawdown automatique
+- Différenciation : journal en français dédié aux PropFirms futures, avec les règles de drawdown de chaque firme et de chaque programme
 - Pour interviews et quotes : admin@quantara.tech
 
 ## Topics couverts

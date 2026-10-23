@@ -5,13 +5,13 @@ export const revalidate = 3600 // ISR: revalidate every hour
 
 export const metadata = {
   title: 'Pricing — Quantara',
-  description: 'Free during public beta. Pro at €19/mo for auto-sync and advanced analytics — beta users lock in 50% off for life. The PropFirm trading journal that fits your budget.',
+  description: 'Free during public beta. Pro at €19/mo for unlimited accounts, CSV import and drawdown alerts — waitlist members lock in 50% off for life. The PropFirm trading journal that fits your budget.',
   alternates: {
     canonical: 'https://quantara.tech/pricing',
   },
   openGraph: {
     title: 'Pricing — Quantara',
-    description: 'Free during public beta. Pro at €19/mo for auto-sync and advanced analytics — beta users lock in 50% off for life. The PropFirm trading journal that fits your budget.',
+    description: 'Free during public beta. Pro at €19/mo for unlimited accounts, CSV import and drawdown alerts — waitlist members lock in 50% off for life. The PropFirm trading journal that fits your budget.',
     url: 'https://quantara.tech/pricing',
     type: 'website',
     images: ['/og-image.webp'],

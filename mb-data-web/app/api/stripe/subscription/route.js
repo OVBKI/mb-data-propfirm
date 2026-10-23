@@ -35,14 +35,20 @@ export async function GET(request) {
     .eq('user_id', auth.user.id)
     .maybeSingle()
 
+  // Même drapeau que les quotas en base (app_flags) : avant le lancement payant,
+  // personne n'est bridé, et l'écran Abonnement doit le dire.
+  const { data: flags } = await supabase.from('app_flags').select('paid_launch').eq('id', 1).maybeSingle()
+  const planOpts = { paidLaunch: Boolean(flags?.paid_launch) }
+
   const payload = {
-    plan: effectivePlan(profile),
+    plan: effectivePlan(profile, planOpts),
     planStatus: profile?.plan_status || null,
     planInterval: profile?.plan_interval || null,
     expiresAt: profile?.plan_expires_at || null,
     cancelAtPeriodEnd: Boolean(profile?.plan_cancel_at_period_end),
     betaGrandfather: Boolean(profile?.beta_grandfather),
-    limits: getPlanLimits(profile),
+    limits: getPlanLimits(profile, planOpts),
+    paidLaunch: planOpts.paidLaunch,
     hasCustomer: Boolean(profile?.stripe_customer_id),
     invoices: [],
   }

@@ -64,11 +64,6 @@ export default function ContactClient() {
               }}>
                 X (Twitter)
               </a>
-              <a href="https://discord.gg/quantara" target="_blank" rel="noopener noreferrer" style={{
-                fontSize: 14, fontWeight: 500, color: 'var(--text2)', textDecoration: 'none',
-              }}>
-                Discord
-              </a>
             </div>
           </div>
 

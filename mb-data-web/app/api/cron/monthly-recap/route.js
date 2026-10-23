@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { verifyAdmin } from '../../../../lib/apiAuth'
+import { unsubscribeHeaders, unsubscribePageUrl } from '../../../../lib/emailUnsubscribe'
 
 export async function GET(req) {
   // Modes diagnostic (aucun envoi de masse) :
@@ -100,13 +101,22 @@ export async function GET(req) {
   const allMonthlyAccounts = allMonthlyRes.data || []
   const activatedInMonth = activatedRes.data || []
 
+  // Désinscrits : lus en base AVANT toute boucle. Si la lecture échoue, on
+  // n'envoie RIEN — écrire à quelqu'un qui s'est désabonné est pire qu'un récap
+  // manqué (la colonne manque tant que la migration d'octobre n'est pas jouée).
+  const { data: optedOut, error: optErr } = await supabase.from('profiles').select('user_id').eq('email_optout', true)
+  if (optErr) return Response.json({ error: 'Lecture des désinscriptions impossible : envoi annulé', detail: optErr.message }, { status: 500 })
+  const optOut = new Set((optedOut || []).map((p) => p.user_id))
+
   let sent = 0
+  let skippedOptOut = 0
   const failures = []
   const dryRecipients = []
 
   for (const user of users) {
     const email = user.email
     if (!email) continue
+    if (optOut.has(user.id)) { skippedOptOut++; continue }
 
     // Compute stats du mois pour ce user
     const userTrades = trades.filter(t => t.user_id === user.id)
@@ -169,6 +179,7 @@ export async function GET(req) {
       newFirmsCount: userFirms.length,
       newAccountsCount: userAccounts.length,
       totalSpentMonth,
+      unsubscribeUrl: unsubscribePageUrl(user.id),
     })
 
     // Version texte (multipart) — améliore nettement le placement en boîte de réception
@@ -185,7 +196,7 @@ export async function GET(req) {
       `Voir mon dashboard : https://quantara.tech/app`,
       '',
       `— Quantara Technologies LLC, Albuquerque, NM`,
-      `Gérer mes emails : https://quantara.tech/app/settings`,
+      `Ne plus recevoir ces e-mails : ${unsubscribePageUrl(user.id)}`,
     ].join('\n')
 
     try {
@@ -196,9 +207,7 @@ export async function GET(req) {
         subject: `Ton récap Quantara — ${monthLabel}`,
         html,
         text,
-        headers: {
-          'List-Unsubscribe': '<mailto:admin@quantara.tech?subject=unsubscribe>, <https://quantara.tech/app/settings>',
-        },
+        headers: unsubscribeHeaders(user.id),
       })
       sent++
     } catch (err) {
@@ -228,6 +237,7 @@ export async function GET(req) {
       env: { CRON_SECRET: !!process.env.CRON_SECRET, RESEND_API_KEY: !!process.env.RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY },
       resendDomain,
       usersTotal: users.length,
+      skippedOptOut,
       eligibleRecipients: dryRecipients.length,
       activityCounts: { trades: trades.length, payouts: payouts.length, newFirms: newFirms.length, newAccounts: newAccounts.length },
       sample: dryRecipients.slice(0, 5).map(e => e.replace(/^(.{2}).*(@.*)$/, '$1***$2')),
@@ -239,12 +249,17 @@ export async function GET(req) {
     month: monthLabel,
     usersProcessed: users.length,
     sent,
+    skippedOptOut,
     failures: failures.length,
     details: failures.length > 0 ? failures : undefined,
   })
 }
 
 // Template HTML simple, propre, responsive — bouquet de stats
+function escapeAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+}
+
 function generateRecapHTML(data) {
   const {
     monthLabel,
@@ -358,7 +373,7 @@ function generateRecapHTML(data) {
           </p>
           <p style="font-size:10px;color:#7b839b;margin:0;">
             Tu reçois cet email parce que tu as un compte actif sur Quantara.<br>
-            <a href="https://quantara.tech/app/settings" style="color:#7b839b;">Gérer mes préférences email</a>
+            <a href="${escapeAttr(data.unsubscribeUrl || 'https://quantara.tech/app/settings')}" style="color:#7b839b;">Ne plus recevoir ces e-mails</a>
           </p>
         </td></tr>
       </table>

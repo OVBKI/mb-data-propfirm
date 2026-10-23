@@ -8,6 +8,7 @@
 //   onUpdated  : callback après save réussi (parent peut refresh ce qu'il faut)
 
 import { useState, useEffect } from 'react'
+import { exportAllData, deleteAccount } from '../lib/accountActions'
 import { supabase } from '../lib/supabase'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
@@ -389,20 +390,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                 disabled={exporting}
                 onClick={async () => {
                   setExporting(true)
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession()
-                    const r = await fetch('/api/export?type=all', {
-                      headers: { Authorization: `Bearer ${session.access_token}` },
-                    })
-                    if (!r.ok) throw new Error('Export failed')
-                    const blob = await r.blob()
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = `quantara-export-${new Date().toISOString().slice(0, 10)}.csv`
-                    a.click()
-                    URL.revokeObjectURL(url)
-                  } catch { setError('Erreur lors de l\'export') }
+                  try { await exportAllData() } catch { setError('Erreur lors de l\'export') }
                   setExporting(false)
                 }}
                 style={{
@@ -452,18 +440,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                     onClick={async () => {
                       setDeleting(true)
                       try {
-                        const { data: { session } } = await supabase.auth.getSession()
-                        const r = await fetch('/api/auth/delete-account', {
-                          method: 'DELETE',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${session.access_token}`,
-                          },
-                          body: JSON.stringify({ confirmation: deleteConfirm }),
-                        })
-                        if (!r.ok) { const d = await r.json(); throw new Error(d.error) }
-                        await supabase.auth.signOut()
-                        window.location.href = '/'
+                        await deleteAccount(deleteConfirm)
                       } catch (e) {
                         setError(e.message || 'Erreur lors de la suppression')
                         setDeleting(false)

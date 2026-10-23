@@ -457,10 +457,16 @@ create index if not exists push_subscriptions_user_id_idx on push_subscriptions(
 create table if not exists waitlist (
   id uuid default gen_random_uuid() primary key,
   email text unique not null,
-  plan text not null check (plan in ('pro','lifetime')),
+  plan text not null,
   created_at timestamptz default now(),
   ip_address text
 );
+-- La page Tarifs propose Pro, Elite et Business : l'ancienne contrainte
+-- (pro, lifetime) faisait échouer les inscriptions Elite et Business en erreur 500.
+-- « lifetime » reste accepté pour les lignes déjà inscrites.
+alter table waitlist drop constraint if exists waitlist_plan_check;
+alter table waitlist add constraint waitlist_plan_check
+  check (plan in ('pro','elite','business','lifetime'));
 
 alter table waitlist enable row level security;
 drop policy if exists "Anyone can insert waitlist" on waitlist;
@@ -674,6 +680,13 @@ alter table stripe_events enable row level security;
 
 create index if not exists stripe_events_received_at_idx on stripe_events(received_at desc);
 
+-- EMAIL_OPTOUT — désinscription des e-mails non essentiels (récap mensuel,
+-- séquence d'accueil). Écrite par l'utilisateur (Réglages) ou par le lien signé
+-- de l'e-mail (/api/email/unsubscribe, service role). Lue par les deux crons, qui
+-- n'envoient RIEN s'ils ne peuvent pas la lire. Inscriptible par le client : c'est
+-- son consentement, pas un droit d'accès — donc hors du revoke ci-dessous.
+alter table profiles add column if not exists email_optout boolean not null default false;
+
 -- DASHBOARD_LAYOUT — disposition personnalisée de « Vue d'ensemble ».
 -- Volontairement laissée inscriptible par le client : c'est une préférence
 -- d'affichage appartenant à l'utilisateur, pas un droit d'accès. Elle n'est
@@ -728,6 +741,21 @@ revoke update (
 -- Le service_role n'est pas concerné (il ne passe pas par ces triggers en
 -- pratique : imports admin et crons écrivent avec des droits élevés).
 
+-- APP_FLAGS — interrupteurs globaux, une seule ligne (id = 1).
+-- paid_launch : FAUX pendant la bêta ouverte. Tant qu'il est faux, aucun quota
+-- ne s'applique : Stripe n'est pas en ligne, personne ne pourrait payer pour
+-- lever une limite. Le jour du lancement payant (voir « GRANDFATHER » plus bas) :
+--   update app_flags set paid_launch = true where id = 1;
+-- `on conflict do nothing` : rejouer ce fichier ne remet JAMAIS le drapeau à faux.
+create table if not exists app_flags (
+  id          int primary key default 1 check (id = 1),
+  paid_launch boolean not null default false,
+  updated_at  timestamptz default now()
+);
+insert into app_flags (id, paid_launch) values (1, false) on conflict (id) do nothing;
+alter table app_flags enable row level security;
+-- Aucune policy : lu par plan_limit_for (security definer) et par l'API (service role).
+
 create or replace function public.plan_limit_for(p_user_id uuid, p_key text)
 returns int
 language plpgsql
@@ -743,6 +771,12 @@ begin
 
   -- Bêta-testeur historique : déplafonné à vie (miroir de effectivePlan()).
   if v_beta then return null; end if;
+
+  -- Bêta ouverte : tant que le lancement payant n'est pas activé, personne n'est
+  -- bridé. Table absente ou ligne absente = pas lancé (miroir de effectivePlan()).
+  if not coalesce((select paid_launch from app_flags where id = 1), false) then
+    return null;
+  end if;
 
   -- past_due garde l'accès : la relance Stripe tourne encore. Couper au premier
   -- échec de paiement transforme une carte expirée en churn définitif.
@@ -842,10 +876,12 @@ create index if not exists journal_entries_user_month_idx
 
 -- ============================================================================
 
--- GRANDFATHER DES BÊTA-TESTEURS — à jouer LE JOUR du lancement payant, une
--- seule fois, en remplaçant la date par celle du lancement :
---   update profiles set beta_grandfather = true
---   where created_at < '2026-09-01' and coalesce(beta_grandfather, false) = false;
+-- LANCEMENT PAYANT — à jouer LE JOUR du lancement, une seule fois, DANS CET
+-- ORDRE (sinon les bêta-testeurs sont bridés entre les deux requêtes) :
+--   1. update profiles set beta_grandfather = true
+--      where created_at < now() and coalesce(beta_grandfather, false) = false;
+--   2. update app_flags set paid_launch = true where id = 1;
+-- Avant ces deux requêtes, aucun quota ne s'applique (voir app_flags).
 
 
 -- ============================================================================

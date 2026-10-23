@@ -6,7 +6,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../AppContext'
 import { supabase } from '../../../../lib/supabase'
-import { planSizeNum, maxDrawdown } from '../../../../lib/constants'
+import { maxDrawdown } from '../../../../lib/constants'
+import { computeStatsByAccount, computeDdFloor } from '../../../../lib/drawdownHealth'
 import DrawdownHealthCard from '../../../../components/health/DrawdownHealthCard'
 import ConsistencyMonitor from '../../../../components/health/ConsistencyMonitor'
 import PayoutPipeline from '../../../../components/health/PayoutPipeline'
@@ -25,107 +26,6 @@ const C = {
   red: 'var(--red)',
 }
 
-// Compute per-account derived stats from trades (journal_entries).
-// Returns: { [accountId]: { balance, peakBalance, totalPnl, bestDayAmount,
-//                          totalProfit, daysCount, winningDaysCount } }
-function computeStatsByAccount(trades, accountsById) {
-  // Group PnL by account → by day
-  const byAcct = {}
-  for (const t of trades) {
-    const acctId = t.account_id
-    if (!acctId) continue
-    const acct = accountsById[acctId]
-    if (!acct) continue
-    // Exclude trades before funded_date (for Funded accounts)
-    if (acct.funded_date && t.date && t.date < acct.funded_date) continue
-    const day = (t.date || '').slice(0, 10)
-    if (!day) continue
-    const pnl = Number(t.pnl) || 0
-    if (!byAcct[acctId]) byAcct[acctId] = { byDay: {}, totalPnl: 0 }
-    byAcct[acctId].byDay[day] = (byAcct[acctId].byDay[day] || 0) + pnl
-    byAcct[acctId].totalPnl += pnl
-  }
-
-  // For each account, compute balance (initial + cumulative pnl), peak EOD balance,
-  // best winning day, total profit (sum of winning days only? OR net total?)
-  const stats = {}
-  for (const [acctId, data] of Object.entries(byAcct)) {
-    const acct = accountsById[acctId]
-    const initialBalance = planSizeNum(acct.plan_size) || 0
-
-    // Sort days chronologically + compute cumulative balance per day
-    const days = Object.entries(data.byDay).sort((a, b) => a[0].localeCompare(b[0]))
-    let cum = initialBalance
-    let peak = initialBalance
-    for (const [_, dayPnl] of days) {
-      cum += dayPnl
-      if (cum > peak) peak = cum
-    }
-
-    // Best winning day
-    let bestDayAmount = 0
-    let bestDayDate = ''
-    for (const [d, p] of days) {
-      if (p > bestDayAmount) { bestDayAmount = p; bestDayDate = d }
-    }
-
-    // Somme des jours GAGNANTS (dénominateur consistency, règle Topstep/Apex).
-    const winningDaysProfit = days.reduce((s, [_, p]) => s + (p > 0 ? p : 0), 0)
-
-    stats[acctId] = {
-      balance: cum,
-      peakBalance: peak,
-      totalPnl: data.totalPnl,
-      bestDayAmount,
-      bestDayDate,
-      daysCount: days.length,
-      winningDaysCount: days.filter(([_, p]) => p > 0).length,
-      winningDaysProfit,
-    }
-  }
-
-  // Fallback for accounts WITH no trades : still provide initial balance
-  for (const a of Object.values(accountsById)) {
-    if (stats[a.id]) continue
-    const init = planSizeNum(a.plan_size) || 0
-    stats[a.id] = {
-      balance: init,
-      peakBalance: init,
-      totalPnl: 0,
-      bestDayAmount: 0,
-      bestDayDate: '',
-      daysCount: 0,
-      winningDaysCount: 0,
-      winningDaysProfit: 0,
-    }
-  }
-  return stats
-}
-
-// Compute drawdown floor per account based on dd_type + firm rules.
-// - static : floor = initial - maxDD
-// - eod    : floor moves with peak EOD high, then locks at initial (Topstep-style)
-// - trailing : floor = peak - maxDD (no cap), tick-by-tick (we approximate with EOD peak)
-function computeDdFloor(account, firmName, peakBalance) {
-  const initial = planSizeNum(account.plan_size) || 0
-  // `account.program` = le programme choisi par le trader. Sans lui, on servait
-  // le drawdown du programme principal de la firme, faux d'un quart à la moitié
-  // pour qui tient un compte Apex legacy ou un FundedNext Rapid.
-  const maxDD = maxDrawdown(firmName, account.plan_size, account.program)
-  if (!maxDD || !initial) return null
-
-  const ddType = (account.dd_type || 'static').toLowerCase()
-  if (ddType === 'static') {
-    return initial - maxDD
-  }
-  if (ddType === 'eod') {
-    // Trailing with lock at starting balance
-    const peakOrInitial = Math.max(peakBalance, initial)
-    return Math.min(peakOrInitial - maxDD, initial)
-  }
-  // 'trailing' or unknown : pure trailing, no lock
-  return Math.max(peakBalance, initial) - maxDD
-}
 
 export default function HealthPage() {
   const { firms, user, marketMode, reload, showToast } = useApp()
@@ -140,13 +40,25 @@ export default function HealthPage() {
     async function load() {
       if (!user) { setTradesLoading(false); return }
       try {
-        const { data, error } = await supabase
-          .from('journal_entries')
-          .select('id, account_id, date, pnl')
-          .eq('user_id', user.id)
+        // Page par page : PostgREST plafonne une réponse à 1 000 lignes, et un
+        // historique tronqué donnerait un faux solde (même lecture que le cron
+        // drawdown-guardian).
+        const all = []
+        let error = null
+        for (let from = 0; ; from += 1000) {
+          const res = await supabase
+            .from('journal_entries')
+            .select('id, account_id, date, pnl')
+            .eq('user_id', user.id)
+            .order('id')
+            .range(from, from + 999)
+          if (res.error) { error = res.error; break }
+          all.push(...(res.data || []))
+          if (!res.data || res.data.length < 1000) break
+        }
         if (cancelled) return
         if (error) { setTradesError(error.message || 'Erreur chargement trades'); setTrades([]) }
-        else setTrades(data || [])
+        else setTrades(all)
       } catch (e) {
         if (!cancelled) setTradesError(e.message || 'Erreur réseau')
       } finally {

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { unsubscribeHeaders, unsubscribePageUrl } from '../../../../lib/emailUnsubscribe'
 
 const SCHEDULE = [
   { day: 0, subject: 'Bienvenue sur Quantara — 3 étapes pour démarrer', step: 0 },
@@ -11,7 +12,7 @@ function escapeHtml(s) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-function emailBody(step, name) {
+function emailBody(step, name, unsubscribeUrl) {
   const n = escapeHtml(name) || 'Trader'
   const bodies = [
     `<h2 style="color:#f0ede8;font-size:20px;font-weight:700;margin:0 0 16px;">Bienvenue ${n} !</h2>
@@ -34,7 +35,7 @@ function emailBody(step, name) {
 <tr><td style="padding:28px 32px 20px;border-bottom:1px solid rgba(255,255,255,0.07);"><div style="font-weight:800;font-size:14px;letter-spacing:0.08em;color:#f0ede8;">QUANTARA</div></td></tr>
 <tr><td style="padding:28px 32px;">${bodies[step]}<br><a href="https://quantara.tech/app" style="display:inline-block;padding:12px 28px;background:#2d6fff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:12px;">Ouvrir mon dashboard →</a></td></tr>
 <tr><td style="padding:20px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.07);background:#0d0f14;">
-<p style="font-size:11px;color:#7b839b;margin:0;line-height:1.5;">Quantara Technologies LLC · Albuquerque, NM, USA<br><a href="https://quantara.tech/app/settings" style="color:#7b839b;">Gérer mes emails</a></p>
+<p style="font-size:11px;color:#7b839b;margin:0;line-height:1.5;">Quantara Technologies LLC · Albuquerque, NM, USA<br><a href="${escapeHtml(unsubscribeUrl)}" style="color:#7b839b;">Ne plus recevoir ces e-mails</a></p>
 </td></tr></table></td></tr></table></body></html>`
 }
 
@@ -67,12 +68,15 @@ export async function GET(request) {
 
       const { data: profile, error: profErr } = await supabase
         .from('profiles')
-        .select('username, onboarding_emails_sent')
+        .select('username, onboarding_emails_sent, email_optout')
         .eq('user_id', user.id)
         .maybeSingle()
 
       // Erreur DB réelle → on saute (ne pas traiter comme "0 envoyé" et spammer).
       if (profErr) { console.error(`Onboarding profile read failed for ${user.id}:`, profErr.message); continue }
+
+      // Désinscrit : plus aucun e-mail de la séquence.
+      if (profile?.email_optout) continue
 
       const alreadySent = profile?.onboarding_emails_sent || 0
       if (alreadySent >= schedule.step + 1) continue
@@ -82,7 +86,8 @@ export async function GET(request) {
           from: 'Quantara <noreply@quantara.tech>',
           to: user.email,
           subject: schedule.subject,
-          html: emailBody(schedule.step, profile?.username),
+          html: emailBody(schedule.step, profile?.username, unsubscribePageUrl(user.id)),
+          headers: unsubscribeHeaders(user.id),
         })
 
         // upsert (et non update) : si la ligne profil n'existe pas encore, on la crée,

@@ -242,9 +242,9 @@ See `.env.example` for all 10 required variables with documentation. Key ones:
 
 ## Deployment
 
-Vercel auto-deploys from `main`. Two cron jobs configured in `vercel.json`:
-- `/api/cron/check-bills` — daily 9 AM UTC (billing reminders via push)
-- `/api/cron/monthly-recap` — 1st of month 8 AM UTC (email recap via Resend)
+Vercel auto-deploys from `main`. ONE cron in `vercel.json`: `/api/cron/daily` at
+08:00 UTC. It dispatches check-bills and onboarding-emails every day,
+drawdown-guardian on weekdays, and monthly-recap on the 1st (`cron/daily/route.js`).
 
 ## Conventions
 
@@ -3019,3 +3019,34 @@ Compositions `QuantaraAd` et `QuantaraAdVertical` (30 s), dans
 dans la diffusion. Pour vérifier une voix sans l'écouter, la faire retranscrire
 par Whisper : c'est ainsi qu'on a trouvé « le compte à risque » entendu
 « le con à risque ». Détails dans `mb-data-promo/DESIGN.md`.
+
+
+## Urgences de l'audit d'octobre — corrigées (2026-10)
+
+Audit complet : `../docs/audit-2026-10.html`. Les six urgences sont corrigées dans
+le code. **Rien n'est actif en production tant que `supabase-schema.sql` n'a pas
+été recollé dans Supabase** (le fichier est rejouable, testé 3 passes sur Postgres 16).
+
+| Urgence | Correctif |
+|---|---|
+| Quotas Free appliqués aux bêta-testeurs | table `app_flags` (une ligne, `paid_launch` = false). `plan_limit_for()` ne bride personne tant que le drapeau est faux. Miroir JS : `effectivePlan(profile, { paidLaunch })`, lu par `/api/stripe/subscription` |
+| Désinscription e-mail sans effet | colonne `profiles.email_optout`, écrite par Réglages et par `/api/email/unsubscribe` (lien signé HMAC, `lib/emailUnsubscribe.js`, RFC 8058 one-click). Les deux crons d'e-mails la lisent et **n'envoient rien s'ils ne peuvent pas la lire** |
+| Drawdown Guardian muet | calcul extrait de la page Santé dans `lib/drawdownHealth.js` ; le cron recalcule solde et plancher à partir des trades (lecture paginée, PostgREST plafonne à 1 000 lignes). La page Santé lit aussi page par page |
+| Promesses fausses | Tarifs (Elite/Business « En préparation », fonctions marquées « prévu »), Sécurité, Intégrations, Docs, landing, JSON-LD, llms.txt, confidentialité (calendrier : FMP + ForexFactory, plus Finnhub) |
+| Waitlist Elite/Business en 500 | contrainte `waitlist_plan_check` élargie à pro/elite/business/lifetime |
+| Export / suppression « bientôt » dans Réglages | `lib/accountActions.js`, partagé avec `ProfileModal` |
+
+### Le jour du lancement payant — dans cet ordre
+```sql
+update profiles set beta_grandfather = true
+where created_at < now() and coalesce(beta_grandfather, false) = false;
+update app_flags set paid_launch = true where id = 1;
+```
+Dans l'ordre inverse, les bêta-testeurs sont bridés entre les deux requêtes.
+
+### Vérifier après avoir recollé le schéma
+```sql
+select paid_launch from app_flags;                                    -- false
+select column_default from information_schema.columns
+ where table_name = 'profiles' and column_name = 'email_optout';      -- false
+```

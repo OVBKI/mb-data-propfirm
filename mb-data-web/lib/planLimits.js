@@ -74,31 +74,35 @@ const ENTITLED_STATUSES = new Set(['active', 'trialing', 'past_due'])
 //   1. beta_grandfather — les bêta-testeurs gardent le Free illimité à vie
 //   2. abonnement Stripe actif
 //   3. sinon : free
-export function effectivePlan(profile) {
-  if (!profile) return 'free'
-  if (profile.beta_grandfather) return 'beta'
-  const plan = profile.plan
-  if (!plan || plan === 'free' || !PLANS.includes(plan)) return 'free'
-  if (!ENTITLED_STATUSES.has(profile.plan_status)) return 'free'
-  return plan
+//
+// `paidLaunch` miroite app_flags.paid_launch (supabase-schema.sql) : tant que le
+// lancement payant n'est pas activé, la base n'applique aucun quota, donc tout
+// profil sans abonnement est en `beta` (illimité). Par défaut `true` : un appel
+// qui ne connaît pas le drapeau applique les règles du lancement.
+export function effectivePlan(profile, { paidLaunch = true } = {}) {
+  if (profile?.beta_grandfather) return 'beta'
+  const plan = profile?.plan
+  if (plan && plan !== 'free' && PLANS.includes(plan) && ENTITLED_STATUSES.has(profile.plan_status)) return plan
+  return paidLaunch ? 'free' : 'beta'
 }
 
 // Limites applicables à un profil. Le palier virtuel `beta` = Free sans plafond.
-export function getPlanLimits(profile) {
-  const plan = effectivePlan(profile)
+export function getPlanLimits(profile, opts) {
+  const plan = effectivePlan(profile, opts)
   if (plan === 'beta') {
-    return { ...PLAN_LIMITS.free, label: 'Beta (fondateur)', maxFirms: null, maxTradesPerMonth: null, maxAccounts: null }
+    const label = profile?.beta_grandfather ? 'Beta (fondateur)' : 'Bêta ouverte'
+    return { ...PLAN_LIMITS.free, label, maxFirms: null, maxTradesPerMonth: null, maxAccounts: null }
   }
   return PLAN_LIMITS[plan] || PLAN_LIMITS.free
 }
 
-export function hasFeature(profile, feature) {
-  return Boolean(getPlanLimits(profile)[feature])
+export function hasFeature(profile, feature, opts) {
+  return Boolean(getPlanLimits(profile, opts)[feature])
 }
 
 // true si `current` (nombre déjà créé) atteint le plafond de `key`.
-export function isAtLimit(profile, key, current) {
-  const max = getPlanLimits(profile)[key]
+export function isAtLimit(profile, key, current, opts) {
+  const max = getPlanLimits(profile, opts)[key]
   if (max === null || max === undefined) return false
   return current >= max
 }

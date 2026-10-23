@@ -81,7 +81,7 @@ const SECTIONS_FR = [
     items: [
       { q: 'À quoi sert la page Profil ?', a: '/app/profile permet de définir ton pseudo (pour login), nom affiché, bio, pays et style de trading. Affiche aussi tes stats publiques agrégées (payouts totaux, win rate, comptes funded, jours tradés).' },
       { q: 'C\'est quoi le toggle "profil public" ?', a: 'Si tu actives ça, ton profil sera visible par les autres traders (URL /u/[ton-pseudo]) — fonctionnalité en cours de développement. Tes trades détaillés et tes comptes individuels restent toujours privés.' },
-      { q: 'Y aura-t-il un réseau social pour traders ?', a: 'Oui, c\'est en roadmap (T4 2026). Tu pourras publier tes trades, partager tes payouts, suivre d\'autres traders, et commenter leurs résultats. Le mur sera réservé aux profils publics.' },
+      { q: 'Y aura-t-il un réseau social pour traders ?', a: 'C\'est à l\'étude, sans date pour l\'instant. Tu pourras publier tes trades, partager tes payouts, suivre d\'autres traders, et commenter leurs résultats. Le mur sera réservé aux profils publics.' },
     ],
   },
   {
@@ -154,7 +154,7 @@ const SECTIONS_EN = [
     items: [
       { q: 'What is the Profile page for?', a: '/app/profile lets you set your username (for login), display name, bio, country and trading style. Also shows your aggregated public stats (total payouts, win rate, funded accounts, traded days).' },
       { q: 'What is the "public profile" toggle?', a: 'If enabled, your profile becomes visible to other traders (URL /u/[your-username]) — feature in development. Your detailed trades and individual accounts always stay private.' },
-      { q: 'Will there be a social network for traders?', a: "Yes, on the roadmap (Q4 2026). You'll be able to post trades, share payouts, follow other traders, and comment on their results. The feed will be reserved for public profiles.",
+      { q: 'Will there be a social network for traders?', a: "It is being considered, with no date yet. You'll be able to post trades, share payouts, follow other traders, and comment on their results. The feed will be reserved for public profiles.",
       },
     ],
   },
@@ -187,20 +187,18 @@ const ROADMAP_FR = [
     ],
   },
   {
-    quarter: 'Q3 2026 (juil-sept)',
+    quarter: 'Prochainement',
     status: 'next',
     items: [
-      'Intégration API ProjectX (TopstepX, Tradeify, TPT, MFFU)',
       'Paywall Stripe + plans freemium/pro',
       'Affiliés PropFirm sur le comparateur',
-      'Multi-langue : Anglais + Espagnol',
       'Emails transactionnels (welcome, recap mensuel)',
       'Mobile responsive complet (audit + fixes)',
       'Page profil publique /u/[pseudo]',
     ],
   },
   {
-    quarter: 'Q4 2026 (oct-déc)',
+    quarter: 'Plus tard',
     status: 'planned',
     items: [
       'AI Coach (analyse patterns trading + insights Claude)',
@@ -213,7 +211,7 @@ const ROADMAP_FR = [
     ],
   },
   {
-    quarter: '2027 et après',
+    quarter: 'Idées, sans date',
     status: 'wishlist',
     items: [
       'API Rithmic directe (sans CSV)',
@@ -242,20 +240,18 @@ const ROADMAP_EN = [
     ],
   },
   {
-    quarter: 'Q3 2026 (Jul-Sep)',
+    quarter: 'Coming next',
     status: 'next',
     items: [
-      'ProjectX API integration (TopstepX, Tradeify, TPT, MFFU)',
       'Stripe paywall + freemium/pro plans',
       'PropFirm affiliates on the comparator',
-      'Multi-language: English + Spanish',
       'Transactional emails (welcome, monthly recap)',
       'Full mobile responsive (audit + fixes)',
       'Public profile page /u/[username]',
     ],
   },
   {
-    quarter: 'Q4 2026 (Oct-Dec)',
+    quarter: 'Later',
     status: 'planned',
     items: [
       'AI Coach (trading pattern analysis + Claude insights)',
@@ -268,7 +264,7 @@ const ROADMAP_EN = [
     ],
   },
   {
-    quarter: '2027 and beyond',
+    quarter: 'Ideas, no date',
     status: 'wishlist',
     items: [
       'Direct Rithmic API (no CSV)',

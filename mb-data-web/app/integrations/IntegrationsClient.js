@@ -23,13 +23,13 @@ const C = {
 
 // Notes par firm (FR/EN) — bloc locale-aware (option B).
 const FIRMS_FR = [
-  { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX',         note: 'Saisie manuelle' },
   { name: 'Apex Trader Funding',    color: 'var(--violet)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic R|Trader Pro' },
   { name: 'Bulenox',                color: 'var(--red)', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
   { name: 'Lucid Trading',          color: 'var(--blue-light)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Import CSV Rithmic — testé en prod' },
-  { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'API ProjectX en roadmap Q3 2026' },
-  { name: 'Take Profit Trader',     color: 'var(--amber)', status: 'manual',       apiVendor: 'TPT (ProjectX)',              note: 'API ProjectX en roadmap Q3 2026' },
-  { name: 'My Funded Futures',      color: '#fb923c', status: 'manual',       apiVendor: 'MFFU (ProjectX)',             note: 'API ProjectX en roadmap Q3 2026' },
+  { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: '—',         note: 'Saisie manuelle' },
+  { name: 'Take Profit Trader',     color: 'var(--amber)', status: 'manual',       apiVendor: '—',              note: 'Saisie manuelle' },
+  { name: 'My Funded Futures',      color: '#fb923c', status: 'manual',       apiVendor: '—',             note: 'Saisie manuelle' },
   { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
   { name: 'Funded Futures Network', color: '#a86bff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Import CSV Rithmic' },
   { name: 'FuturesElite',           color: '#f472b6', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Import CSV Rithmic' },
@@ -37,13 +37,13 @@ const FIRMS_FR = [
 ]
 
 const FIRMS_EN = [
-  { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX (ProjectX)',         note: 'ProjectX API on roadmap Q3 2026' },
+  { name: 'Topstep',                color: '#ff8c42', status: 'manual',       apiVendor: 'TopstepX',         note: 'Manual entry' },
   { name: 'Apex Trader Funding',    color: 'var(--violet)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Rithmic R|Trader Pro CSV import' },
   { name: 'Bulenox',                color: 'var(--red)', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
   { name: 'Lucid Trading',          color: 'var(--blue-light)', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate / NinjaTrader', note: 'Rithmic CSV import — tested in production' },
-  { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: 'Tradeify (ProjectX)',         note: 'ProjectX API on roadmap Q3 2026' },
-  { name: 'Take Profit Trader',     color: 'var(--amber)', status: 'manual',       apiVendor: 'TPT (ProjectX)',              note: 'ProjectX API on roadmap Q3 2026' },
-  { name: 'My Funded Futures',      color: '#fb923c', status: 'manual',       apiVendor: 'MFFU (ProjectX)',             note: 'ProjectX API on roadmap Q3 2026' },
+  { name: 'Tradeify',               color: 'var(--green)', status: 'manual',       apiVendor: '—',         note: 'Manual entry' },
+  { name: 'Take Profit Trader',     color: 'var(--amber)', status: 'manual',       apiVendor: '—',              note: 'Manual entry' },
+  { name: 'My Funded Futures',      color: '#fb923c', status: 'manual',       apiVendor: '—',             note: 'Manual entry' },
   { name: 'Phidias Propfirm',       color: '#1e2a4a', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
   { name: 'Funded Futures Network', color: '#a86bff', status: 'csv-rithmic',  apiVendor: 'Rithmic / Tradovate',         note: 'Rithmic CSV import' },
   { name: 'FuturesElite',           color: '#f472b6', status: 'csv-rithmic',  apiVendor: 'Rithmic',                     note: 'Rithmic CSV import' },
@@ -56,7 +56,7 @@ const PLATFORMS_FR = [
   { name: 'Rithmic',     desc: 'Flux de marché professionnel. ✓ Import CSV actif (Performance + Trader Dashboard).' },
   { name: 'CQG',         desc: 'Alternative à Rithmic, supportée par TPT, MFFU, et certains plans Topstep.' },
   { name: 'TradingView', desc: 'Charts pour analyse technique, accès via certaines firmes (Tradeify, TPT...).' },
-  { name: 'ProjectX',    desc: 'API moderne unifiée Topstep, Tradeify, TPT, MFFU. Intégration en cours de développement.' },
+  { name: 'ProjectX',    desc: 'Plateforme de Topstep (TopstepX) depuis février 2026. Pas de connexion directe avec Quantara : saisie manuelle.' },
   { name: 'R|Trader Pro',desc: 'Plateforme Rithmic native, populaire pour le scalping bas-latence. ✓ Import CSV.' },
   { name: 'Quantower',   desc: 'Plateforme multi-actifs, supportée par TPT et certaines autres firmes.' },
 ]
@@ -67,7 +67,7 @@ const PLATFORMS_EN = [
   { name: 'Rithmic',     desc: 'Professional market data feed. ✓ Active CSV import (Performance + Trader Dashboard).' },
   { name: 'CQG',         desc: 'Alternative to Rithmic, supported by TPT, MFFU, and some Topstep plans.' },
   { name: 'TradingView', desc: 'Charts for technical analysis, accessed via some firms (Tradeify, TPT…).' },
-  { name: 'ProjectX',    desc: 'Modern unified API for Topstep, Tradeify, TPT, MFFU. Integration in development.' },
+  { name: 'ProjectX',    desc: 'Topstep\'s platform (TopstepX) since February 2026. No direct connection with Quantara: manual entry.' },
   { name: 'R|Trader Pro',desc: 'Native Rithmic platform, popular for low-latency scalping. ✓ CSV import.' },
   { name: 'Quantower',   desc: 'Multi-asset platform, supported by TPT and some other firms.' },
 ]

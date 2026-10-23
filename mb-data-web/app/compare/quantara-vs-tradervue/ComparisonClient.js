@@ -2,14 +2,14 @@
 import ComparisonPage from '../../../components/ComparisonPage'
 
 const ROWS = [
-  { feature: 'PropFirm rules pre-filled', quantara: '✅ 10+ firms', competitor: '❌ No', quantaraWins: true },
+  { feature: 'PropFirm rules pre-filled', quantara: '✅ 12 futures firms', competitor: '❌ No', quantaraWins: true },
   { feature: 'Trailing drawdown tracking', quantara: '✅ EOD + Intraday', competitor: '❌ No', quantaraWins: true },
   { feature: 'Consistency rule audit', quantara: '✅ Real-time', competitor: '❌ No', quantaraWins: true },
   { feature: 'Payout tracking + profit split', quantara: '✅ Automatic', competitor: '❌ No', quantaraWins: true },
   { feature: 'Auto-import trades', quantara: '⏳ CSV + API soon', competitor: '✅ Broker sync', competitorWins: true },
   { feature: 'Trade journal', quantara: '✅ Full', competitor: '✅ Full', quantaraWins: false },
   { feature: 'Equity curve', quantara: '✅ Per account', competitor: '✅ Global only', quantaraWins: true },
-  { feature: 'Multi-language (FR/EN/ES)', quantara: '✅', competitor: '❌ EN only', quantaraWins: true },
+  { feature: 'French and English', quantara: '✅', competitor: '❌ EN only', quantaraWins: true },
   { feature: 'Push alerts (billing)', quantara: '✅', competitor: '❌', quantaraWins: true },
   { feature: 'PropFirm comparator', quantara: '✅ Free public', competitor: '❌', quantaraWins: true },
   { feature: 'Pricing', quantara: '✅ Free (beta)', competitor: '$30-50/mo', quantaraWins: true },

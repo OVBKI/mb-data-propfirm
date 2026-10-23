@@ -103,10 +103,10 @@ export async function POST(req) {
             Tu es inscrit·e sur la liste <strong style="color:#f0ede8;">${planLabel}</strong>.
           </p>
           <p style="font-size:14px;color:#9098b0;line-height:1.6;margin:0 0 14px;">
-            Quantara reste <strong style="color:#1db87a;">gratuit pendant la beta</strong>. Quand le plan Pro sortira (Q3 2026), tu auras automatiquement <strong style="color:#f0ede8;">-50% à vie</strong>${plan === 'business' ? ' et un onboarding prioritaire pour ton équipe' : plan === 'elite' ? ' et l\'accès anticipé aux features Elite' : ''}.
+            Quantara reste <strong style="color:#1db87a;">gratuit pendant la beta</strong>. Quand le plan Pro sortira, à la fin de la bêta, tu auras automatiquement <strong style="color:#f0ede8;">-50% à vie</strong>${plan === 'business' ? ' et un onboarding prioritaire pour ton équipe' : plan === 'elite' ? ' et l\'accès anticipé aux features Elite' : ''}.
           </p>
           <p style="font-size:14px;color:#9098b0;line-height:1.6;margin:0 0 20px;">
-            En attendant, profite à fond de la beta — tracking illimité, CSV Rithmic, alertes.
+            En attendant, profite de la bêta : firmes, comptes et trades illimités, import CSV Rithmic, alertes.
           </p>
           <div style="text-align:center;margin-top:24px;">
             <a href="https://quantara.tech/app" style="display:inline-block;padding:12px 28px;background:#2d6fff;color:#fff;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;">Aller au dashboard →</a>

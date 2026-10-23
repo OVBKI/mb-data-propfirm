@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import webpush from 'web-push'
-import { planSizeNum, maxDrawdown } from '../../../../lib/constants'
+import { computeStatsByAccount, drawdownMargin } from '../../../../lib/drawdownHealth'
 
 const THRESHOLD = 0.70
 
@@ -25,31 +25,49 @@ export async function GET(request) {
 
   // Exclut les comptes CFD : les règles de drawdown propfirm (PROPFIRM_RULES)
   // sont futures-only, ce guardian ne doit surveiller que ces comptes.
+  // On ne lit QUE des colonnes du schéma : solde et plancher sont recalculés à
+  // partir des trades, exactement comme la jauge de /app/health (lib/drawdownHealth).
   const { data: accounts, error: accountsError } = await supabase
     .from('accounts')
-    .select('id, firm_id, plan_size, program, status, balance, dd_floor, dd_type, user_id:firms(user_id, name)')
+    .select('id, plan_size, program, status, dd_type, funded_date, firm:firms(user_id, name)')
     .in('status', ['Challenge', 'Financé', 'Funded'])
     .neq('market', 'cfd')
 
   if (accountsError) return Response.json({ error: 'DB error', detail: accountsError.message }, { status: 500 })
   if (!accounts?.length) return Response.json({ sent: 0, checked: 0 })
 
+  // Trades des comptes surveillés, page par page : PostgREST plafonne une réponse
+  // à 1 000 lignes, et un historique tronqué donnerait un faux solde.
+  const ids = accounts.map((a) => a.id)
+  const trades = []
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200)
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('account_id, date, pnl')
+        .in('account_id', chunk)
+        .order('id')
+        .range(from, from + 999)
+      if (error) return Response.json({ error: 'DB error (trades)', detail: error.message }, { status: 500 })
+      trades.push(...(data || []))
+      if (!data || data.length < 1000) break
+    }
+  }
+
+  const accountsById = Object.fromEntries(accounts.map((a) => [a.id, a]))
+  const stats = computeStatsByAccount(trades, accountsById)
+
   const alerts = []
-
   for (const acct of accounts) {
-    if (!acct.balance || !acct.dd_floor) continue
-    const firmName = acct.user_id?.name
-    // % du BUFFER de drawdown restant : room / drawdown max autorisé (pas la balance courante).
-    const room = acct.balance - acct.dd_floor
-    const maxDD = maxDrawdown(firmName, acct.plan_size, acct.program) || 0
-    const startBal = planSizeNum(acct.plan_size) || 0
-    const denom = maxDD > 0 ? maxDD : startBal
-    const roomPct = denom > 0 ? room / denom : 1
-
+    const firmName = acct.firm?.name
+    const m = drawdownMargin(acct, firmName, stats[acct.id])
+    if (!m) continue
+    const { room, roomPct } = m
     if (roomPct <= THRESHOLD && roomPct > 0) {
       alerts.push({
-        userId: acct.user_id?.user_id,
-        firmName: acct.user_id?.name,
+        userId: acct.firm?.user_id,
+        firmName,
         plan: acct.plan_size,
         roomPct: (roomPct * 100).toFixed(1),
         room: room.toFixed(0),

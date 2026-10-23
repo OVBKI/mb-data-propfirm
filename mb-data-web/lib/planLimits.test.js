@@ -163,3 +163,38 @@ describe('refus venant de la base', () => {
     expect(PLAN_LIMITS.free.maxTradesPerMonth).toBe(20)
   })
 })
+
+// Bêta ouverte : tant que app_flags.paid_launch est faux, la base n'applique
+// aucun quota. effectivePlan doit dire la même chose, sinon l'écran Abonnement
+// annoncerait « Free · 20 trades » à quelqu'un que la base laisse passer.
+describe('bêta ouverte (paidLaunch = false)', () => {
+  const pre = { paidLaunch: false }
+  it('un profil sans abonnement est en beta illimitée', () => {
+    expect(effectivePlan({}, pre)).toBe('beta')
+    expect(effectivePlan(null, pre)).toBe('beta')
+    const l = getPlanLimits({}, pre)
+    expect(l.maxFirms).toBeNull()
+    expect(l.maxAccounts).toBeNull()
+    expect(l.maxTradesPerMonth).toBeNull()
+    expect(isAtLimit({}, 'maxFirms', 50, pre)).toBe(false)
+  })
+  it('un abonnement actif garde son palier', () => {
+    expect(effectivePlan({ plan: 'pro', plan_status: 'active' }, pre)).toBe('pro')
+  })
+  it('la beta ne donne pas les fonctions payantes', () => {
+    expect(hasFeature({}, 'aiCoach', pre)).toBe(false)
+  })
+  it('par défaut (drapeau inconnu) les règles du lancement s’appliquent', () => {
+    expect(effectivePlan({})).toBe('free')
+  })
+})
+
+describe('miroir SQL du drapeau de lancement', () => {
+  it('plan_limit_for lit app_flags.paid_launch et la ligne est créée sans jamais être réinitialisée', async () => {
+    const { readFileSync } = await import('fs')
+    const sql = readFileSync(new URL('../supabase-schema.sql', import.meta.url), 'utf8')
+    const fn = sql.slice(sql.indexOf('create or replace function public.plan_limit_for'))
+    expect(fn.slice(0, 1500)).toMatch(/select paid_launch from app_flags where id = 1\), false\)/)
+    expect(sql).toMatch(/insert into app_flags \(id, paid_launch\) values \(1, false\) on conflict \(id\) do nothing/)
+  })
+})

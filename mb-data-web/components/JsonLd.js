@@ -47,7 +47,7 @@ export const ORGANIZATION_SCHEMA = {
     '@type': 'ContactPoint',
     email: 'admin@quantara.tech',
     contactType: 'customer support',
-    availableLanguage: ['French', 'English', 'Spanish'],
+    availableLanguage: ['French', 'English'],
   },
   // sameAs : à compléter au fur et à mesure que les profils sociaux sont créés
   sameAs: [
@@ -91,13 +91,13 @@ export const SOFTWARE_SCHEMA = {
     description: 'Beta gratuite — aucune carte bancaire requise',
   },
   featureList: [
-    'Suivi multi-comptes PropFirm (8+ firmes supportées)',
+    'Suivi multi-comptes PropFirm (12 firmes futures et 9 firmes CFD)',
     'Calcul automatique du trailing drawdown (End-of-Day et Intraday)',
-    'Audit consistency rule en temps réel',
+    'Consistency rule recalculée à chaque trade',
     'Journal de trades manuel détaillé',
-    'Calendrier économique intégré (FR/EN/ES)',
+    'Calendrier économique intégré',
     'Tracking payouts et ROI par PropFirm',
-    'Multi-langue : Français, Anglais, Espagnol',
+    'Disponible en français et en anglais',
     'Mobile-friendly (PWA)',
   ],
   // À activer quand on aura des reviews authentiques (sinon = pénalité Google)
@@ -143,7 +143,7 @@ export const FAQ_SCHEMA = {
       name: 'Quantara est-il disponible en français ?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: "Oui. Quantara est disponible en trois langues : Français, Anglais et Espagnol. Le calendrier économique est également traduit dans ces trois langues.",
+        text: "Oui. Quantara est disponible en français et en anglais, y compris le calendrier économique.",
       },
     },
     {

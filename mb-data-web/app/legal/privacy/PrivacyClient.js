@@ -82,7 +82,7 @@ Pas de soft-delete : c'est une suppression dure.`,
 • **Vercel** (États-Unis, edge Frankfurt EU) — hébergement frontend. DPA signé.
 • **Cloudflare** (États-Unis, points présence mondiaux) — Turnstile captcha anti-bot. DPA signé.
 • **exchangerate-api.com** — taux de change devises (aucune donnée user envoyée).
-• **Finnhub** — calendrier économique (aucune donnée user envoyée).
+• **Financial Modeling Prep** et **ForexFactory** (miroir faireconomy.media) — calendrier économique (aucune donnée utilisateur envoyée).
 • **Resend** (actif — endpoint EU Frankfurt) — emails transactionnels (welcome email, password reset, notifications produit, confirmations waitlist). DPA signé. Stockage des logs email côté Resend EU.
 
 Lieu de stockage des données utilisateur : Supabase EU (Frankfurt) pour les données applicatives, Resend EU (Frankfurt) pour les logs emails transactionnels.
@@ -177,7 +177,7 @@ No soft-delete: it's a hard delete.`,
 • **Vercel** (United States, Frankfurt EU edge) — frontend hosting. DPA signed.
 • **Cloudflare** (United States, global PoPs) — Turnstile anti-bot captcha. DPA signed.
 • **exchangerate-api.com** — currency exchange rates (no user data sent).
-• **Finnhub** — economic calendar (no user data sent).
+• **Financial Modeling Prep** and **ForexFactory** (faireconomy.media mirror) — economic calendar (no user data sent).
 • **Resend** (active — EU Frankfurt endpoint) — transactional emails (welcome email, password reset, product notifications, waitlist confirmations). DPA signed. Email log storage in Resend EU.
 
 Storage location of user data: Supabase EU (Frankfurt) for application data, Resend EU (Frankfurt) for transactional email logs.

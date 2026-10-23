@@ -59,8 +59,8 @@ function LandingFallback() {
             — dans une interface unifiée. Importe tes trades via <strong>CSV Rithmic</strong> ou saisis-les manuellement dans le journal intégré.
           </p>
           <p style={{ marginTop: 12 }}>
-            Le <strong>trailing drawdown</strong> est calculé automatiquement selon les règles propres à chaque firme : End-of-Day pour Topstep,
-            Intraday pour Apex, statique pour Lucid. La <strong>consistency rule</strong> est auditée en temps réel pour que tu saches
+            Le <strong>trailing drawdown</strong> est calculé automatiquement selon les règles propres à chaque firme : End-of-Day ou intraday selon
+            le programme (Apex vend les deux, Lucid est en End-of-Day). La <strong>consistency rule</strong> est recalculée à chaque trade pour que tu saches
             exactement où tu en es avant de demander un payout. Utilise le{' '}
             <a href="/tools/drawdown-simulator" style={{ color: '#4d8fff', textDecoration: 'none' }}>simulateur de drawdown</a>{' '}
             pour tester des scénarios avant de trader.
@@ -68,10 +68,10 @@ function LandingFallback() {
           <p style={{ marginTop: 12 }}>
             Visualise ta performance avec des <strong>courbes d'equity</strong>, un <strong>calendrier PnL heatmap</strong>,
             des analytics cumulées par firme et des statistiques de win rate et consistency.
-            Le <strong>calendrier économique intégré</strong> (données Finnhub, FR/EN/ES) t'aide à anticiper la volatilité avant chaque session.
+            Le <strong>calendrier économique intégré</strong> t'aide à anticiper la volatilité avant chaque session.
           </p>
           <p style={{ marginTop: 12 }}>
-            <a href="/compare" style={{ color: '#4d8fff', textDecoration: 'none' }}>Compare les 11 PropFirms supportées</a> côte à côte :
+            <a href="/compare" style={{ color: '#4d8fff', textDecoration: 'none' }}>Compare les 12 PropFirms futures supportées</a> côte à côte :
             tailles de comptes, drawdown types, profit splits et frais. Consulte la{' '}
             <a href="/pricing" style={{ color: '#4d8fff', textDecoration: 'none' }}>page tarifs</a> — Quantara est <strong>gratuit pendant la beta</strong>,
             sans carte bancaire. Explore le{' '}
@@ -83,14 +83,14 @@ function LandingFallback() {
         <section style={{ marginBottom: 40 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f0ede8', marginBottom: 16 }}>Fonctionnalités clés</h2>
           <ul style={{ lineHeight: 2, fontSize: 14, color: '#c0c5d4', paddingLeft: 20 }}>
-            <li>Multi PropFirm — 11 firmes pré-configurées avec règles auto-remplies</li>
+            <li>Multi PropFirm — 12 firmes futures et 9 firmes CFD pré-configurées</li>
             <li>Import CSV Rithmic (Performance Statement + Trader Dashboard)</li>
             <li>Journal de trading avec screenshots, tags et courbes equity</li>
             <li>Trailing drawdown automatique (EOD, Intraday, Statique)</li>
-            <li>Consistency rule calculée en temps réel</li>
+            <li>Consistency rule recalculée à chaque trade</li>
             <li>Suivi des payouts, dépenses et ROI par firme</li>
             <li>Calendrier PnL mensuel heatmap</li>
-            <li>Calendrier économique intégré (Finnhub, 3 langues)</li>
+            <li>Calendrier économique intégré</li>
             <li>Alertes drawdown par push notification</li>
             <li><a href="/integrations" style={{ color: '#4d8fff', textDecoration: 'none' }}>Voir toutes les intégrations</a></li>
           </ul>

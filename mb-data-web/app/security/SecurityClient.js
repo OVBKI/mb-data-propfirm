@@ -59,8 +59,8 @@ const SECTIONS_FR = [
     color: C.blueLight,
     items: [
       { label: 'Par défaut : aucun accès', value: 'Quantara fonctionne entièrement sans broker. Tu exportes un CSV depuis ton broker et tu le déposes dans /app/import-lab — c\'est le mode par défaut, et il ne demande aucun identifiant.' },
-      { label: 'Sync automatique : uniquement si TU la branches', value: 'Si tu actives la synchronisation d\'un broker, ses identifiants sont nécessaires pour lire ton historique. Ils sont chiffrés (Fernet) avant d\'être stockés, isolés par RLS, et jamais écrits dans les journaux. Rien n\'est branché tant que tu ne le fais pas toi-même.' },
-      { label: 'Lecture seule', value: 'Quantara ne passe, ne modifie et n\'annule aucun ordre. L\'accès sert à lire ton historique de trades, rien d\'autre. Tu peux supprimer une connexion à tout moment : les identifiants sont effacés avec elle.' },
+      { label: 'Aucune connexion broker', value: 'Quantara ne propose aucune synchronisation automatique avec un broker et ne te demande jamais tes identifiants de trading. Seuls les fichiers CSV que tu choisis d\'importer sont lus.' },
+      { label: 'Lecture seule', value: 'Quantara ne passe, ne modifie et n\'annule aucun ordre. Il ne lit que ce que tu saisis ou importes.' },
     ],
   },
   {
@@ -70,7 +70,7 @@ const SECTIONS_FR = [
     items: [
       { label: 'GDPR / RGPD', value: 'Quantara Technologies LLC est conforme RGPD. Données hébergées en EU (Frankfurt). Droit d\'accès, rectification, suppression, portabilité accessibles via contact@quantara.tech.' },
       { label: 'Cookies', value: 'Aucun cookie de tracking. Uniquement cookies fonctionnels (session Supabase, préférences). Voir /legal/privacy#cookies.' },
-      { label: 'Suppression de compte', value: 'À ta demande par email, ton compte + toutes tes données sont supprimés sous 7 jours ouvrés. Pas de soft-delete : c\'est définitif.' },
+      { label: 'Suppression de compte', value: 'Depuis Réglages → Données, en un clic après confirmation : ton compte et toutes tes données sont supprimés immédiatement. Pas de soft-delete : c\'est définitif.' },
     ],
   },
   {
@@ -124,8 +124,8 @@ const SECTIONS_EN = [
     color: C.blueLight,
     items: [
       { label: 'By default: no access at all', value: 'Quantara works entirely without a broker. You export a CSV from your broker and drop it into /app/import-lab — that is the default mode, and it asks for no credentials.' },
-      { label: 'Automatic sync: only if YOU connect it', value: 'If you turn on a broker sync, its credentials are required to read your history. They are encrypted (Fernet) before storage, isolated by RLS, and never written to logs. Nothing is connected until you do it yourself.' },
-      { label: 'Read-only', value: 'Quantara never places, modifies or cancels an order. The access exists to read your trade history, nothing else. You can delete a connection at any time — the credentials go with it.' },
+      { label: 'No broker connection', value: 'Quantara offers no automatic broker sync and never asks for your trading credentials. Only the CSV files you choose to import are read.' },
+      { label: 'Read-only', value: 'Quantara never places, modifies or cancels an order. It only reads what you enter or import.' },
     ],
   },
   {
@@ -135,7 +135,7 @@ const SECTIONS_EN = [
     items: [
       { label: 'GDPR', value: 'Quantara Technologies LLC is GDPR-compliant. Data hosted in EU (Frankfurt). Right of access, rectification, deletion, portability available via contact@quantara.tech.' },
       { label: 'Cookies', value: 'No tracking cookies. Only functional cookies (Supabase session, prefs). See /legal/privacy#cookies.' },
-      { label: 'Account deletion', value: 'On email request, your account + all data is deleted within 7 business days. No soft-delete: it\'s final.' },
+      { label: 'Account deletion', value: 'From Settings → Data, in one click after confirmation: your account and all your data are deleted immediately. No soft delete: it is permanent.' },
     ],
   },
   {

@@ -11,9 +11,9 @@ import BillingSection from '../../../../components/BillingSection'
 import LanguageSwitcher from '../../../../components/LanguageSwitcher'
 import ThemeSwitcher from '../../../../components/ThemeSwitcher'
 import Link from 'next/link'
+import { supabase } from '../../../../lib/supabase'
+import { exportAllData, deleteAccount, DELETE_CONFIRMATION } from '../../../../lib/accountActions'
 
-// ── Local storage key for email preferences ──
-const LS_KEY_MONTHLY_RECAP = 'qt_pref_monthly_recap'
 
 function SectionTitle({ icon, children }) {
   return (
@@ -92,18 +92,22 @@ export default function SettingsPage() {
   const t = useT()
   const { user, profile, currency, setCurrencyMode, rateInfo, marketMode, setMarketMode } = useApp()
 
-  // Email preference: monthly recap opt-in (localStorage for now)
+  // E-mails non essentiels (récap mensuel + séquence d'accueil). La préférence vit
+  // en base (profiles.email_optout) : c'est elle que lisent les crons d'envoi.
+  // Elle vivait avant dans localStorage, que le serveur ne voit pas — décocher ne
+  // changeait rien.
   const [monthlyRecap, setMonthlyRecap] = useState(true)
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LS_KEY_MONTHLY_RECAP)
-      if (stored !== null) setMonthlyRecap(JSON.parse(stored))
-    } catch {}
-  }, [])
+    if (!user?.id) return
+    supabase.from('profiles').select('email_optout').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => { if (data) setMonthlyRecap(!data.email_optout) })
+  }, [user?.id])
 
-  function handleMonthlyRecapToggle(val) {
+  async function handleMonthlyRecapToggle(val) {
     setMonthlyRecap(val)
-    try { localStorage.setItem(LS_KEY_MONTHLY_RECAP, JSON.stringify(val)) } catch {}
+    const { error } = await supabase.from('profiles')
+      .upsert({ user_id: user.id, email_optout: !val }, { onConflict: 'user_id' })
+    if (error) { setMonthlyRecap(!val); showToast?.(t('app.settings.monthlyRecapError')) }
   }
 
   // Toast state for "coming soon" actions
@@ -115,6 +119,9 @@ export default function SettingsPage() {
 
   // Delete account confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const displayName = profile?.display_name || (profile?.username ? `@${profile.username}` : null)
   const email = user?.email || ''
@@ -282,7 +289,12 @@ export default function SettingsPage() {
           description={t('app.settings.exportDesc')}
         >
           <button
-            onClick={() => showToast(t('app.settings.exportSoon'))}
+            disabled={exporting}
+            onClick={async () => {
+              setExporting(true)
+              try { await exportAllData() } catch { showToast(t('app.settings.exportError')) }
+              setExporting(false)
+            }}
             style={{
               fontSize: 12, fontWeight: 600, color: C.text2,
               background: 'var(--tint2)',
@@ -292,7 +304,7 @@ export default function SettingsPage() {
               transition: 'all 0.15s',
             }}
           >
-            {t('app.settings.exportBtn')}
+            {exporting ? t('app.settings.exporting') : t('app.settings.exportBtn')}
           </button>
         </SettingRow>
         <div style={{ paddingTop: 14 }}>
@@ -322,20 +334,41 @@ export default function SettingsPage() {
               <p style={{ fontSize: 12, color: C.text2, margin: '0 0 14px', lineHeight: 1.5 }}>
                 {t('app.settings.deleteConfirmBody')}
               </p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <a
-                  href="mailto:contact@quantara.tech?subject=Suppression%20de%20compte&body=Bonjour%2C%20je%20souhaite%20supprimer%20mon%20compte%20Quantara."
+              <label htmlFor="settings-delete-confirm" style={{ display: 'block', fontSize: 12, color: C.text2, marginBottom: 6 }}>
+                {t('app.settings.deleteTypeLabel')} <strong>{DELETE_CONFIRMATION}</strong>
+              </label>
+              <input
+                id="settings-delete-confirm"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                autoComplete="off"
+                style={{
+                  width: '100%', maxWidth: 320, marginBottom: 12, padding: '8px 10px', fontSize: 13,
+                  background: 'var(--surface)', color: C.text, border: '1px solid var(--red)',
+                  borderRadius: 8, fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  disabled={deleteConfirm !== DELETE_CONFIRMATION || deleting}
+                  onClick={async () => {
+                    setDeleting(true)
+                    try { await deleteAccount(deleteConfirm) }
+                    catch (e) { showToast(e.message && e.message !== 'DELETE' ? e.message : t('app.settings.deleteError')); setDeleting(false) }
+                  }}
                   style={{
-                    fontSize: 12, fontWeight: 600, color: '#fff',
+                    fontSize: 12, fontWeight: 600, color: 'var(--text-inverse)',
                     background: C.red, border: 'none',
                     borderRadius: 8, padding: '8px 16px',
-                    textDecoration: 'none', display: 'inline-block',
+                    cursor: deleteConfirm === DELETE_CONFIRMATION ? 'pointer' : 'not-allowed',
+                    opacity: deleteConfirm === DELETE_CONFIRMATION && !deleting ? 1 : 0.5,
+                    fontFamily: 'inherit',
                   }}
                 >
-                  {t('app.settings.contactSupport')}
-                </a>
+                  {deleting ? t('app.settings.deleting') : t('app.settings.deleteForever')}
+                </button>
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteConfirm('') }}
                   style={{
                     fontSize: 12, fontWeight: 600, color: C.text2,
                     background: 'var(--tint2)',
