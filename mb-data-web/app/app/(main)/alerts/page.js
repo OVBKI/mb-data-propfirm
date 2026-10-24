@@ -5,7 +5,7 @@
 import { useEffect } from 'react'
 import { useApp } from '../AppContext'
 import { useT, useLanguage } from '../../../../components/LanguageProvider'
-import PushNotificationToggle from '../../../../components/PushNotificationToggle'
+import Link from 'next/link'
 
 // Alert categories (order = display order). Each groups alerts sharing a `category`.
 const CATS = [
@@ -33,10 +33,10 @@ export default function AlertsPage() {
         <p style={{ fontSize: '13px', color: 'var(--text3)', margin: 0 }}>{t('app.alerts.subtitle')}</p>
       </div>
 
-      {/* Toggle Push notifications */}
-      <div style={{ marginBottom: '24px' }}>
-        <PushNotificationToggle />
-      </div>
+      {/* Les notifications push se règlent dans Réglages (un seul interrupteur). */}
+      <p style={{ fontSize: '13px', color: 'var(--text3)', margin: '0 0 24px' }}>
+        {t('app.alerts.pushHint')} <Link href="/app/settings" style={{ color: 'var(--blue)' }}>{t('app.alerts.pushHintLink')}</Link>
+      </p>
 
       {/* Alertes groupées par catégorie */}
       {(() => {

@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { verifyAuth } from '../../../lib/apiAuth'
 import { rateLimit, rateLimitResponse } from '../../../lib/rateLimit'
+import { FEATURES } from '../../../lib/features'
 
 function getSupabase() {
   return createClient(
@@ -11,6 +12,8 @@ function getSupabase() {
 }
 
 export async function GET(request) {
+  // Parrainage éteint tant qu'aucun écran ni récompense n'existe (lib/features.js).
+  if (!FEATURES.referral) return Response.json({ error: 'Not found' }, { status: 404 })
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
@@ -44,6 +47,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  // Parrainage éteint tant qu'aucun écran ni récompense n'existe (lib/features.js).
+  if (!FEATURES.referral) return Response.json({ error: 'Not found' }, { status: 404 })
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 

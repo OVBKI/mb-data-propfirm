@@ -150,14 +150,20 @@ export default function CompareFirmsClient({
         }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, marginBottom: 12 }}>Comment choisir entre {firmA} et {firmB}</h2>
           <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0, marginBottom: 12 }}>
-            {`${firmA} et ${firmB} couvrent le même marché — le trading PropFirm futures — mais avec des philosophies différentes. ${firmA} ${metaA.ddType ? `utilise un drawdown ${metaA.ddType.split('(')[0].toLowerCase().trim()}` : 'a sa propre structure de règles'}, tandis que ${firmB} ${metaB.ddType ? `opère un drawdown ${metaB.ddType.split('(')[0].toLowerCase().trim()}`: 'a une autre approche'}. Cette différence détermine comment chaque firm gère le risque intraday et la progression de ton compte.`}
+            {(() => {
+              const ddA = metaA.ddType ? metaA.ddType.split('(')[0].toLowerCase().trim() : null
+              const ddB = metaB.ddType ? metaB.ddType.split('(')[0].toLowerCase().trim() : null
+              if (ddA && ddB && ddA === ddB) return `${firmA} et ${firmB} utilisent tous deux un drawdown ${ddA}. La différence se joue donc ailleurs : prix, objectif, cadence et conditions des payouts, détaillés dans le tableau ci-dessus.`
+              if (ddA && ddB) return `${firmA} utilise un drawdown ${ddA}, ${firmB} un drawdown ${ddB}. C'est la première différence à regarder : elle décide de la façon dont ton seuil de perte suit tes gains.`
+              return `Compare d'abord le type de drawdown de ${firmA} et de ${firmB} dans le tableau ci-dessus : il décide de la façon dont ton seuil de perte suit tes gains.`
+            })()}
           </p>
           <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0 }}>
             {`Avant de choisir, regarde aussi la cadence de payouts, le profit split (`}
             <strong style={{ color: C.text }}>{metaA.splits?.split('.')[0] || '90/10'}</strong>
             {` vs `}
             <strong style={{ color: C.text }}>{metaB.splits?.split('.')[0] || '90/10'}</strong>
-            {`), et les règles spécifiques sur le news trading et l'overnight. Toutes les data ci-dessus sont vérifiées depuis les docs officielles de chaque firm en mai 2026.`}
+            {`), et les règles spécifiques sur le news trading et l'overnight. Les fiches de chaque firme détaillent toutes leurs règles, programme par programme.`}
           </p>
         </section>
 

@@ -116,7 +116,7 @@ export default function FirmsIndexClient() {
             <strong style={{ color: C.text }}>End-of-Day (EOD)</strong>
             {` chez Topstep et Tradeify (le seuil ne se calcule qu'à la clôture), `}
             <strong style={{ color: C.text }}>trailing intraday</strong>
-            {` chez Apex et Lucid (tick par tick), et `}
+            {` chez Apex (programme Intraday) et Bulenox (Option 1), tick par tick, et `}
             <strong style={{ color: C.text }}>trailing avec cap au balance initial</strong>
             {` chez MFFU (intermédiaire). Le choix du type de drawdown est le premier critère qui détermine si une firm vous convient.`}
           </p>
@@ -132,7 +132,20 @@ export default function FirmsIndexClient() {
             {` (ES/NQ partout, crypto futures partiellement). Toutes les fiches ci-dessus détaillent ces points firm par firm.`}
           </p>
           <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0 }}>
-            {`Quantara tracke automatiquement les règles spécifiques à chacune de ces 11 firmes : drawdown, consistency, profit target, payouts éligibles. C'est la seule façon en 2026 d'avoir une vue unifiée quand on diversifie ses comptes sur plusieurs PropFirms.`}
+            {`Quantara connaît les règles de chacune de ces 12 firmes, programme par programme : drawdown, consistency, profit target, payouts. Il les applique à tes comptes pour te donner une vue unifiée quand tu diversifies sur plusieurs PropFirms.`}
+          </p>
+        </section>
+
+        {/* Import des trades — repris de l'ancienne page /integrations */}
+        <section id="import" style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '28px 32px', marginBottom: 32 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, marginBottom: 14 }}>Comment tes trades arrivent dans Quantara</h2>
+          <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0, marginBottom: 12 }}>
+            <strong style={{ color: C.text }}>Import CSV Rithmic</strong>
+            {` : si ta firme passe par Rithmic (Apex, Bulenox, Lucid, Phidias, Funded Futures Network, FuturesElite…), exporte le Performance Statement ou le Trader Dashboard depuis R|Trader Pro et dépose-le dans l'Import Lab. Les trades déjà importés sont reconnus et jamais dupliqués.`}
+          </p>
+          <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0 }}>
+            <strong style={{ color: C.text }}>Saisie manuelle</strong>
+            {` : pour toutes les autres plateformes (TopstepX, Tradovate, NinjaTrader, Quantower…), un trade se saisit en quelques secondes, et peut être copié sur plusieurs comptes d'un coup. Il n'existe pas de connexion automatique à un broker pour l'instant.`}
           </p>
         </section>
 

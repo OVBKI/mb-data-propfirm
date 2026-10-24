@@ -95,6 +95,12 @@ const nextConfig = {
   },
 
   // === Headers de sécurité — appliqués à toutes les routes ===
+  // /integrations répétait /firms et listait surtout des intégrations qui
+  // n'existent plus (sync broker retirée en août 2026). Ce qu'elle disait d'utile
+  // — ce qui s'importe en CSV, ce qui se saisit à la main — est sur /firms.
+  async redirects() {
+    return [{ source: '/integrations', destination: '/firms#import', permanent: true }]
+  },
   async headers() {
     return [
       {

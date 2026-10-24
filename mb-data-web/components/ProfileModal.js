@@ -8,8 +8,8 @@
 //   onUpdated  : callback après save réussi (parent peut refresh ce qu'il faut)
 
 import { useState, useEffect } from 'react'
-import { exportAllData, deleteAccount } from '../lib/accountActions'
 import { supabase } from '../lib/supabase'
+import { FEATURES } from '../lib/features'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
@@ -21,10 +21,6 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [deleteConfirm, setDeleteConfirm] = useState('')
-  const [deleting, setDeleting] = useState(false)
-  const [showDeleteZone, setShowDeleteZone] = useState(false)
-  const [exporting, setExporting] = useState(false)
 
   // Form fields
   const [username, setUsername] = useState('')
@@ -164,7 +160,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        aria-label="Identité publique"
+        aria-label="Ton profil"
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 460,
@@ -188,7 +184,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
             }}>Profil</div>
             <h2 style={{
               fontSize: 18, fontWeight: 700, margin: 0, lineHeight: 1.2,
-            }}>Identité publique</h2>
+            }}>Ton profil</h2>
             <div style={{
               fontSize: 11, color: 'var(--text3)', marginTop: 4,
               fontFamily: 'ui-monospace, monospace',
@@ -276,8 +272,9 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
               </div>
             </div>
 
-            {/* Visibilité publique — Phase 1 réseau social (mai 2026) */}
-            {/* Privacy first : profil privé par défaut. L'user opt-in explicitement. */}
+            {/* Visibilité publique — masquée tant que la couche sociale est éteinte
+                (lib/features.js) : un profil public n'a nulle part où s'afficher. */}
+            {FEATURES.social && (
             <div style={{
               marginBottom: 18, padding: '14px 16px',
               background: 'var(--tint1)',
@@ -334,6 +331,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                 </div>
               )}
             </div>
+            )}
 
             {/* Messages */}
             {error && (
@@ -376,89 +374,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
           </form>
         )}
 
-        {/* === Export & Zone dangereuse === */}
-        {!loading && (
-          <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-            {/* Export données */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Exporter mes données</div>
-              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, lineHeight: 1.5 }}>
-                Télécharge toutes tes données (comptes, payouts, journal) en CSV.
-              </p>
-              <button
-                type="button"
-                disabled={exporting}
-                onClick={async () => {
-                  setExporting(true)
-                  try { await exportAllData() } catch { setError('Erreur lors de l\'export') }
-                  setExporting(false)
-                }}
-                style={{
-                  padding: '8px 16px', fontSize: 13, fontWeight: 500,
-                  background: 'var(--surface2)', border: '1px solid var(--border2)',
-                  color: 'var(--text)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >{exporting ? '⏳ Export...' : '📥 Télécharger CSV'}</button>
-            </div>
-
-            {/* Suppression compte */}
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowDeleteZone(!showDeleteZone)}
-                style={{
-                  fontSize: 12, color: 'var(--red-text)', background: 'none',
-                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                  padding: 0, textDecoration: 'underline',
-                }}
-              >{showDeleteZone ? 'Masquer' : 'Supprimer mon compte'}</button>
-
-              {showDeleteZone && (
-                <div style={{
-                  marginTop: 12, padding: 16, background: 'var(--red-bg)',
-                  border: '1px solid var(--red)', borderRadius: 8,
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--red-text)', marginBottom: 6 }}>
-                    Zone dangereuse
-                  </div>
-                  <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 12 }}>
-                    Cette action est irréversible. Toutes tes données seront supprimées :
-                    firmes, comptes, payouts, journal, profil. Tape <strong>SUPPRIMER MON COMPTE</strong> pour confirmer.
-                  </p>
-                  <input
-                    value={deleteConfirm}
-                    onChange={e => setDeleteConfirm(e.target.value)}
-                    placeholder="SUPPRIMER MON COMPTE"
-                    style={{
-                      ...inputStyle, marginBottom: 10,
-                      borderColor: 'var(--red)',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    disabled={deleteConfirm !== 'SUPPRIMER MON COMPTE' || deleting}
-                    onClick={async () => {
-                      setDeleting(true)
-                      try {
-                        await deleteAccount(deleteConfirm)
-                      } catch (e) {
-                        setError(e.message || 'Erreur lors de la suppression')
-                        setDeleting(false)
-                      }
-                    }}
-                    style={{
-                      padding: '9px 18px', fontSize: 13, fontWeight: 600,
-                      background: deleteConfirm === 'SUPPRIMER MON COMPTE' ? 'var(--red)' : 'var(--surface3)',
-                      color: deleteConfirm === 'SUPPRIMER MON COMPTE' ? '#fff' : 'var(--text3)',
-                      border: 'none', borderRadius: 8, cursor: deleteConfirm === 'SUPPRIMER MON COMPTE' ? 'pointer' : 'not-allowed',
-                      fontFamily: 'inherit', opacity: deleting ? 0.5 : 1,
-                    }}
-                  >{deleting ? '⏳ Suppression...' : 'Supprimer définitivement'}</button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Export des données et suppression du compte : dans Réglages → Données. */}
       </div>
     </div>
   )

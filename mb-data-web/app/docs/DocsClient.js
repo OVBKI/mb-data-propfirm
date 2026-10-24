@@ -22,7 +22,7 @@ const C = {
 }
 
 // === SECTIONS DOCUMENTATION ===
-// Pour le contenu détaillé FAQ + roadmap, on utilise un bloc locale-aware
+// Pour le contenu détaillé de la FAQ, on utilise un bloc locale-aware
 // plutôt que d'éparpiller en clés i18n granulaires (option B du brief).
 
 const SECTIONS_FR = [
@@ -33,16 +33,16 @@ const SECTIONS_FR = [
       { q: 'Comment créer mon premier compte PropFirm ?', a: 'Tableau de bord → "+ Ajouter PropFirm" → choisis ta firme (Topstep, Lucid, Apex…) ou tape un nom custom → ajoute ton premier compte avec sa taille (50K, 100K…). Les règles (drawdown, profit target, jours min) sont auto-remplies.' },
       { q: 'Quelles devises sont supportées ?', a: 'USD, EUR, GBP, CHF. Les conversions sont faites automatiquement. Tu peux switcher entre USD natif et EUR depuis le toggle en haut à droite du dashboard.' },
       { q: 'Faut-il une carte bancaire pour s\'inscrire ?', a: 'Non. Quantara est gratuit pendant la beta — pas de CB demandée.' },
-      { q: 'Je peux me connecter avec mon pseudo au lieu de mon email ?', a: 'Oui. Définis ton pseudo dans /app/profile → "Modifier le profil". Ensuite tu pourras te connecter avec ton pseudo OU ton email — au choix.' },
+      { q: 'Je peux me connecter avec mon pseudo au lieu de mon email ?', a: 'Oui. Définis ton pseudo dans Réglages → "Modifier le profil". Ensuite tu pourras te connecter avec ton pseudo OU ton email — au choix.' },
     ],
   },
   {
     id: 'import-csv',
     title: 'Import CSV Rithmic (nouveau)',
     items: [
-      { q: 'Comment importer mes trades depuis Rithmic ?', a: 'Va dans /app/import-lab (depuis la sidebar SYNC). 2 onglets : (1) "État des comptes" — drag un export Trader Dashboard, ça crée les comptes auto avec balance/DD/status. (2) "Trades" — drag un export Performance Statement, ça ajoute les trades aux comptes existants.' },
+      { q: 'Comment importer mes trades depuis Rithmic ?', a: 'Va dans /app/import-lab (menu Journal → Importer un CSV). 2 onglets : (1) "État des comptes" — drag un export Trader Dashboard, ça crée les comptes auto avec balance/DD/status. (2) "Trades" — drag un export Performance Statement, ça ajoute les trades aux comptes existants.' },
       { q: 'Quel format CSV faut exporter depuis Rithmic ?', a: 'Dans R|Trader Pro → Performance → Export CSV (pour les trades détaillés). Dans Trader Dashboard → Export (pour balance/DD/status des comptes). Les 2 sont supportés par Quantara.' },
-      { q: 'Où je vois mes trades importés ?', a: 'Dans /app/journal-sync — séparé du journal manuel pour pas mélanger. Tu y retrouves filtres firme/compte, calendrier PnL, courbes equity + DD, et historique tabulaire complet.' },
+      { q: 'Où je vois mes trades importés ?', a: 'Dans le Journal, avec tes trades saisis à la main. Le filtre « Origine » isole les trades importés, et un historique détaillé (ordres, fills, durée) s\'affiche sous le calendrier.' },
       { q: 'Et si je réimporte le même CSV plusieurs fois ?', a: 'Le système dédupplique automatiquement via un marker [rithmic:ENTRY_ID/EXIT_ID] dans les notes du trade. Aucun doublon créé.' },
       { q: 'Les trades importés se retrouvent dans le journal manuel ?', a: 'Non, ils sont strictement isolés. Journal manuel = comptes/trades saisis à la main. Journal Sync = comptes/trades importés depuis CSV. Les 2 ne se mélangent jamais.' },
     ],
@@ -70,18 +70,16 @@ const SECTIONS_FR = [
     id: 'rules',
     title: 'Règles PropFirms',
     items: [
-      { q: 'Quelles PropFirms sont supportées ?', a: '10 firmes pré-configurées : Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite. Voir /integrations pour le détail (statut sync CSV vs saisie manuelle).' },
+      { q: 'Quelles PropFirms sont supportées ?', a: '12 firmes futures pré-configurées : Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite, Alpha Futures et FundedNext Futures, plus 9 firmes CFD. Voir /firms pour le détail et l\'import des trades.' },
       { q: 'Mes règles ne sont pas à jour, c\'est normal ?', a: 'Les PropFirms changent leurs règles régulièrement. Quantara fait au mieux pour rester à jour. Si tu vois une incohérence, tu peux toujours modifier les règles d\'un compte individuel directement dans le formulaire de création/édition. Sinon, signale-le à contact@quantara.tech.' },
       { q: 'Comment savoir si je suis dans les règles drawdown trailing ?', a: 'Le dashboard affiche pour chaque compte ta balance actuelle et le seuil DD calculé en temps réel. Les courbes equity dans le journal affichent la ligne DD trailing (statique, EOD ou intraday selon la firme).' },
     ],
   },
   {
     id: 'profile',
-    title: 'Profil & social (nouveau)',
+    title: 'Profil',
     items: [
-      { q: 'À quoi sert la page Profil ?', a: '/app/profile permet de définir ton pseudo (pour login), nom affiché, bio, pays et style de trading. Affiche aussi tes stats publiques agrégées (payouts totaux, win rate, comptes funded, jours tradés).' },
-      { q: 'C\'est quoi le toggle "profil public" ?', a: 'Si tu actives ça, ton profil sera visible par les autres traders (URL /u/[ton-pseudo]) — fonctionnalité en cours de développement. Tes trades détaillés et tes comptes individuels restent toujours privés.' },
-      { q: 'Y aura-t-il un réseau social pour traders ?', a: 'C\'est à l\'étude, sans date pour l\'instant. Tu pourras publier tes trades, partager tes payouts, suivre d\'autres traders, et commenter leurs résultats. Le mur sera réservé aux profils publics.' },
+      { q: 'Où je modifie mon profil ?', a: 'Dans Réglages → Profil → « Modifier le profil » : pseudo (utilisable pour te connecter), nom affiché, bio, pays et style de trading. L\'export de tes données et la suppression du compte sont dans Réglages → Données.' },
     ],
   },
   {
@@ -104,16 +102,16 @@ const SECTIONS_EN = [
       { q: 'How do I create my first PropFirm account?', a: 'Dashboard → "+ Add PropFirm" → pick your firm (Topstep, Lucid, Apex…) or type a custom name → add your first account with its size (50K, 100K…). Rules (drawdown, profit target, min days) are auto-filled.' },
       { q: 'Which currencies are supported?', a: 'USD, EUR, GBP, CHF. Conversions happen automatically. You can switch between native USD and EUR via the toggle at the top right of the dashboard.' },
       { q: 'Do I need a credit card to sign up?', a: 'No. Quantara is free during beta — no card required.' },
-      { q: 'Can I log in with my username instead of email?', a: 'Yes. Set your username in /app/profile → "Edit profile". Then you can log in with username OR email — your choice.' },
+      { q: 'Can I log in with my username instead of email?', a: 'Yes. Set your username in Settings → "Edit profile". Then you can log in with username OR email — your choice.' },
     ],
   },
   {
     id: 'import-csv',
     title: 'Rithmic CSV import (new)',
     items: [
-      { q: 'How do I import my trades from Rithmic?', a: 'Go to /app/import-lab (from the SYNC sidebar). Two tabs: (1) "Account state" — drag a Trader Dashboard export, accounts are auto-created with balance/DD/status. (2) "Trades" — drag a Performance Statement export to add trades to existing accounts.' },
+      { q: 'How do I import my trades from Rithmic?', a: 'Go to /app/import-lab (Journal menu → Import a CSV). Two tabs: (1) "Account state" — drag a Trader Dashboard export, accounts are auto-created with balance/DD/status. (2) "Trades" — drag a Performance Statement export to add trades to existing accounts.' },
       { q: 'Which CSV format should I export from Rithmic?', a: 'In R|Trader Pro → Performance → Export CSV (for detailed trades). In Trader Dashboard → Export (for account balance/DD/status). Both are supported.' },
-      { q: 'Where do I see my imported trades?', a: 'In /app/journal-sync — separated from the manual journal to avoid mixing them. You\'ll find firm/account filters, PnL calendar, equity + DD curves, and full tabular history.' },
+      { q: 'Where do I see my imported trades?', a: 'In the Journal, alongside the trades you entered by hand. The « Source » filter isolates imported trades, and a detailed history (orders, fills, hold time) appears under the calendar.' },
       { q: 'What if I re-import the same CSV multiple times?', a: 'The system automatically dedupes via a [rithmic:ENTRY_ID/EXIT_ID] marker in the trade notes. No duplicates created.' },
       { q: 'Do imported trades show up in the manual journal?', a: 'No, they are strictly isolated. Manual journal = manually entered accounts/trades. Sync journal = CSV-imported accounts/trades. The two never mix.' },
     ],
@@ -143,19 +141,16 @@ const SECTIONS_EN = [
     id: 'rules',
     title: 'PropFirm rules',
     items: [
-      { q: 'Which PropFirms are supported?', a: '10 firms pre-configured: Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite. See /integrations for the details (CSV sync status vs manual entry).' },
+      { q: 'Which PropFirms are supported?', a: '12 futures firms pre-configured: Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite, Alpha Futures and FundedNext Futures, plus 9 CFD firms. See /firms for details and trade import.' },
       { q: 'My rules are out of date, is that normal?', a: 'PropFirms change their rules regularly. Quantara does its best to stay up to date. If you see an inconsistency, you can always edit the rules of an individual account directly in the create/edit form. Otherwise, report it to contact@quantara.tech.' },
       { q: 'How do I know if I\'m within the trailing drawdown rules?', a: 'The dashboard displays your current balance and the live-computed DD threshold for each account. Journal equity curves show the trailing DD line (static, EOD or intraday per firm).' },
     ],
   },
   {
     id: 'profile',
-    title: 'Profile & social (new)',
+    title: 'Profile',
     items: [
-      { q: 'What is the Profile page for?', a: '/app/profile lets you set your username (for login), display name, bio, country and trading style. Also shows your aggregated public stats (total payouts, win rate, funded accounts, traded days).' },
-      { q: 'What is the "public profile" toggle?', a: 'If enabled, your profile becomes visible to other traders (URL /u/[your-username]) — feature in development. Your detailed trades and individual accounts always stay private.' },
-      { q: 'Will there be a social network for traders?', a: "It is being considered, with no date yet. You'll be able to post trades, share payouts, follow other traders, and comment on their results. The feed will be reserved for public profiles.",
-      },
+      { q: 'Where do I edit my profile?', a: 'In Settings → Profile → « Edit profile »: username (usable to log in), display name, bio, country and trading style. Data export and account deletion are in Settings → Data.' },
     ],
   },
   {
@@ -170,111 +165,6 @@ const SECTIONS_EN = [
   },
 ]
 
-const ROADMAP_FR = [
-  {
-    quarter: 'Fait — Mai 2026',
-    status: 'done',
-    items: [
-      'Import CSV Rithmic (Performance + Trader Dashboard)',
-      'Journal Sync séparé du journal manuel',
-      'Profil utilisateur + pseudo login',
-      'Auto-mapping intelligent multi-stratégies',
-      'Auto-renommage comptes (PRO 7, EVAL 17)',
-      'Dédoublonnage trades via marker rithmic',
-      'Détection auto comptes liquidés (badge 🔥)',
-      'Calendrier PnL mensuel heatmap',
-      'Courbes equity avec ligne DD trailing live',
-    ],
-  },
-  {
-    quarter: 'Prochainement',
-    status: 'next',
-    items: [
-      'Paywall Stripe + plans freemium/pro',
-      'Affiliés PropFirm sur le comparateur',
-      'Emails transactionnels (welcome, recap mensuel)',
-      'Mobile responsive complet (audit + fixes)',
-      'Page profil publique /u/[pseudo]',
-    ],
-  },
-  {
-    quarter: 'Plus tard',
-    status: 'planned',
-    items: [
-      'AI Coach (analyse patterns trading + insights Claude)',
-      'Réseau social actif : follows, posts, leaderboard',
-      'Heatmaps avancées (par heure, instrument, session)',
-      'Export PDF mensuel (utile impôts)',
-      'Notifications push proactives (DD warning, payout dispo)',
-      'Mood tracker par session',
-      'Intégration Discord (rôle automatique selon stats)',
-    ],
-  },
-  {
-    quarter: 'Idées, sans date',
-    status: 'wishlist',
-    items: [
-      'API Rithmic directe (sans CSV)',
-      'API Tradovate / NinjaTrader',
-      'Cours et formations propfirm',
-      'Application mobile native iOS/Android',
-      'Marketplace de stratégies (anonymisées)',
-    ],
-  },
-]
-
-const ROADMAP_EN = [
-  {
-    quarter: 'Done — May 2026',
-    status: 'done',
-    items: [
-      'Rithmic CSV import (Performance + Trader Dashboard)',
-      'Sync journal separated from manual journal',
-      'User profile + username login',
-      'Smart multi-strategy auto-mapping',
-      'Auto-rename accounts (PRO 7, EVAL 17)',
-      'Trade dedup via rithmic marker',
-      'Auto-detect liquidated accounts (🔥 badge)',
-      'Monthly PnL heatmap calendar',
-      'Equity curves with live trailing DD line',
-    ],
-  },
-  {
-    quarter: 'Coming next',
-    status: 'next',
-    items: [
-      'Stripe paywall + freemium/pro plans',
-      'PropFirm affiliates on the comparator',
-      'Transactional emails (welcome, monthly recap)',
-      'Full mobile responsive (audit + fixes)',
-      'Public profile page /u/[username]',
-    ],
-  },
-  {
-    quarter: 'Later',
-    status: 'planned',
-    items: [
-      'AI Coach (trading pattern analysis + Claude insights)',
-      'Active social network: follows, posts, leaderboard',
-      'Advanced heatmaps (by hour, instrument, session)',
-      'Monthly PDF export (useful for taxes)',
-      'Proactive push notifications (DD warning, payout available)',
-      'Per-session mood tracker',
-      'Discord integration (automatic role based on stats)',
-    ],
-  },
-  {
-    quarter: 'Ideas, no date',
-    status: 'wishlist',
-    items: [
-      'Direct Rithmic API (no CSV)',
-      'Tradovate / NinjaTrader API',
-      'Propfirm courses and training',
-      'Native iOS/Android mobile app',
-      'Strategy marketplace (anonymized)',
-    ],
-  },
-]
 
 function ChevronIcon({ open }) {
   return (
@@ -319,7 +209,6 @@ export default function DocsClient() {
   const t = useT()
   const { locale } = useLanguage()
   const SECTIONS = locale === 'en' ? SECTIONS_EN : SECTIONS_FR
-  const ROADMAP = locale === 'en' ? ROADMAP_EN : ROADMAP_FR
   const badges = t('pages.docs.statusBadges')
 
   return (
@@ -379,68 +268,6 @@ export default function DocsClient() {
           </Reveal>
         </section>
 
-        {/* ROADMAP */}
-        <section id="roadmap" style={{ padding: '40px 24px 80px', maxWidth: 900, margin: '0 auto', borderTop: `1px solid ${C.border}` }}>
-          <Reveal>
-            <div style={{ paddingTop: 40, marginBottom: 32 }}>
-              <div style={{ fontSize: 11, color: C.green, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
-                {t('pages.docs.roadmapEyebrow')}
-              </div>
-              <h2 style={{ fontSize: 26, fontWeight: 700, margin: 0, marginBottom: 6, letterSpacing: '-0.015em' }}>
-                {t('pages.docs.roadmapHeading')}
-              </h2>
-              <p style={{ fontSize: 13, color: C.text3, margin: 0 }}>
-                {t('pages.docs.roadmapSub')}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {ROADMAP.map(q => {
-                const tone = {
-                  done:     { color: C.green,    bg: 'var(--green-bg)', border: 'var(--green)', label: badges?.done || '✓' },
-                  next:     { color: C.blueLight, bg: 'var(--blue-bg)', border: 'var(--blue-border)', label: badges?.next || '⚡' },
-                  planned:  { color: C.amber,   bg: 'var(--amber-bg)', border: 'var(--amber)', label: badges?.planned || '📅' },
-                  wishlist: { color: C.text3,   bg: 'var(--tint1)', border: 'var(--hairline)', label: badges?.wishlist || '✨' },
-                }[q.status]
-                return (
-                  <div key={q.quarter} style={{
-                    padding: 20,
-                    background: C.surface,
-                    border: `1px solid ${tone.border}`,
-                    borderRadius: 12,
-                  }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      marginBottom: 14, gap: 12, flexWrap: 'wrap',
-                    }}>
-                      <h3 style={{
-                        fontSize: 16, fontWeight: 700, margin: 0,
-                        color: tone.color, letterSpacing: '-0.01em',
-                      }}>
-                        {q.quarter}
-                      </h3>
-                      <span style={{
-                        fontSize: 10, padding: '4px 10px',
-                        background: tone.bg, color: tone.color,
-                        border: `1px solid ${tone.border}`,
-                        borderRadius: 6, fontWeight: 600,
-                        letterSpacing: '0.08em', textTransform: 'uppercase',
-                      }}>{tone.label}</span>
-                    </div>
-                    <ul style={{
-                      margin: 0, paddingLeft: 18,
-                      fontSize: 13, color: C.text2, lineHeight: 1.85,
-                    }}>
-                      {q.items.map((item, i) => (
-                        <li key={i} style={{ marginBottom: 2 }}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              })}
-            </div>
-          </Reveal>
-        </section>
 
         {/* CTA contact */}
         <section style={{ padding: '40px 24px 80px', maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>

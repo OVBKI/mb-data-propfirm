@@ -90,7 +90,7 @@ function Toggle({ checked, onChange, disabled = false }) {
 
 export default function SettingsPage() {
   const t = useT()
-  const { user, profile, currency, setCurrencyMode, rateInfo, marketMode, setMarketMode } = useApp()
+  const { user, profile, currency, setCurrencyMode, rateInfo, marketMode, setMarketMode, openProfileEditor } = useApp()
 
   // E-mails non essentiels (récap mensuel + séquence d'accueil). La préférence vit
   // en base (profiles.email_optout) : c'est elle que lisent les crons d'envoi.
@@ -173,8 +173,9 @@ export default function SettingsPage() {
           </span>
         </SettingRow>
         <div style={{ paddingTop: 14 }}>
-          <Link
-            href="/app/profile"
+          <button
+            type="button"
+            onClick={() => openProfileEditor?.()}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               fontSize: 12, fontWeight: 600, color: C.blueLight,
@@ -182,10 +183,11 @@ export default function SettingsPage() {
               background: 'var(--blue-bg)',
               border: `1px solid var(--blue-border)`,
               borderRadius: 8, transition: 'all 0.15s',
+              cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
             {t('app.settings.editProfile')}
-          </Link>
+          </button>
         </div>
       </Card>
 

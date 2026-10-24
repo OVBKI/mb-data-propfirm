@@ -29,7 +29,6 @@ const C = {
 const NAV_ITEMS = [
   { href: '/admin',               label: 'Dashboard',     icon: '◫' },
   { href: '/admin/activity',      label: 'Activité',      icon: '◉' },
-  { href: '/admin/stats',         label: 'Statistiques',  icon: '◐' },
   { href: '/admin/users',         label: 'Utilisateurs',  icon: '◊' },
   { href: '/admin/payouts',       label: 'Payouts',       icon: '◈' },
   { href: '/admin/propfirms',     label: 'PropFirms',     icon: '◆' },

@@ -42,7 +42,7 @@ garde-fou contre un rendu en haute résolution livré sans qu'on s'en aperçoive
 
 ---
 
-## HeroLoop — la boucle 3D de la landing (`mb-data-web/landing-3d`)
+## HeroLoop — la boucle 3D de la landing (`docs/landing-3d`)
 
 Deuxième composition, tout autre budget : ici il y a du DÉTAIL FIN (une pièce
 gravée du logo, du bronze), donc 1440×648 et un WebM VP9 **avec alpha**.
@@ -59,14 +59,14 @@ animations sont périodiques sur la durée). Le bloom est ajouté par Remotion
 | `blender/make_mask.py` | Blender (`pip install bpy`) | `logo_mask.png` — le relief du logo, lu dans le canal **alpha** du WebP (le fond est transparent : la luminance est vide) |
 | `blender/scene_hands.py` | Blender, Cycles CPU | les 120 images : mains libhand animées (ouvertes → enroulées) + pièce gravée en vue 3/4 |
 | `src/HeroLoop.jsx` | Remotion | rejoue la séquence image par image et ajoute le bloom — aucun rendu 3D dans le navigateur |
-| `render_hero.sh` | Remotion CLI | `mb-data-web/landing-3d/assets/hero-loop.webm` |
+| `render_hero.sh` | Remotion CLI | `docs/landing-3d/assets/hero-loop.webm` |
 
 ```bash
 pip install bpy numpy                    # Blender en module Python, sans interface
 python3 blender/make_mask.py -- blender/logo_mask.png
 ./blender/render_frames.sh               # clone libhand, ~30 min sur 4 cœurs ; relançable
-./render_hero.sh                         # → ../mb-data-web/landing-3d/assets/hero-loop.webm
-cd ../mb-data-web && python3 landing-3d/build_landing.py dist/index.html
+./render_hero.sh                         # → ../docs/landing-3d/assets/hero-loop.webm
+python3 ../docs/landing-3d/build_landing.py ../docs/landing-3d/dist/index.html
 ```
 
 ### La main : libhand (CC BY 3.0)

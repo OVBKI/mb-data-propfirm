@@ -20,6 +20,7 @@
 //   currentHref, onInternalNav, onAfterNav, onShowProfile, onShowTutorial,
 //   showLaunchTutorial, showProfileLink, isOpenMobile
 
+import { FEATURES } from '../lib/features'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useT } from './LanguageProvider'
@@ -73,7 +74,7 @@ export default function AppSidebar({
   // Un groupe s’ouvre tout seul quand la page courante est un de ses enfants —
   // sinon elle resterait cachée derrière un chevron fermé.
   const inJournal = currentPage === 'journal' || href.startsWith('/app/journal')
-  const inSettings = href.startsWith('/app/settings') || href.startsWith('/app/profile') || href.startsWith('/app/groups')
+  const inSettings = href.startsWith('/app/settings') || href.startsWith('/app/groups')
   const [open, setOpen] = useState({ journal: inJournal, settings: inSettings })
   const [newMenu, setNewMenu] = useState(false)
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function AppSidebar({
         { label: t('app.sidebar.journalManuel'), key: 'journal' },
         // L’import CSV est futures-only : les exports viennent de Rithmic.
         ...(isCfd ? [] : [
-          { label: t('app.sidebar.journalSync'), href: '/app/journal-sync' },
+          { label: t('app.sidebar.journalSync'), href: '/app/import-lab' },
         ]),
       ],
     },
@@ -115,17 +116,15 @@ export default function AppSidebar({
     { g: G.heatmaps, label: t('app.sidebar.heatmaps'), key: 'heatmaps' },
     { g: G.myrules, label: t('app.sidebar.myrules'), key: 'myrules' },
     { g: G.rules, label: t('app.sidebar.rules'), key: 'rules' },
-    { g: G.payouts, label: t('app.sidebar.analytics'), key: 'analytics' },
     { g: G.calendar, label: t('app.sidebar.calendar'), key: 'calendar' },
     { g: G.alerts, label: t('app.sidebar.alerts'), key: 'alerts', badge: alertsBadgeCount },
     {
       g: G.settings, label: t('app.sidebar.settings'), group: 'settings',
       children: [
         { label: t('app.sidebar.settingsGeneral'), href: '/app/settings' },
-        { label: t('app.sidebar.myProfile'), href: '/app/profile' },
-        userIsAdmin
-          ? { label: t('app.sidebar.groups'), href: '/app/groups' }
-          : { label: t('app.sidebar.groups'), disabled: true, lock: true },
+        // Groupes : couche sociale masquée (lib/features.js) ; seuls les admins
+        // y accèdent, pour la construire.
+        ...(FEATURES.social || userIsAdmin ? [{ label: t('app.sidebar.groups'), href: '/app/groups' }] : []),
         ...(userIsAdmin ? [{ label: t('app.sidebar.adminPanel'), href: '/admin', plain: true }] : []),
         ...(showLaunchTutorial && onShowTutorial
           ? [{ label: t('app.sidebar.launchTutorial'), action: onShowTutorial }] : []),
@@ -210,9 +209,11 @@ export default function AppSidebar({
   const profSub = t(acctCount === 1 ? 'app.sidebar.planLineOne' : 'app.sidebar.planLine')
     .replace('{plan}', planName).replace('{n}', acctCount)
 
+  // La carte d'identité mène aux Réglages : c'est là que se modifient le profil,
+  // l'abonnement et les données (l'ancienne page /app/profile y redirige).
   const Card = showProfileLink ? 'a' : 'button'
   const cardProps = showProfileLink
-    ? { href: '/app/profile' }
+    ? { href: '/app/settings' }
     : { onClick: onShowProfile, type: 'button' }
 
   return (

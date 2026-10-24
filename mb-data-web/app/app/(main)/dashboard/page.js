@@ -9,8 +9,11 @@ import { MONTHS_FULL } from '../../../../lib/constants'
 import DashboardGrid from '../../../../components/dashboard/DashboardGrid'
 import {
   useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, NetWidget, EquityWidget, HealthWidget,
+  YearlyWidget, AccountCurvesWidget,
 } from '../../../../components/dashboard/widgets'
 import { useDashboardLayout } from '../../../../lib/hooks/useDashboardLayout'
+import { useTradeStats } from '../../../../lib/hooks/useTradeStats'
+import { useSearchParams } from 'next/navigation'
 import { SECTIONS, SECTION_LABELS } from '../../../../lib/dashboardLayout'
 import Link from 'next/link'
 import { ThemeToggle } from '../../../../components/ThemeSwitcher'
@@ -136,7 +139,19 @@ export default function DashboardPage() {
   // Disposition personnalisable de « Vue d'ensemble » : ordre, largeur et
   // visibilité de chaque widget, persistés par utilisateur.
   const dash = useDashboardLayout(user?.id)
-  const overview = useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, totalSpentForAccount })
+  // Solde et plancher recalculés à partir des trades, comme la page Santé.
+  const tradeStats = useTradeStats(user, firms)
+  const overview = useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, totalSpentForAccount, tradeStats })
+  // Lien direct vers un onglet : /app/dashboard?section=performance (l'ancienne
+  // page Analytics y redirige). Consommé une seule fois, au premier rendu.
+  const searchParams = useSearchParams()
+  const sectionParam = searchParams?.get('section')
+  const sectionApplied = useRef(false)
+  useEffect(() => {
+    if (sectionApplied.current || !sectionParam) return
+    sectionApplied.current = true
+    dash.setSection(sectionParam)
+  }, [sectionParam, dash])
   const money = (eur) => currency === 'eur' ? fmtE(eur) : `${(eur / rates.USD).toFixed(2)} $`
 
   function renderFirms() {
@@ -400,6 +415,8 @@ export default function DashboardPage() {
               case 'byFirm':   return renderByFirm()
               case 'stats':    return renderStats()
               case 'ranking':  return renderRanking()
+              case 'yearly':   return <YearlyWidget instance={w} yearly={overview.yearly} money={money} S={S} />
+              case 'accountCurves': return <AccountCurvesWidget firms={firms} user={user} S={S} />
               default:         return null
             }
           }}

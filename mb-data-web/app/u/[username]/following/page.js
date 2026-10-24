@@ -3,6 +3,7 @@
 //
 // Symétrique de followers/page.js — même logique mais avec follower_id = target.
 
+import { FEATURES } from '../../../../lib/features'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
@@ -17,6 +18,7 @@ function getAnonClient() {
 }
 
 export async function generateMetadata({ params }) {
+  if (!FEATURES.social) return { robots: { index: false, follow: false } }
   return {
     title: `Following de @${params.username}`,
     robots: { index: false, follow: true },
@@ -24,6 +26,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function FollowingPage({ params }) {
+  // Couche sociale masquée tant qu'elle n'est pas prête (lib/features.js).
+  if (!FEATURES.social) notFound()
   const supabase = getAnonClient()
   if (!supabase) notFound()
 

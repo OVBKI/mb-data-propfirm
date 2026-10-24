@@ -1,6 +1,8 @@
 'use client'
-// Page /pricing — 4 tiers (Free, Pro, Elite, Business) + formulaire waitlist + FAQ.
-// Free est déjà dispo (CTA → /auth?mode=signup) ; Pro/Elite/Business sont en waitlist.
+// Page /pricing — 2 paliers (Free, Pro) + formulaire waitlist + FAQ.
+// Free est déjà dispo (CTA → /auth?mode=signup) ; Pro est en waitlist. Elite et
+// Business ont été retirés de l'offre (octobre 2026) : presque rien de ce qu'ils
+// vendaient n'existait. L'API waitlist et Stripe les acceptent encore.
 // Le formulaire POST sur /api/waitlist qui insère dans Supabase + envoie un email Resend.
 
 import { useState } from 'react'
@@ -35,8 +37,6 @@ export default function PricingClient() {
   // Récupération des listes de features depuis i18n (objet retourné par translate).
   const freeFeatures = t('pages.pricing.planFree.features')
   const proFeatures = t('pages.pricing.planPro.features')
-  const eliteFeatures = t('pages.pricing.planElite.features')
-  const businessFeatures = t('pages.pricing.planBusiness.features')
 
   const faqItems = t('pages.pricing.faq.items')
 
@@ -128,6 +128,8 @@ export default function PricingClient() {
               gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
               gap: 16,
               alignItems: 'stretch',
+              maxWidth: 760,
+              margin: '0 auto',
             }}>
               {/* FREE */}
               <PricingCard
@@ -162,37 +164,6 @@ export default function PricingClient() {
                 }
               />
 
-              {/* ELITE */}
-              <PricingCard
-                badge={t('pages.pricing.planElite.badge')}
-                badgeColor="var(--violet)"
-                title={t('pages.pricing.planElite.name')}
-                price={t('pages.pricing.planElite.price')}
-                priceSub={t('pages.pricing.planElite.priceSub')}
-                description={t('pages.pricing.planElite.description')}
-                features={eliteFeatures}
-                cta={
-                  <button onClick={() => selectPlanFromCard('elite')} style={ctaPrimaryStyle()}>
-                    {t('pages.pricing.planElite.cta')}
-                  </button>
-                }
-              />
-
-              {/* BUSINESS */}
-              <PricingCard
-                badge={t('pages.pricing.planBusiness.badge')}
-                badgeColor="var(--cyan)"
-                title={t('pages.pricing.planBusiness.name')}
-                price={t('pages.pricing.planBusiness.price')}
-                priceSub={t('pages.pricing.planBusiness.priceSub')}
-                description={t('pages.pricing.planBusiness.description')}
-                features={businessFeatures}
-                cta={
-                  <button onClick={() => selectPlanFromCard('business')} style={ctaPrimaryStyle()}>
-                    {t('pages.pricing.planBusiness.cta')}
-                  </button>
-                }
-              />
             </div>
           </Reveal>
         </section>
@@ -223,22 +194,6 @@ export default function PricingClient() {
                     checked={waitlistPlan === 'pro'}
                     onChange={() => setWaitlistPlan('pro')}
                     color={C.blueLight}
-                  />
-                  <PlanRadio
-                    value="elite"
-                    label="Elite"
-                    sub="39€/mois — early access"
-                    checked={waitlistPlan === 'elite'}
-                    onChange={() => setWaitlistPlan('elite')}
-                    color="var(--violet)"
-                  />
-                  <PlanRadio
-                    value="business"
-                    label="Business"
-                    sub="129€/mo — 10 seats"
-                    checked={waitlistPlan === 'business'}
-                    onChange={() => setWaitlistPlan('business')}
-                    color="var(--cyan)"
                   />
                 </div>
 

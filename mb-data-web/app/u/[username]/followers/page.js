@@ -6,6 +6,7 @@
 // mais on n'affiche le pseudo cliquable QUE pour les followers eux-mêmes is_public.
 // Les followers privés sont représentés par "Trader anonyme" (count préservé).
 
+import { FEATURES } from '../../../../lib/features'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
@@ -20,6 +21,7 @@ function getAnonClient() {
 }
 
 export async function generateMetadata({ params }) {
+  if (!FEATURES.social) return { robots: { index: false, follow: false } }
   return {
     title: `Followers de @${params.username}`,
     robots: { index: false, follow: true },
@@ -27,6 +29,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function FollowersPage({ params }) {
+  // Couche sociale masquée tant qu'elle n'est pas prête (lib/features.js).
+  if (!FEATURES.social) notFound()
   const supabase = getAnonClient()
   if (!supabase) notFound()
 

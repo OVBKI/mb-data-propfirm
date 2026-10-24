@@ -141,8 +141,6 @@ export default function DemoClient() {
           <SidebarItem icon="◊" label={t('app.sidebar.rules')} href="/compare" />
           <SidebarItem icon="◉" label={t('app.sidebar.alerts')} badge="3" badgeColor="var(--red)" />
 
-          <SidebarSection label={t('app.sidebar.sectionCommunaute')} />
-          <SidebarItem icon="◈" label={t('app.sidebar.groups')} />
 
           <div style={{ flex: 1 }} />
           <div style={{ borderTop: '1px solid var(--border)', padding: '12px 8px', marginTop: 8 }}>

@@ -14,7 +14,7 @@ et les principes **LottieFiles/motion-design-skill** (1,8 k★).
 | Fonctions montrées | Dashboard (4 vues), Health Center, Analytics, Heatmaps, recherche ⌘K, Journal + Trade Log (réplication multi-comptes), comparateur de règles, fiches firmes, simulateur de drawdown, tarifs, calendrier éco, alertes, Import Lab, plan de trading, réglages, landing |
 | Format | 1920×1080, 30 i/s, ~57 s, FR, deux versions : avec BGM / sans BGM (SFX conservés) |
 | Données | **100 % fictives** : un trader inventé (« Alex Demo »), 5 firmes, 8 comptes, ~150 trades générés par graine fixe. Aucune donnée réelle, aucun appel à Supabase — la base est simulée au niveau réseau pendant la capture (`capture/`) |
-| Chiffres affichés | calculés par `mb-data-web/landing-3d/facts.mjs` : 12 firmes futures · 52 tailles · 36 programmes · 550 lignes de règles · 9 firmes CFD |
+| Chiffres affichés | calculés par `docs/landing-3d/facts.mjs` : 12 firmes futures · 52 tailles · 36 programmes · 550 lignes de règles · 9 firmes CFD |
 
 ## Direction visuelle (étape 1)
 

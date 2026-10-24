@@ -43,7 +43,7 @@ const DOCS_FAQ_SCHEMA = {
       name: 'Which PropFirms are supported by Quantara?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: '10 firms are pre-configured: Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, and FuturesElite. Each firm has auto-filled rules for drawdown, profit targets, and minimum trading days. See /integrations for CSV sync status details.',
+        text: '12 futures firms are pre-configured, from Topstep and Apex Trader Funding to Alpha Futures and FundedNext Futures, plus 9 CFD firms. See /firms for the full list and how trades are imported.',
       },
     },
     {

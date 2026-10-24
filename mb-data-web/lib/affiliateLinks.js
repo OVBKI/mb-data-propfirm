@@ -3,7 +3,6 @@
 // Si une firm n'a pas de lien (null), on cache le bouton "Ouvrir un compte" plutôt que de pointer dans le vide.
 //
 // Convention de naming des clés : doit matcher le `name` utilisé dans :
-//   - app/integrations/page.js (FIRMS[].name)
 //   - components/PropfirmComparator.js (clés de PROPFIRM_RULES + FIRM_META)
 // Quelques firms ont une typo "FuturesELites" en interne — on garde le mapping cohérent.
 

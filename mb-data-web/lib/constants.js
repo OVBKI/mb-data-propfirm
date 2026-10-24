@@ -1523,13 +1523,6 @@ export const FIRM_SUGGESTION_COLORS = {
 }
 export const STATUS_COLORS = { 'Financé': '#1db87a', 'Challenge': '#fac775', 'Échoué': '#e8504a' }
 
-export const PX_FIRMS = {
-  'Topstep': 'topstepx',
-  'Tradeify': 'tradeify',
-  'Take Profit Trader': 'tpt',
-  'My Funded Futures': 'mff',
-}
-
 // Plans génériques pour firmes non listées dans PROPFIRM_RULES
 export const GENERIC_PLANS = ['25k','50k','75k','100k','150k','250k','300k']
 

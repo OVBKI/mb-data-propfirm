@@ -110,6 +110,19 @@ export const WIDGETS = {
     duplicable: false,
     options: {},
   },
+  // Repris de l'ancienne page Analytics (fusionnée dans l'onglet Performance).
+  yearly: {
+    titleKey: 'app.widgets.yearly',
+    minW: 2, defaultW: 2, minH: 1, defaultH: 1,
+    duplicable: false,
+    options: {},
+  },
+  accountCurves: {
+    titleKey: 'app.widgets.accountCurves',
+    minW: 2, defaultW: 4, minH: 1, defaultH: 2,
+    duplicable: false,
+    options: {},
+  },
   ranking: {
     titleKey: 'app.widgets.ranking',
     minW: 1, defaultW: 1, minH: 1, defaultH: 1,
@@ -168,10 +181,12 @@ export const DEFAULT_LAYOUTS = {
     inst('net', 2, 1), inst('equity', 2, 2), inst('health', 2, 2),
     inst('firms', 4, 2), inst('calendar', 4, 2),
     inst('byFirm', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
+    inst('yearly', 2, 1, false), inst('accountCurves', 4, 2, false),
   ],
   performance: [
     inst('equity', 4, 2), inst('net', 2, 1), inst('byFirm', 2, 1),
-    inst('stats', 1, 1), inst('ranking', 1, 1),
+    inst('yearly', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
+    inst('accountCurves', 4, 2),
     inst('insight', 2, 1, false), inst('payouts', 1, 1, false), inst('spent', 1, 1, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('calendar', 4, 2, false),
   ],
@@ -180,12 +195,14 @@ export const DEFAULT_LAYOUTS = {
     inst('ranking', 2, 1), inst('byFirm', 2, 1),
     inst('insight', 2, 1, false), inst('equity', 2, 2, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('stats', 1, 1, false),
+    inst('yearly', 2, 1, false), inst('accountCurves', 4, 2, false),
   ],
   risk: [
     inst('insight', 2, 1), inst('health', 2, 2), inst('firms', 4, 2),
     inst('payouts', 1, 1, false), inst('spent', 1, 1, false), inst('net', 2, 1, false),
     inst('equity', 2, 2, false), inst('calendar', 4, 2, false), inst('byFirm', 2, 1, false),
     inst('stats', 1, 1, false), inst('ranking', 1, 1, false),
+    inst('yearly', 2, 1, false), inst('accountCurves', 4, 2, false),
   ],
 }
 

@@ -7,6 +7,7 @@ import CompareCfdFirmsClient from './CompareCfdFirmsClient'
 import JsonLd, { ORGANIZATION_SCHEMA } from '../../../../components/JsonLd'
 import { CFD_PROPFIRM_RULES } from '../../../../lib/cfdConstants'
 import { getAllCfdFirmPairs, cfdSlugToPair, CFD_FIRM_TAGLINE } from '../../../../lib/cfdSlugs'
+import { isIndexedCfdPair } from '../../../../lib/indexedPairs'
 
 export const revalidate = 3600
 
@@ -26,6 +27,7 @@ export function generateMetadata({ params }) {
 
   return {
     title,
+    ...(isIndexedCfdPair(params.pair) ? {} : { robots: { index: false, follow: true } }),
     description,
     alternates: { canonical },
     openGraph: {

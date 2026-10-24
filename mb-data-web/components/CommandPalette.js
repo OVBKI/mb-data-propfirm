@@ -13,7 +13,7 @@ import { useDialog } from './useDialog'
 // second jeu : deux listes de traductions finiraient par diverger.
 const PAGES = [
   { href: '/app/dashboard', key: 'app.sidebar.dashboard' },
-  { href: '/app/analytics', key: 'app.sidebar.analytics' },
+  { href: '/app/dashboard?section=performance', key: 'app.sidebar.analytics' },
   { href: '/app/journal',   key: 'app.sidebar.journalManuel' },
   { href: '/app/trades',    key: 'app.sidebar.trades' },
   { href: '/app/heatmaps',  key: 'app.sidebar.heatmaps' },
@@ -22,7 +22,6 @@ const PAGES = [
   { href: '/app/myrules',   key: 'app.sidebar.myrules' },
   { href: '/app/rules',     key: 'app.sidebar.rules' },
   { href: '/app/alerts',    key: 'app.sidebar.alerts' },
-  { href: '/app/groups',    key: 'app.sidebar.groups' },
   { href: '/app/settings',  key: 'app.sidebar.settings' },
 ]
 

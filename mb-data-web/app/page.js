@@ -34,7 +34,7 @@ function LandingFallback() {
           <a href="/compare" style={{ color: '#9098b0', textDecoration: 'none' }}>Comparateur</a>
           <a href="/pricing" style={{ color: '#9098b0', textDecoration: 'none' }}>Tarifs</a>
           <a href="/docs" style={{ color: '#9098b0', textDecoration: 'none' }}>Docs</a>
-          <a href="/integrations" style={{ color: '#9098b0', textDecoration: 'none' }}>Intégrations</a>
+          <a href="/firms" style={{ color: '#9098b0', textDecoration: 'none' }}>PropFirms</a>
           <a href="/demo" style={{ color: '#9098b0', textDecoration: 'none' }}>Demo</a>
         </nav>
       </header>
@@ -92,7 +92,7 @@ function LandingFallback() {
             <li>Calendrier PnL mensuel heatmap</li>
             <li>Calendrier économique intégré</li>
             <li>Alertes drawdown par push notification</li>
-            <li><a href="/integrations" style={{ color: '#4d8fff', textDecoration: 'none' }}>Voir toutes les intégrations</a></li>
+            <li><a href="/firms#import" style={{ color: '#4d8fff', textDecoration: 'none' }}>Comment importer tes trades</a></li>
           </ul>
         </section>
       </main>

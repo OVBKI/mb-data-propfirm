@@ -14,6 +14,7 @@ import {
   getAllFirmPairs,
   pickComparisonPlan,
 } from '../../../lib/firmSlugs'
+import { isIndexedFuturesPair } from '../../../lib/indexedPairs'
 
 export const revalidate = 3600
 
@@ -29,12 +30,14 @@ export function generateMetadata({ params }) {
   const { firmA, firmB } = pair
   const canonical = `https://quantara.tech/compare/${params.pair}`
   const title = `${firmA} vs ${firmB} — Comparatif PropFirm 2026 | Quantara`
-  const description = `${firmA} vs ${firmB} : drawdown, profit split, payouts, prix, règles. Comparatif complet vérifié mai 2026 pour choisir ta PropFirm futures.`
+  const description = `${firmA} vs ${firmB} : drawdown, profit split, payouts, prix, règles, programme par programme, pour choisir ta PropFirm futures.`
 
   return {
     title,
     description,
     alternates: { canonical },
+    // Hors des grandes firmes : page servie mais non indexée (lib/indexedPairs.js).
+    ...(isIndexedFuturesPair(params.pair) ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       title: `${firmA} vs ${firmB} — Comparatif 2026`,
       description,

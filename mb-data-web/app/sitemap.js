@@ -2,6 +2,7 @@
 // Servi automatiquement à https://quantara.tech/sitemap.xml
 // À updater à chaque nouvelle page indexable ajoutée.
 
+import { isIndexedFuturesPair, isIndexedCfdPair } from '../lib/indexedPairs'
 import { getAllFirmSlugs, getAllFirmPairs } from '../lib/firmSlugs'
 import { getAllGuideSlugs, GUIDES } from '../lib/guides'
 import { getAllCfdSlugs, getAllCfdFirmPairs } from '../lib/cfdSlugs'
@@ -34,7 +35,8 @@ export default function sitemap() {
   ]
 
   // Phase 3.2 : une page /compare/[firmA]-vs-[firmB] par paire de firmes (n choose 2)
-  const compareFirmPages = getAllFirmPairs().map(({ slug }) => ({
+  // Seules les paires entre grandes firmes sont indexées (lib/indexedPairs.js).
+  const compareFirmPages = getAllFirmPairs().filter(({ slug }) => isIndexedFuturesPair(slug)).map(({ slug }) => ({
     url: `${BASE_URL}/compare/${slug}`,
     lastModified: now,
     changeFrequency: 'monthly',
@@ -72,7 +74,7 @@ export default function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.8,
     })),
-    ...getAllCfdFirmPairs().map(({ slug }) => ({
+    ...getAllCfdFirmPairs().filter(({ slug }) => isIndexedCfdPair(slug)).map(({ slug }) => ({
       url: `${BASE_URL}/cfd/compare/${slug}`,
       lastModified: now,
       changeFrequency: 'monthly',
@@ -105,12 +107,6 @@ export default function sitemap() {
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/integrations`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.6,
     },
     {
       url: `${BASE_URL}/pricing`,

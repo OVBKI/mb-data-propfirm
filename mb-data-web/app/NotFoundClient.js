@@ -82,7 +82,7 @@ export default function NotFoundClient() {
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/pricing" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkPricing')}</Link>
-            <Link href="/integrations" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkIntegrations')}</Link>
+            <Link href="/firms" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkIntegrations')}</Link>
             <Link href="/docs" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkDocs')}</Link>
             <Link href="/security" style={{ color: 'var(--text2)', textDecoration: 'none' }}>{t('errorPages.linkSecurity')}</Link>
           </div>

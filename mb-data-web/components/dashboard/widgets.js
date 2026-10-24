@@ -12,23 +12,26 @@
 
 import { useMemo } from 'react'
 import { useT, useLanguage } from '../LanguageProvider'
-import { maxDrawdown } from '../../lib/constants'
+import { drawdownMargin, maxDrawdownFor } from '../../lib/drawdownHealth'
+import EquityOverlayChart from '../EquityOverlayChart'
 
 // Nombre de mois couverts par chaque valeur de l'option « période ». `all` est
 // borné : au-delà, l'axe devient illisible et la requête ne rapporte plus rien.
 const RANGE_MONTHS = { '3m': 3, '7m': 7, '12m': 12, all: 36 }
 const DEFAULT_RANGE = '7m'
 
-// Marge de drawdown restante d'un compte, en fraction de son allowance.
-// Renvoie null quand la balance ou le plancher manquent — on ne devine pas.
-function drawdownRoom(account, firmName) {
-  const balance = account.balance
-  const floor = account.dd_floor
-  const custom = account.custom_drawdown != null && account.custom_drawdown > 0
-    ? Number(account.custom_drawdown) : null
-  const maxDD = custom ?? maxDrawdown(firmName, account.plan_size, account.program)
-  if (balance == null || floor == null || !(maxDD > 0)) return null
-  return Math.min(1, Math.max(0, (balance - floor) / maxDD))
+// Marge de drawdown restante d'un compte, en fraction de son allowance. Même
+// calcul que la page Santé (lib/drawdownHealth) : solde et plancher saisis s'ils
+// existent, sinon recalculés à partir des trades. Avant, le widget ne lisait que
+// les valeurs saisies — « pas de données » ici, une jauge sur la page Santé.
+// Renvoie null tant que les trades ne sont pas chargés, ou sans drawdown connu.
+function drawdownRoom(account, firmName, tradeStats) {
+  if (!(maxDrawdownFor(account, firmName) > 0)) return null
+  const hasManual = account.balance != null && account.dd_floor != null
+  if (!hasManual && !tradeStats) return null
+  const m = drawdownMargin(account, firmName, tradeStats?.[account.id])
+  if (!m) return null
+  return Math.min(1, Math.max(0, m.roomPct))
 }
 
 function roomTone(pct) {
@@ -90,7 +93,7 @@ function smoothPath(values, w, h, pad = 2) {
 // ============================================================================
 // Le calcul partagé
 // ============================================================================
-export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, totalSpentForAccount }) {
+export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, totalSpentForAccount, tradeStats }) {
   const t = useT()
 
   // Une série par période disponible. Les calculer toutes ici coûte un seul
@@ -112,7 +115,7 @@ export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, t
     for (const f of firms) {
       for (const a of f.accounts || []) {
         if (a.status === 'Échoué') continue
-        const pct = drawdownRoom(a, f.name)
+        const pct = drawdownRoom(a, f.name, tradeStats)
         if (pct == null) continue
         rows.push({ id: a.id, firmId: f.id, firm: f.name, account: a, pct })
       }
@@ -120,7 +123,7 @@ export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, t
     // On ne tronque pas ici : l'instance décide combien de lignes afficher et
     // dans quel ordre. Trier par risque reste le défaut le plus utile.
     return rows.sort((x, y) => x.pct - y.pct)
-  }, [firms])
+  }, [firms, tradeStats])
 
   // Ce que l'utilisateur devrait faire maintenant, classé par urgence : un compte
   // au bord du breach passe avant un payout à demander.
@@ -130,7 +133,7 @@ export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, t
     for (const f of firms) {
       for (const a of f.accounts || []) {
         if (a.status === 'Échoué') continue
-        const pct = drawdownRoom(a, f.name)
+        const pct = drawdownRoom(a, f.name, tradeStats)
         if (pct != null && pct < 0.2) atRisk.push({ firm: f.name, a, firmId: f.id })
         if (a.status === 'Financé' && a.payout_target > 0) {
           const net = totalPayoutsEUR(a) - totalSpentForAccount(a)
@@ -157,9 +160,35 @@ export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, t
       body: t('app.hero.calmBody').replace('{n}', firms.length),
       cta: null, firmId: null,
     }
-  }, [firms, accts.length, t, totalPayoutsEUR, totalSpentForAccount])
+  }, [firms, accts.length, t, totalPayoutsEUR, totalSpentForAccount, tradeStats])
 
-  return { series, health, insight }
+  // Bilan par année civile, sur tout l'historique : mêmes règles de comptage que
+  // les séries mensuelles (prix, chaque échéance d'un abonnement, activation,
+  // payouts). Repris de l'ancienne page Analytics.
+  const yearly = useMemo(() => {
+    const by = {}
+    const add = (dateStr, field, amount, currency) => {
+      if (!dateStr) return
+      const y = String(dateStr).slice(0, 4)
+      if (!by[y]) by[y] = { year: y, spent: 0, payout: 0 }
+      by[y][field] += toEUR(amount, currency, rates)
+    }
+    for (const f of firms) {
+      for (const a of f.accounts || []) {
+        const months = a.payment_mode === 'monthly' ? (a.months_count || 1) : 1
+        for (let m = 0; m < months; m++) {
+          const d = new Date(a.buy_date)
+          d.setMonth(d.getMonth() + m)
+          if (!isNaN(d)) add(d.toISOString().slice(0, 10), 'spent', a.spent, a.currency)
+        }
+        if (a.activation_fee > 0) add(a.activation_date, 'spent', a.activation_fee, a.currency)
+        for (const p of a.payouts || []) add(p.date, 'payout', p.amount, a.currency)
+      }
+    }
+    return Object.values(by).sort((x, y) => x.year.localeCompare(y.year))
+  }, [firms, toEUR, rates])
+
+  return { series, health, insight, yearly }
 }
 
 const cardOf = (S) => ({ ...S.card, padding: '22px 24px', minWidth: 0, height: '100%' })
@@ -485,5 +514,71 @@ function HeroArt({ tone, accent }) {
               strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
       )}
     </svg>
+  )
+}
+
+// Bilan par année : dépenses, payouts et net, en barres. Une barre par série et
+// par année, toujours partant de zéro (une base décalée escamote les petites
+// barres). Les montants négatifs du net descendent sous l'axe.
+export function YearlyWidget({ instance, yearly, money, S }) {
+  const t = useT()
+  const rows = yearly || []
+  const max = Math.max(1, ...rows.flatMap(r => [r.spent, r.payout, Math.abs(r.payout - r.spent)]))
+  const hasNeg = rows.some(r => r.payout - r.spent < 0)
+  const H = 150, top = 10, base = hasNeg ? top + H * 0.7 : top + H
+  const scale = (hasNeg ? H * 0.7 : H) / max
+  const W = 560, padX = 16, groupW = rows.length ? (W - padX * 2) / rows.length : W
+  const barW = Math.min(34, groupW / 4)
+  const series = [
+    { key: 'spent', color: 'var(--red)', label: t('app.hero.legendSpent'), v: r => r.spent },
+    { key: 'payout', color: 'var(--green)', label: t('app.hero.legendPayouts'), v: r => r.payout },
+    { key: 'net', color: 'var(--blue)', label: t('app.widgets.legendNet'), v: r => r.payout - r.spent },
+  ]
+  return (
+    <div style={cardOf(S)}>
+      <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{titleOf(t, instance, 'app.widgets.yearly')}</h2>
+      {rows.length === 0 ? (
+        <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 12 }}>{t('app.widgets.yearlyEmpty')}</p>
+      ) : (
+        <svg viewBox={`0 0 ${W} ${top + H + 34}`} style={{ display: 'block', width: '100%', height: 'auto', marginTop: 16 }}
+             role="img" aria-label={t('app.widgets.yearly')}>
+          <line x1={padX} x2={W - padX} y1={base} y2={base} stroke="var(--chart-grid)" />
+          {rows.map((r, gi) => {
+            const cx = padX + groupW * gi + groupW / 2
+            return (
+              <g key={r.year}>
+                {series.map((sr, si) => {
+                  const v = sr.v(r), h = Math.abs(v) * scale
+                  const x = cx + (si - 1) * (barW + 4) - barW / 2
+                  return (
+                    <rect key={sr.key} x={x} y={v >= 0 ? base - h : base} width={barW} height={Math.max(h, 1)} rx="3" fill={sr.color}>
+                      <title>{`${r.year} · ${sr.label} : ${money(v)}`}</title>
+                    </rect>
+                  )
+                })}
+                <text x={cx} y={top + H + 26} fontSize="11" textAnchor="middle" fill="var(--text3)" fontFamily="var(--font-mono), monospace">{r.year}</text>
+              </g>
+            )
+          })}
+        </svg>
+      )}
+      <div style={{ display: 'flex', gap: 18, justifyContent: 'center', marginTop: 10, fontSize: 12.5, color: 'var(--text2)', flexWrap: 'wrap' }}>
+        {series.map(sr => (
+          <span key={sr.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i style={{ width: 10, height: 10, borderRadius: 3, background: sr.color }} />{sr.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Courbes d'equity par compte, superposées, à partir des trades du journal.
+// C'était le dernier bloc propre à l'ancienne page Analytics.
+export function AccountCurvesWidget({ firms, user, S }) {
+  return (
+    <div style={{ ...cardOf(S), padding: 0, overflow: 'hidden' }}>
+      <EquityOverlayChart firms={firms} user={user} />
+    </div>
   )
 }

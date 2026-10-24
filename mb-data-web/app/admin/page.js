@@ -2,6 +2,7 @@
 // Admin Dashboard — vue d'ensemble des stats du site.
 // Affiche les KPIs principaux et l'activité récente.
 
+import StatsPanel from './StatsPanel'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 
@@ -261,6 +262,7 @@ export default function AdminDashboardPage() {
         💡 <strong style={{ color: C.text2 }}>Auto-refresh</strong> : recharge la page pour des stats à jour.
         Pour des stats temps réel, configure Supabase Realtime sur les tables concernées.
       </div>
+      <StatsPanel />
     </div>
   )
 }

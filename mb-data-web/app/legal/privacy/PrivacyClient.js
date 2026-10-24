@@ -68,7 +68,7 @@ Pas de soft-delete : c'est une suppression dure.`,
     body: `En tant qu'utilisateur EU, tu disposes des droits suivants — exerçables par email à contact@quantara.tech (réponse sous 30 jours max) :
 
 • **Droit d'accès** : recevoir une copie de toutes tes données (export JSON/CSV).
-• **Droit de rectification** : corriger toute donnée inexacte (modifiable directement dans /app/profile pour la plupart).
+• **Droit de rectification** : corriger toute donnée inexacte (modifiable directement dans Réglages pour la plupart).
 • **Droit à l'effacement** ("droit à l'oubli") : suppression complète de ton compte et données associées.
 • **Droit à la portabilité** : recevoir tes données dans un format structuré (JSON/CSV) pour les migrer ailleurs.
 • **Droit d'opposition** : t'opposer à un traitement spécifique (ex: notifications).
@@ -163,7 +163,7 @@ No soft-delete: it's a hard delete.`,
     body: `As an EU user, you have the following rights — exercisable by email to contact@quantara.tech (reply within 30 days max):
 
 • **Right of access**: receive a copy of all your data (JSON/CSV export).
-• **Right of rectification**: correct any inaccurate data (most editable directly in /app/profile).
+• **Right of rectification**: correct any inaccurate data (most editable directly in Settings).
 • **Right to erasure** ("right to be forgotten"): complete deletion of your account and related data.
 • **Right to portability**: receive your data in a structured format (JSON/CSV) to migrate elsewhere.
 • **Right to object**: object to a specific processing (e.g. notifications).

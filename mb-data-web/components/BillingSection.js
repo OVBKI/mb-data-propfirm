@@ -191,9 +191,7 @@ export default function BillingSection({ onError }) {
             <button onClick={() => startCheckout('pro')} disabled={busy === 'pro'} style={btn(true, busy === 'pro')}>
               {busy === 'pro' ? '…' : 'Passer à Pro'}
             </button>
-            <button onClick={() => startCheckout('elite')} disabled={busy === 'elite'} style={btn(false, busy === 'elite')}>
-              {busy === 'elite' ? '…' : 'Passer à Elite'}
-            </button>
+            {/* Elite et Business ont été retirés de l'offre (octobre 2026) : Pro seulement. */}
           </>
         )}
       </div>

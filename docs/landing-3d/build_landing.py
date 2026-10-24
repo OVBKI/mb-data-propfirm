@@ -10,7 +10,7 @@
 import base64, sys, os, mimetypes
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "index.html")
-LOGO = os.path.join(HERE, "..", "public", "quantara-logo.webp")
+LOGO = os.path.join(HERE, "..", "..", "mb-data-web", "public", "quantara-logo.webp")
 POSTER = os.path.join(HERE, "assets", "hero-poster.png")
 VIDEO = os.path.join(HERE, "assets", "hero-loop.webm")
 out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "dist", "index.html")

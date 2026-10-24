@@ -184,8 +184,8 @@ export default function ImportLabPage() {
           subtitle="Importe tes trades depuis un export Rithmic R|Trader Pro. Mode dry-run par défaut, rien n'est écrit en DB tant que tu ne bascules pas en import réel."
           actions={
             <>
-              <Link href="/app/journal-sync" style={{ textDecoration: 'none' }}>
-                <Btn variant="ghost" size="sm">Journal Sync →</Btn>
+              <Link href="/app/journal?origin=import" style={{ textDecoration: 'none' }}>
+                <Btn variant="ghost" size="sm">Trades importés →</Btn>
               </Link>
               <Link href="/app" style={{ textDecoration: 'none' }}>
                 <Btn variant="ghost" size="sm">← Retour app</Btn>
@@ -1909,9 +1909,9 @@ function ResultSection({ result, onReset, kind }) {
         <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
           <Btn variant="ghost" size="sm" onClick={onReset}>↺ Nouveau fichier</Btn>
           {result.ok && !r.dryRun && (
-            <Link href={kind === 'trades' ? '/app/journal-sync' : '/app'} style={{ textDecoration: 'none' }}>
+            <Link href={kind === 'trades' ? '/app/journal?origin=import' : '/app'} style={{ textDecoration: 'none' }}>
               <Btn variant="blue" size="sm">
-                {kind === 'trades' ? '→ Voir dans Journal Sync' : '→ Voir mes comptes'}
+                {kind === 'trades' ? '→ Voir dans le Journal' : '→ Voir mes comptes'}
               </Btn>
             </Link>
           )}

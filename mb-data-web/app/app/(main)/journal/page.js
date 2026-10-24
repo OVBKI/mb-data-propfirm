@@ -1,24 +1,24 @@
 'use client'
-// app/app/journal/page.js — Manual journal (excludes rithmic-synced accounts)
+// app/app/(main)/journal/page.js — LE journal : trades saisis ET importés (CSV), avec
+// un filtre « Origine » dans la page. Il remplace l'ancien découpage en deux vues
+// (journal manuel ici, trades importés dans /app/journal-sync/view).
 import { useApp } from '../AppContext'
 import JournalPage from '../../../../components/JournalPage'
+import ImportedTradesTable from '../../../../components/ImportedTradesTable'
 
 export default function JournalRoute() {
   const { firms, user, getFirmLogo, showToast, reload } = useApp()
-
-  // Filter out rithmic-synced accounts (those go through /app/journal-sync)
-  const manualFirms = firms
-    .map(f => ({ ...f, accounts: (f.accounts || []).filter(a => !a.rithmic_account_id) }))
-    .filter(f => (f.accounts || []).length > 0)
-
   return (
     <JournalPage
-      firms={manualFirms}
+      firms={firms}
       user={user}
       getFirmLogo={getFirmLogo}
       showToast={showToast}
       onReload={reload}
-      hideRithmicEntries={true}
+      renderExtraSection={(ctx) => {
+        const imported = ctx.filteredEntries.filter((e) => e._imported)
+        return imported.length ? <ImportedTradesTable filteredEntries={imported} allAccounts={ctx.allAccounts} /> : null
+      }}
     />
   )
 }

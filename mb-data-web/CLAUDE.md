@@ -28,7 +28,7 @@ pre-launch manual items, as of 2026-07:
 
 The SQL for A/B/D lives in `supabase-schema.sql` (feedback table ~line 447; balance
 columns ~93-102; revoke ~326-329). Still open (non-blocking): Upstash distributed
-rate-limit (M13) on `/api/px-login`; Sentry test; analytics wiring.
+rate-limit (M13); Sentry test; analytics wiring.
 
 ### Notifications — RESOLVED 2026-07 (was fully broken)
 Symptom: no scheduled emails/push (monthly recap, bill reminders, onboarding,
@@ -92,6 +92,9 @@ npm run lint         # ESLint (next/core-web-vitals)
 
 Tests: Vitest (`npm test`) — suites dans `lib/*.test.js`.
 
+Ce qui n'est pas le produit (maquettes, landing 3D, SEO, business plan, audits,
+plan de lancement) vit dans `../docs/` — voir `../docs/README.md`.
+
 ## Architecture
 
 ### Routing (App Router)
@@ -105,20 +108,19 @@ app/
     (main)/
       layout.js          # Auth shell: session check, loads firms/accounts/payouts, sidebar, modals
       AppContext.js       # React context providing { user, firms, rates, profile, S, toast, ... }
-      dashboard/page.js  # Dashboard (firm cards, stats, charts)
-      journal/page.js    # Thin wrapper → JournalPage component
-      trades/page.js     # Thin wrapper → TradesPage component
-      heatmaps/page.js   # Thin wrapper → HeatmapPage component
-      calendar/page.js   # Thin wrapper → CalendarPage component
-      analytics/page.js  # Cumulative/yearly/monthly charts
-      alerts/page.js     # Billing alerts + push notification toggle
-      settings/page.js   # User preferences (email, notifications, language, data)
-      rules/page.js      # PropfirmComparator
-      myrules/page.js    # MyRulesPage
-      groups/page.js     # Trading groups
-      profile/page.js    # User profile editor
-      import-lab/page.js # CSV import lab
-      journal-sync/      # Hub import CSV + journal importé
+      dashboard/page.js  # Dashboard : grille de widgets, 4 onglets (?section=performance…)
+      health/page.js     # Health Center : marge de drawdown, consistance, payouts
+      journal/page.js    # JournalPage — trades saisis ET importés, filtre « Origine »
+      trades/page.js     # TradesPage (Trade Log) — même fenêtre de saisie (TradeEntryModal)
+      heatmaps/page.js   # HeatmapPage
+      calendar/page.js   # CalendarPage (calendrier économique)
+      alerts/page.js     # Alertes (échéances, payouts, challenges)
+      settings/page.js   # Réglages : profil, abonnement, notifications, apparence, données
+      rules/page.js      # Comparateur de règles (cartes)
+      myrules/page.js    # MyRulesPage (plan, setups, règles perso)
+      import-lab/page.js # Import CSV Rithmic
+      groups/page.js     # Groupes — admins seulement (couche sociale masquée, lib/features.js)
+      analytics/, profile/, journal-sync/ # Redirections (fusionnés, voir « Enlevé — 2026-10 »)
   admin/                 # Admin panel (hardcoded email check in lib/admins.js)
   api/                   # API routes (all use verifyAuth/verifyAdmin from lib/apiAuth.js)
 ```
@@ -257,255 +259,6 @@ drawdown-guardian on weekdays, and monthly-recap on the 1st (`cron/daily/route.j
 - Responsive: add the appropriate CSS class from `globals.css` (e.g. `className="heatmap-2col"`) to grids that need to collapse on mobile
 - Touch targets: buttons must be at least 32px (use `minWidth: 32, minHeight: 32`)
 
-## Session History (May 27, 2026)
-
-### LLC Info
-- **Quantara Technologies LLC**, New Mexico (not Texas)
-- 1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, USA
-- All 20+ files updated (legal, footers, emails, schema, docs)
-
-### Semaine 2 — SEO & Discovery (DONE)
-- **Public comparator** at `/compare` (no login required), JSON-LD FAQ+WebPage schemas
-- **JSON-LD global** — Organization + WebSite in root layout.js (all pages)
-- **hreflang** — fr-FR, en-US, x-default
-- Navigation links added to PageHeader, Footer, MeshGradientFooter
-
-### Semaine 3 — Conversion (DONE)
-- **Hero headline rewrite** — "Tous tes comptes PropFirm. Un seul dashboard." (PropFirm-specific)
-- **Social proof** — beta badge + 3 testimonial cards on landing (SocialProof.js)
-- **Ghost Mode** — `/demo` page with realistic dashboard replica, no signup required
-- **Onboarding emails** — 3-email sequence (Day 0/3/7) via Resend, cron at 10 AM UTC
-
-### Semaine 4 — Growth Engine (DONE)
-- **Drawdown simulator** — `/tools/drawdown-simulator`, interactive EOD/Intraday calculator
-- **Referral program** — API `/api/referral`, unique codes (QT-XXXXXX), crypto.randomBytes
-- **Drawdown Guardian** — push alert cron Mon-Fri 2:30 PM UTC for accounts below 70%
-- **Compare pages** — `/compare/quantara-vs-tradervue`, `/compare/quantara-vs-excel`
-- **ComparisonPage** reusable component for all vs pages
-
-### Audit v1 — Security fixes (DONE)
-- Build crash: moved createClient() from module scope into handlers (3 routes)
-- Security: onboarding email forced to auth.user.email (was accepting arbitrary email)
-- Security: CRON_SECRET undefined bypass fixed (2 cron routes)
-- Security: XSS in email templates fixed (escapeHtml on username)
-- Security: Math.random → crypto.randomBytes for referral codes
-- Crash: try/catch on request.json() in referral + onboarding routes
-- SEO: llms.txt updated with correct LLC + all new page URLs
-
-### Audit v2 — 6-agent deep audit (DONE)
-Scores: SEO 38/100, Architecture 5.5/10, Marketing 6/10, i18n 5/10, Accessibility 3/10
-
-### Phase 0 — Launch Plan executed (DONE)
-**P0.1 Auth + CTAs (FIXED):**
-- Created `/auth` route (page.js + AuthClient.js) — no more 404
-- AuthPage accepts `initialMode` prop, reads `?mode=signup` from URL
-- 10 signup CTAs changed from `/app` → `/auth?mode=signup`
-- Login buttons ("Se connecter") kept at `/app`
-
-**P0.2 SEO quick wins (FIXED):**
-- SSR fallback enriched (app/page.js LandingFallback) — 300+ words + internal links
-- Canonical URLs added to 6 pages (security, integrations, contact, legal/*)
-- OG + Twitter cards added to 9 pages
-- FAQPage JSON-LD added to /docs
-- H1 pollution fixed in 4 landing mockups (h1 → div)
-
-**P0.3 Security (FIXED):**
-- Rate limiting added to 5 routes (referral, onboarding, export, push/subscribe, push/unsubscribe)
-- CSP unsafe-eval made dev-only in next.config.js
-- Push routes refactored to use verifyAuth()
-- Admin layout uses isAdmin() (case-insensitive)
-
-**P0.4 Architecture (FIXED):**
-- Dead dep removed (react-chartjs-2) — lenis kept (used via dynamic import)
-- Nested selects in loadFirms(): `firms.select('*, accounts(*, payouts(*)')` — 1 query instead of 3
-- Exchange rate caching (30 min TTL module-scope)
-- ISR revalidate=3600 on 6 static public pages
-
-**P0.5 Accessibility (FIXED):**
-- :focus-visible styles added in globals.css
-- Skip-to-content link in root layout
-- --text3 contrast increased #565e78 → #7b839b (4.5:1 ratio, 36 files)
-- Dynamic `<html lang>` via LanguageProvider (already was implemented)
-
-### Landing page nav (FIXED)
-- Added 4 nav links to landing top bar: Comparateur, Simulateur DD, Tarifs, Démo
-- Hidden on mobile (< 768px)
-
-### Demo page rebuilt 3x (FINAL VERSION)
-- Exact replica of real dashboard with real PropFirm logos (getFirmLogo)
-- Sidebar: 4 sections (Vue d'ensemble, Mes trades, PropFirms, Communauté), same icons as real
-- 5 stat cards, firm cards with logos/ROI/accounts/badges
-- Full calendar with events (achats/payouts per day), monthly stats, right panel (day detail + transactions récentes)
-- 3 bottom cards (par firme chart, statistiques, par firme ranking)
-- Badge colors: Challenge=amber, Funded=green, Failed=red, Diplômes=blue with border
-- PageHeader + Footer, responsive
-
-**Supabase migrations applied by user:**
-- profiles.onboarding_emails_sent (integer, default 0)
-- profiles.referral_code (text, unique)
-- referrals table (referrer_id, referred_id, referral_code)
-- propfirm_rules_overrides table (firm_name, rule_key, plan, value)
-- waitlist table (email, plan, ip_address)
-
-## What's LEFT to do (Phase 1-5 of LAUNCH_PLAN.md)
-
-### Phase 1 — Beta privée (NEXT — Weeks 2-3)
-- [ ] E2E test complet (signup, onboarding, all features, mobile, Safari)
-- [ ] Email deliverability test (mail-tester.com ≥ 9/10)
-- [ ] Supabase RLS audit (2 test accounts, verify no data leaks)
-- [ ] Setup analytics (PostHog or Plausible)
-- [ ] Recruit 10-20 beta testers (Discord trading FR, Twitter, Reddit)
-- [ ] Setup Discord server (6 channels)
-- [ ] Build quick features: Drawdown Health Dashboard, Position Size Calculator
-
-### Phase 2 — Launch public (Week 4)
-- [ ] Polish based on beta feedback
-- [ ] Marketing assets (screenshot HD, demo video 60-90s, 3 Twitter visuals)
-- [ ] First 5 SEO pages (3 firms + topstep-vs-apex + trailing-drawdown guide)
-- [ ] Launch day: Product Hunt, BetaList, Indie Hackers, HN, Reddit
-
-### Phase 3 — SEO & Content (Weeks 5-8)
-- [x] **Phase 3.1 — `/firms/[slug]` template + 11 firm pages from PROPFIRM_RULES** ✅
-  - `/firms` index + `/firms/[slug]` SSG (generateStaticParams pre-renders all 11)
-  - Slugs: topstep, apex-trader-funding, bulenox, lucid-trading, tradeify,
-    take-profit-trader, my-funded-futures, phidias-propfirm,
-    funded-futures-network, futureselites, alpha-futures
-  - `lib/firmSlugs.js` — editorial layer (FIRM_META: tagline, 200-300w intro,
-    keyFacts, ddType, splits, platform, country, founded, website, FAQs)
-    separate from PROPFIRM_RULES factual data
-  - JSON-LD: Product + BreadcrumbList + FAQPage per firm
-  - Rules grouped by category via `categorizeRule()` (drawdown, profit,
-    trading, contracts, pricing, payouts, multi)
-  - Plans selector → per-plan rule detail
-  - Sitemap updated (+12 URLs, priority 0.9 / 0.85)
-- [x] **Phase 3.2 — `/compare/[pair]` template + 55 firm-vs-firm pages** ✅ (commit cfcff1f)
-  - SSG dynamic route, C(11,2) = 55 pairs from PROPFIRM_RULES
-  - Slug pattern : alphabetical, e.g. `apex-trader-funding-vs-topstep`
-  - Existing `/compare/quantara-vs-*` routes take precedence (Next.js routing)
-  - Per page: hero, dual firm cards, 14-row comparison table, verdict, CTAs
-  - JSON-LD: WebPage + BreadcrumbList + ItemList
-  - Cross-linking: `/firms/[slug]` pages now link to all firm-vs-firm pages
-  - Sitemap: +55 URLs (priority 0.75)
-- [x] **Phase 3.3 — `/guides/[slug]` infrastructure + 5 educational guides** ✅ (commit 4304156)
-  - `/guides` index + `/guides/[slug]` SSG template
-  - 5 initial guides ~1000-1500 words each:
-    trailing-drawdown, eod-vs-intraday-drawdown, consistency-rule,
-    comment-passer-evaluation-topstep, payout-methods-propfirm
-  - `lib/guides.js` — GUIDES object with sections + faqs structure
-  - JSON-LD: Article + BreadcrumbList + FAQPage
-  - Internal linking: guides ↔ firms ↔ other guides
-  - Sitemap: +6 URLs (1 index + 5 guides, priority 0.8-0.85)
-- [ ] Create blog infrastructure (deferred until first 10 articles ready)
-- [x] **Phase 3.4 — Features Sprint 2: Health Center** ✅ (commit 0aeac4a)
-  - New route `/app/health` with 3 live in-app sections:
-    - Drawdown Health (visual fuel gauge per account)
-    - Consistency Monitor (best day / total ratio vs firm threshold)
-    - Payout Pipeline (4-stage kanban Setup → Building → Eligible → Received)
-  - 3 components in `components/health/`
-  - Sidebar link added under "Vue d'ensemble", i18n FR/EN
-  - No DB schema change (uses existing balance/dd_floor/payout_target fields)
-- [x] **Phase 3.5 — Rithmic Live Sync (service Python)** ❌ **RETIRÉ 2026-08** (voir « Synchronisation broker — retirée »)
-- [ ] Backlinks: directory submissions, YouTuber outreach
-
-**Phase 3 totals:**
-- SEO pages: 1 firms index + 11 firm pages + 55 firm-vs-firm + 1 guides index + 5 guides = **73 pages**
-- In-app features: Health Center (Drawdown Health + Consistency Monitor + Payout Pipeline) = **3 new features**
-
-### Phase 4 — Monetization (Weeks 9-10) — TO DO AT THE END
-**User decision:** Postpone access control implementation until the rest of the site is finished.
-Full architecture documented but NOT yet coded. When ready, build in this order:
-- [ ] Get EIN from IRS
-- [ ] Open Mercury bank account
-- [ ] Add Supabase columns: profiles.plan, plan_status, plan_expires_at, stripe_customer_id, stripe_subscription_id, beta_grandfather, plan_started_at
-- [ ] Create lib/planLimits.js (single source of truth for all tier limits)
-- [ ] Create <RequirePlan> component for UI gating
-- [ ] Server-side enforcement on firms/accounts/trades creation routes (return 402 PLAN_LIMIT_REACHED)
-- [ ] Setup Stripe (account, products, webhook secret)
-- [ ] Create /api/stripe/checkout, /api/stripe/webhook (with idempotency), /api/stripe/portal
-- [ ] Lifetime spot counter check before checkout (max 100)
-- [ ] Settings page: "Mon abonnement" section with Stripe portal link
-- [ ] Grandfather all beta users (SET beta_grandfather = true WHERE created_at < launch_date)
-- [ ] Launch Pro tier + Lifetime promo
-- [ ] Communication email "Pro est dispo, -50% à vie pour toi"
-
-**Pricing tiers (DONE in i18n, READY for implementation):**
-- Free: 2 firms, 100 trades/mo
-- Pro: €19/mo or €149/yr (-35%) — unlimited + API sync + Drawdown Guardian + PDF
-- Elite: €39/mo or €299/yr (-36%) — AI Trade Coach + 3 team seats + VIP support
-- Lifetime Founders: €249 one-time (100 spots only) — Pro features for life + Founding badge
-- 30-day money-back guarantee on all paid plans
-
-**Access control architecture (documented, ready to implement):**
-- plan stored in profiles.plan (enum: free/pro/elite/lifetime)
-- Source of truth = Stripe webhook (NOT client-side)
-- All server routes check getPlanLimits(profile) before allowing actions
-- AI Coach excluded from Lifetime (Claude API recurring costs) — add-on €15/mo if needed
-- Beta grandfather: free users from before Pro launch keep unlimited Free features at life
-
-### Phase 5 — Growth (Weeks 11+)
-- [ ] AI Trade Coach (Claude API weekly analysis)
-- [ ] Account Lifecycle Kanban
-- [ ] Anonymous Leaderboard
-- [ ] Social login (Google + Discord OAuth)
-- [ ] Target: MRR $500/mo
-
-## Still-open audit issues
-
-### i18n gaps (P5) — mostly RESOLVED (June 2026)
-- [x] contact/page.js, not-found.js, error.js — FR/EN (server wrapper + Client child using useT)
-- [x] layout.js drawers/modals/toasts/alerts + 22 motivation messages — FR/EN
-- [x] Tutorial.js (steps + chrome) — FR/EN
-- [x] ComparisonPage chrome — FR/EN (prop-driven marketing copy stays in the calling pages)
-- [x] DemoClient sidebar/status labels + locale-aware calendar — FR/EN
-- [x] DrawdownSimulator status/type labels — FR/EN (eod/intraday logic literals kept)
-- [ ] auth/callback — still FR-only (deferred: auth-critical recovery/reset flow, translate with care)
-
-### Security (P6) — RESOLVED
-- [x] Middleware admin "bypass": the spoofable referer/auth-header check was already removed
-  (commit f297496); the real boundary is per-route verifyAdmin() (genuine Supabase JWT
-  validation + isAdmin + service-role) plus RLS — investigation confirmed LOW severity
-  (at most an inert page shell, no data exfiltration). Optional future hardening: validate
-  the session in middleware via `jose` — but the app uses a localStorage storage adapter, so
-  a naive cookie check risks locking out admins. Not worth it currently.
-- [x] role="dialog" + aria-modal + focus trapping + Escape — shipped via the reusable
-  components/useDialog.js hook on the 6 layout overlays and the 4 component modals
-  (ProfileModal, TradeEntryModal, CertificatesModal, OnboardingModal).
-
-### Architecture (remaining)
-- N+1 billing updates in loadFirms (Supabase RPC needed)
-- Sentry integration (DSN exists, needs wiring)
-- Split layout.js monolith into composable pieces
-- AppContext value is now memoized + trimmed to the consumed set (commit 3db1891), so routed
-  pages no longer re-render on the layout's transient modal/drawer/form/toast state
-
-## Programmatic SEO Opportunity
-
-Data in `lib/constants.js` (1084 lines, 11 firms, 33+ plans) can auto-generate:
-- 11 `/firms/[slug]` pages — ~5000/mo keyword volume
-- 33+ `/firms/[slug]/[plan]` sub-pages — long-tail
-- 55 `/compare/[firmA]-vs-[firmB]` pages — comparison queries
-- **Total: ~99 pages from existing data, ~1 week of work**
-
-## Proposed Features (15, ranked by priority score)
-
-| # | Feature | Score | Difficulty |
-|---|---------|:-----:|:----------:|
-| 1 | **Drawdown Health Dashboard** — visual fuel gauge per account | 30 | Low |
-| 2 | **Consistency Score Monitor** — real-time per-firm formula | 28 | Medium |
-| 3 | **Payout Pipeline Tracker** — Eligible→Requested→Received | 27 | Medium |
-| 4 | **Danger Zone + Trading Pause** — modal at 15% DD + cooldown | 27 | Medium |
-| 5 | **Position Size Calculator** — in trade modal + public tool | 26 | Low |
-| 6 | **Daily Pre-Market Checklist** — integrates MyRules | 26 | Low |
-| 7 | **Account Lifecycle Kanban** — pipeline Challenge→Funded | 25 | Medium |
-| 8 | **Rule Violation Detector** — auto-check after each trade | 25 | Medium |
-| 9 | **PropFirm Cost Simulator** — public tool /tools/cost-simulator | 25 | Low |
-| 10 | **AI Trade Coach** — weekly Claude API analysis after 30+ trades | 24 | High |
-| 11 | **Social Payout Certificate** — shareable image @vercel/og | 24 | Low |
-| 12 | **Weekly Recap Card** — shareable PNG every Sunday | 22 | Low |
-| 13 | **Anonymous Leaderboard** — /leaderboard opt-in rankings | 22 | Medium |
-| 14 | **Trade Replay Timeline** — TradingView Lightweight Charts | 20 | High |
-| 15 | **Cross-Firm Benchmarking** — anonymized percentiles | 20 | Medium |
-
 ## Synchronisation broker — RETIRÉE (2026-08)
 
 Trois tentatives ont existé, aucune n'a fonctionné bout en bout. Toutes ont été
@@ -528,30 +281,15 @@ et leurs tests · les blocs `RITHMIC_*` / `TRADOVATE_*` de `.env.example` · la 
 ### Conservé — et pourquoi
 - `lib/importers/rithmic-pnl.js`, `rithmic-dashboard.js`, `firmDetection.js` : ce sont des
   **parseurs CSV**, pas de la synchronisation. Le nom prête à confusion, le rôle non.
-- `/app/import-lab` (dépôt du CSV) et `/app/journal-sync/view` (lecture des trades importés).
+- `/app/import-lab` (dépôt du CSV). Les trades importés se lisent dans le Journal (filtre « Origine »).
 - Les colonnes `rithmic_*` sur `accounts` : remplies par l'import CSV.
-- Le marqueur `[rithmic:` dans `journal_entries.notes`, sur lequel s'appuient
-  `hideRithmicEntries` / `onlyRithmicEntries` de `JournalPage`.
+- Le marqueur `[rithmic:` dans `journal_entries.notes`, qui distingue un trade importé
+  (filtre « Origine » de `JournalPage`, tableau `ImportedTradesTable`).
 
 ### Un effet de bord corrigé au passage
 `/app/import-lab` refusait de mapper les comptes **financés** : ils étaient censés
 arriver par la synchronisation. Celle-ci n'existant plus, les exclure les aurait laissés
 sans aucune voie d'entrée. Ils sont désormais proposés au mapping comme les autres.
-
-## Pending / Roadmap
-
-- **Sentry** — ✅ CODE DEPLOYED + env vars added in Vercel.
-  Test deferred to pre-launch: `curl "https://quantara.tech/api/sentry-test?secret=$CRON_SECRET"`
-  Should produce an issue in https://quantara-ag.sentry.io/issues/ within 30s.
-  Config: DSN, ORG=quantara-ag, PROJECT=quantara-web, AUTH_TOKEN all set.
-  Note: user should rotate the auth token after first verified test (was shared in chat).
-- **Stripe** — CODE SHIPPED, compte à configurer (voir « Stripe Billing » ci-dessous)
-- **Sync broker** — retirée (voir « Synchronisation broker — RETIRÉE »)
-- **Tests** — no framework yet; use Vitest when adding
-- **SEO content engine** — /firms/[slug], /guides/[slug], /blog/[slug] templates not built
-- **Social login** — Google OAuth + Discord OAuth via Supabase Auth providers
-- **Topstep vs Apex page** — highest-value missing content (2.4k/mo keyword)
-- **LAUNCH_PLAN.md** — detailed 5-phase plan with timelines and go/no-go criteria
 
 ## Stripe Billing / Invoicing / Tax
 
@@ -858,42 +596,6 @@ trou.
 Le glissé-déposé utilise l'API HTML5 native, qui **ne fonctionne pas au doigt**
 sur mobile. Les flèches ‹ › font le même travail au clic et servent aussi de
 chemin clavier accessible.
-
-
-## Shell aligné sur la maquette Abyss — 2026-08
-
-La palette et la grille de widgets étaient en place, mais l'ossature de l'app ne
-ressemblait toujours pas à la maquette. Trois écarts corrigés :
-
-| | Avant | Maintenant |
-|---|---|---|
-| Barre du haut | Marque QUANTARA + actions | **Onglets de section** + recherche ⌘K + thème + cloche |
-| Marque | Barre du haut | **En tête du rail** (`.qt-brand`), comme la maquette |
-| Dashboard | Gros « Bonjour X » + eyebrow | **Pas de titre** — on entre dans les cartes |
-
-Les onglets pointent vers de vraies pages : Vue d'ensemble → `/app/dashboard`,
-Performance → `/app/analytics`, Payouts → `/app/health`, Risque → `/app/alerts`.
-
-### Recherche globale — `components/CommandPalette.js`
-⌘K / Ctrl+K depuis n'importe où. Cherche dans les firmes, les comptes et les
-pages ; ↑ ↓ Entrée, Échap pour fermer. Choisir une firme ouvre son tiroir, un
-compte ouvre le sien, une page navigue.
-
-Le raccourci vit DANS le composant, pas dans le layout : on le monte, le
-raccourci existe. Et la liste des pages réutilise les libellés `app.sidebar.*`
-plutôt que d'en dupliquer un second jeu — deux listes de traductions finiraient
-par diverger.
-
-### Commandes du dashboard
-Le gros en-tête est parti, mais ses commandes restent nécessaires (devise,
-recherche de firme, ajouter une PropFirm). Elles tiennent sur une ligne au-dessus
-de la grille, avec le taux de change à gauche et « Personnaliser » juste en
-dessous. La maquette n'a pas ces contrôles — c'est une maquette, pas une app.
-
-### Responsive
-Sous 900px la barre perd le libellé de recherche, le raccourci et l'export CSV ;
-les onglets et la cloche restent. Le rail replié ne garde que le sigle de la
-marque.
 
 
 ## Ossature reprise de la maquette — 2026-08 (correction)
@@ -1720,7 +1422,7 @@ compte en danger.
 ## Comparateur de règles — passage en CARTES (2026-08)
 
 `/app/rules` n'est plus une table. Quatre pistes ont été maquettées
-(`mb-data-web/maquettes-comparateur.html`, conservé) ; la **piste B** a été
+(`docs/maquettes/comparateur.html`, conservé) ; la **piste B** a été
 retenue : une carte par firme.
 
 | | Avant | Maintenant |
@@ -2740,6 +2442,9 @@ Le bloc est donc porté dans les deux, alimenté par le **même module pur**
 L'en-tête de `TradeEntryModal` dit maintenant la vérité et prévient que toute
 évolution du formulaire doit être portée des deux côtés.
 
+✅ **Dette soldée en octobre 2026** : `JournalPage` utilise désormais `TradeEntryModal`.
+Le paragraphe suivant décrit l'état d'avant.
+
 ⚠️ **La vraie dette reste entière** : deux formulaires de trade coexistent, avec
 deux `saveEntry` quasi identiques. Les fusionner (faire consommer
 `TradeEntryModal` à `JournalPage`) est le correctif de fond — non fait ici pour
@@ -2812,11 +2517,11 @@ avantages du produit.
 
 | Fichier | Rôle |
 |---|---|
-| `landing-3d/index.html` | Le gabarit de la page (placeholders `{{LOGO}}`, `{{HERO_POSTER}}`, `{{HERO_VIDEO}}`) |
-| `landing-3d/build_landing.py` | Assemble la page en UN fichier autonome (data-URI) dans `dist/` |
-| `landing-3d/facts.mjs` | Recalcule les chiffres affichés depuis `lib/constants.js` (`npx vite-node`) |
-| `landing-3d/assets/hero-poster.png` | Image fixe du hero (repli sans vidéo, et affiche avant lecture) |
-| `landing-3d/assets/hero-loop.webm` | La boucle vidéo VP9 **avec alpha**, 150 images, 1280×720 |
+| `../docs/landing-3d/index.html` | Le gabarit de la page (placeholders `{{LOGO}}`, `{{HERO_POSTER}}`, `{{HERO_VIDEO}}`) |
+| `../docs/landing-3d/build_landing.py` | Assemble la page en UN fichier autonome (data-URI) dans `dist/` |
+| `../docs/landing-3d/facts.mjs` | Recalcule les chiffres affichés depuis `lib/constants.js` (`npx vite-node`) |
+| `../docs/landing-3d/assets/hero-poster.png` | Image fixe du hero (repli sans vidéo, et affiche avant lecture) |
+| `../docs/landing-3d/assets/hero-loop.webm` | La boucle vidéo VP9 **avec alpha**, 150 images, 1280×720 |
 | `../mb-data-backdrop/blender/` | `make_mask.py`, `scene.py`, `render_frames.sh` — la scène Blender |
 | `../mb-data-backdrop/src/HeroLoop.jsx` | La composition Remotion qui recompose les couches |
 | `../mb-data-backdrop/render_hero.sh` | Produit le WebM |
@@ -3050,3 +2755,31 @@ select paid_launch from app_flags;                                    -- false
 select column_default from information_schema.columns
  where table_name = 'profiles' and column_name = 'email_optout';      -- false
 ```
+
+
+## Enlevé, fusionné ou masqué — 2026-10
+
+Suite de l'audit d'octobre (`../docs/audit-2026-10.html`, section « À enlever »).
+Rien n'a été supprimé côté données ; les anciennes URL redirigent.
+
+| Avant | Maintenant |
+|---|---|
+| Journal (saisis) + `/app/journal-sync/view` (importés) + hub `/app/journal-sync` | **Un Journal**, filtre « Origine » (`?origin=manual\|import`), tableau `components/ImportedTradesTable.js` sous le calendrier pour les importés. Le hub redirige vers l'Import Lab |
+| Formulaire de trade dupliqué dans `JournalPage` | `TradeEntryModal` partout (Journal et Trade Log) |
+| `/app/analytics` | Redirige vers `/app/dashboard?section=performance`. Ses blocs propres sont devenus des widgets : `yearly` (bilan par année) et `accountCurves` (`EquityOverlayChart`) |
+| Jauge du dashboard (valeurs saisies seulement) ≠ page Santé (recalcul depuis les trades) | Un seul calcul, `lib/drawdownHealth.js` (`drawdownMargin`, `maxDrawdownFor` qui respecte `custom_drawdown`, `fetchTradePnl` paginé) ; hook `lib/hooks/useTradeStats.js` côté dashboard |
+| `/app/profile` + `ProfileModal` + Réglages | Réglages → « Modifier le profil » ouvre `ProfileModal` (via `openProfileEditor` du contexte). Export et suppression : Réglages → Données uniquement. `/app/profile` redirige |
+| Interrupteur push dans Alertes ET Réglages | Réglages seulement ; Alertes renvoie vers Réglages |
+| Admin : accueil + Statistiques + Activité | Statistiques affichées sous l'accueil (`app/admin/StatsPanel.js`) ; `/admin/stats` redirige |
+| Couche sociale (`/u/*`, `/g/*`, abonnés, mur, groupes) | **Masquée** par `lib/features.js` (`FEATURES.social = false`) : pages publiques en 404, entrées de menu et option « profil public » retirées. Groupes accessibles aux admins. Code conservé |
+| `/api/referral` (aucun écran) | 404 tant que `FEATURES.referral` est faux |
+| Offre Free / Pro / Elite / Business | **Free + Pro**. L'API waitlist et Stripe acceptent encore elite/business |
+| `/integrations` | Redirection permanente vers `/firms#import` (section « Comment tes trades arrivent dans Quantara ») |
+| Feuille de route des Docs, pastille « Tous les services opérationnels » | Supprimées |
+| 66 + 36 pages « firme contre firme » indexées | Seules les paires entre grandes firmes sont indexées (`lib/indexedPairs.js` : 10 futures, 6 CFD) ; les autres sont en `noindex, follow` et hors sitemap. Le verdict généré ne prétend plus de « philosophies différentes » quand les deux firmes ont le même drawdown, ni une vérification « mai 2026 » |
+| `/api/px-login`, `/api/onboarding`, `PX_FIRMS` | Supprimés (aucun appelant ; ProjectX réservé à Topstep depuis février 2026) |
+| Clés i18n des pages supprimées | Retirées (FR et EN) |
+| Maquettes, landing 3D, SEO, business, audits dans `mb-data-web/` | Déplacés dans `../docs/` |
+
+⚠️ `components/Counter.js` n'est PAS mort, contrairement à ce que disait l'audit :
+la landing l'utilise (`EquityCurveDemo`). Vérifier les imports avant de supprimer.

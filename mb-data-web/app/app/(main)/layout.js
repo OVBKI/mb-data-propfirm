@@ -9,7 +9,7 @@ import Link from 'next/link'
 import CommandPalette from '../../../components/CommandPalette'
 import { supabase } from '../../../lib/supabase'
 import AuthPage from '../../../components/AuthPage'
-import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS, STATUS_COLORS, PX_FIRMS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, registerCustomFuturesFirms } from '../../../lib/constants'
+import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS, STATUS_COLORS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, registerCustomFuturesFirms } from '../../../lib/constants'
 import { useManagedFuturesFirms } from '../../../lib/managedFirms'
 import AppSidebar from '../../../components/AppSidebar'
 import CertificatesModal from '../../../components/CertificatesModal'
@@ -684,6 +684,9 @@ export default function AppLayout({ children }) {
     // La barre de page (dashboard) porte la recherche globale et le compteur
     // d'alertes : la barre globale n'existe plus, ils passent par le contexte.
     openSearch: () => setSearchOpen(true), alertsBadgeCount,
+    // Fenêtre d'édition du profil : ouverte depuis Réglages, seul endroit qui
+    // modifie le profil depuis la fusion avec /app/profile.
+    openProfileEditor: () => setShowProfileModal(true),
     // Market mode (Futures ⇄ CFD)
     marketMode, setMarketMode, openCfdAdd, openAccountWizard, openNewTrade, openQuickPayout,
     // Helpers
@@ -750,7 +753,6 @@ export default function AppLayout({ children }) {
             currentPage={currentPage}
             currentHref={pathname}
             onAfterNav={() => setMobileNavOpen(false)}
-            onShowProfile={() => setShowProfileModal(true)}
             onShowTutorial={() => setShowTutorial(true)}
             showLaunchTutorial={true}
             showProfileLink={true}
@@ -1049,7 +1051,7 @@ export default function AppLayout({ children }) {
           />
         )}
 
-        {/* ── Profile Modal ── */}
+        {/* ── Profile Modal — ouverte depuis Réglages (openProfileEditor) ── */}
         {showProfileModal && user && (
           <ProfileModal
             user={user}

@@ -12,6 +12,7 @@
 // On affiche : pseudo, display_name, bio, country, trading_styles, instruments,
 // date d'inscription, et stats anonymes (nb de firms / trades publics).
 
+import { FEATURES } from '../../../lib/features'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
@@ -52,6 +53,7 @@ async function fetchPublicProfile(username) {
 
 // === Metadata SEO dynamique ===
 export async function generateMetadata({ params }) {
+  if (!FEATURES.social) return { robots: { index: false, follow: false } }
   const profile = await fetchPublicProfile(params.username)
   if (!profile) {
     return {
@@ -105,6 +107,8 @@ function fmtMonth(iso) {
 
 // === Page principale ===
 export default async function PublicProfilePage({ params }) {
+  // Couche sociale masquée tant qu'elle n'est pas prête (lib/features.js).
+  if (!FEATURES.social) notFound()
   const profile = await fetchPublicProfile(params.username)
   if (!profile) {
     notFound()

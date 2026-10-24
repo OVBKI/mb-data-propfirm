@@ -10,6 +10,7 @@
 // Privacy : tous les groupes sont visibles via URL si on a le code.
 // Les pseudos des membres ne sont affichés que si leur profil est public.
 
+import { FEATURES } from '../../../lib/features'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
@@ -27,6 +28,7 @@ function getAdminClient() {
 }
 
 export async function generateMetadata({ params }) {
+  if (!FEATURES.social) return { robots: { index: false, follow: false } }
   const supabase = getAdminClient()
   if (!supabase) return { title: 'Groupe' }
   const { data: g } = await supabase
@@ -50,6 +52,8 @@ function fmtMonth(iso) {
 }
 
 export default async function GroupPage({ params }) {
+  // Couche sociale masquée tant qu'elle n'est pas prête (lib/features.js).
+  if (!FEATURES.social) notFound()
   const code = String(params.code).toUpperCase()
   const supabase = getAdminClient()
   if (!supabase) notFound()

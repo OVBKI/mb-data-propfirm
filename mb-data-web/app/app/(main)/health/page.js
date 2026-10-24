@@ -6,8 +6,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../AppContext'
 import { supabase } from '../../../../lib/supabase'
-import { maxDrawdown } from '../../../../lib/constants'
-import { computeStatsByAccount, computeDdFloor } from '../../../../lib/drawdownHealth'
+import { computeStatsByAccount, computeDdFloor, fetchTradePnl, maxDrawdownFor } from '../../../../lib/drawdownHealth'
 import DrawdownHealthCard from '../../../../components/health/DrawdownHealthCard'
 import ConsistencyMonitor from '../../../../components/health/ConsistencyMonitor'
 import PayoutPipeline from '../../../../components/health/PayoutPipeline'
@@ -40,25 +39,11 @@ export default function HealthPage() {
     async function load() {
       if (!user) { setTradesLoading(false); return }
       try {
-        // Page par page : PostgREST plafonne une réponse à 1 000 lignes, et un
-        // historique tronqué donnerait un faux solde (même lecture que le cron
-        // drawdown-guardian).
-        const all = []
-        let error = null
-        for (let from = 0; ; from += 1000) {
-          const res = await supabase
-            .from('journal_entries')
-            .select('id, account_id, date, pnl')
-            .eq('user_id', user.id)
-            .order('id')
-            .range(from, from + 999)
-          if (res.error) { error = res.error; break }
-          all.push(...(res.data || []))
-          if (!res.data || res.data.length < 1000) break
-        }
+        // Même lecture paginée que le cron drawdown-guardian (lib/drawdownHealth).
+        const { data: all, error } = await fetchTradePnl(supabase, { userId: user.id })
         if (cancelled) return
         if (error) { setTradesError(error.message || 'Erreur chargement trades'); setTrades([]) }
-        else setTrades(all)
+        else setTrades(all || [])
       } catch (e) {
         if (!cancelled) setTradesError(e.message || 'Erreur réseau')
       } finally {
@@ -133,7 +118,7 @@ export default function HealthPage() {
     let safe = 0, caution = 0, danger = 0, noData = 0
     for (const a of enrichedAccounts) {
       if (a.balance == null || a.dd_floor == null) { noData++; continue }
-      const maxDD = maxDrawdown(a.firmName, a.plan_size, a.program)
+      const maxDD = maxDrawdownFor(a, a.firmName)
       if (!maxDD || maxDD <= 0) { noData++; continue }
       const room = Math.max(0, a.balance - a.dd_floor)
       const pct = Math.min(1, room / maxDD)

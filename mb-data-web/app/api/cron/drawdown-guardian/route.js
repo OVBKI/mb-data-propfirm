@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import webpush from 'web-push'
-import { computeStatsByAccount, drawdownMargin } from '../../../../lib/drawdownHealth'
+import { computeStatsByAccount, drawdownMargin, fetchTradePnl } from '../../../../lib/drawdownHealth'
 
 const THRESHOLD = 0.70
 
@@ -29,31 +29,16 @@ export async function GET(request) {
   // partir des trades, exactement comme la jauge de /app/health (lib/drawdownHealth).
   const { data: accounts, error: accountsError } = await supabase
     .from('accounts')
-    .select('id, plan_size, program, status, dd_type, funded_date, firm:firms(user_id, name)')
+    .select('id, plan_size, program, status, dd_type, funded_date, custom_drawdown, firm:firms(user_id, name)')
     .in('status', ['Challenge', 'Financé', 'Funded'])
     .neq('market', 'cfd')
 
   if (accountsError) return Response.json({ error: 'DB error', detail: accountsError.message }, { status: 500 })
   if (!accounts?.length) return Response.json({ sent: 0, checked: 0 })
 
-  // Trades des comptes surveillés, page par page : PostgREST plafonne une réponse
-  // à 1 000 lignes, et un historique tronqué donnerait un faux solde.
-  const ids = accounts.map((a) => a.id)
-  const trades = []
-  for (let i = 0; i < ids.length; i += 200) {
-    const chunk = ids.slice(i, i + 200)
-    for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabase
-        .from('journal_entries')
-        .select('account_id, date, pnl')
-        .in('account_id', chunk)
-        .order('id')
-        .range(from, from + 999)
-      if (error) return Response.json({ error: 'DB error (trades)', detail: error.message }, { status: 500 })
-      trades.push(...(data || []))
-      if (!data || data.length < 1000) break
-    }
-  }
+  // Trades des comptes surveillés, lus page par page (lib/drawdownHealth).
+  const { data: trades, error: tradesError } = await fetchTradePnl(supabase, { accountIds: accounts.map((a) => a.id) })
+  if (tradesError) return Response.json({ error: 'DB error (trades)', detail: tradesError.message }, { status: 500 })
 
   const accountsById = Object.fromEntries(accounts.map((a) => [a.id, a]))
   const stats = computeStatsByAccount(trades, accountsById)

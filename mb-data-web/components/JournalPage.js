@@ -2,23 +2,17 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { useT, useLanguage } from './LanguageProvider'
+import { useT } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
-import { uploadFile } from '../lib/uploadFile'
 import { TooltipIcon } from './Tooltip'
-// Tags : seul TagSelector est utilisé (dans le modal de saisie). L'affichage
-// des badges + le filtre par tags ont été déplacés vers la page Trade Log
-// (/app?p=trades) pour garder le Journal focalisé sur la vue calendrier.
-import TagSelector from './TagSelector'
+// La saisie et l'édition passent par TradeEntryModal, partagé avec le Trade Log :
+// une seule copie du formulaire (réplication, capture, R-multiple, tags).
+import TradeEntryModal from './TradeEntryModal'
 import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
 import { fmtMoney, todayISO } from '../lib/format'
-import { cardStyle as card, panelStyle as panel, inputStyle as inputS, labelStyle as labelS, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
+import { cardStyle as card, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
 import { useTheme } from './ThemeProvider'
-import { planLimitMessage } from '../lib/planLimits'
-import {
-  replicationTargets, countTargets, allTargetIds, pruneSelection, buildReplicaPayloads,
-} from '../lib/tradeReplication'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
 
@@ -492,15 +486,13 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
 
 // Props :
 //   firms, user, getFirmLogo, showToast, onReload     → comme avant
-//   hideRithmicEntries (bool)   → mode journal manuel : exclut les trades CSV
-//   onlyRithmicEntries (bool)   → mode journal sync : N'AFFICHE QUE les trades CSV
+//   Origine des trades : filtre « Tous / Saisis / Importés » dans la page,
+//   initialisé par ?origin=manual|import (l'ancienne vue journal-sync y redirige).
 //   addTradeHref (string|null)  → si set, remplace le modal d'ajout par un Link vers cette URL
 //   addTradeLabel (string)      → label du bouton (défaut "+ Ajouter trade")
 //   pageEyebrow / pageTitle / pageSubtitleSuffix → personnalisation du header
 export default function JournalPage({
   firms, user, getFirmLogo, showToast, onReload,
-  hideRithmicEntries = false,
-  onlyRithmicEntries = false,
   addTradeHref = null,
   addTradeLabel,
   pageEyebrow,
@@ -509,7 +501,6 @@ export default function JournalPage({
   renderExtraSection = null,  // (ctx) => JSX — appelé avant le footer. ctx = { filteredEntries, decoratedEntries, allAccounts, firms }
 }){
   const t = useT()
-  const { locale } = useLanguage()
   const MONTHS = t('app.journal.monthNames')
   const DAYS = t('app.journal.dayNames')
   const _eyebrow = pageEyebrow || t('app.journal.defaultEyebrow')
@@ -525,28 +516,19 @@ export default function JournalPage({
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
   const [selDay, setSelDay] = useState(null)
 
-  // Modal d'ajout / édition
-  const [entryModal, setEntryModal] = useState(null) // null | { entry?, defaultDate? }
-  const [form, setForm] = useState({
-    accountId:'', date:todayISO(), time:'', pnl:'', instrument:'', side:'', notes:'',
-    entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
-    tags: [],
-    commissions:'', slippage:'',
+  // Fenêtre d'ajout / édition (TradeEntryModal) : null | { entry?, defaultDate?, defaultAccountId? }
+  const [editing, setEditing] = useState(null)
+  // Origine des trades affichés. Un trade importé porte le marqueur [rithmic:…]
+  // dans ses notes (posé par l'Import Lab).
+  const originParams = useSearchParams()
+  const [origin, setOrigin] = useState(() => {
+    const o = originParams?.get('origin')
+    return o === 'manual' || o === 'import' ? o : 'all'
   })
-  const [uploadingScreen, setUploadingScreen] = useState(false)
-  // Comptes sur lesquels répliquer le trade — même mécanique que TradesPage.
-  // ⚠️ Cette page a sa PROPRE copie du formulaire (elle n'utilise pas
-  // TradeEntryModal) : sans ce bloc, la réplication n'existait que sur
-  // /app/trades, c'est-à-dire pas là où on saisit au quotidien.
-  const [replicaIds, setReplicaIds] = useState([])
-  const [replicaOpen, setReplicaOpen] = useState(false)
   // Lightbox pour afficher un screenshot en grand
   const [lightboxUrl, setLightboxUrl] = useState(null)
 
-  // Sémantique dialog accessible (Escape, focus trap, restore focus) — le
-  // lightbox peut s'ouvrir PAR-DESSUS le modal (screenshot du form) : le
-  // dialogStack du hook gère l'empilement.
-  const entryDialogRef = useDialog({ open: !!entryModal, onClose: () => setEntryModal(null) })
+  // Sémantique dialog accessible (Escape, focus trap, restore focus).
   const lightboxRef = useDialog({ open: !!lightboxUrl, onClose: () => setLightboxUrl(null) })
 
   // Tous les comptes plats
@@ -558,20 +540,6 @@ export default function JournalPage({
       firmColor: f.color,
     })))
   },[firms])
-
-  // Cibles de réplication — tout sauf le compte courant et les comptes échoués.
-  const replicaGroups = useMemo(
-    () => replicationTargets(firms, form.accountId, accountLabel),
-    [firms, form.accountId]
-  )
-  // Changer de compte principal peut rendre une case cochée invalide, au pire
-  // la faire pointer sur le compte courant.
-  useEffect(() => {
-    setReplicaIds(prev => {
-      const next = pruneSelection(prev, replicaGroups)
-      return next.length === prev.length ? prev : next
-    })
-  }, [replicaGroups])
 
   // Si le scope sélectionné (firme ou firme:compte) n'existe plus dans les
   // firms courantes (ex: switch de marché Futures ⇄ CFD), reset automatique
@@ -604,18 +572,7 @@ export default function JournalPage({
         setLoadError(error.message || 'Erreur chargement journal')
       }
     } else {
-      // Filtre selon le mode :
-      //   - hideRithmicEntries (manuel) : exclut les trades CSV (marker [rithmic:])
-      //   - onlyRithmicEntries (sync)   : N'INCLUT QUE les trades CSV
-      // Le filtre par comptes visibles est appliqué dans decoratedEntries (useMemo)
-      // pour éviter un refetch SQL à chaque fois que la liste des firms change.
-      let filtered = data || []
-      if (onlyRithmicEntries) {
-        filtered = filtered.filter(e => e.notes && e.notes.includes('[rithmic:'))
-      } else if (hideRithmicEntries) {
-        filtered = filtered.filter(e => !e.notes || !e.notes.includes('[rithmic:'))
-      }
-      setEntries(filtered)
+      setEntries(data || [])
     }
     setLoading(false)
   }
@@ -623,7 +580,7 @@ export default function JournalPage({
   useEffect(()=>{
     if(user?.id) loadEntries()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[user?.id, hideRithmicEntries, onlyRithmicEntries])
+  },[user?.id])
 
   // Décore les entries avec les infos firme/compte
   // FIX BUG : on EXCLUT aussi les entries dont le account_id n'est pas dans les
@@ -642,6 +599,7 @@ export default function JournalPage({
           _firmName: acc?.firmName || 'Compte supprimé',
           _firmColor: acc?.firmColor || 'var(--text3)',
           _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
+          _imported: Boolean(e.notes && e.notes.includes('[rithmic:')),
         }
       })
   },[entries, allAccounts])
@@ -657,6 +615,8 @@ export default function JournalPage({
   // (Le filtre par tags a été déplacé vers la page Trade Log dédiée.)
   const filteredEntries = useMemo(()=>{
     let arr = decoratedEntries
+    if(origin === 'manual') arr = arr.filter(e => !e._imported)
+    else if(origin === 'import') arr = arr.filter(e => e._imported)
     if(scope.includes(':')){
       const [, acctId] = scope.split(':')
       arr = arr.filter(e => e.account_id === acctId)
@@ -673,7 +633,7 @@ export default function JournalPage({
       return true
     })
     return arr
-  },[decoratedEntries, scope, statusFilter, allAccounts])
+  },[decoratedEntries, scope, statusFilter, allAccounts, origin])
 
   // PnL agrégé par jour
   const dailyPnL = useMemo(()=>{
@@ -754,170 +714,16 @@ export default function JournalPage({
   //   - undefined         → pas de pré-remplissage
   //   - une string YYYY-MM-DD → date par défaut, compte = filtre actif (scope)
   //   - un objet { accountId, defaultDate } → pré-remplit explicitement
-  // Si aucun accountId explicite, utilise le compte filtré actif (scope = 'firmId:accountId').
-  // Un trade porte-t-il autre chose que compte + date + P&L ?
-  function entryHasDetails(e){
-    return Boolean(e && (e.instrument || e.side || e.notes || e.screenshot_url ||
-      e.entry_price != null || e.exit_price != null || e.stop_loss != null || e.take_profit != null ||
-      (e.commissions && Number(e.commissions) !== 0) || (e.slippage && Number(e.slippage) !== 0) ||
-      (Array.isArray(e.tags) && e.tags.length)))
-  }
-
   function openNewEntry(opts){
     const isObj = opts && typeof opts === 'object' && !Array.isArray(opts)
     const explicitAcctId = isObj ? opts?.accountId : undefined
     const defaultDate    = isObj ? opts?.defaultDate : (typeof opts === 'string' ? opts : undefined)
     let acctId = explicitAcctId
     if(!acctId && scope.includes(':')) acctId = scope.split(':')[1]
-    if(!acctId) acctId = allAccounts[0]?.id || ''
-    setForm({
-      accountId:acctId, date:defaultDate||todayISO(), time:'',
-      pnl:'', instrument:'', side:'', notes:'',
-      entryPrice:'', exitPrice:'', stopLoss:'', takeProfit:'', screenshotUrl:'',
-      tags: [],
-      commissions:'', slippage:'',
-    })
-    setJDetails(false)
-    // La sélection ne survit jamais à une réouverture : sinon un modal rouvert
-    // écrirait en silence sur des comptes cochés pour un trade précédent.
-    setReplicaIds([]); setReplicaOpen(false)
-    setEntryModal({ defaultDate })
+    setEditing({ defaultDate, defaultAccountId: acctId || undefined })
   }
   function openEditEntry(e){
-    // Extrait HH:MM depuis traded_at (sinon vide → default midi à la save)
-    let timeStr = ''
-    if(e.traded_at){
-      try {
-        const d = new Date(e.traded_at)
-        if(!isNaN(d.getTime())){
-          timeStr = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0')
-        }
-      } catch{}
-    }
-    setForm({
-      accountId:e.account_id, date:e.date, time: timeStr,
-      pnl:String(e.pnl), instrument:e.instrument||'', side:e.side||'', notes:e.notes||'',
-      entryPrice: e.entry_price != null ? String(e.entry_price) : '',
-      exitPrice:  e.exit_price  != null ? String(e.exit_price)  : '',
-      stopLoss:   e.stop_loss   != null ? String(e.stop_loss)   : '',
-      takeProfit: e.take_profit != null ? String(e.take_profit) : '',
-      screenshotUrl: e.screenshot_url || '',
-      tags: Array.isArray(e.tags) ? e.tags : [],
-      commissions: e.commissions != null && Number(e.commissions) !== 0 ? String(e.commissions) : '',
-      slippage:    e.slippage    != null && Number(e.slippage)    !== 0 ? String(e.slippage)    : '',
-    })
-    setJDetails(entryHasDetails(e))
-    setReplicaIds([]); setReplicaOpen(false)
-    setEntryModal({ entry:e })
-  }
-  async function saveEntry(){
-    if(!form.accountId){ showToast?.(t('app.trade.toastSelectAccount')); return }
-    if(!form.date){ showToast?.(t('app.trade.toastDateRequired')); return }
-    if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.(t('app.trade.toastPnlRequired')); return }
-    const numOrNull = (s) => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
-    // traded_at = date + time (default midi si time vide)
-    const timeStr = form.time && /^\d{2}:\d{2}$/.test(form.time) ? `${form.time}:00` : '12:00:00'
-    const payload = {
-      user_id: user.id,
-      account_id: form.accountId,
-      date: form.date,
-      traded_at: `${form.date}T${timeStr}`,
-      pnl: parseFloat(form.pnl),
-      instrument: form.instrument.trim(),
-      side: form.side,
-      notes: form.notes.trim(),
-      entry_price:    numOrNull(form.entryPrice),
-      exit_price:     numOrNull(form.exitPrice),
-      stop_loss:      numOrNull(form.stopLoss),
-      take_profit:    numOrNull(form.takeProfit),
-      screenshot_url: form.screenshotUrl || null,
-      // Tags : array vide → null en DB pour cohérence (évite les '{}' inutiles)
-      tags: Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : null,
-      // Commissions & slippage en montant positif absolu (coûts)
-      commissions: Math.abs(parseFloat(form.commissions) || 0) || 0,
-      slippage:    Math.abs(parseFloat(form.slippage)    || 0) || 0,
-    }
-    let res
-    if(entryModal?.entry){
-      res = await supabase.from('journal_entries').update(payload).eq('id', entryModal.entry.id)
-    } else {
-      // UN SEUL insert, avec un tableau : atomique en Postgres, donc un refus
-      // de quota n'écrit rien plutôt qu'un journal à moitié rempli.
-      res = await supabase.from('journal_entries').insert([payload, ...buildReplicaPayloads(payload, replicaIds)])
-    }
-    if(res.error){
-      console.error('[journal save]', res.error)
-      // Affiche le vrai message Supabase pour diagnostiquer (table manquante, RLS, etc.)
-      // Quota de palier refusé par le trigger Postgres → phrase lisible.
-      const msg = planLimitMessage(res.error, locale)
-        || (res.error.code==='42P01' || /does not exist/i.test(res.error.message||'')
-          ? '⚠ Table journal_entries manquante dans Supabase'
-          : (res.error.message || 'Erreur enregistrement'))
-      showToast?.(msg)
-      return
-    }
-    setEntryModal(null)
-    const n = replicaIds.length + 1
-    showToast?.(
-      entryModal?.entry ? t('app.trade.toastModified')
-        : n > 1 ? t('app.trade.toastReplicated').replace('{n}', n)
-          : t('app.trade.toastAdded')
-    )
-    await loadEntries()
-  }
-
-  // Duplication d'un trade DÉJÀ enregistré. Action distincte de « Enregistrer » :
-  // elle copie ce qui est à l'écran et ne touche pas au trade d'origine.
-  async function duplicateEntryToAccounts(){
-    if(replicaIds.length === 0) return
-    if(!form.date){ showToast?.(t('app.trade.toastDateRequired')); return }
-    if(form.pnl===''||isNaN(parseFloat(form.pnl))){ showToast?.(t('app.trade.toastPnlRequired')); return }
-    const numOrNull = (s) => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
-    const timeStr = form.time && /^\d{2}:\d{2}$/.test(form.time) ? `${form.time}:00` : '12:00:00'
-    const base = {
-      user_id: user.id,
-      account_id: form.accountId,
-      date: form.date,
-      traded_at: `${form.date}T${timeStr}`,
-      pnl: parseFloat(form.pnl),
-      instrument: form.instrument.trim(),
-      side: form.side,
-      notes: form.notes.trim(),
-      entry_price:    numOrNull(form.entryPrice),
-      exit_price:     numOrNull(form.exitPrice),
-      stop_loss:      numOrNull(form.stopLoss),
-      take_profit:    numOrNull(form.takeProfit),
-      screenshot_url: form.screenshotUrl || null,
-      tags: Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : null,
-      commissions: Math.abs(parseFloat(form.commissions) || 0) || 0,
-      slippage:    Math.abs(parseFloat(form.slippage)    || 0) || 0,
-    }
-    const rows = buildReplicaPayloads(base, replicaIds)
-    if(rows.length === 0) return
-    const { error } = await supabase.from('journal_entries').insert(rows)
-    if(error){
-      console.error('[journal duplicate]', error)
-      showToast?.(planLimitMessage(error, locale) || t('app.trade.toastReplicateError'))
-      return
-    }
-    setEntryModal(null)
-    showToast?.(t('app.trade.toastDuplicated').replace('{n}', rows.length))
-    await loadEntries()
-  }
-  // Upload screenshot d'un trade vers Supabase Storage
-  async function handleScreenshotUpload(file){
-    if(!file || !user?.id) return
-    setUploadingScreen(true)
-    const { url, error } = await uploadFile({ bucket: 'trade-screenshots', file, userId: user.id })
-    setUploadingScreen(false)
-    if(error){
-      // Affichage en alert (popup) car les erreurs upload sont critiques et trop longues pour un toast
-      alert(error)
-      showToast?.(t('app.trade.toastUploadFailed'))
-      return
-    }
-    setForm(p => ({ ...p, screenshotUrl: url }))
-    showToast?.(t('app.trade.toastScreenshotAdded'))
+    setEditing({ entry: e })
   }
 
   async function deleteEntry(id){
@@ -984,8 +790,6 @@ export default function JournalPage({
   }
 
   const monthLabel = (Array.isArray(MONTHS) ? MONTHS[calMonth] : MONTHS_FR[calMonth]) + ' ' + calYear
-  // Repli des champs d'enrichissement du formulaire de trade (cf. TradeEntryModal).
-  const [jDetails, setJDetails] = useState(false)
   const noAccounts = allAccounts.length === 0
 
   // « Nouveau trade » depuis le rail ou la palette arrive ici avec ?new=1. On
@@ -1049,20 +853,14 @@ export default function JournalPage({
 
       {noAccounts && (
         <div style={{...card,padding:'40px 24px',marginBottom:'16px',background:'var(--surface2)',borderStyle:'dashed',borderColor:'var(--border2)',textAlign:'center'}}>
-          <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>{onlyRithmicEntries?'⟲':'📔'}</div>
+          <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>📔</div>
           <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'8px'}}>
-            {onlyRithmicEntries ? 'Aucun compte synchronisé' : 'Aucun compte à journaliser'}
+            Aucun compte à journaliser
           </div>
           <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',maxWidth:'460px',margin:'0 auto 20px',lineHeight:1.6}}>
-            {onlyRithmicEntries
-              ? `Importe ton premier CSV Rithmic depuis l'Import Lab. Les comptes créés via l'import apparaîtront ici automatiquement, séparés de tes comptes manuels.`
-              : `Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.`}
+            Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.
           </div>
-          {onlyRithmicEntries ? (
-            <a href="/app/import-lab" style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'var(--text-inverse)',borderRadius:'var(--radius)',textDecoration:'none'}}>→ Aller à l'Import Lab</a>
-          ) : (
             <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'var(--text-inverse)',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
-          )}
         </div>
       )}
 
@@ -1133,6 +931,18 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
                 {k:'Échoué',l:t('app.journal.filterFailed')},
               ].map(s=>(
                 <button key={s.k} onClick={()=>setStatusFilter(s.k)} style={chipBtn(statusFilter===s.k)}>{s.l}</button>
+              ))}
+            </div>
+
+            {/* Origine : saisis à la main ou importés par CSV (même journal) */}
+            <div style={{display:'flex',flexWrap:'wrap',gap:'8px',alignItems:'center'}}>
+              <span style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',minWidth:'68px'}}>{t('app.journal.filterOrigin')}</span>
+              {[
+                {k:'all',l:t('app.journal.originAll')},
+                {k:'manual',l:t('app.journal.originManual')},
+                {k:'import',l:t('app.journal.originImport')},
+              ].map(o=>(
+                <button key={o.k} onClick={()=>setOrigin(o.k)} aria-pressed={origin===o.k} style={chipBtn(origin===o.k)}>{o.l}</button>
               ))}
             </div>
 
@@ -1577,285 +1387,19 @@ create index if not exists journal_entries_date_idx       on journal_entries(dat
         </div>
       )}
 
-      {/* Modal ajout / édition */}
-      {entryModal && (
-        <div onClick={()=>setEntryModal(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}}>
-          <div ref={entryDialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')} className="modal" onClick={e=>e.stopPropagation()} style={{...panel,padding:'28px',width:'560px',maxWidth:'100%',maxHeight:'90vh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,0.5)'}}>
-            <h3 style={{fontSize:'17px',fontWeight:'600',marginBottom:'20px'}}>
-              {entryModal?.entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
-            </h3>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
-              <div style={{gridColumn:'1/-1'}}>
-                <label style={labelS}>{t('app.trade.fieldAccount')}</label>
-                <select value={form.accountId} onChange={e=>setForm(p=>({...p,accountId:e.target.value}))} style={inputS}>
-                  <option value="">{t('app.trade.selectAccount')}</option>
-                  {firms.map(f=>(
-                    <optgroup key={f.id} label={f.name}>
-                      {(f.accounts||[]).filter(a=>a.status!=='Échoué').map(a=>(
-                        <option key={a.id} value={a.id}>
-                          {f.name} · {accountLabel(a)} ({a.status})
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </div>
-              {/* Réplication multi-comptes — masquée s'il n'y a nulle part où
-                  répliquer. Même bloc que TradesPage, alimenté par le même
-                  module pur (lib/tradeReplication.js). */}
-              {countTargets(replicaGroups) > 0 && (
-                <div style={{gridColumn:'1/-1'}}>
-                  <button type="button" onClick={()=>setReplicaOpen(o=>!o)} aria-expanded={replicaOpen}
-                    style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 12px',background:'var(--tint1)',border:'1px solid var(--hairline)',borderRadius:8,color:'var(--text2)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'inherit',textAlign:'left',minHeight:32}}>
-                    <span aria-hidden="true" style={{color:'var(--text3)'}}>{replicaOpen?'\u25BE':'\u25B8'}</span>
-                    <span>{t('app.trade.replicateTitle')}</span>
-                    {replicaIds.length>0 && (
-                      <span style={{marginLeft:'auto',padding:'2px 8px',borderRadius:999,background:'var(--blue-bg)',color:'var(--blue-text)',fontSize:11,fontWeight:600}}>
-                        {t('app.trade.replicateSelected').replace('{n}', replicaIds.length)}
-                      </span>
-                    )}
-                  </button>
-                  {replicaOpen && (
-                    <div style={{marginTop:8,padding:'10px 12px',background:'var(--surface2)',border:'1px solid var(--hairline)',borderRadius:8}}>
-                      <p style={{fontSize:11.5,color:'var(--text3)',margin:'0 0 10px',lineHeight:1.5}}>
-                        {entryModal?.entry ? t('app.trade.replicateHintEdit') : t('app.trade.replicateHint')}
-                      </p>
-                      <div style={{display:'flex',gap:6,marginBottom:10}}>
-                        <button type="button" onClick={()=>setReplicaIds(allTargetIds(replicaGroups))}
-                          style={{...btnGhost,padding:'5px 10px',fontSize:11,minHeight:32}}>{t('app.trade.replicateAll')}</button>
-                        <button type="button" onClick={()=>setReplicaIds([])}
-                          style={{...btnGhost,padding:'5px 10px',fontSize:11,minHeight:32}}>{t('app.trade.replicateNone')}</button>
-                      </div>
-                      <div style={{display:'grid',gap:10,maxHeight:220,overflowY:'auto'}}>
-                        {replicaGroups.map(g => (
-                          <fieldset key={g.firmId} style={{border:0,padding:0,margin:0,minWidth:0}}>
-                            {/* Légende et non titre : deux comptes peuvent porter
-                                le même libellé chez deux firmes différentes. */}
-                            <legend style={{...labelS,marginBottom:6,padding:0}}>{g.firmName}</legend>
-                            {g.accounts.map(a => (
-                              <label key={a.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 4px',cursor:'pointer',fontSize:12.5,color:'var(--text)',minHeight:32}}>
-                                <input type="checkbox" checked={replicaIds.includes(a.id)}
-                                  onChange={()=>setReplicaIds(prev => prev.includes(a.id) ? prev.filter(x=>x!==a.id) : [...prev,a.id])}
-                                  style={{width:15,height:15,accentColor:'var(--blue)',cursor:'pointer'}} />
-                                <span>{a.label}</span>
-                                {a.status && <span style={{color:'var(--text3)',fontSize:11}}>{'\u00B7'} {a.status}</span>}
-                              </label>
-                            ))}
-                          </fieldset>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label style={labelS}>{t('app.trade.fieldDate')} · Heure</label>
-                <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:8}}>
-                  <input type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} style={inputS} />
-                  <input type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))} title="Heure du trade (optionnel) — utilisée pour les heatmaps" style={inputS} />
-                </div>
-              </div>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldPnL')}</label>
-                <input type="number" step="0.01" value={form.pnl} onChange={e=>setForm(p=>({...p,pnl:e.target.value}))} placeholder="ex : 250  ou  -125" style={inputS} autoFocus />
-              </div>
-              {/* Meme decoupage que TradeEntryModal : compte + date + P&L suffisent
-                  a ce qu'un trade existe, le reste est de l'enrichissement. */}
-              <div style={{gridColumn:'1/-1'}}>
-                <button type="button" onClick={()=>setJDetails(d=>!d)} aria-expanded={jDetails}
-                  style={{background:'transparent',border:'none',padding:0,cursor:'pointer',fontFamily:'inherit',fontSize:'12.5px',color:'var(--text3)',display:'flex',alignItems:'center',gap:'6px'}}>
-                  <span aria-hidden="true" style={{transform:jDetails?'rotate(90deg)':'none',transition:'transform .18s'}}>{'\u203A'}</span>
-                  {jDetails ? t('app.trade.hideDetails') : t('app.trade.addDetails')}
-                </button>
-              </div>
-
-              {jDetails && (<>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldInstrument')}</label>
-                <input list="instrSugg" value={form.instrument} onChange={e=>setForm(p=>({...p,instrument:e.target.value}))} placeholder="ES, NQ, MNQ, MES, GC..." style={inputS} />
-                <datalist id="instrSugg">
-                  {['ES','NQ','MNQ','MES','RTY','M2K','YM','MYM','GC','MGC','SI','CL','MCL','NG','6E','6B','6J','BTC','MBT'].map(s=><option key={s} value={s} />)}
-                </datalist>
-              </div>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldSide')}</label>
-                <select value={form.side} onChange={e=>setForm(p=>({...p,side:e.target.value}))} style={inputS}>
-                  <option value="">—</option>
-                  <option value="Long">Long</option>
-                  <option value="Short">Short</option>
-                </select>
-              </div>
-
-              {/* === Détails approfondis (optionnels) === */}
-              <div style={{gridColumn:'1/-1',marginTop:'8px',paddingTop:'16px',borderTop:'1px solid var(--border)'}}>
-                <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>
-                  {t('app.trade.sectionDetails')}
-                </div>
-              </div>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldEntry')}</label>
-                <input type="number" step="0.0001" value={form.entryPrice} onChange={e=>setForm(p=>({...p,entryPrice:e.target.value}))} placeholder="ex : 5430.25" style={inputS} />
-              </div>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldExit')}</label>
-                <input type="number" step="0.0001" value={form.exitPrice} onChange={e=>setForm(p=>({...p,exitPrice:e.target.value}))} placeholder="ex : 5435.50" style={inputS} />
-              </div>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldStop')}</label>
-                <input type="number" step="0.0001" value={form.stopLoss} onChange={e=>setForm(p=>({...p,stopLoss:e.target.value}))} placeholder="ex : 5425.00" style={inputS} />
-              </div>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldTP')}</label>
-                <input type="number" step="0.0001" value={form.takeProfit} onChange={e=>setForm(p=>({...p,takeProfit:e.target.value}))} placeholder="ex : 5440.00" style={inputS} />
-              </div>
-
-              {/* Commissions & Slippage (Phase 4) */}
-              <div>
-                <label style={labelS}>{t('app.trade.fieldCommissions')}</label>
-                <input type="number" step="0.01" min="0" value={form.commissions} onChange={e=>setForm(p=>({...p,commissions:e.target.value}))} placeholder="ex : 5.40" style={inputS} />
-              </div>
-              <div>
-                <label style={labelS}>{t('app.trade.fieldSlippage')}</label>
-                <input type="number" step="0.01" min="0" value={form.slippage} onChange={e=>setForm(p=>({...p,slippage:e.target.value}))} placeholder="ex : 2.50" style={inputS} />
-              </div>
-
-              {/* Aperçu Gross PnL si commissions/slippage renseignés */}
-              {(() => {
-                const comm = Math.abs(parseFloat(form.commissions) || 0)
-                const slip = Math.abs(parseFloat(form.slippage)    || 0)
-                const net  = parseFloat(form.pnl)
-                if ((comm <= 0 && slip <= 0) || !Number.isFinite(net)) return null
-                const gross = net + comm + slip
-                return (
-                  <div style={{gridColumn:'1/-1',padding:'8px 12px',background:'var(--tint1)',border:'1px solid var(--border)',borderRadius:'6px',display:'flex',gap:'14px',flexWrap:'wrap',alignItems:'center',fontSize:'11px',color:'var(--text3)'}}>
-                    <span style={{fontWeight:'700',color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.5px',fontSize:'9px'}}>💵 Décomposition</span>
-                    <span>Gross : <strong style={{color:gross>=0?'var(--green)':'var(--red)'}}>{(gross>=0?'+':'')+gross.toFixed(2)} $</strong></span>
-                    {comm > 0 && <span>− Commissions : <strong style={{color:'var(--red)'}}>{comm.toFixed(2)} $</strong></span>}
-                    {slip > 0 && <span>− Slippage : <strong style={{color:'var(--red)'}}>{slip.toFixed(2)} $</strong></span>}
-                    <span>= Net : <strong style={{color:net>=0?'var(--green)':'var(--red)'}}>{(net>=0?'+':'')+net.toFixed(2)} $</strong></span>
-                  </div>
-                )
-              })()}
-
-              {/* === Aperçu R-multiple & R:R en temps réel === */}
-              {(() => {
-                const r = computeRMultiple({
-                  entry: form.entryPrice, exit: form.exitPrice, stop: form.stopLoss,
-                  side: form.side, pnl: form.pnl,
-                })
-                const rr = computeRiskReward({
-                  entry: form.entryPrice, takeProfit: form.takeProfit, stop: form.stopLoss,
-                  side: form.side, pnl: form.pnl, exit: form.exitPrice,
-                })
-                if (r == null && rr == null) return null
-                return (
-                  <div style={{gridColumn:'1/-1',marginTop:'4px',padding:'10px 14px',background:'var(--blue-bg)',border:'1px solid var(--blue-border)',borderRadius:'8px',display:'flex',gap:'18px',flexWrap:'wrap',alignItems:'center',fontSize:'12px'}}>
-                    <span style={{fontWeight:'700',color:'var(--blue-light)',fontSize:'10px',letterSpacing:'0.5px',textTransform:'uppercase'}}>
-                      📐 Aperçu
-                    </span>
-                    {r != null && (
-                      <span style={{color:'var(--text2)'}}>
-                        R réalisé : <strong style={{color: r>=0?'var(--green)':'var(--red)',fontSize:'13px'}}>{formatR(r)}</strong>
-                      </span>
-                    )}
-                    {rr != null && (
-                      <span style={{color:'var(--text2)'}}>
-                        R:R visé : <strong style={{color: rr>=2?'var(--green)':rr>=1?'var(--amber-text)':'var(--red)',fontSize:'13px'}}>{formatRR(rr)}</strong>
-                        {rr < 1 && <span style={{marginLeft:'6px',fontSize:'10px',color:'var(--red)'}}>⚠ setup risqué (R:R &lt; 1)</span>}
-                        {rr >= 2 && <span style={{marginLeft:'6px',fontSize:'10px',color:'var(--green)'}}>✓ bon setup</span>}
-                      </span>
-                    )}
-                  </div>
-                )
-              })()}
-
-              {/* === Tags trades (psychologie + setup + contexte) === */}
-              <div style={{gridColumn:'1/-1',marginTop:'8px',paddingTop:'16px',borderTop:'1px solid var(--border)'}}>
-                <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'10px'}}>
-                  {t('app.trade.sectionTags')}
-                  <span style={{textTransform:'none',letterSpacing:0,fontWeight:'normal',color:'var(--text3)',fontSize:'10px',marginLeft:'6px'}}>
-                    {t('app.trade.tagsHint')}
-                  </span>
-                </div>
-                <TagSelector
-                  value={form.tags}
-                  onChange={tags => setForm(p => ({ ...p, tags }))}
-                />
-              </div>
-
-              {/* === Screenshot du graphique === */}
-              <div style={{gridColumn:'1/-1'}}>
-                <label style={labelS}>{t('app.trade.sectionScreenshot')}</label>
-                {form.screenshotUrl ? (
-                  <div style={{position:'relative',marginBottom:'8px'}}>
-                    <div style={{position:'relative',width:'100%',height:'200px'}}>
-                      <Image
-                        src={form.screenshotUrl}
-                        alt="Screenshot trade"
-                        fill
-                        sizes="560px"
-                        onClick={()=>setLightboxUrl(form.screenshotUrl)}
-                        style={{objectFit:'cover',borderRadius:'8px',cursor:'zoom-in',border:'1px solid var(--border)'}}
-                      />
-                    </div>
-                    <button onClick={()=>setForm(p=>({...p,screenshotUrl:''}))} style={{
-                      position:'absolute',top:'8px',right:'8px',
-                      background:'rgba(0,0,0,0.7)',color:'#fff',border:'none',borderRadius:'6px',
-                      padding:'5px 10px',fontSize:'11px',cursor:'pointer',fontWeight:'600',
-                    }}>{t('app.trade.removeScreenshot')}</button>
-                  </div>
-                ) : (
-                  <label style={{
-                    display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',
-                    padding:'16px',border:'1px dashed var(--border2)',borderRadius:'8px',
-                    cursor: uploadingScreen ? 'wait' : 'pointer',background:'var(--surface2)',
-                    color:'var(--text2)',fontSize:'12px',
-                  }}>
-                    {uploadingScreen ? t('app.trade.uploading') : t('app.trade.uploadLabel')}
-                    <input
-                      type="file" accept="image/*"
-                      disabled={uploadingScreen}
-                      onChange={e=>handleScreenshotUpload(e.target.files?.[0])}
-                      style={{display:'none'}}
-                    />
-                  </label>
-                )}
-              </div>
-
-              <div style={{gridColumn:'1/-1'}}>
-                <label style={labelS}>{t('app.trade.fieldNotes')}</label>
-                <textarea rows={3} value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Optionnel" style={{...inputS,resize:'vertical',fontFamily:'inherit'}} />
-              </div>
-              </>)}
-            </div>
-            <div style={{display:'flex',gap:'8px',justifyContent:'space-between',alignItems:'center',marginTop:'20px'}}>
-              <div>
-                {entryModal?.entry && (
-                  <button onClick={()=>{deleteEntry(entryModal.entry.id);setEntryModal(null)}} style={{...btnGhost,color:'var(--red-text)',borderColor:'var(--red-bg)'}}>{t('app.trade.btnDelete')}</button>
-                )}
-              </div>
-              <div style={{display:'flex',gap:'8px',flexWrap:'wrap',justifyContent:'flex-end'}}>
-                <button onClick={()=>setEntryModal(null)} style={btnGhost}>{t('app.trade.btnCancel')}</button>
-                {/* En édition, dupliquer est une action À PART : elle n'enregistre
-                    pas les modifications du trade courant. */}
-                {entryModal?.entry && replicaIds.length>0 && (
-                  <button onClick={duplicateEntryToAccounts} style={btnGhost}>
-                    {t('app.trade.btnDuplicate').replace('{n}', replicaIds.length)}
-                  </button>
-                )}
-                {/* Le libellé annonce le NOMBRE de comptes touchés — un
-                    « Ajouter » muet qui écrit trois lignes serait une surprise. */}
-                <button onClick={saveEntry} style={btnPrimary}>
-                  {entryModal?.entry ? t('app.trade.btnSave')
-                    : replicaIds.length>0 ? t('app.trade.btnAddMulti').replace('{n}', replicaIds.length+1)
-                      : t('app.trade.btnAdd')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Ajout / édition : la fenêtre partagée avec le Trade Log */}
+      <TradeEntryModal
+        open={!!editing}
+        entry={editing?.entry}
+        defaultDate={editing?.defaultDate}
+        defaultAccountId={editing?.defaultAccountId}
+        firms={firms}
+        user={user}
+        onClose={() => setEditing(null)}
+        onSaved={async () => { await loadEntries(); if (onReload) await onReload() }}
+        onLightbox={url => setLightboxUrl(url)}
+        showToast={showToast}
+      />
     </div>
   )
 }

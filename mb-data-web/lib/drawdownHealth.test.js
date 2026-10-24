@@ -54,3 +54,31 @@ describe('drawdownHealth', () => {
     expect(computeStatsByAccount(trades, { a1: funded }).a1.balance).toBe(50200)
   })
 })
+
+describe('drawdown personnalisé et lecture paginée', () => {
+  it('le drawdown saisi par le trader l’emporte sur le catalogue, plancher compris', () => {
+    const a = { ...acct, custom_drawdown: 1500, dd_type: 'static' }
+    expect(computeDdFloor(a, FIRM, 50000)).toBe(48500)
+    const m = drawdownMargin(a, FIRM, { balance: 49000, peakBalance: 50000 })
+    expect(m.room).toBe(500)
+    expect(m.roomPct).toBeCloseTo(500 / 1500)
+  })
+
+  it('fetchTradePnl lit toutes les pages, pas seulement les 1 000 premières lignes', async () => {
+    const rows = Array.from({ length: 2345 }, (_, i) => ({ id: i, account_id: 'a1', date: '2026-10-01', pnl: 1 }))
+    const calls = []
+    const client = {
+      from: () => {
+        const q = {
+          select: () => q, eq: () => q, in: () => q, order: () => q,
+          range: (a, b) => { calls.push([a, b]); return Promise.resolve({ data: rows.slice(a, b + 1), error: null }) },
+        }
+        return q
+      },
+    }
+    const { fetchTradePnl } = await import('./drawdownHealth')
+    const { data } = await fetchTradePnl(client, { userId: 'u' })
+    expect(data).toHaveLength(2345)
+    expect(calls).toEqual([[0, 999], [1000, 1999], [2000, 2999]])
+  })
+})

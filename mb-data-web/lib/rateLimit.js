@@ -5,7 +5,7 @@
 //
 //   export async function POST(request) {
 //     const ip = getClientIp(request)
-//     const limit = rateLimit({ key: `px-login:${ip}`, windowMs: 60_000, max: 5 })
+//     const limit = rateLimit({ key: `waitlist:${ip}`, windowMs: 60_000, max: 5 })
 //     if (!limit.allowed) {
 //       return Response.json(
 //         { error: 'Too many requests, slow down.' },
@@ -49,7 +49,7 @@ function ensureCleanup() {
  * Vérifie et incrémente le compteur pour `key`.
  *
  * @param {object} opts
- * @param {string} opts.key       Identifiant unique (ex: `px-login:userId` ou `calendar:ip`)
+ * @param {string} opts.key       Identifiant unique (ex: `waitlist:ip` ou `calendar:ip`)
  * @param {number} opts.windowMs  Durée de la fenêtre en ms (défaut 60_000 = 1 min)
  * @param {number} opts.max       Nombre max d'appels dans la fenêtre (défaut 60)
  * @returns {{ allowed: boolean, remaining: number, resetAt: number, retryAfter?: number }}

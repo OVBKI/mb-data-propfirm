@@ -27,14 +27,12 @@ export default function Footer() {
         { label: t('pages.footer.links.compare'),   href: '/compare' },
         { label: t('pages.footer.links.dashboard'), href: '/app' },
         { label: t('pages.footer.links.calendar'),  href: '/app' },
-        { label: t('pages.footer.links.roadmap'),   href: '/docs#roadmap' },
       ],
     },
     {
       title: t('pages.footer.cols.resources'),
       links: [
         { label: t('pages.footer.links.docs'),         href: '/docs' },
-        { label: t('pages.footer.links.integrations'), href: '/integrations' },
         { label: t('pages.footer.links.faq'),          href: '/docs#faq' },
         { label: t('pages.footer.links.status'),       href: 'https://www.vercel-status.com/', external: true },
       ],
@@ -162,11 +160,6 @@ export default function Footer() {
           </div>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
             <span>🇺🇸 Quantara Technologies LLC · 🇪🇺 {t('pages.footer.bottom.eu')}</span>
-            <span>·</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px var(--green-bg)' }} />
-              {t('pages.footer.bottom.allOk')}
-            </span>
           </div>
         </div>
 

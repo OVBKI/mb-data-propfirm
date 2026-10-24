@@ -2,11 +2,9 @@
 // components/TradeEntryModal.js
 // Modal standalone pour créer / éditer / supprimer un trade.
 //
-// ⚠️ Utilisé par TradesPage UNIQUEMENT. JournalPage (vue calendrier) a sa PROPRE
-// copie du formulaire, en ligne dans le composant — l'en-tête affirmait
-// l'inverse, ce qui a fait croire qu'ajouter la réplication ici la mettait aussi
-// sur la page où l'on saisit au quotidien. Toute évolution du formulaire doit
-// être portée DANS LES DEUX, ou les deux doivent être fusionnés.
+// LE formulaire de trade de l'app : utilisé par le Journal (JournalPage) ET le
+// Trade Log (TradesPage). Le Journal avait sa propre copie jusqu'en octobre 2026 ;
+// elle a été retirée. Toute évolution du formulaire se fait ici, une seule fois.
 //
 // USAGE :
 //   <TradeEntryModal

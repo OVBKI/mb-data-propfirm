@@ -89,12 +89,43 @@ export function computeStatsByAccount(trades, accountsById) {
 // - static : floor = initial - maxDD
 // - eod    : floor moves with peak EOD high, then locks at initial (Topstep-style)
 // - trailing : floor = peak - maxDD (no cap), tick-by-tick (we approximate with EOD peak)
+// Drawdown max d'un compte : la valeur saisie par le trader (`custom_drawdown`)
+// l'emporte sur celle du catalogue. Le widget du dashboard et la jauge de la page
+// Santé la respectaient, le calcul du plancher non : la même marge pouvait
+// différer d'un écran à l'autre.
+export function maxDrawdownFor(account, firmName) {
+  const custom = account.custom_drawdown != null && Number(account.custom_drawdown) > 0
+    ? Number(account.custom_drawdown) : null
+  return custom ?? maxDrawdown(firmName, account.plan_size, account.program)
+}
+
+// Lit les trades (account_id, date, pnl) page par page : PostgREST plafonne une
+// réponse à 1 000 lignes, et un historique tronqué donnerait un faux solde.
+// `client` est un client Supabase (navigateur ou service role).
+export async function fetchTradePnl(client, { userId, accountIds } = {}) {
+  const out = []
+  const chunks = accountIds ? [] : [null]
+  if (accountIds) for (let i = 0; i < accountIds.length; i += 200) chunks.push(accountIds.slice(i, i + 200))
+  for (const chunk of chunks) {
+    for (let from = 0; ; from += 1000) {
+      let q = client.from('journal_entries').select('id, account_id, date, pnl')
+      if (userId) q = q.eq('user_id', userId)
+      if (chunk) q = q.in('account_id', chunk)
+      const { data, error } = await q.order('id').range(from, from + 999)
+      if (error) return { data: null, error }
+      out.push(...(data || []))
+      if (!data || data.length < 1000) break
+    }
+  }
+  return { data: out, error: null }
+}
+
 export function computeDdFloor(account, firmName, peakBalance) {
   const initial = planSizeNum(account.plan_size) || 0
   // `account.program` = le programme choisi par le trader. Sans lui, on servait
   // le drawdown du programme principal de la firme, faux d'un quart à la moitié
   // pour qui tient un compte Apex legacy ou un FundedNext Rapid.
-  const maxDD = maxDrawdown(firmName, account.plan_size, account.program)
+  const maxDD = maxDrawdownFor(account, firmName)
   if (!maxDD || !initial) return null
 
   const ddType = (account.dd_type || 'static').toLowerCase()
@@ -119,7 +150,7 @@ export function drawdownMargin(account, firmName, stats) {
   const ddFloor = account.dd_floor != null ? Number(account.dd_floor) : computeDdFloor(account, firmName, peak)
   if (balance == null || ddFloor == null) return null
   const room = balance - ddFloor
-  const maxDD = maxDrawdown(firmName, account.plan_size, account.program) || 0
+  const maxDD = maxDrawdownFor(account, firmName) || 0
   const denom = maxDD > 0 ? maxDD : (planSizeNum(account.plan_size) || 0)
   return { balance, ddFloor, room, roomPct: denom > 0 ? room / denom : 1 }
 }

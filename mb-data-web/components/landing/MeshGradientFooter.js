@@ -36,7 +36,6 @@ function buildSections(t) {
       title: t('footer.sections.resources'),
       links: [
         { label: t('footer.links.docs'),         href: '/docs' },
-        { label: t('footer.links.integrations'), href: '/integrations' },
         { label: t('footer.links.faq'),          href: '/docs#faq' },
         { label: t('footer.links.status'),       href: 'https://www.vercel-status.com/', external: true },
       ],
@@ -224,14 +223,6 @@ export default function MeshGradientFooter() {
           </div>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
             <span>🇺🇸 Quantara Technologies LLC · 🇪🇺 {t('footer.bottom.eu')}</span>
-            <span>·</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{
-                width: 7, height: 7, borderRadius: '50%', background: '#1db87a',
-                boxShadow: '0 0 6px rgba(29,184,122,0.6)',
-              }} />
-              {t('footer.bottom.allOk')}
-            </span>
           </div>
         </div>
 
