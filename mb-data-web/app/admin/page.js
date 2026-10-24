@@ -5,6 +5,7 @@
 import StatsPanel from './StatsPanel'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { fetchAdminData } from '../../lib/adminData'
 
 const C = {
   bg: 'var(--bg)',
@@ -55,44 +56,34 @@ export default function AdminDashboardPage() {
     async function load() {
       try {
         // Stats : on agrège plusieurs requêtes en parallèle pour la performance
-        const now = new Date()
-        const day1 = new Date(now); day1.setDate(now.getDate() - 1)
-        const day7 = new Date(now); day7.setDate(now.getDate() - 7)
-        const day30 = new Date(now); day30.setDate(now.getDate() - 30)
 
         // Récupère le token d'auth pour appeler l'API admin avec Bearer
         const { data: { session } } = await supabase.auth.getSession()
         const authHeader = session ? { Authorization: `Bearer ${session.access_token}` } : {}
 
         // ⚠ On ne peut pas requêter auth.users en direct (RLS limit), on passe par /api/admin/users
-        const [firmsRes, accountsRes, tradesRes, payoutsRes, certsRes,
-               tradesWeek, tradesMonth, accountsByFirm, signupsRes] = await Promise.all([
-          supabase.from('firms').select('id', { count: 'exact', head: true }),
-          supabase.from('accounts').select('id', { count: 'exact', head: true }),
-          supabase.from('journal_entries').select('id', { count: 'exact', head: true }),
-          supabase.from('payouts').select('id', { count: 'exact', head: true }),
-          supabase.from('certificates').select('id', { count: 'exact', head: true }),
-          supabase.from('journal_entries').select('id', { count: 'exact', head: true }).gte('created_at', day7.toISOString()),
-          supabase.from('journal_entries').select('id', { count: 'exact', head: true }).gte('created_at', day30.toISOString()),
-          supabase.from('firms').select('name'),
+        // Comptages lus côté serveur (service role) : avec le client navigateur,
+        // la RLS ne laissait voir que les lignes de l'admin.
+        const [counts, signupsRes] = await Promise.all([
+          fetchAdminData('counts'),
           // Appel API admin avec Bearer token (sinon 401 → users stats vides)
           fetch('/api/admin/users?summary=1', { headers: authHeader }).then(r => r.ok ? r.json() : null).catch(() => null),
         ])
 
-        // Top 3 firmes par usage
+        // Top 5 firmes par usage
         const firmCounts = {}
-        ;(accountsByFirm.data || []).forEach(f => { firmCounts[f.name] = (firmCounts[f.name] || 0) + 1 })
+        ;(counts.firmNames || []).forEach(name => { firmCounts[name] = (firmCounts[name] || 0) + 1 })
         const topFirms = Object.entries(firmCounts).sort((a,b) => b[1]-a[1]).slice(0, 5)
 
         if (!mounted) return
         setStats({
-          totalFirms: firmsRes.count || 0,
-          totalAccounts: accountsRes.count || 0,
-          totalTrades: tradesRes.count || 0,
-          totalPayouts: payoutsRes.count || 0,
-          totalCerts: certsRes.count || 0,
-          tradesWeek: tradesWeek.count || 0,
-          tradesMonth: tradesMonth.count || 0,
+          totalFirms: counts.firms,
+          totalAccounts: counts.accounts,
+          totalTrades: counts.trades,
+          totalPayouts: counts.payouts,
+          totalCerts: counts.certs,
+          tradesWeek: counts.tradesWeek,
+          tradesMonth: counts.tradesMonth,
           topFirms,
           totalUsers: signupsRes?.total || null,
           newUsersWeek: signupsRes?.newWeek || null,

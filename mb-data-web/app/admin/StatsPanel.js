@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { fetchAdminData } from '../../lib/adminData'
 
 const C = {
   bg: 'var(--bg)',
@@ -125,17 +126,9 @@ export default function AdminStatsPage() {
         } catch {}
 
         // Fetch DB data
-        const [firmsRes, accountsRes, tradesRes, payoutsRes] = await Promise.all([
-          supabase.from('firms').select('id, user_id, name'),
-          supabase.from('accounts').select('id, status, payment_mode, plan_size, profit_split, user_id, created_at, months_count, spent, currency'),
-          supabase.from('journal_entries').select('id, user_id, account_id, pnl, created_at'),
-          supabase.from('payouts').select('id, user_id, account_id, amount, created_at'),
-        ])
-
-        const accounts = accountsRes.data || []
-        const trades = tradesRes.data || []
-        const payouts = payoutsRes.data || []
-        const firms = firmsRes.data || []
+        // Toutes les lignes, lues côté serveur (service role, paginé) : avec le
+        // client navigateur, la RLS ne laissait voir que l'admin, plafonné à 1 000.
+        const { firms, accounts, trades, payouts } = await fetchAdminData('stats')
 
         // === Funnel d'activation ===
         const usersWithFirm = new Set(firms.map(f => f.user_id))

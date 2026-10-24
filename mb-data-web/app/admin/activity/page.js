@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
+import { fetchAdminData } from '../../../lib/adminData'
 
 const C = {
   bg: 'var(--bg)',
@@ -104,14 +105,10 @@ export default function AdminActivityPage() {
       } catch {}
 
       // 2) Autres évènements via Supabase
-      const [firmsRes, accountsRes, tradesRes, payoutsRes, certsRes, annRes] = await Promise.all([
-        supabase.from('firms').select('id, name, user_id, created_at').order('created_at', { ascending: false }).limit(limit),
-        supabase.from('accounts').select('id, name, status, user_id, firm_id, created_at, plan_size, funded_date').order('created_at', { ascending: false }).limit(limit),
-        supabase.from('journal_entries').select('id, date, pnl, instrument, account_id, created_at, user_id').order('created_at', { ascending: false }).limit(limit),
-        supabase.from('payouts').select('id, amount, date, account_id, created_at, user_id, note').order('created_at', { ascending: false }).limit(limit),
-        supabase.from('certificates').select('id, type, created_at, user_id').order('created_at', { ascending: false }).limit(limit),
-        supabase.from('announcements').select('id, title, created_at').order('created_at', { ascending: false }).limit(limit),
-      ])
+      // Lus côté serveur (service role) : la RLS ne laissait voir que l'admin.
+      const act = await fetchAdminData('activity', { limit: String(limit) })
+      const firmsRes = { data: act.firms }, accountsRes = { data: act.accounts }, tradesRes = { data: act.trades }
+      const payoutsRes = { data: act.payouts }, certsRes = { data: act.certs }, annRes = { data: act.announcements }
 
       const all = [...signups]
       ;(firmsRes.data || []).forEach(f => all.push({ type: 'firm', ts: f.created_at, data: f, key: 'f_' + f.id }))
