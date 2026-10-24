@@ -184,39 +184,50 @@ select tgname from pg_trigger where tgname in ('firms_quota','accounts_quota','j
       <span class="eyebrow">3 · À ajouter</span>
       <h2 id="h-add">Ce qui manque, par ordre de valeur pour un trader multi-comptes</h2>
       <p>Comparé à TradeZella, TradesViz, Tradervue, TraderSync et Edgewonk. Le manque le plus visible est la synchronisation automatique : tous l'affichent. Mais Quantara a un atout qu'aucun n'a vraiment, le catalogue de règles par firme et par programme. Les meilleurs ajouts s'appuient dessus. Les efforts sont des estimations : S = un à deux jours, M = une semaine, L = plusieurs semaines.</p>
+      <p><span class="pill ok">Fait le 24 octobre</span> Les dix sont livrés. Deux restent à tester en conditions réelles : la connexion TopstepX par API (aucune vraie clé disponible) et la revue IA (clé Anthropic à configurer). Les limites de chaque livraison sont notées sur sa carte.</p>
     </div>
     <div class="adds">
       <article class="add"><div class="top"><h3>Plus de formats d'import</h3><span class="pill n">M</span></div>
         <dl><dt>Manque</dt><dd>Seuls les exports Rithmic sont lus. Il faut ajouter Tradovate, NinjaTrader, TopstepX et MetaTrader 4/5 pour les firmes CFD.</dd>
-        <dt>Pourquoi d'abord</dt><dd>C'est la moitié de la valeur d'une synchronisation, sans partenariat ni identifiants à stocker.</dd></dl></article>
+        <dt>Pourquoi d'abord</dt><dd>C'est la moitié de la valeur d'une synchronisation, sans partenariat ni identifiants à stocker.</dd>
+        <dt>Livré</dt><dd>Tradovate (Performance.csv), NinjaTrader 8 (grille Trades), TopstepX (export Trades), rapports HTML MetaTrader 4 et 5. Format reconnu tout seul, doublons bloqués. Tradovate Performance ne contient pas les frais : P&amp;L brut.</dd></dl></article>
       <article class="add"><div class="top"><h3>Alertes de règles calculées côté serveur</h3><span class="pill n">M</span></div>
         <dl><dt>Manque</dt><dd>Réparer le Guardian, puis prévenir à 80 % de la limite de drawdown et de la perte journalière, avec le même calcul que la page Santé.</dd>
-        <dt>Existe déjà</dt><dd>Push, e-mail, cron quotidien et calcul de marge.</dd></dl></article>
+        <dt>Existe déjà</dt><dd>Push, e-mail, cron quotidien et calcul de marge.</dd>
+        <dt>Livré</dt><dd>Paliers 50 %, 80 % et plancher franchi, en push et par e-mail, une seule alerte par palier. La perte journalière est contrôlée à la saisie de chaque trade, pas par le cron du matin.</dd></dl></article>
       <article class="add"><div class="top"><h3>Préparation au payout, compte par compte</h3><span class="pill n">M</span></div>
         <dl><dt>Manque</dt><dd>« Payout possible le 28 octobre, il reste 2 jours qualifiants, plafond 1 500 $ », selon les vraies conditions de la firme et du programme.</dd>
         <dt>Existe déjà</dt><dd>Le pipeline de payout et toutes les données nécessaires dans le catalogue : jours, buffer, consistance, plafonds.</dd>
-        <dd class="src">Le plus proche chez les concurrents : le widget « Payout Readiness » de TradesViz.</dd></dl></article>
+        <dd class="src">Le plus proche chez les concurrents : le widget « Payout Readiness » de TradesViz.</dd>
+        <dt>Livré</dt><dd>Chaque compte financé de la page Santé montre profit, jours qualifiants et consistance depuis le dernier payout. Pas encore de date prévisionnelle ni de plafond de payout.</dd></dl></article>
       <article class="add"><div class="top"><h3>Contrôle des règles après chaque trade</h3><span class="pill n">L</span></div>
         <dl><dt>Manque</dt><dd>Signaler tout de suite une consistance dépassée, une perte journalière touchée, trop de contrats ou un trade pendant une news interdite.</dd>
-        <dt>Pourquoi</dt><dd>TradesViz le fait de façon générique. Quantara peut le faire avec la règle exacte du programme.</dd></dl></article>
+        <dt>Pourquoi</dt><dd>TradesViz le fait de façon générique. Quantara peut le faire avec la règle exacte du programme.</dd>
+        <dt>Livré</dt><dd>Drawdown, perte du jour, consistance et objectif atteint, affichés juste après l'enregistrement. Pas encore le nombre de contrats max ni les news interdites.</dd></dl></article>
       <article class="add"><div class="top"><h3>Statistiques par setup</h3><span class="pill n">S</span></div>
         <dl><dt>Manque</dt><dd>Taux de réussite, espérance et R moyen par tag ou par setup.</dd>
-        <dt>Existe déjà</dt><dd>Les tags et le R-multiple sur chaque trade. Seule l'agrégation manque.</dd></dl></article>
+        <dt>Existe déjà</dt><dd>Les tags et le R-multiple sur chaque trade. Seule l'agrégation manque.</dd>
+        <dt>Livré</dt><dd>Tableau par tag dans le Trade Log, sur les trades filtrés : trades, réussite, P&amp;L, espérance, R moyen.</dd></dl></article>
       <article class="add"><div class="top"><h3>Coût d'un compte financé, par firme</h3><span class="pill n">S</span></div>
         <dl><dt>Manque</dt><dd>Dépenses en challenges divisées par le nombre de comptes financés, taux de réussite et délai moyen, firme par firme.</dd>
-        <dt>Pourquoi</dt><dd>Parmi les outils étudiés, aucun ne met les dépenses face aux payouts. C'est le point fort de Quantara : à mettre en avant.</dd></dl></article>
+        <dt>Pourquoi</dt><dd>Parmi les outils étudiés, aucun ne met les dépenses face aux payouts. C'est le point fort de Quantara : à mettre en avant.</dd>
+        <dt>Livré</dt><dd>Widget du dashboard : achetés, financés, réussite, coût par financé, délai moyen, net.</dd></dl></article>
       <article class="add"><div class="top"><h3>Exposition totale par instrument</h3><span class="pill n">M</span></div>
         <dl><dt>Manque</dt><dd>Combien de contrats NQ sont ouverts sur l'ensemble des comptes, au moment où on réplique un trade sur cinq comptes.</dd>
-        <dt>Pourquoi</dt><dd>Recommandé dans les guides des concurrents, implémenté par aucun des outils étudiés.</dd></dl></article>
+        <dt>Pourquoi</dt><dd>Recommandé dans les guides des concurrents, implémenté par aucun des outils étudiés.</dd>
+        <dt>Livré</dt><dd>Champ Contrats sur chaque trade et exposition cumulée affichée pendant la réplication, avec l'équivalent en micros.</dd></dl></article>
       <article class="add"><div class="top"><h3>Bilan annuel exportable</h3><span class="pill n">S</span></div>
         <dl><dt>Manque</dt><dd>Payouts reçus et frais payés, par firme et par année, en un fichier, pour préparer sa déclaration.</dd>
-        <dt>Existe déjà</dt><dd>Toutes les données et un export CSV brut.</dd></dl></article>
+        <dt>Existe déjà</dt><dd>Toutes les données et un export CSV brut.</dd>
+        <dt>Livré</dt><dd>CSV dans Réglages → Données : détail et récapitulatif par firme et par devise, avec la mention « pas un document fiscal ».</dd></dl></article>
       <article class="add"><div class="top"><h3>Connexion TopstepX par clé API</h3><span class="pill n">M</span></div>
         <dl><dt>Manque</dt><dd>Lecture seule, avec une clé que le trader génère lui-même. L'API est un abonnement de 29 $ par mois à sa charge.</dd>
-        <dt>Pourquoi pas plus</dt><dd>Rithmic et Tradovate exigent un partenariat ou une homologation. C'est ce qui a fait échouer les tentatives d'août.</dd></dl></article>
+        <dt>Pourquoi pas plus</dt><dd>Rithmic et Tradovate exigent un partenariat ou une homologation. C'est ce qui a fait échouer les tentatives d'août.</dd>
+        <dt>Livré</dt><dd>Onglet de l'Import Lab, en bêta : lecture seule, clé jamais enregistrée. Pas encore testé avec une vraie clé.</dd></dl></article>
       <article class="add"><div class="top"><h3>Revue hebdomadaire par IA</h3><span class="pill n">L</span></div>
         <dl><dt>Manque</dt><dd>Une analyse des trades et des écarts au plan chaque semaine. TradeZella, TradesViz et TraderSync en ont une.</dd>
-        <dt>Quand</dt><dd>Après les points précédents. Elle n'a de valeur que si les données entrent sans effort, et elle coûte à chaque appel.</dd></dl></article>
+        <dt>Quand</dt><dd>Après les points précédents. Elle n'a de valeur que si les données entrent sans effort, et elle coûte à chaque appel.</dd>
+        <dt>Livré</dt><dd>Widget à activer soi-même, revue le lundi dans l'app et par e-mail, génération à la demande limitée. Politique de confidentialité mise à jour.</dd></dl></article>
     </div>
     <p class="lead" style="font-size:15px">Déjà présents, donc pas listés : captures d'écran et prix sur les trades, R-multiple, connexion Google, application installable sur téléphone (manifest et service worker), réplication sur plusieurs comptes.</p>
   </section>

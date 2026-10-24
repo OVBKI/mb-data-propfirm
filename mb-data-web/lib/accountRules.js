@@ -67,7 +67,7 @@ export function accountRuleSet(account, firmName) {
     const target = account.payout_target != null ? Number(account.payout_target) - start : null
     out.profitTarget = target != null && target > 0 ? target : null
     out.minDays = account.min_trading_days != null ? Number(account.min_trading_days) : defaultMinTradingDays(firmName, plan, model.name)
-    out.minDailyProfit = defaultMinDailyProfit(firmName, plan, model.name)
+    out.minDailyProfit = account.min_daily_profit != null ? Number(account.min_daily_profit) : defaultMinDailyProfit(firmName, plan, model.name)
   }
   return out
 }

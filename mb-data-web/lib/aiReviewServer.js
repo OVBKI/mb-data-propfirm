@@ -25,7 +25,7 @@ function anthropic() {
 export async function generateWeeklyReview(supabase, userId, { start, end }) {
   const { data: accts, error: aErr } = await supabase
     .from('accounts')
-    .select('id, name, buy_date, plan_size, program, status, dd_type, funded_date, custom_drawdown, payout_target, min_trading_days, balance, dd_floor, firm:firms(name)')
+    .select('id, name, buy_date, plan_size, program, status, dd_type, funded_date, custom_drawdown, payout_target, min_trading_days, min_daily_profit, balance, dd_floor, firm:firms(name)')
     .eq('user_id', userId)
   if (aErr) throw new Error(aErr.message)
   const accounts = (accts || []).map((a) => ({ ...a, firmName: a.firm?.name || '' }))

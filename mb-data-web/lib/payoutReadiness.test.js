@@ -21,6 +21,10 @@ describe('payoutReadiness', () => {
     expect(r.profit).toBe(1250)
     expect(r.ready).toBe(true)
   })
+  it('le minimum journalier saisi sur le compte prime', () => {
+    const r = payoutReadiness({ account: { ...base, min_daily_profit: 50 }, firmName: 'Topstep', trades: [tr('2026-09-02', 60), tr('2026-09-03', 100)] })
+    expect(r.checks.find((c) => c.key === 'days')).toMatchObject({ current: 2, minDailyProfit: 50 })
+  })
   it('la période repart après le dernier payout', () => {
     const acct = { ...base, payouts: [{ date: '2026-09-10', amount: 900 }] }
     expect(payoutWindowStart(acct)).toEqual({ date: '2026-09-10', inclusive: false })

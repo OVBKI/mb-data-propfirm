@@ -245,7 +245,7 @@ See `.env.example` for all 10 required variables with documentation. Key ones:
 ## Deployment
 
 Vercel auto-deploys from `main`. ONE cron in `vercel.json`: `/api/cron/daily` at
-08:00 UTC. It dispatches check-bills and onboarding-emails every day,
+08:00 UTC. It dispatches check-bills, onboarding-emails and weekly-review every day,
 drawdown-guardian on weekdays, and monthly-recap on the 1st (`cron/daily/route.js`).
 
 ## Conventions
@@ -2783,3 +2783,31 @@ Rien n'a été supprimé côté données ; les anciennes URL redirigent.
 
 ⚠️ `components/Counter.js` n'est PAS mort, contrairement à ce que disait l'audit :
 la landing l'utilise (`EquityCurveDemo`). Vérifier les imports avant de supprimer.
+
+
+## Ajouté — 2026-10 (partie « À ajouter » de l'audit)
+
+Dix fonctionnalités. Les règles d'un compte passent toutes par **un seul module**,
+`lib/accountRules.js` (`accountRuleSet(account, firmName)` : perte journalière,
+consistance, objectif, jours minimum, minimum journalier, lus dans le
+comparateur `lib/futuresComparison`, les valeurs saisies sur le compte primant).
+La marge de drawdown reste `lib/drawdownHealth`. Ne pas recalculer ailleurs.
+
+| Fonctionnalité | Où | Notes |
+|---|---|---|
+| Stats par setup | `lib/tagStats.js`, section repliable de `TradesPage` | Un trade multi-tags compte dans chaque ligne ; ligne « Sans tag ». |
+| Coût d'un financé par firm | `lib/firmEconomics.js`, widget `firmCost` | `accountCashflows()` = source unique des flux (achat, échéances, activation, payouts). Réussite calculée sur les évaluations terminées. |
+| Bilan annuel CSV | `lib/annualReport.js`, Réglages → Données | Toutes les firms (futures + CFD), montants dans la devise du compte, total par devise, mention « pas un document fiscal ». |
+| Contrats + exposition | colonne `journal_entries.quantity`, `lib/exposure.js`, `TradeEntryModal` | `quantity` n'est envoyée que si elle a une valeur : une base sans la colonne accepte encore les trades. |
+| Contrôle après chaque trade | `lib/ruleCheck.js`, panneau « Points de vigilance » de `TradeEntryModal` | Drawdown 50 % / 80 % / franchi, perte du jour vs limite, consistance, objectif atteint. La fenêtre reste ouverte s'il y a un constat. |
+| Préparation au payout | `lib/payoutReadiness.js`, cartes du `PayoutPipeline` (page Santé) | Période = depuis le dernier payout. `payout_target` est un SOLDE (comme `defaultPayoutTarget`). |
+| Alertes serveur 50/80 % | `cron/drawdown-guardian`, `lib/drawdownAlerts.js`, table `drawdown_alert_state` | Une alerte par palier franchi vers le haut, push + e-mail (opt-out respecté). |
+| Imports multi-plateformes | `lib/importers/{common,tradovate,ninjatrader,projectx,metatrader,detect}.js`, `components/import/PlatformImporter.js`, Import Lab `?tab=platforms` | Formats repris d'exports réels publiés (pas de doc officielle des colonnes). Marqueur `[import:<plateforme>:<id>]` ; le Journal reconnaît `/\[(rithmic|import):/`. Tradovate Performance = P&L BRUT. |
+| TopstepX par API (bêta) | `app/api/import/topstepx`, `components/import/TopstepXConnect.js`, `?tab=topstepx-api` | Lecture seule, identifiants jamais stockés ni journalisés, 10 appels / 10 min. Exécutions → allers-retours FIFO dans le navigateur. **Jamais testé contre l'API réelle.** Fichier + API sur la même période = doublons (identifiants différents). |
+| Revue hebdomadaire IA | `lib/aiReview.js` (pur), `lib/aiReviewServer.js` (SDK Anthropic), `cron/weekly-review`, `/api/ai-review`, widget `aiReview` | Opt-in `profiles.ai_review_optin`, table `ai_reviews`. Prompt système figé et mis en cache : n'y mettre AUCUNE donnée variable. Sans `ANTHROPIC_API_KEY` + `AI_REVIEW_MODEL`, la fonctionnalité se déclare indisponible. |
+
+### À faire côté propriétaire
+1. Rejouer `supabase-schema.sql` (colonne `quantity`, tables `drawdown_alert_state` et `ai_reviews`, colonne `ai_review_optin`).
+2. Vercel : `ANTHROPIC_API_KEY` et `AI_REVIEW_MODEL` (identifiant du modèle Claude) pour activer la revue IA.
+3. Accepter les conditions de traitement des données d'Anthropic avant d'ouvrir la revue IA : la politique de confidentialité la cite désormais comme sous-traitant.
+4. Tester l'import TopstepX par API avec un vrai compte Practice et une vraie clé.
