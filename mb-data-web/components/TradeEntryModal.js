@@ -163,7 +163,7 @@ export default function TradeEntryModal({
         const firm = firms.find(f => (f.accounts || []).some(a => a.id === id))
         const account = firm?.accounts.find(a => a.id === id)
         if (!account) continue
-        const r = checkAccountRules({ account, firmName: firm.name, trades: data, day })
+        const r = checkAccountRules({ account, firmName: firm.name, trades: data, day, trade: { instrument: form.instrument, quantity: form.quantity } })
         if (r.items.length) out.push({ id, firm: firm.name, label: accountLabel(account), items: r.items })
       }
       return out
@@ -811,6 +811,8 @@ function ruleSentence(item, t) {
       return t('app.trade.ruleDaily').replace('{loss}', usd(item.loss)).replace('{limit}', usd(item.limit)).replace('{pct}', pct(item.used))
     case 'consistency':
       return t('app.trade.ruleConsistency').replace('{pct}', pct(item.share)).replace('{limit}', pct(item.limit))
+    case 'contracts':
+      return t('app.trade.ruleContracts').replace('{qty}', item.qty).replace('{limit}', item.limit).replace('{kind}', t(item.kind === 'micro' ? 'app.trade.kindMicro' : 'app.trade.kindMini'))
     case 'target':
       return t('app.trade.ruleTarget').replace('{profit}', usd(item.profit)).replace('{target}', usd(item.target))
     default:

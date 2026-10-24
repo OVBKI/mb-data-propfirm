@@ -9,6 +9,8 @@
 // Niveaux : 'info' (objectif atteint), 'warn', 'danger', 'breach'.
 import { computeStatsByAccount, drawdownMargin } from './drawdownHealth'
 import { accountRuleSet } from './accountRules'
+import { accountMaxContracts } from './contractLimits'
+import { contractKind } from './exposure'
 
 export const DD_WARN = 0.5
 export const DD_DANGER = 0.8
@@ -21,7 +23,8 @@ function levelFor(used) {
   return null
 }
 
-export function checkAccountRules({ account, firmName, trades, day }) {
+// `trade` (facultatif) : { instrument, quantity } du trade qu'on vient de saisir.
+export function checkAccountRules({ account, firmName, trades, day, trade = null }) {
   const items = []
   const rules = accountRuleSet(account, firmName)
   if (!rules.phase) return { level: null, items, rules }
@@ -58,7 +61,20 @@ export function checkAccountRules({ account, firmName, trades, day }) {
     }
   }
 
-  // 4. Objectif atteint : bon à savoir tout de suite (arrêter, demander le payout).
+  // 4. Taille de position : contrats du trade contre la limite du compte. Seulement
+  // si l'instrument est un mini ou un micro connu et que le catalogue donne une
+  // limite lisible (lib/contractLimits).
+  const qty = Number(trade?.quantity)
+  const kind = trade ? contractKind(trade.instrument) : null
+  if (qty > 0 && kind) {
+    const lim = accountMaxContracts(account, firmName)
+    const limit = kind === 'mini' ? lim?.mini : (lim?.micro ?? (lim?.mini != null ? lim.mini * 10 : null))
+    if (limit != null && qty > limit) {
+      items.push({ rule: 'contracts', level: 'danger', qty, limit, kind })
+    }
+  }
+
+  // 5. Objectif atteint : bon à savoir tout de suite (arrêter, demander le payout).
   if (rules.profitTarget && stats && stats.totalPnl >= rules.profitTarget) {
     items.push({ rule: 'target', level: 'info', profit: stats.totalPnl, target: rules.profitTarget })
   }

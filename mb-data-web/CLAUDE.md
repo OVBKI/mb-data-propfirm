@@ -2851,3 +2851,25 @@ La page Santé (304 kB) embarque le catalogue de règles, dont elle a besoin.
 `propfirm_rules_overrides`, `trading_plan`, `trading_setups`, `trading_rule_items`,
 fonction `rate_limit_hit`, colonnes manquantes. Sans la fonction, la limitation de débit
 retombe en mémoire, sans erreur.
+
+## Ordre conseillé de l'audit — bouclé (2026-10)
+
+Les quatre étapes de l'audit d'octobre sont livrées. Deux ajouts pour la boucler :
+
+- **`/api/admin/db-health` + carte « Base de production » dans /admin/system** :
+  sonde la base de prod (tables, colonnes, fonction `rate_limit_hit`) et l'état des
+  quotas (`app_flags.paid_launch`, profils, bêta-testeurs à vie). C'est la façon de
+  vérifier qu'un `supabase-schema.sql` recollé est complet, sans écrire de SQL.
+  Ajouter une table ou une colonne au schéma → l'ajouter aussi dans `TABLES` /
+  `COLUMNS` de la route.
+- **Limite de contrats** : `lib/contractLimits.js` (`maxContracts`,
+  `accountMaxContracts`) lit les clés « Contrats max … » du catalogue et ne rend une
+  limite que si la cellule est lisible sans ambiguïté (pas de plan d'échelle « 3 → 15 »,
+  pas de « selon le solde », pas de valeurs non étiquetées séparées par « / »). Les
+  comptes LFA/live et les limites « avant safety net » sont ignorés. `ruleCheck`
+  signale un trade au-dessus de la limite (`rule: 'contracts'`, niveau danger).
+  Topstep XFA n'a pas de limite fixe (Scaling Plan) : rien n'est signalé, à dessein.
+
+La suite (mise en production, essais réels, décisions sur le palier gratuit et un
+palier au-dessus de Pro, lancement Stripe) est dans `../docs/audit-2026-10.html`,
+section 5.

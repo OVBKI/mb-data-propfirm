@@ -37,4 +37,15 @@ describe('checkAccountRules', () => {
     const r = checkAccountRules({ account: acct({ status: 'Challenge' }), firmName: 'Topstep', trades: [tr('2026-10-01', 1600), tr('2026-10-02', 1500)], day: '2026-10-02' })
     expect(r.items.find((i) => i.rule === 'target')?.level).toBe('info')
   })
+  it('contrats au-delà de la limite du compte → danger', () => {
+    const lucid = { id: 'a1', plan_size: '50k', status: 'Challenge', program: 'LucidFlex' }
+    const r = checkAccountRules({ account: lucid, firmName: 'Lucid Trading', trades: [], day: '2026-10-02', trade: { instrument: 'NQZ6', quantity: 6 } })
+    expect(r.items.find((i) => i.rule === 'contracts')).toMatchObject({ level: 'danger', qty: 6, limit: 4, kind: 'mini' })
+    const ok = checkAccountRules({ account: lucid, firmName: 'Lucid Trading', trades: [], day: '2026-10-02', trade: { instrument: 'MNQ', quantity: 30 } })
+    expect(ok.items.find((i) => i.rule === 'contracts')).toBeUndefined()
+  })
+  it('instrument inconnu ou limite illisible : pas de constat', () => {
+    const tsx = { id: 'a1', plan_size: '50k', status: 'Financé', program: 'XFA Standard' }
+    expect(checkAccountRules({ account: tsx, firmName: 'Topstep', trades: [], day: '2026-10-02', trade: { instrument: 'NQ', quantity: 50 } }).items.find((i) => i.rule === 'contracts')).toBeUndefined()
+  })
 })

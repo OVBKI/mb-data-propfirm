@@ -73,6 +73,19 @@ export default function AdminSystemPage() {
 
   // ── Notifications diagnostics (email + push) ──
   const [notif, setNotif] = useState(null)
+  const [dbHealth, setDbHealth] = useState(null)
+
+  // État de la base de production : ce qui manque après avoir recollé
+  // supabase-schema.sql, et les quotas de la bêta (sans écrire de SQL).
+  async function loadDbHealth() {
+    setDbHealth(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/db-health', { headers: { Authorization: `Bearer ${session?.access_token}` } })
+      const d = await res.json()
+      setDbHealth(res.ok ? d : { error: d.error || `HTTP ${res.status}` })
+    } catch (e) { setDbHealth({ error: e.message }) }
+  }
   const [notifBusy, setNotifBusy] = useState(null) // 'email' | 'push' | null
   async function loadNotif() {
     try {
@@ -124,7 +137,7 @@ export default function AdminSystemPage() {
     setLoading(false)
   }
 
-  useEffect(() => { loadHealth(); loadNotif() }, [])
+  useEffect(() => { loadHealth(); loadNotif(); loadDbHealth() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check des env vars client (les seules accessibles côté navigateur)
   const envChecks = [
@@ -171,6 +184,48 @@ export default function AdminSystemPage() {
           <div style={{ fontSize: 12, color: C.text2 }}>
             {totalRows} rows total · {DB_TABLES.length} tables monitorées
           </div>
+        </div>
+      </div>
+
+      {/* === Base de production : schéma et quotas === */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 12 }}>
+          🗄 Base de production — schéma et quotas
+        </div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18 }}>
+          {!dbHealth ? (
+            <div style={{ color: C.text3, fontSize: 12 }}>⏳ Vérification…</div>
+          ) : dbHealth.error ? (
+            <div style={{ color: C.red, fontSize: 12 }}>⚠ {dbHealth.error}</div>
+          ) : (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 600, color: dbHealth.missing ? C.amber : C.green, marginBottom: 10 }}>
+                {dbHealth.missing
+                  ? `⚠ ${dbHealth.missing} élément(s) manquant(s) : recolle supabase-schema.sql dans Supabase → SQL Editor.`
+                  : '✅ Schéma complet : tout ce que le code utilise existe.'}
+              </div>
+              <div style={{ fontSize: 12, color: C.text2, marginBottom: 12, lineHeight: 1.6 }}>
+                Quotas : {dbHealth.quotas.paidLaunch === null
+                  ? <b style={{ color: C.amber }}>app_flags absente, quotas du palier gratuit possiblement actifs</b>
+                  : dbHealth.quotas.paidLaunch
+                    ? <b style={{ color: C.amber }}>lancement payant actif, le palier gratuit est limité</b>
+                    : <b style={{ color: C.green }}>bêta, aucun utilisateur n'est limité</b>}
+                {dbHealth.quotas.profiles != null && <> · {dbHealth.quotas.profiles} profils, {dbHealth.quotas.grandfathered ?? '—'} bêta-testeurs à vie</>}
+              </div>
+              {dbHealth.missing > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 6 }}>
+                  {dbHealth.checks.filter(c => !c.ok).map(c => (
+                    <div key={c.group + c.name} style={{ fontSize: 12, display: 'flex', gap: 8 }}>
+                      <span>❌</span>
+                      <span style={{ fontFamily: 'monospace', color: C.red, wordBreak: 'break-all' }}>{c.name}</span>
+                      <span style={{ color: C.text3 }}>{c.group} · {c.detail}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={loadDbHealth} style={{ marginTop: 12, padding: '6px 12px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: 'var(--tint2)', color: C.text2, border: `1px solid ${C.border2}`, cursor: 'pointer', fontFamily: 'inherit' }}>↻ Revérifier</button>
+            </>
+          )}
         </div>
       </div>
 

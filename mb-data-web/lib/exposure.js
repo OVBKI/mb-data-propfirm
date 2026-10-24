@@ -20,6 +20,14 @@ export function instrumentRoot(symbol) {
   return m ? m[1] : s
 }
 
+// Taille d'un contrat : 'mini', 'micro', ou null si l'instrument est inconnu.
+export function contractKind(instrument) {
+  const root = instrumentRoot(instrument)
+  if (MINI_TO_MICRO[root]) return 'mini'
+  if (MICRO_TO_MINI[root]) return 'micro'
+  return null
+}
+
 // { root, contracts, micro, microSymbol } — micro = équivalent en micros, ou
 // null si l'instrument n'a pas de micro connu.
 export function replicationExposure(instrument, quantity, accountCount) {

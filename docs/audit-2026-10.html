@@ -203,7 +203,7 @@ select tgname from pg_trigger where tgname in ('firms_quota','accounts_quota','j
       <article class="add"><div class="top"><h3>Contrôle des règles après chaque trade</h3><span class="pill n">L</span></div>
         <dl><dt>Manque</dt><dd>Signaler tout de suite une consistance dépassée, une perte journalière touchée, trop de contrats ou un trade pendant une news interdite.</dd>
         <dt>Pourquoi</dt><dd>TradesViz le fait de façon générique. Quantara peut le faire avec la règle exacte du programme.</dd>
-        <dt>Livré</dt><dd>Drawdown, perte du jour, consistance et objectif atteint, affichés juste après l'enregistrement. Pas encore le nombre de contrats max ni les news interdites.</dd></dl></article>
+        <dt>Livré</dt><dd>Drawdown, perte du jour, consistance, objectif atteint et, depuis le 24 octobre, contrats au-dessus de la limite du compte (quand le catalogue la donne clairement), affichés juste après l'enregistrement. Pas encore les news interdites.</dd></dl></article>
       <article class="add"><div class="top"><h3>Statistiques par setup</h3><span class="pill n">S</span></div>
         <dl><dt>Manque</dt><dd>Taux de réussite, espérance et R moyen par tag ou par setup.</dd>
         <dt>Existe déjà</dt><dd>Les tags et le R-multiple sur chaque trade. Seule l'agrégation manque.</dd>
@@ -261,12 +261,23 @@ select tgname from pg_trigger where tgname in ('firms_quota','accounts_quota','j
     <div class="sec-head">
       <span class="eyebrow">5 · Ordre conseillé</span>
       <h2 id="h-plan">Réparer, simplifier, puis construire</h2>
+      <p><span class="pill ok">Fait le 24 octobre</span> Les quatre étapes sont livrées dans le code, en deux jours au lieu de six semaines. Ce qui reste ne se fait plus dans le code : c'est de la mise en production, des essais réels et deux décisions.</p>
     </div>
     <ol class="plan">
-      <li><b>Cette semaine : les six urgences.</b> Vérifier les quotas avec la requête ci-dessus et lever la limite des inscrits actuels. Rendre la désinscription réelle. Réparer le Guardian. Retirer les promesses fausses. Brancher l'export et la suppression dans les Réglages.</li>
-      <li><b>Semaine 2 : simplifier.</b> Passer l'offre à Gratuit + Pro. Cacher la couche sociale. Fusionner les trois vues de trades, les deux formulaires et Analytics avec le dashboard. Supprimer le code mort. Ranger le dépôt et élaguer CLAUDE.md.</li>
-      <li><b>Semaines 3 à 6 : les ajouts qui s'appuient sur le catalogue.</b> Nouveaux formats d'import, alertes serveur à 80 %, préparation au payout, statistiques par setup, coût d'un compte financé.</li>
-      <li><b>Ensuite.</b> Contrôle des règles après chaque trade, exposition par instrument, connexion TopstepX, puis la revue par IA, qui pourra justifier un palier au-dessus de Pro.</li>
+      <li><b>Les six urgences.</b> <span class="pill ok">Fait</span> Quotas levés pendant la bêta, désinscription réelle, Guardian réparé, promesses fausses retirées, export et suppression dans les Réglages. Il restait à « vérifier les quotas avec la requête » : l'admin (Système) le montre désormais sans SQL, avec la liste de ce qui manque dans la base.</li>
+      <li><b>Simplifier.</b> <span class="pill ok">Fait</span> Offre Gratuit + Pro, couche sociale cachée, une seule vue des trades et un seul formulaire, Analytics fondu dans le dashboard, code mort supprimé, dépôt rangé.</li>
+      <li><b>Les ajouts qui s'appuient sur le catalogue.</b> <span class="pill ok">Fait</span> Formats d'import, alertes serveur à 50 et 80 %, préparation au payout, statistiques par setup, coût d'un compte financé.</li>
+      <li><b>Ensuite.</b> <span class="pill ok">Fait</span> Contrôle des règles après chaque trade (il signale aussi un nombre de contrats au-dessus de la limite du compte, quand le catalogue la donne clairement), exposition par instrument, connexion TopstepX, revue par IA. Plus l'état technique : dépendances, schéma, traductions, poids des pages.</li>
+    </ol>
+    <div class="sec-head" style="margin-top:28px">
+      <h2>Et maintenant, dans cet ordre</h2>
+    </div>
+    <ol class="plan">
+      <li><b>Mettre en production.</b> Recoller <code>supabase-schema.sql</code> dans Supabase, puis ouvrir l'admin (Système) : la carte « Base de production » doit afficher « Schéma complet ». Ajouter <code>ANTHROPIC_API_KEY</code> et <code>AI_REVIEW_MODEL</code> sur Vercel.</li>
+      <li><b>Essayer en conditions réelles.</b> Un import TopstepX par clé API avec un compte Practice, une revue IA générée à la demande, une alerte drawdown reçue par push et par e-mail, un réimport Rithmic de plus de 1 000 trades.</li>
+      <li><b>Deux décisions produit avant le lancement payant.</b> Ce que limite le palier gratuit (aujourd'hui 1 firme, 3 comptes, 20 trades par mois : trop peu pour voir ce que fait Quantara ; l'historique ou les alertes seraient de meilleurs leviers), et si la revue IA justifie un palier au-dessus de Pro.</li>
+      <li><b>Lancement payant.</b> Configurer Stripe (produits, taxes, webhook), puis les deux requêtes de lancement dans l'ordre : bêta-testeurs à vie d'abord, <code>paid_launch</code> ensuite.</li>
+      <li><b>À construire plus tard.</b> Les news interdites dans le contrôle après trade (il faut croiser l'heure du trade avec le calendrier économique et la règle de la firme), une date prévisionnelle et le plafond dans la préparation au payout.</li>
     </ol>
   </section>
 
