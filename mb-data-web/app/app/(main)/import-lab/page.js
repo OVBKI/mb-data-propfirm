@@ -1,5 +1,6 @@
 'use client'
-// Page ISOLÉE pour tester l'import CSV Rithmic.
+// Import des trades : Rithmic (CSV), Tradovate, NinjaTrader, TopstepX,
+// MetaTrader (components/import/PlatformImporter) et TopstepX par API.
 // 2 modes (onglets) :
 //   📊 Trades   — Import du CSV "Performance" (PnL Statement) → crée comptes + trades
 //   ⚖️ État    — Import du CSV "Trader Dashboard" → met à jour soldes + DD + status
@@ -21,6 +22,8 @@ import { T } from '../../../../components/dashboard/theme'
 import { Card, Btn, Badge, PageHeader, Section, UIStyles } from '../../../../components/dashboard/ui'
 import { defaultChallengePrice } from '../../../../lib/constants'
 import { useApp } from '../AppContext'
+import PlatformImporter from '../../../../components/import/PlatformImporter'
+import TopstepXConnect from '../../../../components/import/TopstepXConnect'
 
 // Génère un nom propre depuis un Rithmic ID type LFF050-XXXXXX-PRO007 :
 //   PRO007 → "PRO 7"   (compte financé)
@@ -106,6 +109,11 @@ export default function ImportLabPage() {
   const { user } = useApp()
 
   const [tab, setTab] = useState('dashboard')
+  // ?tab=platforms|topstepx-api|trades : lien direct vers un onglet.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (['dashboard', 'trades', 'platforms', 'topstepx-api'].includes(t)) setTab(t)
+  }, [])
 
   const [existingFirms, setExistingFirms] = useState([])
   const [existingAccounts, setExistingAccounts] = useState([])
@@ -180,8 +188,8 @@ export default function ImportLabPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <PageHeader
           eyebrow="IMPORT · BETA"
-          title="Import Lab — Rithmic CSV"
-          subtitle="Importe tes trades depuis un export Rithmic R|Trader Pro. Mode dry-run par défaut, rien n'est écrit en DB tant que tu ne bascules pas en import réel."
+          title="Import Lab"
+          subtitle="Importe tes trades depuis Rithmic, Tradovate, NinjaTrader, TopstepX ou MetaTrader. Simulation par défaut : rien n'est écrit tant que tu ne passes pas en import réel."
           actions={
             <>
               <Link href="/app/journal?origin=import" style={{ textDecoration: 'none' }}>
@@ -196,7 +204,7 @@ export default function ImportLabPage() {
 
         {/* === Tabs === */}
         <div className="il-tabs" style={{
-          display: 'flex', gap: 4, marginBottom: 24,
+          display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 24,
           padding: 4, background: T.color.surface2,
           borderRadius: T.radius.lg,
           border: `1px solid ${T.color.border}`,
@@ -204,10 +212,16 @@ export default function ImportLabPage() {
           maxWidth: '100%',
         }}>
           <TabBtn active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>
-            1️⃣ État des comptes (Dashboard)
+            Rithmic · état des comptes
           </TabBtn>
           <TabBtn active={tab === 'trades'} onClick={() => setTab('trades')}>
-            2️⃣ Trades (PnL Statement)
+            Rithmic · trades
+          </TabBtn>
+          <TabBtn active={tab === 'platforms'} onClick={() => setTab('platforms')}>
+            Tradovate · NinjaTrader · TopstepX · MT4/5
+          </TabBtn>
+          <TabBtn active={tab === 'topstepx-api'} onClick={() => setTab('topstepx-api')}>
+            TopstepX par API
           </TabBtn>
         </div>
 
@@ -221,6 +235,10 @@ export default function ImportLabPage() {
             onSuccess={refreshExisting}
           />
         )}
+
+        {tab === 'platforms' && <PlatformImporter user={user} />}
+
+        {tab === 'topstepx-api' && <TopstepXConnect user={user} />}
 
         {tab === 'dashboard' && (
           <DashboardImporter

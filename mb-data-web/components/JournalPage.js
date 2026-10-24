@@ -519,7 +519,7 @@ export default function JournalPage({
   // Fenêtre d'ajout / édition (TradeEntryModal) : null | { entry?, defaultDate?, defaultAccountId? }
   const [editing, setEditing] = useState(null)
   // Origine des trades affichés. Un trade importé porte le marqueur [rithmic:…]
-  // dans ses notes (posé par l'Import Lab).
+  // ou [import:<plateforme>:…] dans ses notes (posé par l'Import Lab).
   const originParams = useSearchParams()
   const [origin, setOrigin] = useState(() => {
     const o = originParams?.get('origin')
@@ -599,7 +599,7 @@ export default function JournalPage({
           _firmName: acc?.firmName || 'Compte supprimé',
           _firmColor: acc?.firmColor || 'var(--text3)',
           _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
-          _imported: Boolean(e.notes && e.notes.includes('[rithmic:')),
+          _imported: /\[(rithmic|import):/.test(e.notes || ''),
         }
       })
   },[entries, allAccounts])

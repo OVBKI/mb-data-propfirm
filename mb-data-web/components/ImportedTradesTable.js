@@ -1,9 +1,28 @@
 'use client'
-// components/ImportedTradesTable.js — historique dense des trades importés par CSV
-// (Rithmic), avec les métadonnées que l'Import Lab écrit dans les notes : ordres,
+// components/ImportedTradesTable.js — historique dense des trades importés
+// (Rithmic, Tradovate, NinjaTrader, TopstepX, MetaTrader), avec les métadonnées que l'Import Lab écrit dans les notes : ordres,
 // quantité, fills, durée de détention. Affiché sous le Journal quand le filtre
 // « Origine » montre des trades importés. Vivait dans /app/journal-sync/view,
 // une vue séparée du Journal qui ne montrait que ces trades.
+
+// Les autres plateformes posent [import:<plateforme>:<id>] et les mêmes clés
+// qty= / entry= / exit= ; la durée se déduit alors des deux heures.
+function parseImportMeta(notes) {
+  if (!notes) return null
+  const m = notes.match(/\[import:([a-z0-9-]+):[^\]]+\]/)
+  if (!m) return parseRithmicMeta(notes)
+  const entryTime = (notes.match(/entry=([\d-]+ [\d:]+)/) || [])[1] || null
+  const exitTime = (notes.match(/exit=([\d-]+ [\d:]+)/) || [])[1] || null
+  const hold = entryTime && exitTime ? (new Date(exitTime.replace(' ', 'T')) - new Date(entryTime.replace(' ', 'T'))) / 1000 : 0
+  return {
+    platform: m[1],
+    qty: parseFloat((notes.match(/qty=([\d.]+)/) || [])[1] || 0),
+    fills: null,
+    holdSeconds: hold > 0 ? hold : 0,
+    entryTime,
+    exitTime,
+  }
+}
 
 function parseRithmicMeta(notes) {
   if (!notes) return null
@@ -97,10 +116,10 @@ export default function TradesHistory({ filteredEntries, allAccounts }) {
             </thead>
             <tbody>
               {filteredEntries.slice(0, 1000).map((t) => {
-                const meta = parseRithmicMeta(t.notes)
+                const meta = parseImportMeta(t.notes)
                 const acc = accountById[t.account_id]
                 const pnl = Number(t.pnl) || 0
-                const isLong = t.side === 'LONG'
+                const isLong = String(t.side || '').toUpperCase() === 'LONG'
                 return (
                   <tr key={t.id} className="ts-row" style={{
                     borderTop:'1px solid var(--tint2)',
@@ -125,9 +144,9 @@ export default function TradesHistory({ filteredEntries, allAccounts }) {
                       ...tdStyle, fontWeight:600, letterSpacing:'0.05em',
                       color: isLong ? 'var(--green)' : 'var(--red)',
                     }}>
-                      {t.side === 'LONG' ? '▲ LONG' : t.side === 'SHORT' ? '▼ SHORT' : t.side || '—'}
+                      {isLong ? '▲ LONG' : String(t.side || '').toUpperCase() === 'SHORT' ? '▼ SHORT' : t.side || '—'}
                     </td>
-                    <td style={{ ...tdStyle, textAlign:'right' }}>{meta?.qty ?? '—'}</td>
+                    <td style={{ ...tdStyle, textAlign:'right' }}>{t.quantity ?? (meta?.qty || '—')}</td>
                     <td style={{ ...tdStyle, textAlign:'right', color:'var(--text2)' }}>{t.entry_price ?? '—'}</td>
                     <td style={{ ...tdStyle, textAlign:'right', color:'var(--text2)' }}>{t.exit_price ?? '—'}</td>
                     <td style={{

@@ -143,9 +143,17 @@ export default function FirmsIndexClient() {
             <strong style={{ color: C.text }}>Import CSV Rithmic</strong>
             {` : si ta firme passe par Rithmic (Apex, Bulenox, Lucid, Phidias, Funded Futures Network, FuturesElite…), exporte le Performance Statement ou le Trader Dashboard depuis R|Trader Pro et dépose-le dans l'Import Lab. Les trades déjà importés sont reconnus et jamais dupliqués.`}
           </p>
+          <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0, marginBottom: 12 }}>
+            <strong style={{ color: C.text }}>Export Tradovate, NinjaTrader, TopstepX ou MetaTrader</strong>
+            {` : dépose le Performance.csv de Tradovate, la grille Trades de NinjaTrader 8 exportée en CSV, l'export Trades de TopstepX ou le rapport HTML de MetaTrader 4/5. Le format est reconnu automatiquement, et un réimport n'écrit jamais deux fois le même trade.`}
+          </p>
+          <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0, marginBottom: 12 }}>
+            <strong style={{ color: C.text }}>TopstepX par clé API (bêta)</strong>
+            {` : avec un abonnement ProjectX API, Quantara lit tes trades à la demande. La clé sert le temps de la lecture et n'est pas enregistrée.`}
+          </p>
           <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0 }}>
             <strong style={{ color: C.text }}>Saisie manuelle</strong>
-            {` : pour toutes les autres plateformes (TopstepX, Tradovate, NinjaTrader, Quantower…), un trade se saisit en quelques secondes, et peut être copié sur plusieurs comptes d'un coup. Il n'existe pas de connexion automatique à un broker pour l'instant.`}
+            {` : pour les autres plateformes (Quantower…), un trade se saisit en quelques secondes et peut être copié sur plusieurs comptes d'un coup. Il n'y a pas de synchronisation automatique en continu.`}
           </p>
         </section>
 
