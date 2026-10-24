@@ -12,10 +12,12 @@ import { supabase } from '../lib/supabase'
 import { FEATURES } from '../lib/features'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
+import { useT } from './LanguageProvider'
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
 
 export default function ProfileModal({ user, onClose, onUpdated }) {
+  const t = useT()
   const dialogRef = useDialog({ open: true, onClose })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -100,15 +102,15 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
     const trimmed = username.trim()
     if (trimmed) {
       if (!USERNAME_REGEX.test(trimmed)) {
-        setError('Pseudo invalide : 3-20 caractères, lettres/chiffres/_/- uniquement.')
+        setError(t('app.profileModal.errInvalid'))
         return
       }
       if (usernameCheck === 'taken') {
-        setError(`Le pseudo « ${trimmed} » est déjà pris par un autre user.`)
+        setError(t('app.profileModal.errTaken').replace('{name}', trimmed))
         return
       }
       if (usernameCheck === 'checking') {
-        setError('Vérification du pseudo en cours, attends une seconde.')
+        setError(t('app.profileModal.errChecking'))
         return
       }
     }
@@ -117,7 +119,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
     try {
       // Si is_public coché mais pas de pseudo → on bloque (un profil public sans pseudo n'a pas de URL)
       if (isPublic && !trimmed) {
-        setError('Pour rendre ton profil public, choisis d\'abord un pseudo.')
+        setError(t('app.profileModal.errPublicNoName'))
         setSaving(false)
         return
       }
@@ -132,13 +134,13 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
         })
         .eq('user_id', user.id)
       if (error) throw error
-      setSuccess('✓ Profil mis à jour')
+      setSuccess(t('app.profileModal.saved'))
       setInitialUsername(trimmed)
       if (onUpdated) onUpdated()
       // Fermeture auto après 1.5s
       setTimeout(() => { if (onClose) onClose() }, 1200)
     } catch (err) {
-      setError(err.message || 'Erreur lors de la sauvegarde')
+      setError(err.message || t('app.profileModal.errSave'))
     } finally {
       setSaving(false)
     }
@@ -160,7 +162,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        aria-label="Ton profil"
+        aria-label={t('app.profileModal.aria')}
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 460,
@@ -181,10 +183,10 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
               fontSize: 10, color: 'var(--blue-light)',
               letterSpacing: '0.16em', textTransform: 'uppercase',
               fontWeight: 600, marginBottom: 6,
-            }}>Profil</div>
+            }}>{t('app.profileModal.eyebrow')}</div>
             <h2 style={{
               fontSize: 18, fontWeight: 700, margin: 0, lineHeight: 1.2,
-            }}>Ton profil</h2>
+            }}>{t('app.profileModal.title')}</h2>
             <div style={{
               fontSize: 11, color: 'var(--text3)', marginTop: 4,
               fontFamily: 'ui-monospace, monospace',
@@ -192,6 +194,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
           </div>
           <button
             onClick={onClose}
+            aria-label={t('app.profileModal.close')}
             style={{
               background: 'transparent', border: 'none', color: 'var(--text3)',
               fontSize: 18, cursor: 'pointer', padding: 4, lineHeight: 1,
@@ -216,7 +219,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
             {/* PSEUDO */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>
-                Pseudo <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>(optionnel)</span>
+                {t('app.profileModal.username')} <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>{t('app.profileModal.optional')}</span>
               </label>
               <input
                 type="text" value={username}
@@ -231,40 +234,40 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                     'var(--border2)',
                 }} />
               <div style={{ fontSize: 10, marginTop: 4, minHeight: 14, color: 'var(--text3)' }}>
-                {!username && '3-20 caractères · lettres, chiffres, _ et - · Permettra de te connecter avec ce pseudo au lieu de ton email'}
-                {username && usernameCheck === 'invalid' && <span style={{ color: 'var(--red-text)' }}>✗ Format invalide (3-20 chars, lettres/chiffres/_/-)</span>}
-                {username && usernameCheck === 'same' && <span style={{ color: 'var(--text3)' }}>✓ Pseudo actuel</span>}
-                {username && usernameCheck === 'checking' && <span style={{ color: 'var(--text3)' }}>⋯ Vérification...</span>}
-                {username && usernameCheck === 'available' && <span style={{ color: 'var(--green-text)' }}>✓ Pseudo disponible</span>}
-                {username && usernameCheck === 'taken' && <span style={{ color: 'var(--red-text)' }}>✗ Pseudo déjà pris</span>}
+                {!username && t('app.profileModal.usernameHelp')}
+                {username && usernameCheck === 'invalid' && <span style={{ color: 'var(--red-text)' }}>{t('app.profileModal.usernameInvalidShort')}</span>}
+                {username && usernameCheck === 'same' && <span style={{ color: 'var(--text3)' }}>{t('app.profileModal.usernameSame')}</span>}
+                {username && usernameCheck === 'checking' && <span style={{ color: 'var(--text3)' }}>{t('app.profileModal.usernameChecking')}</span>}
+                {username && usernameCheck === 'available' && <span style={{ color: 'var(--green-text)' }}>{t('app.profileModal.usernameAvailable')}</span>}
+                {username && usernameCheck === 'taken' && <span style={{ color: 'var(--red-text)' }}>{t('app.profileModal.usernameTaken')}</span>}
               </div>
             </div>
 
             {/* DISPLAY NAME */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>
-                Nom affiché <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>(optionnel)</span>
+                {t('app.profileModal.displayName')} <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>{t('app.profileModal.optional')}</span>
               </label>
               <input
                 type="text" value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
-                placeholder="Jean Dupont"
+                placeholder={t('app.profileModal.displayNamePh')}
                 maxLength={50}
                 style={inputStyle} />
               <div style={{ fontSize: 10, marginTop: 4, color: 'var(--text3)' }}>
-                Affiché à la place de ton pseudo/email sur les pages où c'est plus naturel.
+                {t('app.profileModal.displayNameHelp')}
               </div>
             </div>
 
             {/* BIO */}
             <div style={{ marginBottom: 18 }}>
               <label style={labelStyle}>
-                Bio <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>(optionnel)</span>
+                {t('app.profileModal.bio')} <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text3)', fontWeight: 400 }}>{t('app.profileModal.optional')}</span>
               </label>
               <textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
-                placeholder="Scalper futures · MNQ/MES · 2 ans d'expérience..."
+                placeholder={t('app.profileModal.bioPh')}
                 maxLength={280} rows={3}
                 style={{ ...inputStyle, resize: 'vertical', minHeight: 60, fontFamily: 'inherit', lineHeight: 1.5 }} />
               <div style={{ fontSize: 10, marginTop: 4, color: 'var(--text3)', textAlign: 'right' }}>
@@ -296,14 +299,14 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                    Rendre mon profil public
+                    {t('app.profileModal.publicTitle')}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
-                    Ton profil sera accessible à <code style={{
+                    {t('app.profileModal.publicBodyBefore')} <code style={{
                       background: 'var(--tint2)', padding: '1px 5px',
                       borderRadius: 3, fontSize: 10, fontFamily: 'ui-monospace, monospace',
-                    }}>quantara.tech/u/{username || 'ton-pseudo'}</code> pour tous (y compris non connectés).
-                    {' '}Pseudo, bio, style de trading visibles · <strong style={{ color: 'var(--text2)' }}>aucun montant de payout</strong> exposé.
+                    }}>quantara.tech/u/{username || t('app.profileModal.publicSlug')}</code> {t('app.profileModal.publicBodyAfter')}
+                    {' '}{t('app.profileModal.publicVisible')} <strong style={{ color: 'var(--text2)' }}>{t('app.profileModal.publicNoPayout')}</strong> {t('app.profileModal.publicExposed')}
                   </div>
                 </div>
               </label>
@@ -359,7 +362,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                   border: '1px solid var(--hairline)',
                   color: 'var(--text2)', borderRadius: 8,
                   cursor: 'pointer', fontFamily: 'inherit',
-                }}>Annuler</button>
+                }}>{t('app.profileModal.cancel')}</button>
               <button
                 type="submit" disabled={saving}
                 style={{
@@ -369,7 +372,7 @@ export default function ProfileModal({ user, onClose, onUpdated }) {
                   cursor: saving ? 'wait' : 'pointer',
                   opacity: saving ? 0.6 : 1, fontFamily: 'inherit',
                   boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset',
-                }}>{saving ? '⏳ Sauvegarde...' : 'Enregistrer'}</button>
+                }}>{saving ? t('app.profileModal.saving') : t('app.profileModal.save')}</button>
             </div>
           </form>
         )}

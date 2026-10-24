@@ -11,51 +11,59 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { C, cardStyle } from '../lib/theme'
+import { useT, useLanguage } from './LanguageProvider'
 
 const PLAN_LABEL = {
   free: 'Free',
-  beta: 'Beta — fondateur',
+  beta: null, // traduit : app.billing.planBeta
   pro: 'Pro',
   elite: 'Elite',
   business: 'Business',
 }
 
-// Libellés FR des statuts Stripe bruts renvoyés par le webhook.
-const STATUS_LABEL = {
-  active: 'Actif',
-  trialing: 'Période d’essai',
-  past_due: 'Paiement en retard',
-  canceled: 'Résilié',
-  unpaid: 'Impayé',
-  incomplete: 'Paiement incomplet',
-  incomplete_expired: 'Paiement expiré',
-  paused: 'En pause',
+// Clés i18n des statuts Stripe bruts renvoyés par le webhook.
+const STATUS_KEY = {
+  active: 'stActive',
+  trialing: 'stTrialing',
+  past_due: 'stPastDue',
+  canceled: 'stCanceled',
+  unpaid: 'stUnpaid',
+  incomplete: 'stIncomplete',
+  incomplete_expired: 'stIncompleteExpired',
+  paused: 'stPaused',
 }
 
-function fmtAmount(cents, currency) {
+function fmtAmount(cents, currency, locale = 'fr') {
   if (cents == null) return '—'
   try {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: (currency || 'eur').toUpperCase() })
+    return new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'fr-FR', { style: 'currency', currency: (currency || 'eur').toUpperCase() })
       .format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency || ''}`
   }
 }
 
-function fmtDate(value) {
+function fmtDate(value, locale = 'fr') {
   if (!value) return '—'
   const d = typeof value === 'number' ? new Date(value * 1000) : new Date(value)
   if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 async function authHeaders() {
   const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) throw new Error('Session expirée')
+  if (!session?.access_token) throw new Error('SESSION_EXPIRED')
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }
 }
 
+// Message lisible pour l'erreur de session levée par authHeaders().
+function sessionText(message, t) {
+  return message === 'SESSION_EXPIRED' ? t('app.billing.sessionExpired') : message
+}
+
 export default function BillingSection({ onError }) {
+  const t = useT()
+  const { locale } = useLanguage()
   const [state, setState] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null) // 'portal' | 'pro' | 'elite' | …
@@ -68,11 +76,11 @@ export default function BillingSection({ onError }) {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       setState(json)
     } catch (err) {
-      onError?.(err.message)
+      onError?.(sessionText(err.message, t))
     } finally {
       setLoading(false)
     }
-  }, [onError])
+  }, [onError, t])
 
   useEffect(() => { load() }, [load])
 
@@ -88,7 +96,7 @@ export default function BillingSection({ onError }) {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       window.location.href = json.url
     } catch (err) {
-      onError?.(err.message)
+      onError?.(sessionText(err.message, t))
       setBusy(null)
     }
   }
@@ -101,7 +109,7 @@ export default function BillingSection({ onError }) {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       window.location.href = json.url
     } catch (err) {
-      onError?.(err.message)
+      onError?.(sessionText(err.message, t))
       setBusy(null)
     }
   }
@@ -109,7 +117,7 @@ export default function BillingSection({ onError }) {
   if (loading) {
     return (
       <div style={{ ...cardStyle, padding: 20, marginBottom: 20, fontSize: 12, color: C.text3 }}>
-        Chargement de l’abonnement…
+        {t('app.billing.loading')}
       </div>
     )
   }
@@ -126,10 +134,10 @@ export default function BillingSection({ onError }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 11, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
-            Plan actuel
+            {t('app.billing.current')}
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: accent, letterSpacing: '-0.02em' }}>
-            {PLAN_LABEL[plan] || plan}
+            {plan === 'beta' ? t('app.billing.planBeta') : (PLAN_LABEL[plan] || plan)}
           </div>
         </div>
         {state.planStatus && (
@@ -139,22 +147,22 @@ export default function BillingSection({ onError }) {
             background: state.planStatus === 'past_due' ? 'var(--amber-bg)' : 'var(--tint2)',
             border: `1px solid ${state.planStatus === 'past_due' ? 'var(--amber)' : C.border}`,
           }}>
-            {STATUS_LABEL[state.planStatus] || state.planStatus}
+            {STATUS_KEY[state.planStatus] ? t('app.billing.' + STATUS_KEY[state.planStatus]) : state.planStatus}
           </span>
         )}
       </div>
 
       {state.betaGrandfather && (
         <div style={{ marginTop: 12, fontSize: 12, color: C.amber, lineHeight: 1.5 }}>
-          🏅 Tu fais partie des bêta-testeurs : ton accès illimité est conservé à vie.
+          {t('app.billing.grandfather')}
         </div>
       )}
 
       {state.expiresAt && (
         <div style={{ marginTop: 10, fontSize: 12, color: C.text3 }}>
           {state.cancelAtPeriodEnd
-            ? `Se termine le ${fmtDate(state.expiresAt)} — pas de reconduction.`
-            : `Prochaine échéance : ${fmtDate(state.expiresAt)}`}
+            ? t('app.billing.endsOn').replace('{date}', fmtDate(state.expiresAt, locale))
+            : t('app.billing.nextDue').replace('{date}', fmtDate(state.expiresAt, locale))}
         </div>
       )}
 
@@ -166,14 +174,14 @@ export default function BillingSection({ onError }) {
             disabled={busy === 'portal'}
             style={btn(false, busy === 'portal')}
           >
-            {busy === 'portal' ? '…' : 'Gérer mon abonnement'}
+            {busy === 'portal' ? '…' : t('app.billing.manage')}
           </button>
         )}
 
         {!isPaid && (
           <>
             <div style={{ display: 'flex', gap: 4, padding: 3, background: 'var(--tint2)', borderRadius: 8, border: `1px solid ${C.border}` }}>
-              {[['month', 'Mensuel'], ['year', 'Annuel −35%']].map(([val, label]) => (
+              {[['month', t('app.billing.monthly')], ['year', t('app.billing.yearly')]].map(([val, label]) => (
                 <button
                   key={val}
                   onClick={() => setInterval(val)}
@@ -189,7 +197,7 @@ export default function BillingSection({ onError }) {
               ))}
             </div>
             <button onClick={() => startCheckout('pro')} disabled={busy === 'pro'} style={btn(true, busy === 'pro')}>
-              {busy === 'pro' ? '…' : 'Passer à Pro'}
+              {busy === 'pro' ? '…' : t('app.billing.upgrade')}
             </button>
             {/* Elite et Business ont été retirés de l'offre (octobre 2026) : Pro seulement. */}
           </>
@@ -201,7 +209,7 @@ export default function BillingSection({ onError }) {
         <>
           <div style={{ height: 1, background: C.border, margin: '20px 0 16px' }} />
           <div style={{ fontSize: 11, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>
-            Factures
+            {t('app.billing.invoices')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {state.invoices.map((inv) => (
@@ -215,8 +223,8 @@ export default function BillingSection({ onError }) {
                 <span style={{ color: C.text3, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 11 }}>
                   {inv.number || inv.id}
                 </span>
-                <span style={{ color: C.text3, flex: 1, textAlign: 'center' }}>{fmtDate(inv.created)}</span>
-                <span style={{ color: C.text, fontWeight: 600 }}>{fmtAmount(inv.total, inv.currency)}</span>
+                <span style={{ color: C.text3, flex: 1, textAlign: 'center' }}>{fmtDate(inv.created, locale)}</span>
+                <span style={{ color: C.text, fontWeight: 600 }}>{fmtAmount(inv.total, inv.currency, locale)}</span>
                 {inv.pdfUrl && (
                   <a
                     href={inv.pdfUrl}

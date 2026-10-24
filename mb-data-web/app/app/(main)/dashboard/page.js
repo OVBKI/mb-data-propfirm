@@ -4,8 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../AppContext'
-import { useT } from '../../../../components/LanguageProvider'
-import { MONTHS_FULL } from '../../../../lib/constants'
+import { useT, useLanguage } from '../../../../components/LanguageProvider'
 import DashboardGrid from '../../../../components/dashboard/DashboardGrid'
 import AiReviewWidget from '../../../../components/dashboard/AiReviewWidget'
 import {
@@ -23,25 +22,33 @@ import { useTheme } from '../../../../components/ThemeProvider'
 
 // ── Mini Bar Chart for dashboard ──
 function MiniBarChart({ firms, firmTotalSpent, firmTotalPayouts }) {
+  const t = useT()
   const { theme } = useTheme()
   const ref = useRef(null)
   const chart = useRef(null)
 
+  // Les montants sont calculés au rendu et résumés en une chaîne : le graphe se
+  // redessine quand un montant change, pas seulement quand la liste des firms change.
+  const series = JSON.stringify({
+    labels: firms.map(f => f.name.length > 8 ? f.name.slice(0, 8) + '…' : f.name),
+    spent: firms.map(f => parseFloat(firmTotalSpent(f).toFixed(2))),
+    payouts: firms.map(f => parseFloat(firmTotalPayouts(f).toFixed(2))),
+  })
+  const hasFirms = firms.length > 0
+
   useEffect(() => {
-    if (!ref.current || !firms.length) return
+    if (!ref.current || !hasFirms) return
     // Chart.js peint dans un canvas : var() n'y est pas résolu, on lit les jetons
     // calculés. `theme` est en dépendance pour reconstruire à la bascule.
     const CH = chartColors()
     import('chart.js/auto').then(({ default: Chart }) => {
       if (chart.current) { chart.current.destroy(); chart.current = null }
-      const labels = firms.map(f => f.name.length > 8 ? f.name.slice(0, 8) + '…' : f.name)
-      const spent = firms.map(f => parseFloat(firmTotalSpent(f).toFixed(2)))
-      const payouts = firms.map(f => parseFloat(firmTotalPayouts(f).toFixed(2)))
+      const { labels, spent, payouts } = JSON.parse(series)
       chart.current = new Chart(ref.current, {
         type: 'bar',
         data: {
           labels, datasets: [
-            { label: 'Dépensé (€)', data: spent, backgroundColor: '#e8504a', borderRadius: 4 },
+            { label: t('app.dashboard.legendSpent') + ' (€)', data: spent, backgroundColor: '#e8504a', borderRadius: 4 },
             { label: 'Payouts (€)', data: payouts, backgroundColor: '#1db87a', borderRadius: 4 }
           ]
         },
@@ -56,13 +63,14 @@ function MiniBarChart({ firms, firmTotalSpent, firmTotalPayouts }) {
       })
     })
     return () => { if (chart.current) { chart.current.destroy(); chart.current = null } }
-  }, [firms.map(f => f.id).join(','), theme])
+  }, [series, hasFirms, theme, t])
 
   return <canvas ref={ref} />
 }
 
 export default function DashboardPage() {
   const t = useT()
+  const { locale } = useLanguage()
   const {
     user, firms, rates, profile, rateInfo,
     currency, setCurrencyMode, searchQ, setSearchQ,
@@ -96,19 +104,19 @@ export default function DashboardPage() {
         if (!m[a.buy_date]) m[a.buy_date] = []
         const isMonthly = a.payment_mode === 'monthly'
         const monthsBilled = a.months_count || 1
-        m[a.buy_date].push({ type: 'buy', firm: f.name, amount: a.spent, currency: a.currency, firmId: f.id, acctId: a.id, label: isMonthly ? 'Mensualité #1' : 'Challenge' })
+        m[a.buy_date].push({ type: 'buy', firm: f.name, amount: a.spent, currency: a.currency, firmId: f.id, acctId: a.id, label: isMonthly ? t('app.dashboard.evMonthly').replace('{n}', 1) : t('app.dashboard.evChallenge') })
         if (isMonthly && monthsBilled > 1) {
           for (let i = 1; i < monthsBilled; i++) {
             const d = new Date(a.buy_date)
             d.setMonth(d.getMonth() + i)
             const dStr = d.toISOString().slice(0, 10)
             if (!m[dStr]) m[dStr] = []
-            m[dStr].push({ type: 'buy', firm: f.name, amount: a.spent, currency: a.currency, firmId: f.id, acctId: a.id, label: `Mensualité #${i + 1}` })
+            m[dStr].push({ type: 'buy', firm: f.name, amount: a.spent, currency: a.currency, firmId: f.id, acctId: a.id, label: t('app.dashboard.evMonthly').replace('{n}', i + 1) })
           }
         }
         if (a.activation_fee > 0 && a.activation_date) {
           if (!m[a.activation_date]) m[a.activation_date] = []
-          m[a.activation_date].push({ type: 'buy', firm: f.name, amount: a.activation_fee, currency: a.currency, firmId: f.id, acctId: a.id, label: 'Activation' })
+          m[a.activation_date].push({ type: 'buy', firm: f.name, amount: a.activation_fee, currency: a.currency, firmId: f.id, acctId: a.id, label: t('app.dashboard.evActivation') })
         }
         ;(a.payouts || []).forEach(p => {
           if (!m[p.date]) m[p.date] = []
@@ -180,22 +188,22 @@ export default function DashboardPage() {
           return (
             <div key={firm.id} onClick={() => setFirmDrawer(firm.id)} className="qt-firm-card" style={{ ...S.card, padding: '20px', cursor: 'pointer', transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--blue-border)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.25), 0 0 24px var(--blue-bg)' }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--card-shadow)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>{getFirmLogo(firm.name, firm.color, 36)}<div><div style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.005em' }}>{firm.name}</div><div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>{al.length} compte{al.length > 1 ? 's' : ''} · {payoutCount} payout{payoutCount > 1 ? 's' : ''}</div></div></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>{getFirmLogo(firm.name, firm.color, 36)}<div><div style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.005em' }}>{firm.name}</div><div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>{t(al.length > 1 ? 'app.dashboard.accountsMany' : 'app.dashboard.accountsOne').replace('{n}', al.length)} · {t(payoutCount > 1 ? 'app.dashboard.payoutsMany' : 'app.dashboard.payoutsOne').replace('{n}', payoutCount)}</div></div></div>
                 <div style={{ textAlign: 'right' }}><div style={{ fontSize: '19px', fontWeight: '700', color: net >= 0 ? 'var(--green)' : 'var(--red)', letterSpacing: '-0.015em' }}>{currency === 'eur' ? fmtENet(net, 0) : (net >= 0 ? '+' : '') + (net / rates.USD).toFixed(0) + ' $'}</div><div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%</div></div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px', marginBottom: '14px' }}>
-                {[{ l: 'Dépensé', v: currency === 'eur' ? fmtE(ts, 0) : (ts / rates.USD).toFixed(0) + ' $', c: 'var(--red)' }, { l: 'Payouts', v: currency === 'eur' ? fmtE(tp, 0) : (tp / rates.USD).toFixed(0) + ' $', c: 'var(--green)' }, { l: 'Actifs', v: financedCount + challengeCount }].map((s, i) => (
+                {[{ l: t('app.dashboard.miniSpent'), v: currency === 'eur' ? fmtE(ts, 0) : (ts / rates.USD).toFixed(0) + ' $', c: 'var(--red)' }, { l: t('app.dashboard.miniPayouts'), v: currency === 'eur' ? fmtE(tp, 0) : (tp / rates.USD).toFixed(0) + ' $', c: 'var(--green)' }, { l: t('app.dashboard.miniActive'), v: financedCount + challengeCount }].map((s, i) => (
                   <div key={i} style={{ background: 'var(--tint1)', border: '1px solid var(--tint2)', borderRadius: '7px', padding: '10px 8px', textAlign: 'center' }}><div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px', fontWeight: '600' }}>{s.l}</div><div style={{ fontSize: '14px', fontWeight: '700', color: s.c || 'var(--text)', letterSpacing: '-0.005em' }}>{s.v}</div></div>
                 ))}
               </div>
               {activeAccts.slice(0, 3).map(a => {
                 const aNet = totalPayoutsEUR(a) - totalSpentForAccount(a)
                 return <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid var(--border)', fontSize: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: STATUS_COLORS[a.status] || 'var(--text3)', flexShrink: 0 }} /><span title={`Acheté le ${a.buy_date}`} style={{ color: 'var(--text2)', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{accountLabel(a)}</span><span style={{ ...S.badge(a.status), fontSize: '9px', padding: '1px 6px', flexShrink: 0 }}>{a.status}</span>{a.liquidated_at && <span title={`Auto-liquidé le ${new Date(a.liquidated_at).toLocaleString('fr-FR')}`} style={{ fontSize: '10px', cursor: 'help', marginLeft: '2px', flexShrink: 0 }}>{'🔥'}</span>}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: STATUS_COLORS[a.status] || 'var(--text3)', flexShrink: 0 }} /><span title={t('app.dashboard.boughtOn').replace('{date}', a.buy_date)} style={{ color: 'var(--text2)', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{accountLabel(a)}</span><span style={{ ...S.badge(a.status), fontSize: '9px', padding: '1px 6px', flexShrink: 0 }}>{a.status}</span>{a.liquidated_at && <span title={t('app.dashboard.liquidatedOn').replace('{date}', new Date(a.liquidated_at).toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR'))} style={{ fontSize: '10px', cursor: 'help', marginLeft: '2px', flexShrink: 0 }}>{'🔥'}</span>}</div>
                   <span style={{ fontWeight: '600', color: aNet >= 0 ? 'var(--green)' : 'var(--red)' }}>{fmtMoneyNet(aNet, 0)}</span>
                 </div>
               })}
-              {activeAccts.length > 3 && <div style={{ fontSize: '11px', color: 'var(--text3)', padding: '4px 0' }}>+{activeAccts.length - 3} autre{activeAccts.length - 3 > 1 ? 's' : ''}...</div>}
+              {activeAccts.length > 3 && <div style={{ fontSize: '11px', color: 'var(--text3)', padding: '4px 0' }}>{t(activeAccts.length - 3 > 1 ? 'app.dashboard.moreMany' : 'app.dashboard.moreOne').replace('{n}', activeAccts.length - 3)}</div>}
               <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                 {challengeCount > 0 && <span style={S.badge('Challenge')}>{challengeCount} {t('app.status.challenge')}{challengeCount > 1 ? 's' : ''}</span>}
                 {financedCount > 0 && <span style={S.badge('Financé')}>{financedCount} {t('app.status.funded')}{financedCount > 1 ? 's' : ''}</span>}
@@ -231,23 +239,23 @@ export default function DashboardPage() {
     return (
       <div style={{ ...S.card, padding: '20px 22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ fontSize: '15px', fontWeight: '600' }}>Calendrier des transactions</div>
+              <div style={{ fontSize: '15px', fontWeight: '600' }}>{t('app.dashboard.calendarTitle')}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button onClick={() => { const d = new Date(calYear, calMonth - 1); setCalMonth(d.getMonth()); setCalYear(d.getFullYear()) }} style={S.btnGhost}>{'‹'}</button>
-                <span style={{ fontWeight: '600', minWidth: '140px', textAlign: 'center' }}>{MONTHS_FULL[calMonth]} {calYear}</span>
+                <span style={{ fontWeight: '600', minWidth: '140px', textAlign: 'center' }}>{new Date(calYear, calMonth, 1).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { month: 'long' }).replace(/^./, c => c.toUpperCase())} {calYear}</span>
                 <button onClick={() => { const d = new Date(calYear, calMonth + 1); setCalMonth(d.getMonth()); setCalYear(d.getFullYear()) }} style={S.btnGhost}>{'›'}</button>
-                <button onClick={() => { setCalMonth(new Date().getMonth()); setCalYear(new Date().getFullYear()); setSelDay(null) }} style={S.btnGhost}>Aujourd&apos;hui</button>
+                <button onClick={() => { setCalMonth(new Date().getMonth()); setCalYear(new Date().getFullYear()); setSelDay(null) }} style={S.btnGhost}>{t('app.dashboard.todayBtn')}</button>
               </div>
             </div>
             <div className="stats-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '14px' }}>
-              {[{ l: 'Achats du mois', v: fmtMoney(msSpent), c: 'var(--red)' }, { l: 'Payouts du mois', v: fmtMoney(msPayout), c: 'var(--green)' }, { l: 'Net du mois', v: fmtMoneyNet(msPayout - msSpent), c: (msPayout - msSpent) >= 0 ? 'var(--green)' : 'var(--red)' }].map((s, i) => (
+              {[{ l: t('app.dashboard.monthSpent'), v: fmtMoney(msSpent), c: 'var(--red)' }, { l: t('app.dashboard.monthPayout'), v: fmtMoney(msPayout), c: 'var(--green)' }, { l: t('app.dashboard.monthNet'), v: fmtMoneyNet(msPayout - msSpent), c: (msPayout - msSpent) >= 0 ? 'var(--green)' : 'var(--red)' }].map((s, i) => (
                 <div key={i} style={{ ...S.card, padding: '10px 14px' }}><div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>{s.l}</div><div style={{ fontSize: '15px', fontWeight: '600', color: s.c }}>{s.v}</div></div>
               ))}
             </div>
             <div className="grid-1-280" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'start' }}>
               <div style={{ ...S.card, overflow: 'hidden' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', background: 'var(--surface2)', borderBottom: '0.5px solid var(--border)' }}>
-                  {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(d => <div key={d} style={{ padding: '12px 0', textAlign: 'center', fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d}</div>)}
+                  {['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'].map(k => t('app.dashboard.' + k)).map(d => <div key={d} style={{ padding: '12px 0', textAlign: 'center', fontSize: '11px', fontWeight: '600', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d}</div>)}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
                   {calDays.map((day, i) => {
@@ -264,20 +272,20 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...S.card, padding: '16px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px' }}>{selDay ? new Date(selDay + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Sélectionnez un jour'}</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px' }}>{selDay ? new Date(selDay + 'T00:00:00').toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : t('app.dashboard.selectDay')}</div>
                   {selDay ? (evtMap[selDay] || []).length > 0 ? (evtMap[selDay] || []).map((e, i) => (
                     <div key={i} onClick={() => setFirmDrawer(e.firmId)} style={{ padding: '10px 12px', background: 'var(--surface2)', borderRadius: 'var(--radius)', marginBottom: '8px', cursor: 'pointer' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ fontWeight: '600', fontSize: '13px' }}>{e.firm}</span><span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '99px', background: e.type === 'buy' ? 'var(--red-bg)' : 'var(--green-bg)', color: e.type === 'buy' ? 'var(--red-text)' : 'var(--green-text)', fontWeight: '600' }}>{e.label || (e.type === 'buy' ? 'Achat' : 'Payout')}</span></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ fontWeight: '600', fontSize: '13px' }}>{e.firm}</span><span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '99px', background: e.type === 'buy' ? 'var(--red-bg)' : 'var(--green-bg)', color: e.type === 'buy' ? 'var(--red-text)' : 'var(--green-text)', fontWeight: '600' }}>{e.label || (e.type === 'buy' ? t('app.dashboard.eventBuy') : t('app.dashboard.eventPayout'))}</span></div>
                       <div style={{ fontSize: '12px', color: e.type === 'buy' ? 'var(--red)' : 'var(--green)', fontWeight: '600' }}>{e.type === 'buy' ? '-' : '+'}{fmtMoney(toEUR(e.amount, e.currency, rates))}</div>
                     </div>
-                  )) : <div style={{ color: 'var(--text3)', fontSize: '12px' }}>Aucune transaction.</div> : <div style={{ color: 'var(--text3)', fontSize: '12px' }}>Cliquez sur un jour.</div>}
+                  )) : <div style={{ color: 'var(--text3)', fontSize: '12px' }}>{t('app.dashboard.noTransaction')}</div> : <div style={{ color: 'var(--text3)', fontSize: '12px' }}>{t('app.dashboard.clickDay')}</div>}
                 </div>
                 <div style={{ ...S.card, padding: '16px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Transactions récentes</div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{t('app.dashboard.recentTx')}</div>
                   {Object.entries(evtMap).flatMap(([d, evts]) => evts.map(e => ({ ...e, date: d }))).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).map((e, i) => (
                     <div key={i} style={{ display: 'flex', gap: '8px', padding: '7px 0', borderBottom: '0.5px solid var(--border)' }}>
                       <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: e.type === 'buy' ? 'var(--red)' : 'var(--green)', marginTop: '4px', flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}><div style={{ fontSize: '12px', fontWeight: '500' }}>{e.firm}</div><div style={{ fontSize: '10px', color: 'var(--text3)' }}>{e.date} · {e.type === 'buy' ? 'Achat' : 'Payout'}</div></div>
+                      <div style={{ flex: 1 }}><div style={{ fontSize: '12px', fontWeight: '500' }}>{e.firm}</div><div style={{ fontSize: '10px', color: 'var(--text3)' }}>{e.date} · {e.type === 'buy' ? t('app.dashboard.eventBuy') : t('app.dashboard.eventPayout')}</div></div>
                       <div style={{ fontSize: '12px', fontWeight: '600', color: e.type === 'buy' ? 'var(--red)' : 'var(--green)' }}>{e.type === 'buy' ? '-' : '+'}{fmtMoney(toEUR(e.amount, e.currency, rates))}</div>
                     </div>
                   ))}
@@ -291,10 +299,10 @@ export default function DashboardPage() {
   function renderByFirm() {
     return (
           <div style={{ ...S.card, padding: '18px' }}>
-            <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '10px' }}>Par firme (EUR)</div>
+            <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '10px' }}>{t('app.dashboard.byFirmEur')}</div>
             <div style={{ display: 'flex', gap: '14px', marginBottom: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text2)' }}><div style={{ width: '10px', height: '3px', borderRadius: '2px', background: '#e8504a' }}></div>Dépensé</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text2)' }}><div style={{ width: '10px', height: '3px', borderRadius: '2px', background: '#1db87a' }}></div>Payouts</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text2)' }}><div style={{ width: '10px', height: '3px', borderRadius: '2px', background: '#e8504a' }}></div>{t('app.dashboard.legendSpent')}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text2)' }}><div style={{ width: '10px', height: '3px', borderRadius: '2px', background: '#1db87a' }}></div>{t('app.dashboard.legendPayouts')}</div>
             </div>
             <div style={{ position: 'relative', height: '180px' }}><MiniBarChart firms={firms} firmTotalSpent={firmTotalSpent} firmTotalPayouts={firmTotalPayouts} /></div>
           </div>
@@ -304,7 +312,7 @@ export default function DashboardPage() {
   function renderStats() {
     return (
           <div style={{ ...S.card, padding: '18px' }}>
-            <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '14px' }}>Statistiques</div>
+            <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '14px' }}>{t('app.dashboard.stats')}</div>
             {(() => {
               const paid = accts.filter(a => a.status === 'Financé').length
               const total = accts.length
@@ -314,11 +322,11 @@ export default function DashboardPage() {
               const roi = totalSpentEUR > 0 ? totalNet / totalSpentEUR * 100 : null
               return <>
                 {[
-                  ['Taux de réussite', total > 0 ? Math.round(paid / total * 100) + '%' : '—', paid / total > 0.5 ? 'var(--green)' : 'var(--text)'],
-                  ['Meilleur payout', bestP > 0 ? fmtMoney(bestP) : '—', 'var(--green)'],
-                  ['Coût moyen challenge', total > 0 ? fmtMoney(totalSpentEUR / total) : '—', 'var(--text)'],
-                  ['ROI global', roi !== null ? (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%' : '—', roi >= 0 ? 'var(--green)' : 'var(--red)'],
-                  ['Comptes actifs', activeCount, 'var(--text)'],
+                  [t('app.dashboard.successRate'), total > 0 ? Math.round(paid / total * 100) + '%' : '—', paid / total > 0.5 ? 'var(--green)' : 'var(--text)'],
+                  [t('app.dashboard.bestPayout'), bestP > 0 ? fmtMoney(bestP) : '—', 'var(--green)'],
+                  [t('app.dashboard.avgChallengeCost'), total > 0 ? fmtMoney(totalSpentEUR / total) : '—', 'var(--text)'],
+                  [t('app.dashboard.globalRoi'), roi !== null ? (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%' : '—', roi >= 0 ? 'var(--green)' : 'var(--red)'],
+                  [t('app.dashboard.activeAccounts'), activeCount, 'var(--text)'],
                 ].map(([label, value, color], i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid var(--border)' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text2)' }}>{label}</span>
@@ -334,7 +342,7 @@ export default function DashboardPage() {
   function renderRanking() {
     return (
           <div style={{ ...S.card, padding: '18px' }}>
-            <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '14px' }}>Par firme</div>
+            <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text2)', marginBottom: '14px' }}>{t('app.dashboard.byFirm')}</div>
             {firms.slice().sort((a, b) => (firmTotalPayouts(b) - firmTotalSpent(b)) - (firmTotalPayouts(a) - firmTotalSpent(a))).map(f => {
               const net = firmTotalPayouts(f) - firmTotalSpent(f)
               return <div key={f.id} onClick={() => setFirmDrawer(f.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid var(--border)', cursor: 'pointer' }}>
@@ -342,13 +350,13 @@ export default function DashboardPage() {
                   {getFirmLogo(f.name, f.color, 22)}
                   <div>
                     <div style={{ fontSize: '12px', fontWeight: '600' }}>{f.name}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text3)' }}>{(f.accounts || []).length} compte{(f.accounts || []).length > 1 ? 's' : ''}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text3)' }}>{t((f.accounts || []).length > 1 ? 'app.dashboard.accountsMany' : 'app.dashboard.accountsOne').replace('{n}', (f.accounts || []).length)}</div>
                   </div>
                 </div>
                 <div style={{ fontSize: '13px', fontWeight: '600', color: net >= 0 ? 'var(--green)' : 'var(--red)' }}>{net >= 0 ? '+' : ''}{net.toFixed(0)} €</div>
               </div>
             })}
-            {!firms.length && <div style={{ fontSize: '12px', color: 'var(--text3)' }}>Aucune donnée</div>}
+            {!firms.length && <div style={{ fontSize: '12px', color: 'var(--text3)' }}>{t('app.dashboard.noData')}</div>}
           </div>
     )
   }

@@ -150,13 +150,13 @@ export default function AuthPage({ onAuth, initialMode }) {
     // 🛡️ Anti-bot 1 : honeypot. Un humain ne le voit pas, un bot le remplit.
     if (honeypot) {
       // On simule un succès silencieux pour pas révéler qu'on a détecté le bot
-      setSuccess('Compte créé ! Vérifiez votre email pour confirmer.')
+      setSuccess(t('app.authErrors.created'))
       return
     }
 
     // 🛡️ Anti-bot 2 : Turnstile (login ET signup, requis par Supabase)
     if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError('Merci d\'attendre la validation du captcha avant de continuer (quelques secondes).')
+      setError(t('app.authErrors.captchaWait'))
       return
     }
 
@@ -178,13 +178,13 @@ export default function AuthPage({ onAuth, initialMode }) {
             body: JSON.stringify({ username: loginEmail }),
           })
           if (res.status === 429) {
-            throw new Error('Trop de tentatives. Réessaye dans une minute.')
+            throw new Error(t('app.authErrors.tooMany'))
           }
           const json = await res.json().catch(() => ({}))
           if (!res.ok) {
-            throw new Error('Erreur lors de la résolution du pseudo : ' + (json.error || res.statusText))
+            throw new Error(t('app.authErrors.resolveError').replace('{msg}', json.error || res.statusText))
           }
-          if (!json.email) throw new Error(`Aucun compte trouvé avec le pseudo « ${loginEmail} ».`)
+          if (!json.email) throw new Error(t('app.authErrors.noUser').replace('{name}', loginEmail))
           loginEmail = json.email
         }
 
@@ -200,19 +200,19 @@ export default function AuthPage({ onAuth, initialMode }) {
         // === SIGNUP ===
         const signupEmail = emailOrUsername.trim()
         if (!EMAIL_REGEX.test(signupEmail)) {
-          throw new Error('Renseigne ton email pour créer un compte (pas un pseudo).')
+          throw new Error(t('app.authErrors.emailForSignup'))
         }
         // Si pseudo renseigné : vérifie le format et la dispo avant le signup
         const trimmedUsername = username.trim()
         if (trimmedUsername) {
           if (!USERNAME_REGEX.test(trimmedUsername)) {
-            throw new Error('Pseudo invalide : 3-20 caractères, lettres/chiffres/_/- uniquement.')
+            throw new Error(t('app.authErrors.usernameInvalid'))
           }
           if (usernameCheck === 'taken') {
-            throw new Error(`Le pseudo « ${trimmedUsername} » est déjà pris.`)
+            throw new Error(t('app.authErrors.usernameTaken').replace('{name}', trimmedUsername))
           }
           if (usernameCheck === 'checking') {
-            throw new Error('Vérification du pseudo en cours, réessaie dans une seconde.')
+            throw new Error(t('app.authErrors.usernameChecking'))
           }
         }
 

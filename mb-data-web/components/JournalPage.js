@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { useT } from './LanguageProvider'
+import { useT, useLanguage } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { TooltipIcon } from './Tooltip'
@@ -22,6 +22,8 @@ const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
 // Carte avec courbe de balance pour un compte donné
 function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddTrade, addTradeHref=null }){
   const t = useT()
+  const { locale } = useLanguage()
+  const numLocale = locale === 'en' ? 'en-US' : 'fr-FR'
   const { theme } = useTheme()
   const ref = useRef(null)
   const chart = useRef(null)
@@ -261,21 +263,19 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
     if(!onResetBalance) return
     const today = new Date().toISOString().slice(0,10)
     const ans = window.prompt(
-      `Reset la balance du compte ${accountLabel(account)} ?\n\n` +
-      `Saisis la date du passage en Financé (YYYY-MM-DD).\n` +
-      `Les trades avant cette date seront masqués du calcul de balance (mais conservés dans l'historique).`,
+      t('app.journalAccount.resetPrompt').replace('{account}', accountLabel(account)),
       today
     )
     if(!ans) return
     if(!/^\d{4}-\d{2}-\d{2}$/.test(ans.trim())){
-      alert('Format invalide. Utilise YYYY-MM-DD (ex: 2026-05-30)')
+      alert(t('app.journalAccount.badDate'))
       return
     }
     onResetBalance(account.id, ans.trim())
   }
   function handleUndoReset(){
     if(!onResetBalance) return
-    if(!confirm('Annuler le reset ? Les anciens trades seront de nouveau pris en compte dans la balance.')) return
+    if(!confirm(t('app.journalAccount.undoConfirm'))) return
     onResetBalance(account.id, null)
   }
 
@@ -295,28 +295,28 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
           {addTradeHref ? (
             <a
               href={addTradeHref}
-              title="Importer un CSV pour ajouter des trades"
+              title={t('app.journalAccount.importTitle')}
               style={{
                 fontSize:'11px',padding:'7px 11px',borderRadius:'8px',
                 background:'var(--blue-bg)',border:'1px solid var(--blue-border)',
                 color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',whiteSpace:'nowrap',
                 textDecoration:'none',display:'inline-block',
               }}
-            >+ Importer</a>
+            >{t('app.journalAccount.importBtn')}</a>
           ) : onAddTrade && (
             <button
               onClick={()=>onAddTrade(account.id)}
-              title="Ajouter un trade pour ce compte"
+              title={t('app.journalAccount.addTitle')}
               style={{
                 fontSize:'11px',padding:'7px 11px',borderRadius:'8px',
                 background:'var(--blue-bg)',border:'1px solid var(--blue-border)',
                 color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',whiteSpace:'nowrap',
               }}
-            >+ Trade</button>
+            >{t('app.journalAccount.addBtn')}</button>
           )}
           <div style={{textAlign:'right'}}>
             <div style={{fontSize:'18px',fontWeight:'700',color:finalNet>=0?'var(--green)':'var(--red)'}}>
-              ${data.finalBalance.toLocaleString('fr-FR',{maximumFractionDigits:0})}
+              ${data.finalBalance.toLocaleString(numLocale,{maximumFractionDigits:0})}
             </div>
             <div style={{fontSize:'11px',color:finalNet>=0?'var(--green)':'var(--red)'}}>
               {finalNet>=0?'+':''}{finalNet.toFixed(0)} $ ({pctFromStart>=0?'+':''}{pctFromStart.toFixed(2)}%)
@@ -339,8 +339,8 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
           borderRadius:'var(--radius)',fontSize:'11px',
         }}>
           <span style={{color:'var(--text2)'}}>
-            ↻ Compte reset le <strong style={{color:'var(--text)'}}>{fundedDate}</strong>
-            {ignoredCount>0 && <span style={{color:'var(--text3)'}}> · {ignoredCount} trade{ignoredCount>1?'s':''} antérieur{ignoredCount>1?'s':''} masqué{ignoredCount>1?'s':''}</span>}
+            {t('app.journalAccount.resetOn')} <strong style={{color:'var(--text)'}}>{fundedDate}</strong>
+            {ignoredCount>0 && <span style={{color:'var(--text3)'}}> · {t(ignoredCount>1?'app.journalAccount.hiddenMany':'app.journalAccount.hiddenOne').replace('{n}', ignoredCount)}</span>}
           </span>
           <div style={{display:'flex',gap:'6px'}}>
             <button onClick={handleResetClick} style={{
@@ -355,12 +355,12 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
         </div>
       ) : account.status === 'Financé' && onResetBalance ? (
         <div style={{marginBottom:'12px',display:'flex',alignItems:'center',gap:'8px'}}>
-          <button onClick={handleResetClick} title="Repart la balance à 0 depuis une date donnée — utile au passage Challenge → Financé pour ne pas mélanger les trades des 2 phases" style={{
+          <button onClick={handleResetClick} title={t('app.journalAccount.resetTitle')} style={{
             fontSize:'11px',padding:'6px 12px',borderRadius:'6px',
             background:'var(--blue-bg)',border:'1px solid var(--blue-border)',
             color:'var(--blue-light)',cursor:'pointer',fontWeight:'600',
           }}>{t('app.journal.resetBalance')}</button>
-          <TooltipIcon text="Quand tu passes Challenge → Financé, ton compte simulé repart à 0 (les trades de la phase challenge sont conservés mais masqués du calcul de balance Financé). Click pour définir manuellement la date du reset." maxWidth={320} />
+          <TooltipIcon text={t('app.journalAccount.resetTip')} maxWidth={320} />
         </div>
       ) : null}
 
@@ -375,18 +375,18 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             return (
               <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'10px 12px'}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'5px'}}>
-                  <span style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:'700'}}>🎯 Objectif payout</span>
+                  <span style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:'700'}}>{t('app.journalAccount.payoutGoal')}</span>
                   <span style={{fontSize:'12px',fontWeight:'700',color:reached?'var(--green)':'var(--text)'}}>
-                    {reached ? '✓ Atteint' : `${progress.toFixed(0)}%`}
+                    {reached ? t('app.journalAccount.reached') : `${progress.toFixed(0)}%`}
                   </span>
                 </div>
                 <div style={{fontSize:'13px',fontWeight:'700',color:reached?'var(--green)':'var(--text)',marginBottom:'4px'}}>
-                  ${payoutTarget.toLocaleString('fr-FR',{maximumFractionDigits:0})}
+                  ${payoutTarget.toLocaleString(numLocale,{maximumFractionDigits:0})}
                 </div>
                 <div style={{fontSize:'10px',color:reached?'var(--green-text)':'var(--text2)'}}>
                   {reached
-                    ? `+$${(-remaining).toLocaleString('fr-FR',{maximumFractionDigits:0})} au-dessus`
-                    : `Il manque $${remaining.toLocaleString('fr-FR',{maximumFractionDigits:0})}`}
+                    ? t('app.journalAccount.above').replace('{amount}', (-remaining).toLocaleString(numLocale,{maximumFractionDigits:0}))
+                    : t('app.journalAccount.missing').replace('{amount}', remaining.toLocaleString(numLocale,{maximumFractionDigits:0}))}
                 </div>
                 {/* Mini barre de progression */}
                 <div style={{height:'4px',background:'var(--surface3)',borderRadius:'99px',marginTop:'6px',overflow:'hidden'}}>
@@ -402,13 +402,13 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
             const counted = useValidated ? data.validatedDays : data.tradingDays
             const reached = counted >= minDays
             const progress = minDays > 0 ? Math.min(100, (counted / minDays) * 100) : 0
-            const label = useValidated ? `📅 Jours validés (≥$${minDailyProfit})` : '📅 Jours tradés'
+            const label = useValidated ? t('app.journalAccount.validatedDays').replace('{min}', minDailyProfit) : t('app.journalAccount.tradedDays')
             return (
               <div style={{background:'var(--surface2)',borderRadius:'var(--radius)',padding:'10px 12px'}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'5px'}}>
                   <span style={{fontSize:'10px',color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:'700'}}>{label}</span>
                   <span style={{fontSize:'12px',fontWeight:'700',color:reached?'var(--green)':'var(--text)'}}>
-                    {reached ? '✓ Atteint' : `${progress.toFixed(0)}%`}
+                    {reached ? t('app.journalAccount.reached') : `${progress.toFixed(0)}%`}
                   </span>
                 </div>
                 <div style={{fontSize:'13px',fontWeight:'700',color:reached?'var(--green)':'var(--text)',marginBottom:'4px'}}>
@@ -416,19 +416,19 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
                 </div>
                 <div style={{fontSize:'10px',color:reached?'var(--green-text)':'var(--text2)'}}>
                   {reached
-                    ? 'Minimum atteint'
+                    ? t('app.journalAccount.minReached')
                     : useValidated
-                      ? `Encore ${minDays - counted} jour${minDays-counted>1?'s':''} à ≥$${minDailyProfit}`
-                      : `Encore ${minDays - counted} jour${minDays-counted>1?'s':''}`}
+                      ? t(minDays-counted>1?'app.journalAccount.moreDaysMinMany':'app.journalAccount.moreDaysMinOne').replace('{n}', minDays - counted).replace('{min}', minDailyProfit)
+                      : t(minDays-counted>1?'app.journalAccount.moreDaysMany':'app.journalAccount.moreDaysOne').replace('{n}', minDays - counted)}
                 </div>
                 {useValidated && data.tradingDays > data.validatedDays && (
                   <div style={{fontSize:'9px',color:'var(--text3)',marginTop:'2px',fontStyle:'italic'}}>
-                    {`${data.tradingDays - data.validatedDays} jour${(data.tradingDays - data.validatedDays)>1?'s':''} traités mais <$${minDailyProfit}`}
+                    {t((data.tradingDays - data.validatedDays)>1?'app.journalAccount.belowMinMany':'app.journalAccount.belowMinOne').replace('{n}', data.tradingDays - data.validatedDays).replace('{min}', minDailyProfit)}
                   </div>
                 )}
                 {data.lastPayoutDate && (
-                  <div style={{fontSize:'9px',color:'#4d8fff',marginTop:'2px',fontStyle:'italic',display:'flex',alignItems:'center',gap:'4px'}} title="Le compteur est reset après chaque payout — la plupart des PropFirms exigent N jours de trading entre chaque payout, pas en cumulé.">
-                    🔄 Compteur reset depuis le payout du {data.lastPayoutDate}
+                  <div style={{fontSize:'9px',color:'#4d8fff',marginTop:'2px',fontStyle:'italic',display:'flex',alignItems:'center',gap:'4px'}} title={t('app.journalAccount.counterResetTitle')}>
+                    {t('app.journalAccount.counterReset').replace('{date}', data.lastPayoutDate)}
                   </div>
                 )}
                 <div style={{height:'4px',background:'var(--surface3)',borderRadius:'99px',marginTop:'6px',overflow:'hidden'}}>
@@ -442,27 +442,27 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
 
       <div style={{display:'flex',gap:'14px',marginBottom:'10px',flexWrap:'wrap'}}>
         <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
-          <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a'}} />Balance
+          <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a'}} />{t('app.journalAccount.balance')}
         </div>
         {ddMax!==null && (
           <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
             <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#e8504a'}} />
             {isTrailing
-              ? <span>DD trailing intraday (${ddMax.toLocaleString('fr-FR')}) → actuellement ${data.currentDD?.toLocaleString('fr-FR')}</span>
+              ? <span>{t('app.journalAccount.ddTrailing').replace('{max}', ddMax.toLocaleString(numLocale)).replace('{cur}', data.currentDD?.toLocaleString(numLocale) ?? '—')}</span>
               : isEod
-              ? <span>DD EOD (${ddMax.toLocaleString('fr-FR')}) → actuellement ${data.currentDD?.toLocaleString('fr-FR')}</span>
-              : <span>DD static (${ddMax.toLocaleString('fr-FR')}) → ${(planSize-ddMax).toLocaleString('fr-FR')}</span>}
+              ? <span>{t('app.journalAccount.ddEod').replace('{max}', ddMax.toLocaleString(numLocale)).replace('{cur}', data.currentDD?.toLocaleString(numLocale) ?? '—')}</span>
+              : <span>{t('app.journalAccount.ddStatic').replace('{max}', ddMax.toLocaleString(numLocale)).replace('{floor}', (planSize-ddMax).toLocaleString(numLocale))}</span>}
           </div>
         )}
         {payoutTarget!==null && (
           <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'var(--text2)'}}>
             <div style={{width:'10px',height:'3px',borderRadius:'2px',background:'#1db87a',borderTop:'1px dashed #1db87a'}} />
-            <span>Objectif (${payoutTarget.toLocaleString('fr-FR')})</span>
+            <span>{t('app.journalAccount.target').replace('{amount}', payoutTarget.toLocaleString(numLocale))}</span>
           </div>
         )}
         {ddMax===null && (
           <div style={{fontSize:'11px',color:'var(--text3)',fontStyle:'italic'}}>
-            ⓘ DD max non défini pour {account.firmName} / {String(account.plan_size||'').toUpperCase()}
+            {t('app.journalAccount.ddUnknown').replace('{firm}', account.firmName).replace('{plan}', String(account.plan_size||'').toUpperCase())}
           </div>
         )}
       </div>
@@ -477,7 +477,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
 
       {isTrailing && ddMax!==null && data.currentDD === planSize && (
         <div style={{marginTop:'10px',fontSize:'10px',color:'var(--green-text)',padding:'6px 10px',background:'var(--green-bg)',borderRadius:'6px'}}>
-          ✓ DD figé au balance initial (${planSize.toLocaleString('fr-FR')}) — votre compte a sécurisé son drawdown.
+          {t('app.journalAccount.ddLocked').replace('{amount}', planSize.toLocaleString(numLocale))}
         </div>
       )}
     </div>
@@ -596,13 +596,13 @@ export default function JournalPage({
         return {
           ...e,
           _firmId: acc?.firmId,
-          _firmName: acc?.firmName || 'Compte supprimé',
+          _firmName: acc?.firmName || t('app.journalAccount.deletedAccount'),
           _firmColor: acc?.firmColor || 'var(--text3)',
-          _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : 'Compte supprimé',
+          _accountLabel: acc ? `${acc.firmName} · ${accountLabel(acc)}` : t('app.journalAccount.deletedAccount'),
           _imported: /\[(rithmic|import):/.test(e.notes || ''),
         }
       })
-  },[entries, allAccounts])
+  },[entries, allAccounts, t])
 
   // Helper : un compte passe-t-il le filtre de statut ?
   function passesStatus(acc){
@@ -743,28 +743,18 @@ export default function JournalPage({
       .eq('id', accountId)
     if(error){
       // Si la colonne n'existe pas, message explicite avec la commande SQL à exécuter
-      const isMissingColumn = /column.*funded_date.*does not exist|funded_date.*column/i.test(error.message || '')
-      if(isMissingColumn){
-        alert(
-          '⚠ La colonne `funded_date` n\'existe pas dans Supabase.\n\n' +
-          'Va sur https://supabase.com → ton projet → SQL Editor, et exécute :\n\n' +
-          'alter table accounts add column if not exists funded_date date;\n\n' +
-          'Puis recharge la page et réessaye.'
-        )
-      } else {
-        alert('Erreur reset : ' + error.message)
-      }
-      showToast?.('❌ Reset échoué — voir popup')
+      alert(t('app.journalAccount.resetError').replace('{msg}', error.message))
+      showToast?.(t('app.journalAccount.resetFailedToast'))
       return
     }
-    showToast?.(fundedDate ? `Balance reset au ${fundedDate} ✓` : 'Reset annulé ✓')
+    showToast?.(fundedDate ? t('app.journalAccount.resetDone').replace('{date}', fundedDate) : t('app.journalAccount.resetCancelled'))
     // Recharge les firmes côté parent pour rafraîchir account.funded_date dans les props
     if(onReload) await onReload()
   }
 
   // Export CSV des trades filtrés (avec BOM UTF-8 + tags + R-multiple + commissions)
   function exportJournalCSV(){
-    const rows = [['Date','Firme','Compte','Instrument','Side','PnL net','Commissions','Slippage','PnL gross','Entry','Exit','Stop','TP','R réalisé','R:R visé','Tags','Notes']]
+    const rows = [t('app.journalAccount.csvHeaders').split('|')]
     filteredEntries.forEach(e=>{
       const tagsStr = Array.isArray(e.tags) ? e.tags.join(', ') : ''
       const r = computeRMultiple({ entry:e.entry_price, exit:e.exit_price, stop:e.stop_loss, side:e.side, pnl:e.pnl })
@@ -816,7 +806,7 @@ export default function JournalPage({
           </div>
           <h1 style={{fontSize:'30px',fontWeight:'700',letterSpacing:'-0.025em',margin:0,marginBottom:'6px',lineHeight:1.1}}>{_title}</h1>
           <div style={{fontSize:'13px',color:'var(--text3)'}}>
-            {decoratedEntries.length} trade{decoratedEntries.length>1?'s':''} enregistré{decoratedEntries.length>1?'s':''} · {_subtitle}
+            {t(decoratedEntries.length>1?'app.journalAccount.countMany':'app.journalAccount.countOne').replace('{n}', decoratedEntries.length)} · {_subtitle}
           </div>
         </div>
         <div className="page-header-actions" style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
@@ -855,52 +845,28 @@ export default function JournalPage({
         <div style={{...card,padding:'40px 24px',marginBottom:'16px',background:'var(--surface2)',borderStyle:'dashed',borderColor:'var(--border2)',textAlign:'center'}}>
           <div style={{fontSize:'42px',marginBottom:'14px',opacity:0.6}}>📔</div>
           <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'8px'}}>
-            Aucun compte à journaliser
+            {t('app.journalAccount.noAccountTitle')}
           </div>
           <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',maxWidth:'460px',margin:'0 auto 20px',lineHeight:1.6}}>
-            Pour saisir tes trades dans le journal, ajoute d'abord au moins une PropFirm + un compte de trading depuis le tableau de bord.
+            {t('app.journalAccount.noAccountBody')}
           </div>
-            <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'var(--text-inverse)',borderRadius:'var(--radius)',textDecoration:'none'}}>← Aller au tableau de bord</a>
+            <a href="/app" onClick={(e)=>{e.preventDefault();window.history.pushState({},'','/app');window.location.reload()}} style={{display:'inline-block',padding:'10px 22px',fontSize:'13px',fontWeight:'600',background:'var(--blue)',color:'var(--text-inverse)',borderRadius:'var(--radius)',textDecoration:'none'}}>{t('app.journalAccount.goDashboard')}</a>
         </div>
       )}
 
       {loadError === 'table_missing' && (
         <div style={{...card,padding:'20px',marginBottom:'16px',background:'var(--red-bg)',borderColor:'var(--red)'}}>
-          <div style={{fontSize:'14px',fontWeight:'700',color:'var(--red-text)',marginBottom:'8px'}}>⚠ Table Supabase manquante</div>
-          <div style={{fontSize:'12px',color:'var(--text2)',lineHeight:1.5,marginBottom:'12px'}}>
-            La table <code style={{background:'var(--surface3)',padding:'1px 6px',borderRadius:'4px'}}>journal_entries</code> n'existe pas encore dans ta base Supabase.
-            Va dans <strong>Supabase → SQL Editor</strong> et exécute le bloc SQL suivant :
-          </div>
-          <pre style={{background:'var(--surface3)',padding:'12px',borderRadius:'var(--radius)',fontSize:'11px',overflow:'auto',color:'var(--text2)',lineHeight:1.5,fontFamily:'monospace',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{`create table if not exists journal_entries (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade not null,
-  account_id uuid references accounts(id) on delete cascade not null,
-  date date not null,
-  pnl numeric(12,2) not null,
-  instrument text default '',
-  side text default '',
-  notes text default '',
-  created_at timestamptz default now()
-);
-alter table journal_entries enable row level security;
-create policy "Users manage own journal" on journal_entries
-  for all using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-create index if not exists journal_entries_user_id_idx    on journal_entries(user_id);
-create index if not exists journal_entries_account_id_idx on journal_entries(account_id);
-create index if not exists journal_entries_date_idx       on journal_entries(date);`}</pre>
-          <div style={{display:'flex',gap:'8px',marginTop:'12px',flexWrap:'wrap'}}>
-            <button onClick={loadEntries} style={btnPrimary}>↻ Réessayer</button>
-            <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" style={btnGhost}>Ouvrir Supabase ↗</a>
-          </div>
+          <div style={{fontSize:'14px',fontWeight:'700',color:'var(--red-text)',marginBottom:'8px'}}>{t('app.journalAccount.unavailableTitle')}</div>
+          <div style={{fontSize:'12px',color:'var(--text2)',lineHeight:1.5,marginBottom:'12px'}}>{t('app.journalAccount.unavailableBody')}</div>
+          <button onClick={loadEntries} style={btnPrimary}>{t('app.journalAccount.retry')}</button>
         </div>
       )}
 
       {loadError && loadError !== 'table_missing' && (
         <div style={{...card,padding:'16px',marginBottom:'16px',background:'var(--red-bg)',borderColor:'var(--red)'}}>
-          <div style={{fontSize:'13px',fontWeight:'600',color:'var(--red-text)',marginBottom:'4px'}}>Erreur de chargement</div>
+          <div style={{fontSize:'13px',fontWeight:'600',color:'var(--red-text)',marginBottom:'4px'}}>{t('app.journalAccount.loadErrorTitle')}</div>
           <div style={{fontSize:'12px',color:'var(--text2)',fontFamily:'monospace'}}>{loadError}</div>
-          <button onClick={loadEntries} style={{...btnPrimary,marginTop:'10px'}}>↻ Réessayer</button>
+          <button onClick={loadEntries} style={{...btnPrimary,marginTop:'10px'}}>{t('app.journalAccount.retry')}</button>
         </div>
       )}
 

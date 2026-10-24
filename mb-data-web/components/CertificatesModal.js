@@ -15,14 +15,15 @@ import { supabase } from '../lib/supabase'
 import { uploadFile, deleteFile } from '../lib/uploadFile'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
+import { useT } from './LanguageProvider'
 
 const TYPES = [
-  { k: 'challenge_passed', l: '🏆 Challenge réussi', color: 'var(--amber)' },
-  { k: 'payout',           l: '💰 Payout reçu',      color: 'var(--green)' },
+  { k: 'challenge_passed', lk: 'typeChallenge', color: 'var(--amber)' },
+  { k: 'payout',           lk: 'typePayout',    color: 'var(--green)' },
 ]
 // Pour la rétrocompatibilité : si un cert en DB a un type non listé (ex: 'other', 'certificate'),
 // on retombe sur ce fallback à l'affichage.
-const FALLBACK_TYPE = { k: 'other', l: '📄 Autre', color: 'var(--text2)' }
+const FALLBACK_TYPE = { k: 'other', lk: 'typeOther', color: 'var(--text2)' }
 
 const labelStyle = {
   display:'block', fontSize:'11px', fontWeight:'600',
@@ -35,6 +36,7 @@ const inputStyle = {
 }
 
 export default function CertificatesModal({ firm, user, onClose, showToast, getFirmLogo }){
+  const t = useT()
   const dialogRef = useDialog({ open: true, onClose })
   const [certs, setCerts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -62,7 +64,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
     if(err){
       const isMissing = /relation.*does not exist|42P01/i.test(err.message || '')
       setError(isMissing
-        ? '⚠ La table `certificates` n\'existe pas dans Supabase. Lance le SQL de supabase-schema.sql.'
+        ? t('app.certificates.missingTable')
         : err.message)
       setCerts([])
     } else {
@@ -81,7 +83,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
     })
     if(upErr){
       alert(upErr)
-      showToast?.('❌ Upload échoué')
+      showToast?.(t('app.certificates.uploadFailed'))
       setUploading(false)
       return
     }
@@ -98,17 +100,13 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
     if(insErr){
       const isMissing = /relation.*does not exist|42P01/i.test(insErr.message || '')
       if(isMissing){
-        alert(
-          '⚠ La table `certificates` n\'existe pas dans Supabase.\n\n' +
-          'Va sur Supabase → SQL Editor et exécute le contenu de supabase-schema.sql ' +
-          '(le fichier contient déjà la commande create table certificates avec les bonnes RLS).'
-        )
+        alert(t('app.certificates.missingTable'))
       } else {
-        showToast?.('Erreur enregistrement : ' + insErr.message)
+        showToast?.(t('app.certificates.saveError').replace('{msg}', insErr.message))
       }
       return
     }
-    showToast?.('Diplôme ajouté ✓')
+    showToast?.(t('app.certificates.added'))
     setUploadOpen(false)
     setUploadNote('')
     setUploadDate(new Date().toISOString().slice(0,10))
@@ -116,15 +114,15 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
   }
 
   async function handleDelete(cert){
-    if(!confirm('Supprimer ce diplôme ?')) return
+    if(!confirm(t('app.certificates.confirmDelete'))) return
     // Supprime aussi le fichier du storage si possible (path = après le ?token, on peut extraire)
     // Pour simplifier on supprime juste la ligne — le fichier reste orphelin mais pas grave (storage gratuit)
     const { error: delErr } = await supabase.from('certificates').delete().eq('id', cert.id)
     if(delErr){
-      showToast?.('Erreur suppression : ' + delErr.message)
+      showToast?.(t('app.certificates.deleteError').replace('{msg}', delErr.message))
       return
     }
-    showToast?.('Diplôme supprimé')
+    showToast?.(t('app.certificates.deleted'))
     await load()
   }
 
@@ -135,7 +133,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
       position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)',
       zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px',
     }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={`Diplômes — ${firm.name}`} onClick={e=>e.stopPropagation()} style={{
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t('app.certificates.title').replace('🎓 ', '').replace('{firm}', firm.name)} onClick={e=>e.stopPropagation()} style={{
         background:'var(--surface)', borderRadius:'var(--radius-lg)',
         border:'1px solid var(--border2)',
         width:'100%', maxWidth:'900px', maxHeight:'90vh',
@@ -150,9 +148,9 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
           <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
             {getFirmLogo ? getFirmLogo(firm.name, firm.color, 36) : null}
             <div>
-              <div style={{fontSize:'16px', fontWeight:'700'}}>🎓 Diplômes — {firm.name}</div>
+              <div style={{fontSize:'16px', fontWeight:'700'}}>{t('app.certificates.title').replace('{firm}', firm.name)}</div>
               <div style={{fontSize:'11px', color:'var(--text3)', marginTop:'2px'}}>
-                {certs.length} diplôme{certs.length>1?'s':''} enregistré{certs.length>1?'s':''}
+                {t(certs.length > 1 ? 'app.certificates.countMany' : 'app.certificates.countOne').replace('{n}', certs.length)}
               </div>
             </div>
           </div>
@@ -162,11 +160,11 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
               borderRadius:'8px', border:'1px solid transparent', background:'var(--text)', color:'var(--text-inverse)',
               boxShadow:'0 1px 0 rgba(255,255,255,0.4) inset, 0 4px 12px rgba(0,0,0,0.25)',
               fontFamily:'inherit', letterSpacing:'0.005em',
-            }}>{uploadOpen ? '✕ Annuler' : '+ Ajouter un diplôme'}</button>
+            }}>{uploadOpen ? t('app.certificates.cancel') : t('app.certificates.add')}</button>
             <button onClick={onClose} style={{
               width:'32px', height:'32px', borderRadius:'8px', border:'1px solid var(--border2)',
               background:'transparent', color:'var(--text2)', cursor:'pointer', fontSize:'14px',
-            }}>✕</button>
+            }} aria-label={t('app.certificates.close')}>✕</button>
           </div>
         </div>
 
@@ -178,24 +176,24 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
               background:'var(--surface2)', border:'1px solid var(--border)',
               borderRadius:'10px', padding:'16px', marginBottom:'20px',
             }}>
-              <div style={{fontSize:'13px', fontWeight:'600', marginBottom:'14px'}}>📤 Nouveau diplôme</div>
+              <div style={{fontSize:'13px', fontWeight:'600', marginBottom:'14px'}}>{t('app.certificates.newTitle')}</div>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px'}}>
                 <div>
-                  <label style={labelStyle}>Type</label>
+                  <label style={labelStyle}>{t('app.certificates.type')}</label>
                   <select value={uploadType} onChange={e=>setUploadType(e.target.value)} style={inputStyle}>
-                    {TYPES.map(t => <option key={t.k} value={t.k}>{t.l}</option>)}
+                    {TYPES.map(ty => <option key={ty.k} value={ty.k}>{t('app.certificates.' + ty.lk)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Date (optionnel)</label>
+                  <label style={labelStyle}>{t('app.certificates.date')}</label>
                   <input type="date" value={uploadDate} onChange={e=>setUploadDate(e.target.value)} style={inputStyle} />
                 </div>
                 <div style={{gridColumn:'1/-1'}}>
-                  <label style={labelStyle}>Note (optionnel)</label>
+                  <label style={labelStyle}>{t('app.certificates.note')}</label>
                   <input
                     type="text" value={uploadNote}
                     onChange={e=>setUploadNote(e.target.value)}
-                    placeholder="ex : Compte 50K · Profit target $3000 atteint"
+                    placeholder={t('app.certificates.notePh')}
                     style={inputStyle}
                   />
                 </div>
@@ -244,13 +242,13 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
               background:'var(--surface2)', borderRadius:'10px',
             }}>
               <div style={{fontSize:'32px', marginBottom:'12px'}}>🎓</div>
-              Aucun diplôme pour {firm.name} pour l'instant.<br />
-              Clique sur <strong style={{color:'var(--text2)'}}>+ Ajouter un diplôme</strong> pour commencer.
+              {t('app.certificates.emptyLine1').replace('{firm}', firm.name)}<br />
+              {t('app.certificates.emptyBefore')} <strong style={{color:'var(--text2)'}}>{t('app.certificates.add')}</strong> {t('app.certificates.emptyAfter')}
             </div>
           ) : (
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:'14px'}}>
               {certs.map(cert => {
-                const typeMeta = TYPES.find(t => t.k === cert.type) || FALLBACK_TYPE
+                const typeMeta = TYPES.find(ty => ty.k === cert.type) || FALLBACK_TYPE
                 return (
                   <div key={cert.id} style={{
                     background:'var(--surface2)', border:'1px solid var(--border)',
@@ -268,7 +266,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
                       {isPdf(cert.file_url) ? (
                         <div style={{textAlign:'center', color:'var(--text2)', padding:'20px'}}>
                           <div style={{fontSize:'40px', marginBottom:'6px'}}>📄</div>
-                          <div style={{fontSize:'11px'}}>PDF — clic pour ouvrir</div>
+                          <div style={{fontSize:'11px'}}>{t('app.certificates.pdfOpen')}</div>
                         </div>
                       ) : (
                         <div style={{position:'relative', width:'100%', height:'100%'}}>
@@ -286,8 +284,8 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
                       <div style={{
                         display:'inline-block', alignSelf:'flex-start',
                         fontSize:'10px', fontWeight:'600', padding:'2px 8px', borderRadius:'99px',
-                        background:`${typeMeta.color}22`, color:typeMeta.color,
-                      }}>{typeMeta.l}</div>
+                        background:`color-mix(in srgb, ${typeMeta.color} 14%, transparent)`, color:typeMeta.color,
+                      }}>{t('app.certificates.' + typeMeta.lk)}</div>
                       {cert.date && <div style={{fontSize:'11px', color:'var(--text3)'}}>{cert.date}</div>}
                       {cert.note && <div style={{fontSize:'11px', color:'var(--text2)'}}>{cert.note}</div>}
                       <div style={{display:'flex', gap:'6px', marginTop:'auto', paddingTop:'6px'}}>
@@ -298,7 +296,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
                             background:'var(--surface3)', color:'var(--text2)',
                             textAlign:'center', textDecoration:'none', fontWeight:'600',
                           }}
-                        >↗ Ouvrir</a>
+                        >{t('app.certificates.open')}</a>
                         <button
                           onClick={()=>handleDelete(cert)}
                           style={{
@@ -306,6 +304,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
                             background:'transparent', border:'1px solid var(--border2)',
                             color:'var(--red-text)', cursor:'pointer', fontWeight:'600',
                           }}
+                          aria-label={t('app.certificates.delete')}
                         >✕</button>
                       </div>
                     </div>
@@ -319,13 +318,13 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
 
       {/* Lightbox zoom */}
       {zoomCert && !isPdf(zoomCert.file_url) && (
-        <div ref={zoomRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={'Diplôme' /* TODO i18n */} onClick={e=>{e.stopPropagation();setZoomCert(null)}} style={{
+        <div ref={zoomRef} role="dialog" aria-modal="true" tabIndex={-1} aria-label={t('app.certificates.zoomAria')} onClick={e=>{e.stopPropagation();setZoomCert(null)}} style={{
           position:'fixed', inset:0, background:'rgba(0,0,0,0.95)', zIndex:600,
           display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', cursor:'zoom-out',
         }}>
           <div style={{position:'relative', width:'95%', height:'95%'}}>
             <Image
-              src={zoomCert.file_url} alt="Diplôme"
+              src={zoomCert.file_url} alt={t('app.certificates.zoomAria')}
               fill
               sizes="95vw"
               style={{objectFit:'contain', borderRadius:'8px'}}
@@ -335,7 +334,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
             position:'absolute', top:'20px', right:'20px',
             background:'var(--tint3)', color:'var(--text)', border:'1px solid var(--hairline2)',
             borderRadius:'8px', padding:'8px 16px', fontSize:'13px', cursor:'pointer', fontWeight:'600',
-          }}>✕ Fermer</button>
+          }}>{t('app.certificates.closeZoom')}</button>
         </div>
       )}
     </div>
