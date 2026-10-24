@@ -9,7 +9,7 @@
 // Redesign complet : hero hero + week strip horizontal + day cards avec
 // events en grid (pas table) + visual diff Actual vs Forecast.
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
@@ -319,7 +319,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
   const nowTs = Date.now()
   const dayRefs = useRef({})
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
       const r = await fetch(`/api/calendar?week=${week}&t=${Date.now()}`, { cache: 'no-store' })
@@ -332,11 +332,11 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
       setLastUpd(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
     } catch (e) { setError(e.message); setEvents([]) }
     setLoading(false)
-  }
+  }, [week])
 
-  useEffect(() => { load() }, [week])
+  useEffect(() => { load() }, [load])
   // Refresh toutes les 60s pour récupérer les actuals dès publication
-  useEffect(() => { const iv = setInterval(load, 60000); return () => clearInterval(iv) }, [week])
+  useEffect(() => { const iv = setInterval(load, 60000); return () => clearInterval(iv) }, [load])
 
   // Live clock every 30s for the "Now" pill
   useEffect(() => {

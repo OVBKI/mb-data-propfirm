@@ -84,6 +84,10 @@ export default function FuturesRulesComparator() {
   const managed = useManagedFuturesFirms()
   // Idempotent overlay registration — runs before the resolvers below read firmRules().
   registerCustomFuturesFirms(managed)
+  // `managed` ne figure pas dans le calcul mais en est la cause : registerCustomFuturesFirms
+  // vient de modifier le catalogue que getFirmsWithComparison lit. Le retirer
+  // laisserait le comparateur sur l'ancien catalogue.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const firms = useMemo(() => getFirmsWithComparison(), [managed])
 
   // Union des tailles de plan sur toutes les firmes, triées par montant.

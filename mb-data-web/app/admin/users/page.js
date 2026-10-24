@@ -1,7 +1,7 @@
 'use client'
 // Admin Users page — liste, recherche, détails et suppression des utilisateurs.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase'
 
 const C = {
@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
   const [selected, setSelected] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -68,14 +68,13 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => { load() }, [])
-  // Recherche : debounce simple sur 400ms
-  useEffect(() => {
-    const t = setTimeout(load, 400)
-    return () => clearTimeout(t)
   }, [search])
+
+  // Premier chargement immédiat, puis recherche avec un délai de 400 ms.
+  useEffect(() => {
+    const timer = setTimeout(load, search ? 400 : 0)
+    return () => clearTimeout(timer)
+  }, [load, search])
 
   async function handleDelete(userId, email) {
     if (!confirm(`⚠ Supprimer définitivement le compte de ${email} ?\n\nToutes ses données (firms, trades, payouts, certificats) seront supprimées en cascade.\n\nCette action est IRRÉVERSIBLE.`)) return

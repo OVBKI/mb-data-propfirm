@@ -18,6 +18,7 @@ import {
 } from '../lib/cfdConstants'
 import { getCfdFirmsOrdered, getCfdModelsFromFirm, CFD_FIRM_TAGLINE, cfdFirmToSlug } from '../lib/cfdSlugs'
 import { useManagedCfdFirms } from '../lib/managedFirms'
+import Image from 'next/image'
 
 // Inline "visually hidden" style (screen readers only).
 const SR_ONLY = {
@@ -325,7 +326,7 @@ export default function CfdComparator() {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {firm.logoUrl
-                        ? <img src={firm.logoUrl} alt="" style={{ width: 28, height: 28, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                        ? <Image src={firm.logoUrl} alt="" width={28} height={28} unoptimized style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
                         : <InitialAvatar name={firm.name} color={color} size={28} />}
                       <div style={{ minWidth: 0 }}>
                         {firm.__custom ? (

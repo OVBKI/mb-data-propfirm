@@ -1,9 +1,10 @@
 'use client'
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { useT, useLanguage } from './LanguageProvider'
 import { supabase } from '../lib/supabase'
+import { fetchAll } from '../lib/fetchAll'
 import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSplit } from '../lib/constants'
 import { TooltipIcon } from './Tooltip'
 // La saisie et l'édition passent par TradeEntryModal, partagé avec le Trade Log :
@@ -52,7 +53,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
   const ignoredCount = fundedDate ? entries.filter(e => e.date < fundedDate).length : 0
 
   // Payouts du compte (séparés des trades) — ils déduisent de la balance à leur date
-  const accountPayouts = account.payouts || []
+  const accountPayouts = useMemo(() => account.payouts || [], [account.payouts])
   // Profit split de la firme (% pour le trader). Ex: Lucid = 90 (= 90/10).
   // Sert à convertir le NET (montant entré par le user = ce qu'il reçoit) en BRUT
   // (montant qui sort du compte funded simulé). Brut = Net / (split/100).
@@ -181,9 +182,14 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
     }
   },[entries, accountPayouts, planSize, ddMax, isTrailing, isEod, fundedDate, minDailyProfit, profitSplit])
 
+  // Les séries du graphe résumées en une chaîne : le graphe se reconstruit quand
+  // une valeur change, pas à chaque rendu du parent (entries est un nouveau tableau).
+  const chartSeries = JSON.stringify({ labels: data.labels, balances: data.balances, ddLine: data.ddLine })
+
   useEffect(()=>{
     if(!ref.current) return
-    if(!data.labels.length) return
+    const { labels, balances, ddLine } = JSON.parse(chartSeries)
+    if(!labels.length) return
     let destroyed = false
     // Chart.js peint dans un canvas : var() n'y est pas résolu, on lit les jetons
     // calculés. `theme` est en dépendance pour reconstruire à la bascule.
@@ -193,16 +199,16 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       if(chart.current){ chart.current.destroy(); chart.current = null }
       const datasets = [
         {
-          label:'Balance', data:data.balances,
+          label:'Balance', data:balances,
           borderColor: CH.green, backgroundColor: CH.greenFill,
-          fill:true, tension:0.25, pointRadius:data.labels.length>30?0:3, borderWidth:2,
+          fill:true, tension:0.25, pointRadius:labels.length>30?0:3, borderWidth:2,
         },
       ]
       if(ddMax !== null){
         const isMoving = isTrailing || isEod
         datasets.push({
           label: isTrailing ? 'DD max (trailing intraday)' : isEod ? 'DD max (EOD)' : 'DD max (static)',
-          data: data.ddLine,
+          data: ddLine,
           borderColor: '#e8504a', backgroundColor:'transparent',
           fill:false, tension:0, pointRadius:0, borderWidth:2,
           borderDash: isTrailing ? [4,3] : isEod ? [6,3] : [6,4],
@@ -213,19 +219,19 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       if(payoutTarget !== null){
         datasets.push({
           label: 'Objectif payout',
-          data: data.labels.map(()=>payoutTarget),
+          data: labels.map(()=>payoutTarget),
           borderColor: '#1db87a', backgroundColor:'transparent',
           fill:false, tension:0, pointRadius:0, borderWidth:2,
           borderDash:[2,3],
         })
       }
-      const allVals = [...data.balances, ...(data.ddLine.filter(v=>v!==null))]
+      const allVals = [...balances, ...(ddLine.filter(v=>v!==null))]
       if(payoutTarget !== null) allVals.push(payoutTarget)
       const minVal = Math.min(...allVals) * 0.998
       const maxVal = Math.max(...allVals, planSize) * 1.002
       chart.current = new Chart(ref.current, {
         type:'line',
-        data:{ labels:data.labels, datasets },
+        data:{ labels:labels, datasets },
         options:{
           responsive:true, maintainAspectRatio:false,
           interaction:{mode:'index', intersect:false},
@@ -253,7 +259,7 @@ function EquityCurveCard({ account, entries, getFirmLogo, onResetBalance, onAddT
       destroyed = true
       if(chart.current){ chart.current.destroy(); chart.current = null }
     }
-  },[data.labels.join(','), data.balances.join(','), data.ddLine.join(','), planSize, isTrailing, payoutTarget, theme])
+  },[chartSeries, ddMax, isEod, planSize, isTrailing, payoutTarget, theme])
 
   const finalNet = data.totalPnl
   const pctFromStart = planSize>0 ? (finalNet/planSize)*100 : 0
@@ -557,12 +563,13 @@ export default function JournalPage({
     if(!user){ setLoading(false); return }
     // ⚠ Filtre explicite par user_id : les RLS admin (lecture all) override le filtrage classique,
     // sans ce filtre l'admin verrait TOUS les trades de TOUS les users dans son journal.
-    const { data, error } = await supabase
+    const { data, error } = await fetchAll(() => supabase
       .from('journal_entries')
       .select('*')
       .eq('user_id', user.id)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
+      .order('id'))
     if(error){
       console.error('[journal load]', error)
       // 42P01 = relation does not exist (table manquante)
@@ -605,11 +612,11 @@ export default function JournalPage({
   },[entries, allAccounts, t])
 
   // Helper : un compte passe-t-il le filtre de statut ?
-  function passesStatus(acc){
+  const passesStatus = useCallback((acc) => {
     if(!acc) return true
     if(statusFilter === 'all') return true
     return acc.status === statusFilter
-  }
+  }, [statusFilter])
 
   // Filtre par scope, statut, ET funded_date (reset balance) du compte rattaché.
   // (Le filtre par tags a été déplacé vers la page Trade Log dédiée.)
@@ -633,7 +640,7 @@ export default function JournalPage({
       return true
     })
     return arr
-  },[decoratedEntries, scope, statusFilter, allAccounts, origin])
+  },[decoratedEntries, scope, passesStatus, allAccounts, origin])
 
   // PnL agrégé par jour
   const dailyPnL = useMemo(()=>{
@@ -714,14 +721,14 @@ export default function JournalPage({
   //   - undefined         → pas de pré-remplissage
   //   - une string YYYY-MM-DD → date par défaut, compte = filtre actif (scope)
   //   - un objet { accountId, defaultDate } → pré-remplit explicitement
-  function openNewEntry(opts){
+  const openNewEntry = useCallback((opts) => {
     const isObj = opts && typeof opts === 'object' && !Array.isArray(opts)
     const explicitAcctId = isObj ? opts?.accountId : undefined
     const defaultDate    = isObj ? opts?.defaultDate : (typeof opts === 'string' ? opts : undefined)
     let acctId = explicitAcctId
     if(!acctId && scope.includes(':')) acctId = scope.split(':')[1]
     setEditing({ defaultDate, defaultAccountId: acctId || undefined })
-  }
+  }, [scope])
   function openEditEntry(e){
     setEditing({ entry: e })
   }
@@ -793,7 +800,7 @@ export default function JournalPage({
     newConsumed.current = true
     openNewEntry()
     window.history.replaceState({}, '', window.location.pathname)
-  }, [wantsNew, loading, noAccounts])
+  }, [wantsNew, loading, noAccounts, openNewEntry])
 
   return (
     <div className="page-pad" style={{maxWidth:'1160px',margin:'0 auto',padding:'28px 24px 60px'}}>

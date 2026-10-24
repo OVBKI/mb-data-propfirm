@@ -11,9 +11,10 @@
 //
 // COMPATIBLE avec /app?p=trades — rendu depuis app/app/page.js
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { supabase } from '../lib/supabase'
+import { fetchAll } from '../lib/fetchAll'
 import { accountLabel } from '../lib/constants'
 import { computeRStats, computeRMultiple, computeRiskReward } from '../lib/tradeMath'
 import { TRADE_TAGS, getTagMeta, getTagDisplay } from '../lib/tradeTags'
@@ -110,16 +111,17 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
   }, [firmFilter, accountFilter, firms, allAccounts])
 
   // === Load entries ===
-  async function loadEntries() {
+  const loadEntries = useCallback(async () => {
     if (!user) { setLoading(false); return }
     setLoading(true); setLoadError('')
     // Filtre user_id explicite (anti-leak admin)
-    const { data, error } = await supabase
+    const { data, error } = await fetchAll(() => supabase
       .from('journal_entries')
       .select('*')
       .eq('user_id', user.id)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
+      .order('id'))
     setLoading(false)
     if (error) {
       console.error('[trades load]', error)
@@ -127,8 +129,8 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
       return
     }
     setEntries(data || [])
-  }
-  useEffect(() => { loadEntries() }, [user?.id])
+  }, [user, t])
+  useEffect(() => { loadEntries() }, [loadEntries])
 
   // === Entries enrichies avec compte/firme ===
   const decoratedEntries = useMemo(() => {

@@ -9,7 +9,7 @@
 // Prérequis Supabase Storage : bucket "certificates" public + table `certificates`
 // (voir supabase-schema.sql + lib/uploadFile.js)
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { uploadFile, deleteFile } from '../lib/uploadFile'
@@ -54,7 +54,7 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
   const zoomOpen = !!zoomCert && !/\.pdf(\?|$)/i.test(zoomCert.file_url || '')
   const zoomRef = useDialog({ open: zoomOpen, onClose: () => setZoomCert(null) })
 
-  async function load(){
+  const load = useCallback(async () => {
     setLoading(true); setError('')
     const { data, error: err } = await supabase
       .from('certificates')
@@ -71,9 +71,9 @@ export default function CertificatesModal({ firm, user, onClose, showToast, getF
       setCerts(data || [])
     }
     setLoading(false)
-  }
+  }, [firm.id, t])
 
-  useEffect(() => { load() }, [firm.id])
+  useEffect(() => { load() }, [load])
 
   async function handleUpload(file){
     if(!file) return

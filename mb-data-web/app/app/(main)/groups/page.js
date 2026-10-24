@@ -7,7 +7,7 @@
 // La sidebar affiche déjà un cadenas pour eux. Quand la feature est
 // prête, retirer le guard `if (!userIsAdmin) return <ComingSoon />`.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../../../lib/supabase'
@@ -61,11 +61,7 @@ export default function GroupsPage() {
   const [joinError, setJoinError] = useState('')
   const [joinSuccess, setJoinSuccess] = useState('')
 
-  useEffect(() => {
-    if (user) loadGroups()
-  }, [user])
-
-  async function loadGroups() {
+  const loadGroups = useCallback(async () => {
     setLoadingGroups(true)
     const { data: memberships, error } = await supabase
       .from('group_members')
@@ -80,7 +76,11 @@ export default function GroupsPage() {
       setGroups(enriched)
     }
     setLoadingGroups(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) loadGroups()
+  }, [user, loadGroups])
 
   async function handleCreate(e) {
     e.preventDefault()

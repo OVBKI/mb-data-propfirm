@@ -10,6 +10,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { buildWeekDigest, REVIEW_SYSTEM_PROMPT, reviewUserMessage } from './aiReview'
 import { fetchTradePnl } from './drawdownHealth'
+import { fetchAll } from './fetchAll'
 
 export function aiReviewConfigured() {
   return !!(process.env.ANTHROPIC_API_KEY && process.env.AI_REVIEW_MODEL)
@@ -30,14 +31,14 @@ export async function generateWeeklyReview(supabase, userId, { start, end }) {
   if (aErr) throw new Error(aErr.message)
   const accounts = (accts || []).map((a) => ({ ...a, firmName: a.firm?.name || '' }))
 
-  const { data: trades, error: tErr } = await supabase
+  const { data: trades, error: tErr } = await fetchAll(() => supabase
     .from('journal_entries')
     .select('account_id, date, traded_at, pnl, instrument, side, tags, notes, entry_price, exit_price, stop_loss')
     .eq('user_id', userId)
     .gte('date', start)
     .lte('date', end)
     .order('date')
-    .limit(3000)
+    .order('id'))
   if (tErr) throw new Error(tErr.message)
   if (!trades?.length) return { skipped: 'no_trades' }
 

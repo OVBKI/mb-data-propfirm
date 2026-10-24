@@ -17,6 +17,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchAll } from '../lib/fetchAll'
 import { C, inputStyleCompact as inputS } from '../lib/theme'
 import { fmtMoney } from '../lib/format'
 import { useT } from './LanguageProvider'
@@ -139,11 +140,12 @@ export default function HeatmapPage({ user, firms, showToast }) {
     let cancelled = false
     setLoading(true)
     ;(async () => {
-      const { data, error } = await supabase
+      const { data, error } = await fetchAll(() => supabase
         .from('journal_entries')
         .select('id, account_id, date, traded_at, pnl, instrument, side')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
+        .order('id'))
       if (cancelled) return
       if (error) {
         console.error('[heatmap] fetch error:', error)
@@ -155,7 +157,7 @@ export default function HeatmapPage({ user, firms, showToast }) {
       setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [user?.id])
+  }, [user?.id, showToast, t])
 
   // === Filtre par période + compte + statut + firme ===
   const filtered = useMemo(() => {

@@ -170,9 +170,16 @@ export default function Tutorial({ onClose, onPageChange, state }) {
   const stepActionHintRaw = t(`tutorial.steps.${step.tkey}.actionHint`)
   const stepActionHint = stepActionHintRaw === `tutorial.steps.${step.tkey}.actionHint` ? null : stepActionHintRaw
 
+  // Dernières valeurs de state et onPageChange, lues par les effets qui ne
+  // doivent se déclencher QU'AU CHANGEMENT D'ÉTAPE : les mettre en dépendance
+  // reprendrait la photo initiale à chaque geste, et un onPageChange recréé à
+  // chaque rendu du parent relancerait la navigation en boucle.
+  const latest = useRef({ state, onPageChange })
+  useEffect(() => { latest.current = { state, onPageChange } })
+
   // Snapshot l'état initial au changement d'étape
   useEffect(() => {
-    initialStateRef.current = { ...state }
+    initialStateRef.current = { ...latest.current.state }
     setActionValidated(false)
     return () => {
       if (advanceTimerRef.current) {
@@ -184,8 +191,8 @@ export default function Tutorial({ onClose, onPageChange, state }) {
 
   // Switch page si l'étape l'exige
   useEffect(() => {
-    if (step.page) onPageChange?.(step.page)
-  }, [idx])
+    if (step.page) latest.current.onPageChange?.(step.page)
+  }, [idx, step.page])
 
   // Auto-advance pour les étapes 'action' quand waitFor(state, initial) est vrai
   useEffect(() => {
@@ -199,7 +206,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
         setIdx(i => Math.min(STEPS.length - 1, i + 1))
       }, 1100)
     }
-  }, [state, idx, actionValidated])
+  }, [state, step, actionValidated])
 
   // Mesure la position de l'élément cible (avec retry pour les éléments pas encore montés)
   useEffect(() => {
@@ -251,7 +258,7 @@ export default function Tutorial({ onClose, onPageChange, state }) {
       window.removeEventListener('resize', onResize)
       window.removeEventListener('scroll', onScroll, true)
     }
-  }, [idx])
+  }, [idx, step.target, step.type])
 
   function next() {
     if (idx < STEPS.length - 1) setIdx(idx + 1)

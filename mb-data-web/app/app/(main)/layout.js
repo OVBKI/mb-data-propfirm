@@ -178,6 +178,10 @@ export default function AppLayout({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Une fois par utilisateur connecté. Le changement de marché recharge les firms
+  // dans l'effet suivant : mettre loadFirms ici (il dépend du marché) ferait un
+  // second chargement en double à chaque bascule Futures ⇄ CFD.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (user) { loadFirms(); fetchRates(); loadProfile() } }, [user])
 
   // Reload firms when the market mode changes (after the initial mount). loadFirms
@@ -708,7 +712,7 @@ export default function AppLayout({ children }) {
     fmtMoney, fmtMoneyNet,
     totalPayoutsEUR, totalSpentForAccount, firmTotalSpent, firmTotalPayouts,
     accts, totalSpentEUR, totalPayoutsEUR2, totalNet, totalPayoutCount,
-    alerts, upcomingBills, markAlertsSeen,
+    alerts, upcomingBills, markAlertsSeen, alertsBadgeCount,
   ])
 
   // ── Guards ──

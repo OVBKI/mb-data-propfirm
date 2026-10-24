@@ -16,6 +16,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../../lib/supabase'
+import { fetchAll } from '../../../../lib/fetchAll'
 import { parseRithmicPnL } from '../../../../lib/importers/rithmic-pnl'
 import { parseRithmicDashboard } from '../../../../lib/importers/rithmic-dashboard'
 import { T } from '../../../../components/dashboard/theme'
@@ -507,11 +508,15 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
 
         let existingMarkers = new Set()
         if (!dryRun) {
-          const { data } = await supabase
+          // Toutes les lignes : au-delà de 1 000 trades importés, les marqueurs
+          // manquants laissaient passer des doublons.
+          const { data, error: markErr } = await fetchAll(() => supabase
             .from('journal_entries')
             .select('notes')
             .eq('account_id', accountId)
             .like('notes', '%[rithmic:%')
+            .order('id'))
+          if (markErr) throw new Error(markErr.message)
           for (const e of (data || [])) {
             const m = (e.notes || '').match(/\[rithmic:(\d+)\/(\d+)\]/)
             if (m) existingMarkers.add(`${m[1]}/${m[2]}`)

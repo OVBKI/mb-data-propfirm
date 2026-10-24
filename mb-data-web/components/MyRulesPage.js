@@ -10,7 +10,7 @@
 // Tables DB : trading_plan, trading_setups, trading_rule_items (créées via SQL).
 // Compatible avec /app?p=myrules — rendu depuis app/app/page.js.
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { uploadFile } from '../lib/uploadFile'
@@ -166,7 +166,7 @@ function PlanTab({ user, showToast }) {
       setSavedAt(new Date())
     }, 1500)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
-  }, [content, loading, user.id])
+  }, [content, loading, user.id, showToast, t])
 
   if (loading) return (
     <div style={{ ...card, padding: 18 }}>
@@ -212,7 +212,7 @@ function SetupsTab({ user, showToast }) {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)  // null | 'new' | setup object
 
-  async function loadSetups() {
+  const loadSetups = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('trading_setups')
@@ -228,9 +228,9 @@ function SetupsTab({ user, showToast }) {
     }
     setSetups(data || [])
     setLoading(false)
-  }
+  }, [user.id, showToast, t])
 
-  useEffect(() => { loadSetups() }, [user.id])
+  useEffect(() => { loadSetups() }, [loadSetups])
 
   async function saveSetup(form) {
     const payload = {
@@ -475,7 +475,7 @@ function RulesTab({ user, showToast }) {
   const [loading, setLoading] = useState(true)
   const [newRule, setNewRule] = useState({ text: '', category: 'risk' })
 
-  async function loadRules() {
+  const loadRules = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('trading_rule_items')
@@ -492,9 +492,9 @@ function RulesTab({ user, showToast }) {
     }
     setRules(data || [])
     setLoading(false)
-  }
+  }, [user.id, showToast, t])
 
-  useEffect(() => { loadRules() }, [user.id])
+  useEffect(() => { loadRules() }, [loadRules])
 
   async function addRule() {
     if (!newRule.text.trim()) return

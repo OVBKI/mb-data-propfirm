@@ -10,6 +10,7 @@ import { uploadFile } from '../../../lib/uploadFile'
 import { PROPFIRM_RULES } from '../../../lib/constants'
 import { CFD_PROPFIRM_RULES } from '../../../lib/cfdConstants'
 import { CFD_FIRM_TAGLINE } from '../../../lib/cfdSlugs'
+import Image from 'next/image'
 
 const C = {
   bg: 'var(--bg)', surface: 'var(--surface)', surface2: 'var(--surface2)',
@@ -220,7 +221,7 @@ export default function AdminPropfirmsPage() {
           <Field label="Logo" span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
               {form.logo_url
-                ? <img src={form.logo_url} alt="logo" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover', border: `1px solid ${C.border2}` }} />
+                ? <Image src={form.logo_url} alt="logo" width={48} height={48} unoptimized style={{ borderRadius: 10, objectFit: 'cover', border: `1px solid ${C.border2}` }} />
                 : <div style={{ width: 48, height: 48, borderRadius: 10, background: C.surface2, border: `1px dashed ${C.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text3, fontSize: 18 }}>?</div>}
               <label style={{ ...ghost, cursor: uploading ? 'wait' : 'pointer' }}>{uploading ? '⏳ Upload…' : (form.logo_url ? 'Changer le logo' : 'Uploader un logo')}<input type="file" accept="image/*" onChange={onLogo} style={{ display: 'none' }} disabled={uploading} /></label>
               {form.logo_url && <button onClick={() => setForm(p => ({ ...p, logo_url: '' }))} style={ghost}>Retirer</button>}
@@ -371,7 +372,7 @@ export default function AdminPropfirmsPage() {
               <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
                 {byMarket[market].map((f, i) => (
                   <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderBottom: i < byMarket[market].length - 1 ? `1px solid ${C.border}` : 'none', opacity: f.is_active ? 1 : 0.5 }}>
-                    {f.logo_url ? <img src={f.logo_url} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} /> : <div style={{ width: 34, height: 34, borderRadius: 8, background: C.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text3, fontWeight: 700, flexShrink: 0 }}>{(f.name || '?')[0]}</div>}
+                    {f.logo_url ? <Image src={f.logo_url} alt="" width={34} height={34} unoptimized style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} /> : <div style={{ width: 34, height: 34, borderRadius: 8, background: C.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text3, fontWeight: 700, flexShrink: 0 }}>{(f.name || '?')[0]}</div>}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 600 }}>{f.name} {!f.is_active && <span style={{ fontSize: 10, color: C.text3 }}>(inactive)</span>}</div>
                       <div style={{ fontSize: 11, color: C.text3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.tagline || f.slug || '—'}</div>

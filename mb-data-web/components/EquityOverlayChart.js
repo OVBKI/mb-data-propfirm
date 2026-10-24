@@ -21,6 +21,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchAll } from '../lib/fetchAll'
 import { accountLabel, planSizeNum } from '../lib/constants'
 import Skeleton from './Skeleton'
 import { chartColors } from '../lib/theme'
@@ -111,12 +112,13 @@ export default function EquityOverlayChart({ firms = [], user }) {
       const result = {}
       // Fetch en parallèle
       const promises = selected.map(async acctId => {
-        const { data, error } = await supabase
+        const { data, error } = await fetchAll(() => supabase
           .from('journal_entries')
           .select('account_id, date, pnl')
           .eq('user_id', user.id)
           .eq('account_id', acctId)
           .order('date', { ascending: true })
+          .order('id'))
         if (error) {
           console.error('[equity overlay]', error)
           return [acctId, []]
