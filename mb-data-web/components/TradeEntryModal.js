@@ -34,6 +34,8 @@ import {
   replicationTargets, countTargets, allTargetIds, pruneSelection, buildReplicaPayloads,
 } from '../lib/tradeReplication'
 import { replicationExposure } from '../lib/exposure'
+import { checkAccountRules } from '../lib/ruleCheck'
+import { fetchTradePnl } from '../lib/drawdownHealth'
 import TagSelector from './TagSelector'
 import { useT, useLanguage } from './LanguageProvider'
 import { useDialog } from './useDialog'
@@ -144,6 +146,42 @@ export default function TradeEntryModal({
   // que les écarts se glissent.
   const [replicaIds, setReplicaIds] = useState([])
   const [replicaOpen, setReplicaOpen] = useState(false)
+  // Constats de règles après un enregistrement : tant qu'il y en a, la fenêtre
+  // reste ouverte sur eux au lieu de se fermer.
+  const [ruleAlerts, setRuleAlerts] = useState(null)
+  useEffect(() => { if (!open) setRuleAlerts(null) }, [open])
+
+  // Relit les trades des comptes touchés et confronte chacun à ses règles.
+  // Un échec de lecture ne doit jamais bloquer : on ferme comme avant.
+  async function rulesAfterSave(accountIds, day) {
+    try {
+      const ids = [...new Set(accountIds.filter(Boolean))]
+      const { data, error } = await fetchTradePnl(supabase, { userId: user.id, accountIds: ids })
+      if (error || !data) return []
+      const out = []
+      for (const id of ids) {
+        const firm = firms.find(f => (f.accounts || []).some(a => a.id === id))
+        const account = firm?.accounts.find(a => a.id === id)
+        if (!account) continue
+        const r = checkAccountRules({ account, firmName: firm.name, trades: data, day })
+        if (r.items.length) out.push({ id, firm: firm.name, label: accountLabel(account), items: r.items })
+      }
+      return out
+    } catch {
+      return []
+    }
+  }
+
+  async function finishSave(accountIds) {
+    const alerts = await rulesAfterSave(accountIds, form.date)
+    if (alerts.length) {
+      setRuleAlerts(alerts)
+      await onSaved?.()
+      return
+    }
+    onClose?.()
+    await onSaved?.()
+  }
 
   // Initialise / réinitialise le form quand le modal s'ouvre
   useEffect(() => {
@@ -260,8 +298,7 @@ export default function TradeEntryModal({
         : n > 1 ? t('app.trade.toastReplicated').replace('{n}', n)
           : t('app.trade.toastAdded')
     )
-    onClose?.()
-    await onSaved?.()
+    await finishSave([form.accountId, ...replicaIds])
   }
 
   // Duplication d'un trade DÉJÀ enregistré vers d'autres comptes.
@@ -306,8 +343,7 @@ export default function TradeEntryModal({
       return
     }
     showToast?.(t('app.trade.toastDuplicated').replace('{n}', rows.length))
-    onClose?.()
-    await onSaved?.()
+    await finishSave(rows.map(r => r.account_id))
   }
 
   async function deleteEntry() {
@@ -342,8 +378,10 @@ export default function TradeEntryModal({
         style={{ ...card, padding: '28px', width: '560px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
       >
         <h3 style={{ fontSize: '17px', fontWeight: '600', marginBottom: '20px' }}>
-          {entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
+          {ruleAlerts ? t('app.trade.rulesTitle') : entry ? t('app.trade.modalEditTitle') : t('app.trade.modalNewTitle')}
         </h3>
+
+        {ruleAlerts ? <RuleAlerts alerts={ruleAlerts} t={t} onDone={onClose} /> : (<>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           {/* Compte */}
@@ -746,6 +784,67 @@ export default function TradeEntryModal({
             </button>
           </div>
         </div>
+        </>)}
+      </div>
+    </div>
+  )
+}
+
+const RULE_COLORS = {
+  breach: { fg: 'var(--red-text)', bg: 'var(--red-bg)' },
+  danger: { fg: 'var(--red-text)', bg: 'var(--red-bg)' },
+  warn:   { fg: 'var(--amber-text, var(--amber))', bg: 'var(--amber-bg, var(--tint2))' },
+  info:   { fg: 'var(--green-text, var(--green))', bg: 'var(--green-bg, var(--tint2))' },
+}
+const usd = (v) => `$${Math.round(Math.abs(v)).toLocaleString('en-US')}`
+const pct = (v) => `${Math.round(v * 100)} %`
+
+// Une phrase par constat. Les montants sont en dollars : ce sont les règles
+// des firms, exprimées dans la devise du compte.
+function ruleSentence(item, t) {
+  switch (item.rule) {
+    case 'drawdown':
+      return item.level === 'breach'
+        ? t('app.trade.ruleDdBreach').replace('{balance}', usd(item.balance)).replace('{floor}', usd(item.floor))
+        : t('app.trade.ruleDd').replace('{pct}', pct(item.used)).replace('{room}', usd(item.room)).replace('{floor}', usd(item.floor))
+    case 'dailyLoss':
+      return t('app.trade.ruleDaily').replace('{loss}', usd(item.loss)).replace('{limit}', usd(item.limit)).replace('{pct}', pct(item.used))
+    case 'consistency':
+      return t('app.trade.ruleConsistency').replace('{pct}', pct(item.share)).replace('{limit}', pct(item.limit))
+    case 'target':
+      return t('app.trade.ruleTarget').replace('{profit}', usd(item.profit)).replace('{target}', usd(item.target))
+    default:
+      return ''
+  }
+}
+
+function RuleAlerts({ alerts, t, onDone }) {
+  return (
+    <div>
+      <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 14px', lineHeight: 1.5 }}>{t('app.trade.rulesIntro')}</p>
+      <div style={{ display: 'grid', gap: 12 }}>
+        {alerts.map(a => (
+          <section key={a.id} aria-label={`${a.firm} · ${a.label}`}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>{a.firm} · {a.label}</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+              {a.items.map(item => {
+                const c = RULE_COLORS[item.level] || RULE_COLORS.warn
+                return (
+                  <li key={item.rule} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 12px', borderRadius: 8, background: c.bg, color: 'var(--text)', fontSize: 12.5, lineHeight: 1.5 }}>
+                    <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: c.fg, paddingTop: 2 }}>
+                      {t(`app.trade.ruleLevel_${item.level}`)}
+                    </span>
+                    <span>{ruleSentence(item, t)}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
+      <p style={{ fontSize: 11, color: 'var(--text3)', margin: '14px 0 0', lineHeight: 1.5 }}>{t('app.trade.rulesNote')}</p>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+        <button onClick={onDone} style={btnPrimary} autoFocus>{t('app.trade.rulesDone')}</button>
       </div>
     </div>
   )

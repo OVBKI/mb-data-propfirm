@@ -456,6 +456,18 @@ create policy "Users manage own push subscriptions" on push_subscriptions
 
 create index if not exists push_subscriptions_user_id_idx on push_subscriptions(user_id);
 
+-- DRAWDOWN_ALERT_STATE (octobre 2026) — dernier palier d'alerte drawdown
+-- envoyé par compte ('none' | 'warn' | 'danger' | 'breach'). Le cron
+-- drawdown-guardian ne prévient que quand le palier MONTE : sans cet état, un
+-- compte à 85 % recevrait la même alerte chaque matin.
+-- Écrit et lu par le service role uniquement : RLS activée, aucune policy.
+create table if not exists drawdown_alert_state (
+  account_id uuid primary key references accounts(id) on delete cascade,
+  level text not null default 'none' check (level in ('none', 'warn', 'danger', 'breach')),
+  updated_at timestamptz not null default now()
+);
+alter table drawdown_alert_state enable row level security;
+
 -- WAITLIST — inscriptions waitlist Pro / Lifetime
 create table if not exists waitlist (
   id uuid default gen_random_uuid() primary key,

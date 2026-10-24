@@ -252,7 +252,7 @@ export default function HealthPage() {
         title="Payout Pipeline"
         subtitle="Suivi des comptes financés à travers les 4 étapes : Setup → Building → Eligible → Received."
       >
-        <PayoutPipeline firms={firms} statsByAccount={statsByAccount} />
+        <PayoutPipeline firms={firms} statsByAccount={statsByAccount} trades={tradesLoading ? null : trades} />
       </Section>
     </div>
   )

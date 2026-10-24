@@ -6,11 +6,14 @@
 //   3. Eligible     : conditions remplies, peut demander un payout
 //   4. Received     : a déjà reçu au moins 1 payout
 //
-// Conditions Eligible (par défaut, conservateur) :
-//   - min_trading_days atteint
-//   - profit cumulé > 50% du seuil payout target (ou simplement positif si pas de target)
+// Eligible = toutes les conditions de payout connues sont tenues sur la période
+// depuis le dernier payout (lib/payoutReadiness : profit, jours qualifiants,
+// consistance). Chaque carte affiche où en est chaque condition. Un compte déjà
+// payé redevient « Eligible » quand le payout suivant est disponible.
 
 import { useMemo } from 'react'
+import { payoutReadiness } from '../../lib/payoutReadiness'
+import { useT } from '../LanguageProvider'
 import { getFirmLogo } from '../../lib/firmLogos'
 import { FIRM_SUGGESTION_COLORS, planSizeNum } from '../../lib/constants'
 
@@ -31,8 +34,8 @@ const C = {
 const STAGES = [
   { id: 'setup',    label: 'Setup',     color: C.grey,      desc: 'Compte fraîchement financé, pas encore de trades.' },
   { id: 'building', label: 'Building',  color: C.amber,     desc: 'Trades en cours, profit insuffisant ou jours min non atteints.' },
-  { id: 'eligible', label: 'Eligible',  color: C.green,     desc: 'Toutes les conditions sont remplies. Tu peux demander un payout.' },
-  { id: 'received', label: 'Received',  color: C.blueLight, desc: 'Au moins 1 payout déjà reçu. Continue à scaler.' },
+  { id: 'eligible', label: 'Eligible',  color: C.green,     desc: 'Toutes les conditions connues sont remplies depuis le dernier payout. Vérifie sur ta plateforme puis demande-le.' },
+  { id: 'received', label: 'Received',  color: C.blueLight, desc: 'Au moins 1 payout déjà reçu, le suivant n’est pas encore disponible.' },
 ]
 
 function classifyAccount(account, firmName, computedBalance) {
@@ -58,23 +61,59 @@ function classifyAccount(account, firmName, computedBalance) {
   return 'setup'
 }
 
-export default function PayoutPipeline({ firms, statsByAccount }) {
+function stageFor(account, firmName, computedBalance, readiness) {
+  if (!readiness || readiness.checks.length === 0) return classifyAccount(account, firmName, computedBalance)
+  if (readiness.ready) return 'eligible'
+  if ((account.payouts || []).length > 0) return 'received'
+  return readiness.tradingDays > 0 ? 'building' : 'setup'
+}
+
+const usd = (v) => `$${Math.round(v).toLocaleString('en-US')}`
+const SR_ONLY = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }
+
+// Une ligne par condition : ✓ tenue, ○ pas encore.
+function ReadinessList({ readiness, t }) {
+  if (!readiness || !readiness.checks.length) return null
+  return (
+    <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0 0', display: 'grid', gap: 3, fontSize: 11, color: C.text2 }}>
+      {readiness.checks.map(c => {
+        let text
+        if (c.key === 'profit') text = t('app.health.readyProfit').replace('{cur}', usd(c.current)).replace('{req}', usd(c.required))
+        else if (c.key === 'days') text = t(c.minDailyProfit ? 'app.health.readyDaysMin' : 'app.health.readyDays').replace('{cur}', c.current).replace('{req}', c.required).replace('{min}', usd(c.minDailyProfit || 0))
+        else text = t('app.health.readyConsistency').replace('{cur}', c.current == null ? '—' : `${Math.round(c.current * 100)} %`).replace('{req}', `${Math.round(c.required * 100)} %`)
+        return (
+          <li key={c.key} style={{ display: 'flex', gap: 6 }}>
+            <span aria-hidden="true" style={{ color: c.ok ? C.green : C.text3, width: 10 }}>{c.ok ? '✓' : '○'}</span>
+            <span style={{ color: c.ok ? C.text2 : C.text3 }}>
+              <span style={SR_ONLY}>{c.ok ? t('app.health.readyOk') : t('app.health.readyTodo')} : </span>{text}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+export default function PayoutPipeline({ firms, statsByAccount, trades }) {
+  const t = useT()
   const cards = useMemo(() => {
     const acc = []
     for (const f of (firms || [])) {
       for (const a of (f.accounts || [])) {
         if (a.status !== 'Financé') continue
         const computedBalance = statsByAccount?.[a.id]?.balance
+        const readiness = trades ? payoutReadiness({ account: a, firmName: f.name, trades }) : null
         acc.push({
           ...a,
           firmName: f.name,
           _computedBalance: computedBalance,
-          stage: classifyAccount(a, f.name, computedBalance),
+          _readiness: readiness,
+          stage: stageFor(a, f.name, computedBalance, readiness),
         })
       }
     }
     return acc
-  }, [firms, statsByAccount])
+  }, [firms, statsByAccount, trades])
 
   const byStage = useMemo(() => {
     const map = {}
@@ -175,6 +214,7 @@ export default function PayoutPipeline({ firms, statsByAccount }) {
                         <span style={{ color: C.blueLight }}>{payoutCount} payout{payoutCount > 1 ? 's' : ''}</span>
                       )}
                     </div>
+                    <ReadinessList readiness={item._readiness} t={t} />
                   </div>
                 )
               })
