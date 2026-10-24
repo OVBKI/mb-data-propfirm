@@ -702,6 +702,105 @@ create index if not exists stripe_events_received_at_idx on stripe_events(receiv
 -- son consentement, pas un droit d'accès — donc hors du revoke ci-dessous.
 alter table profiles add column if not exists email_optout boolean not null default false;
 
+-- ============================================================================
+-- OBJETS UTILISÉS PAR LE CODE MAIS ABSENTS DE CE FICHIER (audit d'octobre 2026)
+-- ----------------------------------------------------------------------------
+-- Certains existent déjà en production (créés à la main) : `if not exists`
+-- les laisse intacts. Sur une base neuve, sans eux, des requêtes échouaient.
+
+-- Solde et plancher de drawdown SAISIS à la main (optionnels). Quand ils sont
+-- renseignés, lib/drawdownHealth les préfère au recalcul depuis les trades.
+-- Abonnement mensuel ou paiement unique ; nombre d'échéances payées.
+alter table accounts add column if not exists payment_mode text default 'monthly';
+alter table accounts add column if not exists months_count integer not null default 1;
+-- Dernier recalcul des échéances (layout.js, au chargement de l'app).
+alter table accounts add column if not exists last_bill_check_at timestamptz;
+-- Heure du trade (heatmaps par heure, revue IA). Heure murale, sans fuseau.
+alter table journal_entries add column if not exists traded_at timestamp;
+
+alter table accounts add column if not exists balance  numeric(14,2);
+alter table accounts add column if not exists dd_floor numeric(14,2);
+
+-- Séquence d'accueil : nombre d'e-mails déjà envoyés (cron onboarding-emails).
+alter table profiles add column if not exists onboarding_emails_sent integer not null default 0;
+
+-- Parrainage (masqué tant que lib/features.js FEATURES.referral est faux).
+alter table profiles add column if not exists referral_code text;
+create unique index if not exists profiles_referral_code_uniq on profiles(referral_code) where referral_code is not null;
+create table if not exists referrals (
+  id uuid default gen_random_uuid() primary key,
+  referrer_id uuid references auth.users(id) on delete cascade not null,
+  referred_id uuid references auth.users(id) on delete cascade not null unique,
+  referral_code text not null,
+  created_at timestamptz not null default now(),
+  check (referrer_id <> referred_id)
+);
+alter table referrals enable row level security;
+-- Écriture par /api/referral (service role). Chacun lit les parrainages où il figure.
+drop policy if exists "Users read own referrals" on referrals;
+create policy "Users read own referrals" on referrals
+  for select using (auth.uid() = referrer_id or auth.uid() = referred_id);
+create index if not exists referrals_referrer_idx on referrals(referrer_id);
+
+-- Surcharges de règles par firme (lues par le comparateur PropfirmComparator,
+-- par-dessus PROPFIRM_RULES). Données publiques ; écriture service role seulement.
+create table if not exists propfirm_rules_overrides (
+  id uuid default gen_random_uuid() primary key,
+  firm_name text not null,
+  rule_key text not null,
+  plan text not null,
+  value text,
+  updated_at timestamptz not null default now(),
+  unique (firm_name, rule_key, plan)
+);
+alter table propfirm_rules_overrides enable row level security;
+drop policy if exists "Public read rules overrides" on propfirm_rules_overrides;
+create policy "Public read rules overrides" on propfirm_rules_overrides
+  for select using (true);
+
+-- Plan de trading (« Mes règles », components/MyRulesPage.js) : un plan par
+-- utilisateur, ses setups et ses règles. Chacun ne voit et n'écrit que les siens.
+create table if not exists trading_plan (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  content text not null default '',
+  updated_at timestamptz not null default now()
+);
+create table if not exists trading_setups (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  name text not null,
+  description text default '',
+  conditions text default '',
+  screenshot_url text,
+  active boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create table if not exists trading_rule_items (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  rule_text text not null,
+  category text not null default 'risk',
+  active boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table trading_plan enable row level security;
+alter table trading_setups enable row level security;
+alter table trading_rule_items enable row level security;
+drop policy if exists "Users manage own trading plan" on trading_plan;
+create policy "Users manage own trading plan" on trading_plan
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "Users manage own trading setups" on trading_setups;
+create policy "Users manage own trading setups" on trading_setups
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "Users manage own trading rules" on trading_rule_items;
+create policy "Users manage own trading rules" on trading_rule_items
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create index if not exists trading_setups_user_idx on trading_setups(user_id);
+create index if not exists trading_rule_items_user_idx on trading_rule_items(user_id);
+
 -- AI_REVIEW_OPTIN (octobre 2026) — revue hebdomadaire du journal par IA.
 -- Désactivée par défaut : l'activer envoie un résumé des trades à l'API
 -- Anthropic (voir la politique de confidentialité). Inscriptible par le client,
