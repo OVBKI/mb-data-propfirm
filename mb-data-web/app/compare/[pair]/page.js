@@ -22,7 +22,8 @@ export function generateStaticParams() {
   return getAllFirmPairs().map(({ slug }) => ({ pair: slug }))
 }
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   const pair = slugToPair(params.pair)
   if (!pair) {
     return { title: 'Comparison not found · Quantara', robots: { index: false, follow: false } }
@@ -53,7 +54,8 @@ export function generateMetadata({ params }) {
   }
 }
 
-export default function Page({ params }) {
+export default async function Page(props) {
+  const params = await props.params
   const pair = slugToPair(params.pair)
   if (!pair) notFound()
 

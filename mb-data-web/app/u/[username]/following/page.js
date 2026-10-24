@@ -17,7 +17,8 @@ function getAnonClient() {
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   if (!FEATURES.social) return { robots: { index: false, follow: false } }
   return {
     title: `Following de @${params.username}`,
@@ -25,7 +26,8 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function FollowingPage({ params }) {
+export default async function FollowingPage(props) {
+  const params = await props.params
   // Couche sociale masquée tant qu'elle n'est pas prête (lib/features.js).
   if (!FEATURES.social) notFound()
   const supabase = getAnonClient()

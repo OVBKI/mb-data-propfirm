@@ -1,6 +1,6 @@
 import { Outfit, Roboto_Mono } from 'next/font/google'
 import Script from 'next/script'
-import dynamic from 'next/dynamic'
+import CookieConsent from '../components/CookieConsentLazy'
 import { Analytics } from '@vercel/analytics/react'
 import { LanguageProvider } from '../components/LanguageProvider'
 import { ThemeProvider } from '../components/ThemeProvider'
@@ -8,7 +8,6 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import JsonLd, { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA } from '../components/JsonLd'
 import './globals.css'
 
-const CookieConsent = dynamic(() => import('../components/CookieConsent'), { ssr: false })
 
 // Abyss — Outfit pour l'interface (grotesque géométrique, chaleureux aux grandes
 // tailles), Roboto Mono pour tout ce qui s'aligne en colonne. Exposées en

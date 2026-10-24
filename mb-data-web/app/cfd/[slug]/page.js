@@ -14,7 +14,8 @@ export function generateStaticParams() {
   return getAllCfdSlugs().map((slug) => ({ slug }))
 }
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   const firmName = cfdSlugToFirm(params.slug)
   if (!firmName) {
     return { title: 'PropFirm CFD introuvable · Quantara', robots: { index: false, follow: false } }
@@ -89,7 +90,8 @@ function buildFaqs(firmName, firm) {
   return faqs.slice(0, 5)
 }
 
-export default function Page({ params }) {
+export default async function Page(props) {
+  const params = await props.params
   const firmName = cfdSlugToFirm(params.slug)
   if (!firmName) notFound()
 

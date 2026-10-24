@@ -52,7 +52,8 @@ async function fetchPublicProfile(username) {
 }
 
 // === Metadata SEO dynamique ===
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   if (!FEATURES.social) return { robots: { index: false, follow: false } }
   const profile = await fetchPublicProfile(params.username)
   if (!profile) {
@@ -106,7 +107,8 @@ function fmtMonth(iso) {
 }
 
 // === Page principale ===
-export default async function PublicProfilePage({ params }) {
+export default async function PublicProfilePage(props) {
+  const params = await props.params
   // Couche sociale masquée tant qu'elle n'est pas prête (lib/features.js).
   if (!FEATURES.social) notFound()
   const profile = await fetchPublicProfile(params.username)

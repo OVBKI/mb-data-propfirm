@@ -27,7 +27,8 @@ function getAdminClient() {
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   if (!FEATURES.social) return { robots: { index: false, follow: false } }
   const supabase = getAdminClient()
   if (!supabase) return { title: 'Groupe' }
@@ -51,7 +52,8 @@ function fmtMonth(iso) {
   } catch { return '' }
 }
 
-export default async function GroupPage({ params }) {
+export default async function GroupPage(props) {
+  const params = await props.params
   // Couche sociale masquée tant qu'elle n'est pas prête (lib/features.js).
   if (!FEATURES.social) notFound()
   const code = String(params.code).toUpperCase()

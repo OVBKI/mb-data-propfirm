@@ -15,7 +15,8 @@ export function generateStaticParams() {
   return getAllCfdFirmPairs().map(({ slug }) => ({ pair: slug }))
 }
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   const pair = cfdSlugToPair(params.pair)
   if (!pair) {
     return { title: 'Comparaison introuvable · Quantara', robots: { index: false, follow: false } }
@@ -45,7 +46,8 @@ export function generateMetadata({ params }) {
   }
 }
 
-export default function Page({ params }) {
+export default async function Page(props) {
+  const params = await props.params
   const pair = cfdSlugToPair(params.pair)
   if (!pair) notFound()
 

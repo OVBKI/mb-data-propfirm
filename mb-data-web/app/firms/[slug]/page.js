@@ -13,7 +13,8 @@ export function generateStaticParams() {
   return getAllFirmSlugs().map((slug) => ({ slug }))
 }
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   const firmName = slugToFirm(params.slug)
   if (!firmName) {
     return { title: 'PropFirm not found · Quantara', robots: { index: false, follow: false } }
@@ -43,7 +44,8 @@ export function generateMetadata({ params }) {
   }
 }
 
-export default function Page({ params }) {
+export default async function Page(props) {
+  const params = await props.params
   const firmName = slugToFirm(params.slug)
   if (!firmName) notFound()
 

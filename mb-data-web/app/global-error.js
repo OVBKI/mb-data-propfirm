@@ -79,6 +79,8 @@ export default function GlobalError({ error, reset }) {
             >
               Réessayer
             </button>
+            {/* Un vrai rechargement après un plantage : <Link> réutiliserait l'arbre React en échec. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/" style={{
               padding: '12px 22px',
               fontSize: 14, fontWeight: 600,

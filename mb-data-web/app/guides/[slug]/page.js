@@ -11,7 +11,8 @@ export function generateStaticParams() {
   return getAllGuideSlugs().map((slug) => ({ slug }))
 }
 
-export function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params
   const guide = getGuide(params.slug)
   if (!guide) {
     return { title: 'Guide not found · Quantara', robots: { index: false, follow: false } }
@@ -36,7 +37,8 @@ export function generateMetadata({ params }) {
   }
 }
 
-export default function Page({ params }) {
+export default async function Page(props) {
+  const params = await props.params
   const guide = getGuide(params.slug)
   if (!guide) notFound()
 
