@@ -9,13 +9,17 @@ import { planSizeNum, maxDrawdown, isTrailingDD, accountLabel, defaultProfitSpli
 import { TooltipIcon } from './Tooltip'
 // La saisie et l'édition passent par TradeEntryModal, partagé avec le Trade Log :
 // une seule copie du formulaire (réplication, capture, R-multiple, tags).
-import TradeEntryModal from './TradeEntryModal'
+import dynamic from 'next/dynamic'
 import { computeRMultiple, computeRiskReward, computeRStats, formatR, formatRR } from '../lib/tradeMath'
 import { fmtMoney, todayISO } from '../lib/format'
 import { cardStyle as card, btnPrimary, btnGhost, chipBtn, chartColors } from '../lib/theme'
 import { useTheme } from './ThemeProvider'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
+
+// La fenêtre de saisie (et le catalogue de règles qu'elle embarque pour le
+// contrôle après trade) n'est chargée qu'à la première ouverture.
+const TradeEntryModal = dynamic(() => import('./TradeEntryModal'))
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
@@ -1361,8 +1365,8 @@ export default function JournalPage({
       )}
 
       {/* Ajout / édition : la fenêtre partagée avec le Trade Log */}
-      <TradeEntryModal
-        open={!!editing}
+      {editing && <TradeEntryModal
+        open
         entry={editing?.entry}
         defaultDate={editing?.defaultDate}
         defaultAccountId={editing?.defaultAccountId}
@@ -1372,7 +1376,7 @@ export default function JournalPage({
         onSaved={async () => { await loadEntries(); if (onReload) await onReload() }}
         onLightbox={url => setLightboxUrl(url)}
         showToast={showToast}
-      />
+      />}
     </div>
   )
 }

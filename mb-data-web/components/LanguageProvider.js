@@ -15,9 +15,11 @@
 //   - À chaque setLocale : persiste dans localStorage + met à jour <html lang="">
 //   - Avant le mount client : utilise DEFAULT_LOCALE (FR) côté serveur — pas de mismatch
 //     car le HTML initial est toujours FR, le switch EN se fait après hydratation.
+//   - Le dictionnaire anglais est chargé à la demande (lib/i18n/en.js) : la
+//     langue ne bascule qu'une fois son dictionnaire arrivé.
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { translate, getInitialLocale, persistLocale, DEFAULT_LOCALE } from '../lib/i18n'
+import { translate, getInitialLocale, persistLocale, loadLocale, DEFAULT_LOCALE } from '../lib/i18n'
 
 const LanguageContext = createContext({
   locale: DEFAULT_LOCALE,
@@ -34,20 +36,24 @@ export function LanguageProvider({ children }) {
   useEffect(() => {
     const detected = getInitialLocale()
     if (detected !== locale) {
-      setLocaleState(detected)
-      if (typeof document !== 'undefined') {
-        document.documentElement.lang = detected
-      }
+      loadLocale(detected).then(() => {
+        setLocaleState(detected)
+        if (typeof document !== 'undefined') {
+          document.documentElement.lang = detected
+        }
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const setLocale = useCallback((newLocale) => {
     persistLocale(newLocale)
-    setLocaleState(newLocale)
-    if (typeof document !== 'undefined') {
-      document.documentElement.lang = newLocale
-    }
+    loadLocale(newLocale).then(() => {
+      setLocaleState(newLocale)
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = newLocale
+      }
+    })
   }, [])
 
   // Bound `t` function — re-créée à chaque changement de locale pour invalider les memos

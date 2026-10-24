@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
 import * as I18N from './i18n'
+import EN from './i18n/en'
 
 // Toutes les clés t('…') utilisées dans l'app doivent exister en FR ET en EN,
 // et les deux dictionnaires doivent avoir les mêmes clés.
@@ -26,7 +27,7 @@ function walk(dir, files = []) {
 
 describe('i18n', () => {
   const root = new URL('..', import.meta.url).pathname
-  const locales = I18N.TRANSLATIONS
+  const locales = { fr: I18N.TRANSLATIONS.fr, en: EN }
   it('dictionnaires trouvés', () => { expect(locales?.fr && locales?.en).toBeTruthy() })
   const fr = flatten(locales?.fr), en = flatten(locales?.en)
 
@@ -37,6 +38,11 @@ describe('i18n', () => {
     }
     const missing = [...used].filter((k) => !(k in fr) || !(k in en))
     expect(missing).toEqual([])
+  })
+
+  it('le dictionnaire anglais se charge à la demande', async () => {
+    await I18N.loadLocale('en')
+    expect(I18N.translate('app.trade.rulesDone', 'en')).toBe('Got it')
   })
 
   it('FR et EN ont les mêmes clés', () => {

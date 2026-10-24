@@ -20,13 +20,17 @@ import { computeRStats, computeRMultiple, computeRiskReward } from '../lib/trade
 import { TRADE_TAGS, getTagMeta, getTagDisplay } from '../lib/tradeTags'
 import { tagStats, UNTAGGED } from '../lib/tagStats'
 import TradeCard from './TradeCard'
-import TradeEntryModal from './TradeEntryModal'
+import dynamic from 'next/dynamic'
 import TagSelector from './TagSelector'
 import { C } from '../lib/theme'
 import { fmtMoney, todayISO, daysAgoISO } from '../lib/format'
 import { useT } from './LanguageProvider'
 import Skeleton from './Skeleton'
 import { useDialog } from './useDialog'
+
+// La fenêtre de saisie (et le catalogue de règles qu'elle embarque pour le
+// contrôle après trade) n'est chargée qu'à la première ouverture.
+const TradeEntryModal = dynamic(() => import('./TradeEntryModal'))
 
 // La carte passe par les jetons `--card-*` (app/globals.css). Elle etait
 // redefinie ici avec ses propres valeurs, ce qui faisait cohabiter deux
@@ -585,8 +589,8 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
       )}
 
       {/* === Modal trade (créer / éditer) === */}
-      <TradeEntryModal
-        open={!!editing}
+      {editing && <TradeEntryModal
+        open
         entry={editing?.entry}
         defaultDate={editing?.defaultDate}
         defaultAccountId={editing?.defaultAccountId}
@@ -596,7 +600,7 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
         onSaved={async () => { await loadEntries(); if (onReload) await onReload() }}
         onLightbox={url => setLightboxUrl(url)}
         showToast={showToast}
-      />
+      />}
 
       {/* Responsive stats grid */}
       <style>{`

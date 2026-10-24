@@ -6,24 +6,17 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import CommandPalette from '../../../components/CommandPalette'
 import { supabase } from '../../../lib/supabase'
-import AuthPage from '../../../components/AuthPage'
 import { PROPFIRM_RULES, FIRM_COLORS, MONTHS_FR, MONTHS_FULL, FIRM_SUGGESTIONS, FIRM_SUGGESTION_COLORS, STATUS_COLORS, plansForFirm, accountLabel, defaultDdType, defaultPayoutTarget, defaultMinTradingDays, defaultChallengePrice, defaultMinDailyProfit, registerCustomFuturesFirms } from '../../../lib/constants'
 import { useManagedFuturesFirms } from '../../../lib/managedFirms'
 import AppSidebar from '../../../components/AppSidebar'
-import CertificatesModal from '../../../components/CertificatesModal'
-import OnboardingModal from '../../../components/OnboardingModal'
 import Skeleton from '../../../components/Skeleton'
 import Tooltip, { TooltipIcon } from '../../../components/Tooltip'
 import AnnouncementBanner from '../../../components/AnnouncementBanner'
-import Tutorial from '../../../components/Tutorial'
 import DashboardBackdrop from '../../../components/dashboard/DashboardBackdrop'
-import ProfileModal from '../../../components/ProfileModal'
 import CfdAccountModal from '../../../components/CfdAccountModal'
-import CfdAccountDrawer from '../../../components/CfdAccountDrawer'
-import NewAccountWizard from '../../../components/NewAccountWizard'
-import QuickPayoutDialog from '../../../components/QuickPayoutDialog'
 import BetaFeedback from '../../../components/BetaFeedback'
 import { FIRM_LOGOS, getFirmLogo } from '../../../lib/firmLogos'
 import { useT, useLanguage } from '../../../components/LanguageProvider'
@@ -32,6 +25,17 @@ import { AppContext } from './AppContext'
 import { ThemeToggle } from '../../../components/ThemeSwitcher'
 import { planLimitMessage } from '../../../lib/planLimits'
 import { suggestProfitSplit, generateAccountNames, buildAccountForm, programsForFirm } from '../../../lib/accountDefaults'
+
+// Fenêtres ouvertes sur action (et l'écran de connexion) : chargées à la
+// demande, pour ne pas alourdir chaque page de l'app de code rarement utilisé.
+const AuthPage = dynamic(() => import('../../../components/AuthPage'), { loading: () => <Skeleton.AppShell /> })
+const CertificatesModal = dynamic(() => import('../../../components/CertificatesModal'))
+const OnboardingModal = dynamic(() => import('../../../components/OnboardingModal'))
+const Tutorial = dynamic(() => import('../../../components/Tutorial'))
+const ProfileModal = dynamic(() => import('../../../components/ProfileModal'))
+const CfdAccountDrawer = dynamic(() => import('../../../components/CfdAccountDrawer'))
+const NewAccountWizard = dynamic(() => import('../../../components/NewAccountWizard'))
+const QuickPayoutDialog = dynamic(() => import('../../../components/QuickPayoutDialog'))
 
 // ── Helpers ──
 

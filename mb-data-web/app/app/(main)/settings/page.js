@@ -225,7 +225,7 @@ export default function SettingsPage() {
 
       {/* ── 2. Abonnement ── */}
       <SectionTitle icon="💳">
-        Abonnement
+        {t('app.billing.sectionTitle')}
       </SectionTitle>
       <BillingSection onError={showToast} />
 
