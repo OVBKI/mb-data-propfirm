@@ -9,7 +9,7 @@ import { MONTHS_FULL } from '../../../../lib/constants'
 import DashboardGrid from '../../../../components/dashboard/DashboardGrid'
 import {
   useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, NetWidget, EquityWidget, HealthWidget,
-  YearlyWidget, AccountCurvesWidget,
+  YearlyWidget, AccountCurvesWidget, FirmCostWidget,
 } from '../../../../components/dashboard/widgets'
 import { useDashboardLayout } from '../../../../lib/hooks/useDashboardLayout'
 import { useTradeStats } from '../../../../lib/hooks/useTradeStats'
@@ -416,6 +416,7 @@ export default function DashboardPage() {
               case 'stats':    return renderStats()
               case 'ranking':  return renderRanking()
               case 'yearly':   return <YearlyWidget instance={w} yearly={overview.yearly} money={money} S={S} />
+              case 'firmCost': return <FirmCostWidget instance={w} rows={overview.firmCost} money={money} S={S} />
               case 'accountCurves': return <AccountCurvesWidget firms={firms} user={user} S={S} />
               default:         return null
             }

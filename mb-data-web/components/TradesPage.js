@@ -16,7 +16,8 @@ import Image from 'next/image'
 import { supabase } from '../lib/supabase'
 import { accountLabel } from '../lib/constants'
 import { computeRStats, computeRMultiple, computeRiskReward } from '../lib/tradeMath'
-import { TRADE_TAGS, getTagMeta } from '../lib/tradeTags'
+import { TRADE_TAGS, getTagMeta, getTagDisplay } from '../lib/tradeTags'
+import { tagStats, UNTAGGED } from '../lib/tagStats'
 import TradeCard from './TradeCard'
 import TradeEntryModal from './TradeEntryModal'
 import TagSelector from './TagSelector'
@@ -477,6 +478,9 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
         </div>
       </div>
 
+      {/* === Statistiques par setup (sur les trades filtrés) === */}
+      {!loading && filteredEntries.length > 0 && <SetupStats entries={filteredEntries} t={t} />}
+
       {/* === Liste des cards === */}
       {loading ? (
         <div>
@@ -601,6 +605,64 @@ export default function TradesPage({ user, firms, showToast, onReload }) {
           .trades-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
+    </div>
+  )
+}
+
+// Tableau par setup : une ligne par tag, triée par P&L. Replié par défaut
+// pour ne pas pousser la liste des trades hors de l'écran.
+function SetupStats({ entries, t }) {
+  const [open, setOpen] = useState(false)
+  const rows = useMemo(() => tagStats(entries), [entries])
+  const tagged = rows.filter((r) => r.tag !== UNTAGGED).length
+  const th = { padding: '6px 8px', fontSize: 9, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }
+  const td = { padding: '7px 8px', fontSize: 12, textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
+  return (
+    <div style={{ ...card, padding: '12px 16px', marginBottom: 14 }}>
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} style={{ all: 'unset', cursor: 'pointer', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, fontWeight: 600, color: C.text }}>
+        <span>{t('app.trades.setupTitle')} <span style={{ color: C.text3, fontWeight: 500 }}>· {tagged} {t('app.trades.setupCount')}</span></span>
+        <span style={{ color: C.text3, fontSize: 11 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        tagged === 0 ? (
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: C.text3 }}>{t('app.trades.setupEmpty')}</p>
+        ) : (
+          <div style={{ overflowX: 'auto', marginTop: 10 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <th style={{ ...th, textAlign: 'left' }}>{t('app.trades.setupColTag')}</th>
+                  <th style={th}>{t('app.trades.statTrades')}</th>
+                  <th style={th}>{t('app.trades.statWinRate')}</th>
+                  <th style={th}>{t('app.trades.statPnl')}</th>
+                  <th style={th}>{t('app.trades.setupColExp')}</th>
+                  <th style={th}>{t('app.trades.statAvgR')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const meta = r.tag === UNTAGGED ? null : getTagDisplay(r.tag)
+                  return (
+                    <tr key={r.tag} style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <td style={{ ...td, textAlign: 'left', fontFamily: 'inherit' }}>
+                        {meta
+                          ? <span style={{ padding: '2px 7px', borderRadius: 5, background: meta.bg, color: meta.color, fontSize: 11, fontWeight: 600 }}>{meta.label}</span>
+                          : <span style={{ color: C.text3 }}>{t('app.trades.setupNone')}</span>}
+                      </td>
+                      <td style={td}>{r.count}</td>
+                      <td style={{ ...td, color: r.winRate >= 0.5 ? C.green : C.text2 }}>{(r.winRate * 100).toFixed(0)}%</td>
+                      <td style={{ ...td, color: r.total >= 0 ? C.green : C.red }}>{fmtMoney(r.total)}</td>
+                      <td style={{ ...td, color: r.expectancy >= 0 ? C.green : C.red }}>{fmtMoney(r.expectancy)}</td>
+                      <td style={{ ...td, color: C.text2 }}>{r.avgR != null ? (r.avgR >= 0 ? '+' : '') + r.avgR.toFixed(2) + 'R' : '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            <p style={{ margin: '8px 0 0', fontSize: 10, color: C.text3 }}>{t('app.trades.setupNote')}</p>
+          </div>
+        )
+      )}
     </div>
   )
 }

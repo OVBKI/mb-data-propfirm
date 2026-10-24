@@ -165,6 +165,9 @@ create index if not exists journal_entries_tags_idx on journal_entries using gin
 -- Import CSV Rithmic alimente déjà `commissions` automatiquement.
 alter table journal_entries add column if not exists commissions numeric(12,2) default 0;
 alter table journal_entries add column if not exists slippage    numeric(12,2) default 0;
+-- Nombre de contrats (octobre 2026) : sert à l'exposition cumulée quand un
+-- trade est répliqué sur plusieurs comptes. Optionnel ; les imports le remplissent.
+alter table journal_entries add column if not exists quantity integer check (quantity is null or quantity > 0);
 
 -- CERTIFICATS / DIPLÔMES — captures de réussite challenge, payouts, etc.
 create table if not exists certificates (

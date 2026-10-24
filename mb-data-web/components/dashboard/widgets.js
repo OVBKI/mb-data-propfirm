@@ -14,6 +14,7 @@ import { useMemo } from 'react'
 import { useT, useLanguage } from '../LanguageProvider'
 import { drawdownMargin, maxDrawdownFor } from '../../lib/drawdownHealth'
 import EquityOverlayChart from '../EquityOverlayChart'
+import { firmEconomics } from '../../lib/firmEconomics'
 
 // Nombre de mois couverts par chaque valeur de l'option « période ». `all` est
 // borné : au-delà, l'axe devient illisible et la requête ne rapporte plus rien.
@@ -188,7 +189,10 @@ export function useOverviewData({ firms, accts, rates, toEUR, totalPayoutsEUR, t
     return Object.values(by).sort((x, y) => x.year.localeCompare(y.year))
   }, [firms, toEUR, rates])
 
-  return { series, health, insight, yearly }
+  // Coût d'un financé par firm, converti dans la même unité que le reste.
+  const firmCost = useMemo(() => firmEconomics(firms, (amount, currency) => toEUR(amount, currency, rates)), [firms, toEUR, rates])
+
+  return { series, health, insight, yearly, firmCost }
 }
 
 const cardOf = (S) => ({ ...S.card, padding: '22px 24px', minWidth: 0, height: '100%' })
@@ -569,6 +573,54 @@ export function YearlyWidget({ instance, yearly, money, S }) {
           </span>
         ))}
       </div>
+    </div>
+  )
+}
+
+// Coût réel d'un compte financé, par firm : tout ce qui a été payé chez elle
+// (évaluations ratées comprises) divisé par le nombre de comptes financés.
+export function FirmCostWidget({ instance, rows, money, S }) {
+  const t = useT()
+  const list = (rows || []).filter(r => r.accounts > 0)
+  const th = { padding: '6px 8px', fontSize: 10.5, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }
+  const td = { padding: '8px', fontSize: 13, textAlign: 'right', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
+  const pct = (v) => v == null ? '—' : `${Math.round(v * 100)} %`
+  return (
+    <div style={cardOf(S)}>
+      <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{titleOf(t, instance, 'app.widgets.firmCost')}</h2>
+      {list.length === 0 ? (
+        <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 12 }}>{t('app.widgets.firmCostEmpty')}</p>
+      ) : (
+        <div style={{ overflowX: 'auto', marginTop: 12 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--hairline)' }}>
+                <th style={{ ...th, textAlign: 'left' }}>{t('app.widgets.firmCostFirm')}</th>
+                <th style={th}>{t('app.widgets.firmCostBought')}</th>
+                <th style={th}>{t('app.widgets.firmCostFunded')}</th>
+                <th style={th}>{t('app.widgets.firmCostPass')}</th>
+                <th style={th}>{t('app.widgets.firmCostPer')}</th>
+                <th style={th}>{t('app.widgets.firmCostDays')}</th>
+                <th style={th}>{t('app.widgets.legendNet')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map(r => (
+                <tr key={r.firmId ?? r.firm} style={{ borderBottom: '1px solid var(--hairline)' }}>
+                  <td style={{ ...td, textAlign: 'left', fontFamily: 'inherit', fontWeight: 600 }}>{r.firm}</td>
+                  <td style={td}>{r.accounts}</td>
+                  <td style={td}>{r.funded}</td>
+                  <td style={td}>{pct(r.passRate)}</td>
+                  <td style={{ ...td, fontWeight: 700 }}>{r.costPerFunded == null ? '—' : money(r.costPerFunded)}</td>
+                  <td style={td}>{r.avgDaysToFunded == null ? '—' : `${Math.round(r.avgDaysToFunded)} ${t('app.widgets.daysShort')}`}</td>
+                  <td style={{ ...td, color: r.net >= 0 ? 'var(--green)' : 'var(--red)' }}>{money(r.net)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 11.5, color: 'var(--text3)', margin: '10px 0 0' }}>{t('app.widgets.firmCostNote')}</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -117,6 +117,13 @@ export const WIDGETS = {
     duplicable: false,
     options: {},
   },
+  // Coût réel d'un compte financé, par firm (lib/firmEconomics).
+  firmCost: {
+    titleKey: 'app.widgets.firmCost',
+    minW: 2, defaultW: 4, minH: 1, defaultH: 1,
+    duplicable: false,
+    options: {},
+  },
   accountCurves: {
     titleKey: 'app.widgets.accountCurves',
     minW: 2, defaultW: 4, minH: 1, defaultH: 2,
@@ -181,18 +188,18 @@ export const DEFAULT_LAYOUTS = {
     inst('net', 2, 1), inst('equity', 2, 2), inst('health', 2, 2),
     inst('firms', 4, 2), inst('calendar', 4, 2),
     inst('byFirm', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
-    inst('yearly', 2, 1, false), inst('accountCurves', 4, 2, false),
+    inst('yearly', 2, 1, false), inst('firmCost', 4, 1, false), inst('accountCurves', 4, 2, false),
   ],
   performance: [
     inst('equity', 4, 2), inst('net', 2, 1), inst('byFirm', 2, 1),
     inst('yearly', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
-    inst('accountCurves', 4, 2),
+    inst('firmCost', 4, 1), inst('accountCurves', 4, 2),
     inst('insight', 2, 1, false), inst('payouts', 1, 1, false), inst('spent', 1, 1, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('calendar', 4, 2, false),
   ],
   payouts: [
     inst('payouts', 2, 1), inst('spent', 2, 1), inst('net', 4, 1), inst('calendar', 4, 2),
-    inst('ranking', 2, 1), inst('byFirm', 2, 1),
+    inst('ranking', 2, 1), inst('byFirm', 2, 1), inst('firmCost', 4, 1),
     inst('insight', 2, 1, false), inst('equity', 2, 2, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('stats', 1, 1, false),
     inst('yearly', 2, 1, false), inst('accountCurves', 4, 2, false),
@@ -202,7 +209,7 @@ export const DEFAULT_LAYOUTS = {
     inst('payouts', 1, 1, false), inst('spent', 1, 1, false), inst('net', 2, 1, false),
     inst('equity', 2, 2, false), inst('calendar', 4, 2, false), inst('byFirm', 2, 1, false),
     inst('stats', 1, 1, false), inst('ranking', 1, 1, false),
-    inst('yearly', 2, 1, false), inst('accountCurves', 4, 2, false),
+    inst('yearly', 2, 1, false), inst('firmCost', 4, 1, false), inst('accountCurves', 4, 2, false),
   ],
 }
 

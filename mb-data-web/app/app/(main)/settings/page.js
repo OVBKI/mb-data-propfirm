@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { useApp } from '../AppContext'
-import { useT } from '../../../../components/LanguageProvider'
+import { useT, useLanguage } from '../../../../components/LanguageProvider'
 import { C, cardStyle } from '../../../../lib/theme'
 import PushNotificationToggle from '../../../../components/PushNotificationToggle'
 import BillingSection from '../../../../components/BillingSection'
@@ -13,6 +13,8 @@ import ThemeSwitcher from '../../../../components/ThemeSwitcher'
 import Link from 'next/link'
 import { supabase } from '../../../../lib/supabase'
 import { exportAllData, deleteAccount, DELETE_CONFIRMATION } from '../../../../lib/accountActions'
+import { annualReport, reportYears } from '../../../../lib/annualReport'
+import { accountLabel } from '../../../../lib/constants'
 
 
 function SectionTitle({ icon, children }) {
@@ -122,6 +124,36 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const { locale } = useLanguage()
+
+  // Bilan annuel : lu sur TOUTES les firms, futures et CFD, pas seulement le
+  // marché affiché (le contexte `firms` est filtré par marché).
+  const [reportFirms, setReportFirms] = useState(null)
+  const [reportYear, setReportYear] = useState('')
+  useEffect(() => {
+    if (!user?.id) return
+    supabase.from('firms').select('name, accounts(*, payouts(*))').eq('user_id', user.id)
+      .then(({ data }) => {
+        const fs = data || []
+        setReportFirms(fs)
+        const ys = reportYears(fs)
+        setReportYear(String(ys.includes(new Date().getFullYear() - 1) ? new Date().getFullYear() - 1 : (ys[0] || new Date().getFullYear())))
+      })
+  }, [user?.id])
+
+  function downloadAnnualReport() {
+    const { csv, lines } = annualReport(reportFirms || [], reportYear, { lang: locale === 'en' ? 'en' : 'fr', accountName: accountLabel })
+    if (!lines.length) { showToast(t('app.settings.reportEmpty')); return }
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `quantara-bilan-${reportYear}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
 
   const displayName = profile?.display_name || (profile?.username ? `@${profile.username}` : null)
   const email = user?.email || ''
@@ -308,6 +340,38 @@ export default function SettingsPage() {
           >
             {exporting ? t('app.settings.exporting') : t('app.settings.exportBtn')}
           </button>
+        </SettingRow>
+        <SettingRow
+          label={t('app.settings.reportLabel')}
+          description={t('app.settings.reportDesc')}
+        >
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <select
+              id="annual-report-year"
+              aria-label={t('app.settings.reportYear')}
+              value={reportYear}
+              onChange={(e) => setReportYear(e.target.value)}
+              disabled={!reportFirms}
+              style={{ fontSize: 12, color: C.text, background: 'var(--tint1)', border: `1px solid ${C.border2}`, borderRadius: 8, padding: '7px 10px', fontFamily: 'inherit' }}
+            >
+              {Array.from(new Set([...reportYears(reportFirms || []), Number(reportYear) || new Date().getFullYear()]))
+                .sort((a, b) => b - a)
+                .map((y) => <option key={y} value={String(y)}>{y}</option>)}
+            </select>
+            <button
+              disabled={!reportFirms}
+              onClick={downloadAnnualReport}
+              style={{
+                fontSize: 12, fontWeight: 600, color: C.text2,
+                background: 'var(--tint2)',
+                border: `1px solid ${C.border2}`,
+                borderRadius: 8, padding: '8px 14px',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {t('app.settings.reportBtn')}
+            </button>
+          </div>
         </SettingRow>
         <div style={{ paddingTop: 14 }}>
           {!showDeleteConfirm ? (

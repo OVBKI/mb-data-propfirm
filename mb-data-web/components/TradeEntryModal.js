@@ -33,6 +33,7 @@ import { computeRMultiple, computeRiskReward, formatR, formatRR } from '../lib/t
 import {
   replicationTargets, countTargets, allTargetIds, pruneSelection, buildReplicaPayloads,
 } from '../lib/tradeReplication'
+import { replicationExposure } from '../lib/exposure'
 import TagSelector from './TagSelector'
 import { useT, useLanguage } from './LanguageProvider'
 import { useDialog } from './useDialog'
@@ -65,19 +66,31 @@ function buildTradedAt(date, time) {
   return `${date}T${timeStr}`
 }
 
+// Nombre de contrats : entier positif, ou rien. N'est ajouté au payload que
+// s'il y a quelque chose à écrire (saisi, ou à effacer) : une base où la
+// colonne `quantity` n'a pas encore été créée continue d'accepter les trades.
+function quantityOrNull(v) {
+  const n = parseInt(v, 10)
+  return n > 0 ? n : null
+}
+function withQuantity(payload, form, entry) {
+  const q = quantityOrNull(form.quantity)
+  return q != null || entry?.quantity != null ? { ...payload, quantity: q } : payload
+}
+
 // Form vide par défaut
 const EMPTY_FORM = {
   accountId: '', date: todayISO(), time: '', pnl: '', instrument: '', side: '', notes: '',
   entryPrice: '', exitPrice: '', stopLoss: '', takeProfit: '', screenshotUrl: '',
   tags: [],
-  commissions: '', slippage: '',
+  commissions: '', slippage: '', quantity: '',
 }
 
 // Un trade porte-t-il autre chose que le strict minimum (compte, date, P&L) ?
 // Sert a decider si la section « details » s'ouvre d'emblee en edition.
 export function hasDetails(f) {
   return Boolean(
-    f.instrument || f.side || f.notes || f.screenshotUrl ||
+    f.instrument || f.side || f.quantity || f.notes || f.screenshotUrl ||
     f.entryPrice || f.exitPrice || f.stopLoss || f.takeProfit ||
     f.commissions || f.slippage || (f.tags && f.tags.length)
   )
@@ -101,6 +114,7 @@ function entryToForm(e) {
     tags:        Array.isArray(e.tags) ? e.tags : [],
     commissions: e.commissions != null && Number(e.commissions) !== 0 ? String(e.commissions) : '',
     slippage:    e.slippage    != null && Number(e.slippage)    !== 0 ? String(e.slippage)    : '',
+    quantity:    e.quantity != null ? String(e.quantity) : '',
   }
 }
 
@@ -197,7 +211,7 @@ export default function TradeEntryModal({
     if (!form.date) { showToast?.(t('app.trade.toastDateRequired')); return }
     if (form.pnl === '' || isNaN(parseFloat(form.pnl))) { showToast?.(t('app.trade.toastPnlRequired')); return }
     const numOrNull = s => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
-    const payload = {
+    const payload = withQuantity({
       user_id: user.id,
       account_id: form.accountId,
       date: form.date,
@@ -216,7 +230,7 @@ export default function TradeEntryModal({
       // Commissions & slippage en montant absolu positif (coûts payés)
       commissions: Math.abs(parseFloat(form.commissions) || 0) || 0,
       slippage:    Math.abs(parseFloat(form.slippage)    || 0) || 0,
-    }
+    }, form, entry)
     setSaving(true)
     let res
     if (entry) {
@@ -261,7 +275,7 @@ export default function TradeEntryModal({
     if (!form.date) { showToast?.(t('app.trade.toastDateRequired')); return }
     if (form.pnl === '' || isNaN(parseFloat(form.pnl))) { showToast?.(t('app.trade.toastPnlRequired')); return }
     const numOrNull = s => s === '' || s == null ? null : (isNaN(parseFloat(s)) ? null : parseFloat(s))
-    const base = {
+    const base = withQuantity({
       user_id: user.id,
       account_id: form.accountId,
       date: form.date,
@@ -278,7 +292,7 @@ export default function TradeEntryModal({
       tags: Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : null,
       commissions: Math.abs(parseFloat(form.commissions) || 0) || 0,
       slippage:    Math.abs(parseFloat(form.slippage)    || 0) || 0,
-    }
+    }, form, null)
     const rows = buildReplicaPayloads(base, replicaIds)
     if (rows.length === 0) return
     setSaving(true)
@@ -443,6 +457,24 @@ export default function TradeEntryModal({
                       </fieldset>
                     ))}
                   </div>
+
+                  {/* Exposition cumulée : ce que la réplication met réellement
+                      sur le marché, tous comptes confondus. */}
+                  {replicaIds.length > 0 && (() => {
+                    const x = replicationExposure(form.instrument, form.quantity, replicaIds.length + 1)
+                    return (
+                      <p role="status" style={{ fontSize: 12, color: 'var(--text2)', margin: '10px 0 0', paddingTop: 10, borderTop: '1px solid var(--hairline)', lineHeight: 1.5 }}>
+                        {x
+                          ? t('app.trade.exposure')
+                              .replace('{qty}', form.quantity)
+                              .replace('{n}', replicaIds.length + 1)
+                              .replace('{total}', x.contracts)
+                              .replace('{sym}', x.root)
+                            + (x.micro != null && x.microSymbol !== x.root ? ` ≈ ${x.micro} ${x.microSymbol}` : '')
+                          : t('app.trade.exposureHint')}
+                      </p>
+                    )
+                  })()}
                 </div>
               )}
             </div>
@@ -517,16 +549,32 @@ export default function TradeEntryModal({
             </datalist>
           </div>
           <div>
-            <label style={labelS}>{t('app.trade.fieldSide')}</label>
-            <select
-              value={form.side}
-              onChange={e => setForm(p => ({ ...p, side: e.target.value }))}
-              style={inputS}
-            >
-              <option value="">—</option>
-              <option value="Long">{t('app.trade.sideLong')}</option>
-              <option value="Short">{t('app.trade.sideShort')}</option>
-            </select>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8 }}>
+              <div>
+                <label style={labelS} htmlFor="trade-side">{t('app.trade.fieldSide')}</label>
+                <select
+                  id="trade-side"
+                  value={form.side}
+                  onChange={e => setForm(p => ({ ...p, side: e.target.value }))}
+                  style={inputS}
+                >
+                  <option value="">—</option>
+                  <option value="Long">{t('app.trade.sideLong')}</option>
+                  <option value="Short">{t('app.trade.sideShort')}</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelS} htmlFor="trade-qty">{t('app.trade.fieldQty')}</label>
+                <input
+                  id="trade-qty"
+                  type="number" min="1" step="1" inputMode="numeric"
+                  value={form.quantity}
+                  onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))}
+                  placeholder="1"
+                  style={inputS}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Détails approfondis */}
