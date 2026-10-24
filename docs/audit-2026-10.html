@@ -235,21 +235,23 @@ select tgname from pg_trigger where tgname in ('firms_quota','accounts_quota','j
   <section id="technique" aria-labelledby="h-tech">
     <div class="sec-head">
       <span class="eyebrow">4 · État technique</span>
-      <h2 id="h-tech">Mesuré le 23 octobre</h2>
+      <h2 id="h-tech">Mesuré le 23 octobre, corrigé le 24</h2>
+      <p><span class="pill ok">Fait le 24 octobre</span> Les neuf points sont traités. Deux défauts plus graves ont été trouvés en chemin : l'export de données sortait sans trade, et le Journal ne lisait que les 1 000 derniers trades.</p>
     </div>
     <div class="scroll">
       <table>
-        <thead><tr><th scope="col">Point</th><th scope="col">Mesure</th><th scope="col">Lecture</th></tr></thead>
+        <thead><tr><th scope="col">Point</th><th scope="col">Le 23 octobre</th><th scope="col">Le 24 octobre</th></tr></thead>
         <tbody>
-          <tr><th scope="row">Tests</th><td class="num">632 / 632</td><td><span class="pill ok">Sain</span> Surtout sur le catalogue de règles, la facturation et le dashboard.</td></tr>
-          <tr><th scope="row">Lint</th><td class="num">0 erreur · 35 avert.</td><td><span class="pill ok">Sain</span> Des dépendances de hooks React oubliées.</td></tr>
-          <tr><th scope="row">Build de production</th><td class="num">OK</td><td><span class="pill ok">Sain</span> Pages les plus lourdes : Journal 269 kB et Dashboard 261 kB au premier chargement.</td></tr>
-          <tr><th scope="row">Dépendances vulnérables</th><td class="num">13 · dont 2 critiques</td><td><span class="pill warn">À planifier</span> La faille Sentry ne s'applique pas : la route « tunnel » n'est pas activée. Les failles de Next ne se corrigent qu'en passant à la version 16, qui casse la compatibilité. Le reste se corrige avec npm audit fix.</td></tr>
-          <tr><th scope="row">Schéma SQL</th><td class="num">6 manques</td><td><span class="pill warn">À compléter</span> Utilisés par le code mais absents du fichier : tables referrals et propfirm_rules_overrides, colonnes referral_code, onboarding_emails_sent, balance et dd_floor.</td></tr>
-          <tr><th scope="row">Pages admin</th><td class="num">3 pages</td><td><span class="pill warn">À vérifier</span> Elles lisent la base avec le client utilisateur, et les policies de lecture admin sont commentées dans le schéma. Elles ne verraient alors que les données de l'admin.</td></tr>
-          <tr><th scope="row">Calendrier économique</th><td class="num">FMP puis ForexFactory</td><td><span class="pill warn">Fragile</span> Une réponse illisible de FMP saute le repli et renvoie une erreur 500.</td></tr>
-          <tr><th scope="row">Traductions</th><td class="num">5 écrans</td><td><span class="pill warn">Incomplet</span> Import, journal-sync, groupes, profil et fenêtre de profil sont en français seulement.</td></tr>
-          <tr><th scope="row">Limitation de débit</th><td class="num">en mémoire</td><td><span class="pill warn">Connu</span> Remise à zéro à chaque démarrage à froid, ouvert depuis juillet.</td></tr>
+          <tr><th scope="row">Tests</th><td class="num">632 / 632</td><td><span class="pill ok">771 / 771</span> Nouveaux tests : calendrier, limitation de débit, pagination, parité des traductions.</td></tr>
+          <tr><th scope="row">Lint</th><td class="num">0 erreur · 35 avert.</td><td><span class="pill ok">0 · 0</span> Dépendances de hooks corrigées une par une, dont le badge d'alertes qui ne se mettait pas à jour.</td></tr>
+          <tr><th scope="row">Build et poids</th><td class="num">Journal 269 kB · Dashboard 261 kB</td><td><span class="pill ok">Journal 263 · Trade Log 260 · Dashboard 268</span> Malgré Next 15 et les nouveaux widgets : l'anglais et les fenêtres rares sont chargés à la demande.</td></tr>
+          <tr><th scope="row">Dépendances vulnérables</th><td class="num">13 · dont 2 critiques</td><td><span class="pill ok">0</span> Next 15.5.28, React 19, Sentry et vitest à jour, postcss forcé en 8.5. Sans passer à Next 16.</td></tr>
+          <tr><th scope="row">Schéma SQL</th><td class="num">6 manques</td><td><span class="pill ok">Complet</span> 6 + 7 objets ajoutés après comparaison de chaque table et colonne utilisée par le code avec une vraie base Postgres. À recoller dans Supabase.</td></tr>
+          <tr><th scope="row">Pages admin</th><td class="num">3 pages</td><td><span class="pill ok">Côté serveur</span> Une route admin lit toute la plateforme avec la service role ; l'admin ne voyait que ses propres données.</td></tr>
+          <tr><th scope="row">Calendrier économique</th><td class="num">FMP puis ForexFactory</td><td><span class="pill ok">Robuste</span> Une source en panne ne fait plus tomber l'autre ; dernier calendrier connu affiché si les deux tombent.</td></tr>
+          <tr><th scope="row">Traductions</th><td class="num">5 écrans</td><td><span class="pill ok">Traduits</span> Import Lab, profil, certificats, abonnement, groupes, restes du Journal et du dashboard, erreurs de connexion. Un test vérifie que chaque clé existe en français et en anglais.</td></tr>
+          <tr><th scope="row">Limitation de débit</th><td class="num">en mémoire</td><td><span class="pill ok">Postgres</span> Compteurs partagés entre instances, clés hachées, repli en mémoire si la base ne répond pas.</td></tr>
+          <tr><th scope="row">Trouvé en chemin</th><td class="num">—</td><td><span class="pill warn">Corrigé</span> Export de données vide (colonnes inexistantes) ; Journal, Trade Log, Heatmaps et dédoublonnage Rithmic limités à 1 000 trades sans le dire.</td></tr>
         </tbody>
       </table>
     </div>

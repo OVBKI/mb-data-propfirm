@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Quantara (Quantara Technologies LLC, New Mexico) — PropFirm trading analytics platform. Next.js 14 (App Router) + Supabase + Vercel.
+Quantara (Quantara Technologies LLC, New Mexico) — PropFirm trading analytics platform. Next.js 15 (App Router, React 19) + Supabase + Vercel.
 Monorepo root is `/mb-data-web/`.
 
 ## Beta launch — manual actions (owner: roxxnexus@gmail.com)
@@ -87,7 +87,7 @@ cd mb-data-web
 npm install          # install dependencies
 npm run dev          # dev server on localhost:3000
 npm run build        # production build
-npm run lint         # ESLint (next/core-web-vitals)
+npm run lint         # ESLint CLI (next/core-web-vitals) — 0 erreur, 0 avertissement à tenir
 ```
 
 Tests: Vitest (`npm test`) — suites dans `lib/*.test.js`.
@@ -169,7 +169,7 @@ When adding new components, import from `lib/theme.js` for colors and style obje
 Client-side only via `components/LanguageProvider.js`. Two locales: FR (default) and EN.
 - `useT()` returns a translation function: `t('hero.title')` → translated string
 - `useLanguage()` returns `{ locale, setLocale }`
-- Translations live in `lib/i18n.js` (single file, ~2260 lines, dot-notation keys)
+- Translations live in `lib/i18n.js` (FR, toujours chargé) and `lib/i18n/en.js` (EN, chargé à la demande par `loadLocale`). Toute clé ajoutée va dans LES DEUX fichiers ; `lib/i18nParity.test.js` échoue sinon
 - **All app components are fully translated** (v3.1 completed). Keys are organized under:
   - `app.dashboard.*`, `app.analytics.*`, `app.alerts.*` — dashboard pages
   - `app.trades.*` — TradesPage (trade log with filters)
@@ -180,7 +180,7 @@ Client-side only via `components/LanguageProvider.js`. Two locales: FR (default)
   - `app.trade.*` — TradeEntryModal + TradeCard (trade form fields, toasts, previews)
   - `app.settings.*` — Settings page (profile, notifications, language, data)
   - `app.auth.*` — AuthPage (login/register)
-- When adding new user-visible text, add keys to both `FR` and `EN` objects in `lib/i18n.js`
+- When adding new user-visible text, add the FR key in `lib/i18n.js` and the EN key in `lib/i18n/en.js`
 
 ### Loading States (Skeleton)
 
@@ -229,7 +229,7 @@ export async function POST(request) {
 }
 ```
 
-Admin routes use `verifyAdmin(request)` instead. Cron routes validate `CRON_SECRET` Bearer token. Rate limiting is in-memory (resets on serverless cold start).
+Admin routes use `verifyAdmin(request)` instead. Cron routes validate `CRON_SECRET` Bearer token. Rate limiting : `await rateLimit({...})`, compteurs dans Postgres (`rate_limit_hit`), repli en mémoire si la base ne répond pas.
 
 ### Landing Page
 
@@ -2811,3 +2811,43 @@ La marge de drawdown reste `lib/drawdownHealth`. Ne pas recalculer ailleurs.
 2. Vercel : `ANTHROPIC_API_KEY` et `AI_REVIEW_MODEL` (identifiant du modèle Claude) pour activer la revue IA.
 3. Accepter les conditions de traitement des données d'Anthropic avant d'ouvrir la revue IA : la politique de confidentialité la cite désormais comme sous-traitant.
 4. Tester l'import TopstepX par API avec un vrai compte Practice et une vraie clé.
+
+
+## État technique — 2026-10 (partie 4 de l'audit)
+
+| Point | Avant | Maintenant |
+|---|---|---|
+| Dépendances | 13 vulnérabilités dont 2 critiques (Next 14) | **0** — Next 15.5.28, React 19, R3F 9 / drei 10, Sentry 10.76, postcss forcé en 8.5 par `overrides` |
+| Lint | 0 erreur, 35 avertissements | **0 / 0** ; `npm run lint` passe par ESLint (`next lint` est déprécié) |
+| Schéma | 6 objets utilisés par le code mais absents | complet : vérifié en comparant chaque table et colonne lue ou écrite par le code à une base Postgres 16 créée depuis le fichier (3 passes) |
+| Pages admin | lues avec le client navigateur (RLS : l'admin ne voyait que ses lignes) | `/api/admin/data` (service role, paginé) via `lib/adminData.js` |
+| Calendrier | une réponse illisible de FMP finissait en 500 | `safely()` + délai de 8 s par source, dernier calendrier servi « périmé » si les deux tombent |
+| Traductions | 5 écrans en français seulement | Import Lab, profil, certificats, abonnement, groupes, Journal, dashboard, connexion |
+| Limitation de débit | en mémoire, par instance | Postgres (`rate_limits`, `rate_limit_hit` atomique, clés hachées) |
+
+### Next 15 — ce qui a changé dans le code
+- `params` des pages dynamiques est une promesse : `const params = await props.params`.
+- `dynamic(..., { ssr: false })` n'est permis que dans un composant client : d'où
+  `components/landing/LandingPageLazy.js` et `components/CookieConsentLazy.js`.
+- npm 10 plante (`edgesOut`) en reconstruisant l'arbre à cause des peers optionnels
+  de vitest ; `npx npm@11 install` passe. `npm ci` avec npm 10 fonctionne sur le lockfile.
+
+### Deux défauts trouvés en chemin
+- **Plafond de 1 000 lignes** : PostgREST tronque sans erreur. Le Journal, le Trade Log,
+  les Heatmaps, les courbes par compte, la revue IA et le dédoublonnage Rithmic lisaient
+  tous au plus 1 000 trades. Toute lecture de `journal_entries` passe par
+  `lib/fetchAll.js` (ou `fetchTradePnl`), avec un `.order('id')` final.
+- **Export de données vide** : `/api/export` demandait `symbol` et `content`, colonnes
+  inexistantes ; le CSV sortait sans trade.
+
+### Poids des pages
+Le dictionnaire anglais et les fenêtres ouvertes sur action (saisie de trade, assistant,
+profil, certificats, onboarding, tutoriel, payout, tiroir CFD, connexion) sont chargés à
+la demande. Journal 263 kB, Trade Log 260 kB, Dashboard 268 kB au premier chargement.
+La page Santé (304 kB) embarque le catalogue de règles, dont elle a besoin.
+
+### À rejouer sur Supabase
+`supabase-schema.sql` (rejouable) : tables `rate_limits`, `referrals`,
+`propfirm_rules_overrides`, `trading_plan`, `trading_setups`, `trading_rule_items`,
+fonction `rate_limit_hit`, colonnes manquantes. Sans la fonction, la limitation de débit
+retombe en mémoire, sans erreur.
