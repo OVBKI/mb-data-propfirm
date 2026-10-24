@@ -7,6 +7,7 @@ import { useApp } from '../AppContext'
 import { useT } from '../../../../components/LanguageProvider'
 import { MONTHS_FULL } from '../../../../lib/constants'
 import DashboardGrid from '../../../../components/dashboard/DashboardGrid'
+import AiReviewWidget from '../../../../components/dashboard/AiReviewWidget'
 import {
   useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, NetWidget, EquityWidget, HealthWidget,
   YearlyWidget, AccountCurvesWidget, FirmCostWidget,
@@ -416,6 +417,7 @@ export default function DashboardPage() {
               case 'stats':    return renderStats()
               case 'ranking':  return renderRanking()
               case 'yearly':   return <YearlyWidget instance={w} yearly={overview.yearly} money={money} S={S} />
+              case 'aiReview': return <AiReviewWidget instance={w} user={user} S={S} />
               case 'firmCost': return <FirmCostWidget instance={w} rows={overview.firmCost} money={money} S={S} />
               case 'accountCurves': return <AccountCurvesWidget firms={firms} user={user} S={S} />
               default:         return null

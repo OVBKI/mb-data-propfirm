@@ -6,6 +6,7 @@
 //   - onboarding-emails  → tous les jours
 //   - drawdown-guardian  → en semaine (lun→ven)
 //   - monthly-recap      → le 1er du mois
+//   - weekly-review      → tous les jours (rattrapage des revues IA manquantes)
 //
 // Chaque sous-job est appelé en interne (HTTP, même déploiement) avec le
 // CRON_SECRET — leur logique/route restent inchangées.
@@ -61,6 +62,8 @@ export async function GET(req) {
     { name: 'onboarding-emails', run: true },
     { name: 'drawdown-guardian', run: isWeekday },
     { name: 'monthly-recap', run: isFirstOfMonth },
+    // Tous les jours : ne fait rien tant que la revue de la semaine passée existe déjà.
+    { name: 'weekly-review', run: true },
   ]
 
   if (dry) {

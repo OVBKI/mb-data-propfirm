@@ -76,7 +76,7 @@ Pas de soft-delete : c'est une suppression dure.`,
   },
   {
     title: '6. Sous-traitants',
-    body: `Pour fonctionner, Quantara s'appuie sur les sous-traitants suivants (tous conformes RGPD, Data Processing Agreements en place) :
+    body: `Pour fonctionner, Quantara s'appuie sur les sous-traitants suivants :
 
 • **Supabase** (États-Unis, instance Frankfurt EU) — hébergement DB, authentification. Stockage EU. DPA signé.
 • **Vercel** (États-Unis, edge Frankfurt EU) — hébergement frontend. DPA signé.
@@ -84,6 +84,8 @@ Pas de soft-delete : c'est une suppression dure.`,
 • **exchangerate-api.com** — taux de change devises (aucune donnée user envoyée).
 • **Financial Modeling Prep** et **ForexFactory** (miroir faireconomy.media) — calendrier économique (aucune donnée utilisateur envoyée).
 • **Resend** (actif — endpoint EU Frankfurt) — emails transactionnels (welcome email, password reset, notifications produit, confirmations waitlist). DPA signé. Stockage des logs email côté Resend EU.
+• **Anthropic** (États-Unis) — uniquement si tu actives la revue hebdomadaire par IA : un résumé chiffré de tes trades de la semaine (P&L par jour, par compte, par setup, état des règles) et des extraits de tes notes de trade sont envoyés à l'API Claude pour rédiger la revue. Ni ton nom ni ton e-mail ne sont envoyés. Anthropic indique ne pas entraîner ses modèles sur les données reçues par son API commerciale. Tu peux désactiver la revue à tout moment.
+• **ProjectX / TopstepX** (États-Unis) — uniquement si tu utilises l'import TopstepX par clé API : ton nom d'utilisateur et ta clé transitent par notre serveur le temps de la lecture de tes trades et ne sont pas enregistrés.
 
 Lieu de stockage des données utilisateur : Supabase EU (Frankfurt) pour les données applicatives, Resend EU (Frankfurt) pour les logs emails transactionnels.
 
@@ -171,7 +173,7 @@ No soft-delete: it's a hard delete.`,
   },
   {
     title: '6. Subprocessors',
-    body: `To operate, Quantara relies on the following subprocessors (all GDPR-compliant, Data Processing Agreements in place):
+    body: `To operate, Quantara relies on the following subprocessors:
 
 • **Supabase** (United States, Frankfurt EU instance) — DB hosting, authentication. EU storage. DPA signed.
 • **Vercel** (United States, Frankfurt EU edge) — frontend hosting. DPA signed.
@@ -179,6 +181,8 @@ No soft-delete: it's a hard delete.`,
 • **exchangerate-api.com** — currency exchange rates (no user data sent).
 • **Financial Modeling Prep** and **ForexFactory** (faireconomy.media mirror) — economic calendar (no user data sent).
 • **Resend** (active — EU Frankfurt endpoint) — transactional emails (welcome email, password reset, product notifications, waitlist confirmations). DPA signed. Email log storage in Resend EU.
+• **Anthropic** (United States) — only if you turn on the weekly AI review: a numeric summary of your week's trades (P&L by day, account and setup, rule status) and excerpts of your trade notes are sent to the Claude API to write the review. Your name and e-mail are not sent. Anthropic states it does not train its models on data received through its commercial API. You can turn the review off at any time.
+• **ProjectX / TopstepX** (United States) — only if you use the TopstepX API import: your username and key pass through our server while your trades are read and are not stored.
 
 Storage location of user data: Supabase EU (Frankfurt) for application data, Resend EU (Frankfurt) for transactional email logs.
 

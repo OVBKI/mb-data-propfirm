@@ -702,6 +702,38 @@ create index if not exists stripe_events_received_at_idx on stripe_events(receiv
 -- son consentement, pas un droit d'accès — donc hors du revoke ci-dessous.
 alter table profiles add column if not exists email_optout boolean not null default false;
 
+-- AI_REVIEW_OPTIN (octobre 2026) — revue hebdomadaire du journal par IA.
+-- Désactivée par défaut : l'activer envoie un résumé des trades à l'API
+-- Anthropic (voir la politique de confidentialité). Inscriptible par le client,
+-- comme email_optout : c'est un consentement.
+alter table profiles add column if not exists ai_review_optin boolean not null default false;
+
+-- AI_REVIEWS — une revue par utilisateur et par semaine (lundi = week_start).
+-- period_end < dimanche : revue générée à la demande en cours de semaine ; le
+-- cron la remplace par la revue de la semaine complète.
+-- Écrite par le serveur (service role) uniquement ; l'utilisateur lit et
+-- supprime les siennes.
+create table if not exists ai_reviews (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  week_start date not null,
+  period_end date not null,
+  content text not null,
+  trades_count integer not null default 0,
+  pnl numeric(12,2),
+  emailed_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (user_id, week_start)
+);
+alter table ai_reviews enable row level security;
+drop policy if exists "Users read own ai reviews" on ai_reviews;
+create policy "Users read own ai reviews" on ai_reviews
+  for select using (auth.uid() = user_id);
+drop policy if exists "Users delete own ai reviews" on ai_reviews;
+create policy "Users delete own ai reviews" on ai_reviews
+  for delete using (auth.uid() = user_id);
+create index if not exists ai_reviews_user_week_idx on ai_reviews(user_id, week_start desc);
+
 -- DASHBOARD_LAYOUT — disposition personnalisée de « Vue d'ensemble ».
 -- Volontairement laissée inscriptible par le client : c'est une préférence
 -- d'affichage appartenant à l'utilisateur, pas un droit d'accès. Elle n'est
