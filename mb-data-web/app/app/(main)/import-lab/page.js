@@ -22,6 +22,7 @@ import { T } from '../../../../components/dashboard/theme'
 import { Card, Btn, Badge, PageHeader, Section, UIStyles } from '../../../../components/dashboard/ui'
 import { defaultChallengePrice } from '../../../../lib/constants'
 import { useApp } from '../AppContext'
+import { useT } from '../../../../components/LanguageProvider'
 import PlatformImporter from '../../../../components/import/PlatformImporter'
 import TopstepXConnect from '../../../../components/import/TopstepXConnect'
 
@@ -107,12 +108,13 @@ function findMatchingExistingAccount(rithmicId, existingAccounts, firmId) {
 
 export default function ImportLabPage() {
   const { user } = useApp()
+  const t = useT()
 
   const [tab, setTab] = useState('dashboard')
   // ?tab=platforms|topstepx-api|trades : lien direct vers un onglet.
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get('tab')
-    if (['dashboard', 'trades', 'platforms', 'topstepx-api'].includes(t)) setTab(t)
+    const q = new URLSearchParams(window.location.search).get('tab')
+    if (['dashboard', 'trades', 'platforms', 'topstepx-api'].includes(q)) setTab(q)
   }, [])
 
   const [existingFirms, setExistingFirms] = useState([])
@@ -189,14 +191,14 @@ export default function ImportLabPage() {
         <PageHeader
           eyebrow="IMPORT · BETA"
           title="Import Lab"
-          subtitle="Importe tes trades depuis Rithmic, Tradovate, NinjaTrader, TopstepX ou MetaTrader. Simulation par défaut : rien n'est écrit tant que tu ne passes pas en import réel."
+          subtitle={t('app.importLab.subtitle')}
           actions={
             <>
               <Link href="/app/journal?origin=import" style={{ textDecoration: 'none' }}>
-                <Btn variant="ghost" size="sm">Trades importés →</Btn>
+                <Btn variant="ghost" size="sm">{t('app.importLab.importedTrades')}</Btn>
               </Link>
               <Link href="/app" style={{ textDecoration: 'none' }}>
-                <Btn variant="ghost" size="sm">← Retour app</Btn>
+                <Btn variant="ghost" size="sm">{t('app.importLab.backToApp')}</Btn>
               </Link>
             </>
           }
@@ -212,16 +214,16 @@ export default function ImportLabPage() {
           maxWidth: '100%',
         }}>
           <TabBtn active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>
-            Rithmic · état des comptes
+            {t('app.importLab.tabRithmicState')}
           </TabBtn>
           <TabBtn active={tab === 'trades'} onClick={() => setTab('trades')}>
-            Rithmic · trades
+            {t('app.importLab.tabRithmicTrades')}
           </TabBtn>
           <TabBtn active={tab === 'platforms'} onClick={() => setTab('platforms')}>
             Tradovate · NinjaTrader · TopstepX · MT4/5
           </TabBtn>
           <TabBtn active={tab === 'topstepx-api'} onClick={() => setTab('topstepx-api')}>
-            TopstepX par API
+            {t('app.importLab.tabApi')}
           </TabBtn>
         </div>
 
@@ -285,6 +287,7 @@ function TabBtn({ active, onClick, children }) {
 // ============================================================================
 // ============================================================================
 function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting, onSuccess }) {
+  const t = useT()
   const [fileName, setFileName] = useState('')
   const [parsed, setParsed] = useState(null)
   const [parseError, setParseError] = useState('')
@@ -371,7 +374,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
         setParsed(null)
       }
     }
-    reader.onerror = () => setParseError('Erreur de lecture du fichier')
+    reader.onerror = () => setParseError(t('app.importLab.readError'))
     reader.readAsText(file)
   }
 
@@ -381,7 +384,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
     const file = e.dataTransfer.files?.[0]
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      setParseError('Seuls les fichiers .csv sont acceptés')
+      setParseError(t('app.importLab.csvOnly'))
       return
     }
     handleFile(file)
@@ -401,10 +404,9 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
 
     if (!dryRun) {
       const ok = window.confirm(
-        `⚠️ IMPORT RÉEL (Trades)\n\n` +
-        `- ${countToCreate(parsed, mapping)} nouveaux comptes\n` +
-        `- ${parsed.totals.tradeCount} trades (avant dédoublonnage)\n\n` +
-        `Continuer ?`
+        t('app.importLab.confirmTrades')
+          .replace('{create}', countToCreate(parsed, mapping))
+          .replace('{trades}', parsed.totals.tradeCount)
       )
       if (!ok) return
     }
@@ -432,7 +434,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
             .from('firms')
             .insert({ user_id: user.id, name: 'Lucid Trading', color: 'var(--blue)', market: 'futures' })
             .select().single()
-          if (error) throw new Error(`Création firme : ${error.message}`)
+          if (error) throw new Error(t('app.importLab.errCreateFirm').replace('{msg}', error.message))
           lucidFirm = data
         } else {
           lucidFirm = { id: '__dry_run_firm__' }
@@ -462,7 +464,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
                 .eq('id', m.accountId)
                 .eq('user_id', user.id)
               if (error) {
-                report.errors.push(`Backfill rithmic_id sur ${acc.rithmicId} : ${error.message}`)
+                report.errors.push(t('app.importLab.errBackfill').replace('{id}', acc.rithmicId).replace('{msg}', error.message))
               }
             }
           }
@@ -488,7 +490,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
           if (!dryRun) {
             const { data, error } = await supabase
               .from('accounts').insert(payload).select().single()
-            if (error) throw new Error(`Création compte ${acc.rithmicId} : ${error.message}`)
+            if (error) throw new Error(t('app.importLab.errCreateAccount').replace('{id}', acc.rithmicId).replace('{msg}', error.message))
             accountIdMap[acc.rithmicId] = data.id
           } else {
             accountIdMap[acc.rithmicId] = `__dry_${acc.rithmicId}`
@@ -572,7 +574,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
 
   return (
     <>
-      <Section title="1 · Choisis ta PropFirm">
+      <Section title={t('app.importLab.stepFirm')}>
         <Card padding="lg">
           <FirmPicker
             firms={existingFirms}
@@ -582,13 +584,13 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
           />
           {!loadingExisting && existingFirms.length === 0 && (
             <div style={{ marginTop: 12, fontSize: 12, color: T.color.text3 }}>
-              Tu n&apos;as pas encore de firme dans Quantara. <Link href="/app/dashboard" style={{ color: T.color.blueLight }}>Crée-en une d&apos;abord</Link>, puis reviens ici.
+              {t('app.importLab.noFirmBefore')} <Link href="/app/dashboard" style={{ color: T.color.blueLight }}>{t('app.importLab.noFirmLink')}</Link>{t('app.importLab.noFirmAfter')}
             </div>
           )}
         </Card>
       </Section>
 
-      <Section title="2 · Sélectionne ton CSV PnL Statement">
+      <Section title={t('app.importLab.stepCsvPnl')}>
         <Card padding="lg" style={!selectedFirmId ? { opacity: 0.45, pointerEvents: 'none' } : undefined}>
           <DropZone
             fileName={fileName}
@@ -598,8 +600,8 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
             onDragLeave={() => setDragOver(false)}
             onClick={() => { if (selectedFirmId) fileInputRef.current?.click() }}
             placeholder={selectedFirmId
-              ? `Format : Rithmic R|Trader Pro → Performance → Export CSV (cible : ${selectedFirm?.name || 'firme sélectionnée'})`
-              : '↑ Choisis d\'abord ta PropFirm ci-dessus'}
+              ? t('app.importLab.formatPnl').replace('{firm}', selectedFirm?.name || t('app.importLab.selectedFirmFallback'))
+              : t('app.importLab.pickFirmFirst')}
           />
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
@@ -628,14 +630,13 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
                   <div style={{ fontSize: 18, marginTop: -2 }}>💡</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: T.color.amber, marginBottom: 4 }}>
-                      {unmatched.length} compte{unmatched.length > 1 ? 's' : ''} pas encore créé{unmatched.length > 1 ? 's' : ''} dans Quantara
+                      {(unmatched.length > 1 ? t('app.importLab.unmatchedMany') : t('app.importLab.unmatchedOne')).replace('{n}', unmatched.length)}
                     </div>
                     <div style={{ fontSize: 12, color: T.color.text2, lineHeight: 1.5, marginBottom: 8 }}>
-                      Ordre recommandé : <strong>importe d'abord le CSV "État des comptes" (Dashboard)</strong> pour créer les comptes avec leur balance, DD et status corrects.
-                      Ensuite reviens ici pour importer les trades.
+                      {t('app.importLab.recommendedOrder')}<strong>{t('app.importLab.recommendedStrong')}</strong>{t('app.importLab.recommendedRest')}
                     </div>
                     <div style={{ fontSize: 11, color: T.color.text3, fontFamily: T.font.mono }}>
-                      Si tu préfères tout faire d'un coup, tu peux quand même créer les comptes manquants ici (form ci-dessous).
+                      {t('app.importLab.allAtOnce')}
                     </div>
                   </div>
                 </div>
@@ -644,10 +645,10 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
           })()}
 
           <Section
-            title="2 · Détection"
+            title={t('app.importLab.stepDetection')}
             action={
               <div style={{ display: 'flex', gap: 8 }}>
-                <Badge tone="blue">{parsed.accounts.length} comptes</Badge>
+                <Badge tone="blue">{t('app.importLab.accountsCount').replace('{n}', parsed.accounts.length)}</Badge>
                 <Badge tone="neutral">{parsed.totals.tradeCount} trades</Badge>
                 <Badge tone="neutral">{parsed.totals.fillCount} fills</Badge>
                 <Badge tone={parsed.totals.netPnL >= 0 ? 'green' : 'red'}>
@@ -694,6 +695,7 @@ function TradesImporter({ user, existingFirms, existingAccounts, loadingExisting
 // ============================================================================
 // ============================================================================
 function DashboardImporter({ user, existingAccounts, existingFirms, loadingExisting, onSuccess }) {
+  const t = useT()
   const [fileName, setFileName] = useState('')
   const [parsed, setParsed] = useState(null)
   const [parseError, setParseError] = useState('')
@@ -776,7 +778,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
         setParsed(null)
       }
     }
-    reader.onerror = () => setParseError('Erreur de lecture du fichier')
+    reader.onerror = () => setParseError(t('app.importLab.readError'))
     reader.readAsText(file)
   }
 
@@ -786,7 +788,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
     const file = e.dataTransfer.files?.[0]
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      setParseError('Seuls les fichiers .csv sont acceptés')
+      setParseError(t('app.importLab.csvOnly'))
       return
     }
     handleFile(file)
@@ -817,18 +819,17 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
     }
 
     if (toUpdate.length + toCreate.length === 0) {
-      window.alert('Aucun compte à traiter — tous en "Skip". Sélectionne au moins 1 compte à lier ou à créer.')
+      window.alert(t('app.importLab.noAccountToProcess'))
       return
     }
 
     if (!dryRun) {
       const ok = window.confirm(
-        `⚠️ IMPORT RÉEL (Dashboard)\n\n` +
-        (toCreate.length ? `${toCreate.length} nouveaux comptes vont être CRÉÉS\n` : '') +
-        (toUpdate.length ? `${toUpdate.length} comptes existants vont être MIS À JOUR\n` : '') +
-        (toSkip.length   ? `${toSkip.length} comptes seront ignorés\n` : '') +
-        `\nLes nouveaux comptes auront balance + DD + status set depuis le CSV.\n\n` +
-        `Continuer ?`
+        t('app.importLab.confirmDashHead') +
+        (toCreate.length ? t('app.importLab.confirmDashCreate').replace('{n}', toCreate.length) : '') +
+        (toUpdate.length ? t('app.importLab.confirmDashUpdate').replace('{n}', toUpdate.length) : '') +
+        (toSkip.length   ? t('app.importLab.confirmDashSkip').replace('{n}', toSkip.length) : '') +
+        t('app.importLab.confirmDashFoot')
       )
       if (!ok) return
     }
@@ -858,7 +859,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
               .from('firms')
               .insert({ user_id: user.id, name: firmName, color: 'var(--blue)', market: 'futures' })
               .select().single()
-            if (error) throw new Error(`Création firme ${firmName} : ${error.message}`)
+            if (error) throw new Error(t('app.importLab.errCreateFirmNamed').replace('{firm}', firmName).replace('{msg}', error.message))
             firmRow = data
           } else {
             firmRow = { id: '__dry_run_firm__', name: firmName }
@@ -870,7 +871,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
       for (const acc of toCreate) {
         const m = mapping[acc.rithmicId]
         if (!firmRow) {
-          report.errors.push(`${acc.rithmicId} : impossible de créer le compte (firme inconnue)`)
+          report.errors.push(t('app.importLab.errUnknownFirm').replace('{id}', acc.rithmicId))
           continue
         }
         const payload = {
@@ -899,7 +900,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
         if (!dryRun) {
           const { error } = await supabase.from('accounts').insert(payload)
           if (error) {
-            report.errors.push(`Création ${acc.rithmicId} : ${error.message}`)
+            report.errors.push(t('app.importLab.errCreate').replace('{id}', acc.rithmicId).replace('{msg}', error.message))
             continue
           }
         }
@@ -974,7 +975,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
 
   return (
     <>
-      <Section title="1 · Choisis ta PropFirm">
+      <Section title={t('app.importLab.stepFirm')}>
         <Card padding="lg">
           <FirmPicker
             firms={existingFirms}
@@ -984,13 +985,13 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
           />
           {!loadingExisting && existingFirms.length === 0 && (
             <div style={{ marginTop: 12, fontSize: 12, color: T.color.text3 }}>
-              Tu n&apos;as pas encore de firme dans Quantara. <Link href="/app/dashboard" style={{ color: T.color.blueLight }}>Crée-en une d&apos;abord</Link>, puis reviens ici.
+              {t('app.importLab.noFirmBefore')} <Link href="/app/dashboard" style={{ color: T.color.blueLight }}>{t('app.importLab.noFirmLink')}</Link>{t('app.importLab.noFirmAfter')}
             </div>
           )}
         </Card>
       </Section>
 
-      <Section title="2 · Sélectionne ton CSV Trader Dashboard">
+      <Section title={t('app.importLab.stepCsvDash')}>
         <Card padding="lg" style={!selectedFirmId ? { opacity: 0.45, pointerEvents: 'none' } : undefined}>
           <DropZone
             fileName={fileName}
@@ -1000,8 +1001,8 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
             onDragLeave={() => setDragOver(false)}
             onClick={() => { if (selectedFirmId) fileInputRef.current?.click() }}
             placeholder={selectedFirmId
-              ? `Format : Rithmic R|Trader Pro → Trader Dashboard → Export CSV (cible : ${selectedFirm?.name || 'firme sélectionnée'})`
-              : '↑ Choisis d\'abord ta PropFirm ci-dessus'}
+              ? t('app.importLab.formatDash').replace('{firm}', selectedFirm?.name || t('app.importLab.selectedFirmFallback'))
+              : t('app.importLab.pickFirmFirst')}
           />
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
@@ -1013,16 +1014,16 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
       {parsed && (
         <>
           <Section
-            title="3 · État des comptes"
+            title={t('app.importLab.stepState')}
             action={
               <div style={{ display: 'flex', gap: 8 }}>
-                <Badge tone="blue">{parsed.accounts.length} comptes</Badge>
-                <Badge tone="green">{parsed.totals.activeCount} actifs</Badge>
+                <Badge tone="blue">{t('app.importLab.accountsCount').replace('{n}', parsed.accounts.length)}</Badge>
+                <Badge tone="green">{t('app.importLab.activeCount').replace('{n}', parsed.totals.activeCount)}</Badge>
                 {parsed.totals.atRiskCount > 0 && (
-                  <Badge tone="amber">{parsed.totals.atRiskCount} à risque</Badge>
+                  <Badge tone="amber">{t('app.importLab.atRisk').replace('{n}', parsed.totals.atRiskCount)}</Badge>
                 )}
                 {parsed.totals.liquidatedCount > 0 && (
-                  <Badge tone="red">{parsed.totals.liquidatedCount} liquidés</Badge>
+                  <Badge tone="red">{t('app.importLab.liquidatedCount').replace('{n}', parsed.totals.liquidatedCount)}</Badge>
                 )}
                 <Badge tone="neutral">Total ${parsed.totals.totalBalance.toFixed(2)}</Badge>
               </div>
@@ -1048,7 +1049,7 @@ function DashboardImporter({ user, existingAccounts, existingFirms, loadingExist
             setDryRun={setDryRun}
             importing={importing}
             onLaunch={doImport}
-            label="Mise à jour comptes"
+            label={t('app.importLab.labelDash')}
           />
 
           {importResult && (
@@ -1115,15 +1116,16 @@ function TradesAccountCard({ account, mapping, existingAccounts, existingFirms, 
 // CARD : compte du Dashboard (mode État)
 // ============================================================================
 function DashboardAccountCard({ account, mapping, existingAccounts, existingFirms, loadingExisting, forcedFirmId, allowedStatuses, onChangeMapping }) {
+  const t = useT()
   const [expanded, setExpanded] = useState(true)
   if (!mapping) return null
 
   const buffer = account.bufferDD
   const bufferPct = account.balance > 0 ? (buffer / account.balance) * 100 : 0
   let bufferTone, bufferLabel
-  if (account.liquidated) { bufferTone = 'red'; bufferLabel = '💀 LIQUIDÉ' }
-  else if (buffer < 0) { bufferTone = 'red'; bufferLabel = '🚨 DÉPASSEMENT' }
-  else if (bufferPct < 3) { bufferTone = 'amber'; bufferLabel = '⚠️ PROCHE' }
+  if (account.liquidated) { bufferTone = 'red'; bufferLabel = t('app.importLab.bufLiquidated') }
+  else if (buffer < 0) { bufferTone = 'red'; bufferLabel = t('app.importLab.bufBreach') }
+  else if (bufferPct < 3) { bufferTone = 'amber'; bufferLabel = t('app.importLab.bufClose') }
   else { bufferTone = 'green'; bufferLabel = '✓ SAFE' }
 
   return (
@@ -1141,7 +1143,7 @@ function DashboardAccountCard({ account, mapping, existingAccounts, existingFirm
             <Badge tone={bufferTone}>{bufferLabel}</Badge>
             {mapping.autoMatched && (
               <Badge tone={mapping.matchStrategy === 'rithmic_id' ? 'green' : 'blue'}>
-                ✓ AUTO-LIÉ {mapping.matchStrategy === 'rithmic_id' ? '(ID)' : '(NOM)'}
+                {t('app.importLab.autoLinked')} {mapping.matchStrategy === 'rithmic_id' ? '(ID)' : t('app.importLab.byName')}
               </Badge>
             )}
           </div>
@@ -1153,7 +1155,7 @@ function DashboardAccountCard({ account, mapping, existingAccounts, existingFirm
           </div>
           {account.liquidated && (
             <div style={{ marginTop: 6, fontSize: 11, color: T.color.red, fontFamily: T.font.mono }}>
-              💀 Liquidé le {account.triggerTime?.replace('T', ' à ')} · {account.triggerStatus}
+              {t('app.importLab.liquidatedOn').replace('{when}', account.triggerTime?.replace('T', t('app.importLab.at')) || '')} · {account.triggerStatus}
             </div>
           )}
         </div>
@@ -1183,7 +1185,7 @@ function DashboardAccountCard({ account, mapping, existingAccounts, existingFirm
             borderRadius: T.radius.md,
           }}>
             <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10, fontFamily: T.font.mono }}>
-              Détails Rithmic
+              {t('app.importLab.rithmicDetails')}
             </div>
             <div className="il-kv-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, fontFamily: T.font.mono }}>
               <KV k="Currency" v={account.currency} />
@@ -1191,7 +1193,7 @@ function DashboardAccountCard({ account, mapping, existingAccounts, existingFirm
               <KV k="Net Position" v={account.netPosition === 0 ? 'Flat' : `${account.netPosition}`} />
               <KV k="Available Margin" v={`$${account.availableMargin.toFixed(2)}`} />
               <KV k="Cash on Hand" v={`$${account.cashOnHand.toFixed(2)}`} />
-              <KV k="Cash EOD précédent" v={`$${account.cashOnHandPrevEOD.toFixed(2)}`} />
+              <KV k={t('app.importLab.prevEodCash')} v={`$${account.cashOnHandPrevEOD.toFixed(2)}`} />
               <KV k="Risk Algorithm" v={account.riskAlgorithm || '—'} />
               <KV k="Account Name" v={account.accountName || '—'} />
             </div>
@@ -1218,6 +1220,7 @@ function KV({ k, v }) {
 // noyer l'user dans tous ses comptes Apex / PropFirm / etc.
 // Toggle "Tout afficher" pour revenir à la liste complète.
 function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExisting, allowCreate, dashboardMode, account, forcedFirmId, allowedStatuses, onChangeMapping }) {
+  const t = useT()
   // Mode Dashboard : mapping = { accountId, autoMatched }
   // Mode Trades :   mapping = { mode: 'create'|'existing', accountId?, newName?, planSize? }
   //
@@ -1265,12 +1268,12 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
           marginBottom: 10, flexWrap: 'wrap', gap: 8,
         }}>
           <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: T.font.mono }}>
-            Action sur ce compte
+            {t('app.importLab.actionOnAccount')}
           </div>
           <div className="il-mode-chips" style={{ display: 'flex', gap: 4 }}>
             <ModeChip active={mode === 'existing'} onClick={() => {
               onChangeMapping({ ...mapping, mode: 'existing', accountId: mapping.accountId || null })
-            }} color={T.color.blueLight}>↻ Lier à existant</ModeChip>
+            }} color={T.color.blueLight}>{t('app.importLab.linkExisting')}</ModeChip>
             <ModeChip active={mode === 'create'} onClick={() => {
               const today = new Date().toISOString().slice(0, 10)
               const suggestedPrice = account?.firm ? defaultChallengePrice(account.firm, '50k') : null
@@ -1284,7 +1287,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                 activationFee: mapping.activationFee || '0',
                 fundedDate: mapping.fundedDate || (account?.type === 'FUNDED' ? today : ''),
               })
-            }} color={T.color.green}>➕ Créer nouveau</ModeChip>
+            }} color={T.color.green}>{t('app.importLab.createNew')}</ModeChip>
             <ModeChip active={mode === 'skip'} onClick={() => {
               onChangeMapping({ ...mapping, mode: 'skip', accountId: null })
             }} color={T.color.text3}>⏭️ Skip</ModeChip>
@@ -1298,10 +1301,10 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               fontSize: 10, color: T.color.text3, textTransform: 'uppercase',
               letterSpacing: '0.1em', marginBottom: 6, fontFamily: T.font.mono,
             }}>
-              Lier au compte Quantara
+              {t('app.importLab.linkToAccount')}
               {matchingFirm && !showAll && (
                 <span style={{ marginLeft: 8, color: T.color.blueLight, textTransform: 'none', letterSpacing: 0 }}>
-                  · filtré sur {matchingFirm.name}
+                  {t('app.importLab.filteredOn').replace('{firm}', matchingFirm.name)}
                 </span>
               )}
               {matchingFirm && !firmIsForced && (
@@ -1315,10 +1318,10 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               onChange={(e) => onChangeMapping({ ...mapping, mode: 'existing', accountId: e.target.value || null, autoMatched: false })}
               style={inputStyle()}
             >
-              <option value="" style={optionStyle}>— Choisir un compte —</option>
+              <option value="" style={optionStyle}>{t('app.importLab.chooseAccount')}</option>
               {filteredAccounts.map((ea) => (
                 <option key={ea.id} value={ea.id} style={optionStyle}>
-                  {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
+                  {(ea.name || t('app.importLab.unnamed').replace('{id}', ea.id.slice(0, 6)))} · {ea.plan_size} · {ea.status}
                   {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
                 </option>
               ))}
@@ -1326,11 +1329,11 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             {loadingExisting && <LoadingNote />}
             {mapping.autoMatched && (
               <div style={{ fontSize: 11, color: T.color.green, marginTop: 8, fontFamily: T.font.mono }}>
-                ✓ Auto-lié via {
+                {t('app.importLab.autoLinkedVia')}{
                   mapping.matchStrategy === 'rithmic_id' ? 'rithmic_account_id (exact)' :
-                  mapping.matchStrategy === 'generated_name' ? `nom auto-généré ("${generateAccountName(account?.rithmicId || '')}")` :
-                  mapping.matchStrategy === 'legacy_name' ? `nom legacy` :
-                  mapping.matchStrategy === 'fuzzy_name' ? `nom approximatif` :
+                  mapping.matchStrategy === 'generated_name' ? t('app.importLab.viaGenerated').replace('{name}', generateAccountName(account?.rithmicId || '')) :
+                  mapping.matchStrategy === 'legacy_name' ? t('app.importLab.viaLegacy') :
+                  mapping.matchStrategy === 'fuzzy_name' ? t('app.importLab.viaFuzzy') :
                   'auto-detection'
                 }
               </div>
@@ -1345,13 +1348,13 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               fontSize: 10, color: T.color.green, textTransform: 'uppercase',
               letterSpacing: '0.1em', marginBottom: 8, fontFamily: T.font.mono,
             }}>
-              Créer un nouveau compte Quantara
+              {t('app.importLab.createTitle')}
             </div>
 
             {/* Ligne 1 : Nom + Plan + Status auto */}
             <div className="il-form-row" style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <MicroLabel>Nom (auto-renommé)</MicroLabel>
+                <MicroLabel>{t('app.importLab.nameAuto')}</MicroLabel>
                 <input type="text" placeholder="PRO 7"
                   value={mapping.newName || ''}
                   onChange={(e) => onChangeMapping({ ...mapping, newName: e.target.value })}
@@ -1379,7 +1382,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                   color: account?.type === 'FUNDED' ? T.color.green : T.color.amber,
                   borderRadius: T.radius.md, fontFamily: T.font.mono, letterSpacing: '0.05em',
                 }}>
-                  {account?.type === 'FUNDED' ? '💰 Financé' : '🎯 Challenge'}
+                  {account?.type === 'FUNDED' ? t('app.importLab.statusFunded') : '🎯 Challenge'}
                 </div>
               </div>
             </div>
@@ -1396,18 +1399,18 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                 textTransform: 'uppercase', letterSpacing: '0.1em',
                 marginBottom: 8, fontFamily: T.font.mono,
               }}>
-                {account?.type === 'FUNDED' ? 'Achat du challenge initial' : 'Achat du challenge'}
+                {account?.type === 'FUNDED' ? t('app.importLab.buyInitial') : t('app.importLab.buy')}
               </div>
               <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1, minWidth: 140 }}>
-                  <MicroLabel>Date d'achat</MicroLabel>
+                  <MicroLabel>{t('app.importLab.buyDate')}</MicroLabel>
                   <input type="date"
                     value={mapping.buyDate || ''}
                     onChange={(e) => onChangeMapping({ ...mapping, buyDate: e.target.value })}
                     style={inputStyle()} />
                 </div>
                 <div style={{ flex: 1, minWidth: 140 }}>
-                  <MicroLabel>Coût du challenge ($)</MicroLabel>
+                  <MicroLabel>{t('app.importLab.challengeCost')}</MicroLabel>
                   <input type="number" min="0" step="0.01" placeholder="165.00"
                     value={mapping.challengeCost || ''}
                     onChange={(e) => onChangeMapping({ ...mapping, challengeCost: e.target.value })}
@@ -1429,18 +1432,18 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                   textTransform: 'uppercase', letterSpacing: '0.1em',
                   marginBottom: 8, fontFamily: T.font.mono,
                 }}>
-                  Passage en compte financé
+                  {t('app.importLab.fundedTitle')}
                 </div>
                 <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                   <div style={{ flex: 1, minWidth: 140 }}>
-                    <MicroLabel>Date passage financé</MicroLabel>
+                    <MicroLabel>{t('app.importLab.fundedDate')}</MicroLabel>
                     <input type="date"
                       value={mapping.fundedDate || ''}
                       onChange={(e) => onChangeMapping({ ...mapping, fundedDate: e.target.value })}
                       style={inputStyle()} />
                   </div>
                   <div style={{ flex: 1, minWidth: 140 }}>
-                    <MicroLabel>Frais activation ($) — 0 si aucun</MicroLabel>
+                    <MicroLabel>{t('app.importLab.activationFee')}</MicroLabel>
                     <input type="number" min="0" step="0.01" placeholder="0"
                       value={mapping.activationFee || ''}
                       onChange={(e) => onChangeMapping({ ...mapping, activationFee: e.target.value })}
@@ -1458,7 +1461,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               borderRadius: T.radius.md,
               fontSize: 11, color: T.color.text3, fontFamily: T.font.mono, lineHeight: 1.5,
             }}>
-              ⚡ Données auto-importées depuis le CSV : balance ${account?.balance?.toFixed(2) || '?'} · DD min ${account?.minBalance?.toFixed(2) || '?'} · {account?.liquidated ? `💀 liquidé ${account?.triggerTime?.replace('T', ' à ')}` : '✓ actif'}
+              {t('app.importLab.autoData').replace('{balance}', account?.balance?.toFixed(2) || '?').replace('{min}', account?.minBalance?.toFixed(2) || '?')}{account?.liquidated ? t('app.importLab.liquidatedLower').replace('{when}', account?.triggerTime?.replace('T', t('app.importLab.at')) || '') : t('app.importLab.activeLower')}
             </div>
           </>
         )}
@@ -1472,7 +1475,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
             borderRadius: T.radius.md,
             fontSize: 12, color: T.color.text3, fontFamily: T.font.mono,
           }}>
-            ⏭️ Ce compte sera ignoré lors de l'import.
+            {t('app.importLab.skipNote')}
           </div>
         )}
       </div>
@@ -1492,10 +1495,10 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
         marginBottom: 10,
       }}>
         <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: T.font.mono }}>
-          Mapping vers Quantara
+          {t('app.importLab.mappingTitle')}
           {matchingFirm && !showAll && (
             <span style={{ marginLeft: 8, color: T.color.blueLight, textTransform: 'none', letterSpacing: 0 }}>
-              · filtré sur {matchingFirm.name}
+              {t('app.importLab.filteredOn').replace('{firm}', matchingFirm.name)}
             </span>
           )}
         </div>
@@ -1523,10 +1526,10 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
         }}
         style={inputStyle()}
       >
-        {allowCreate && <option value="__create__" style={optionStyle}>➕ Créer un nouveau compte Quantara</option>}
+        {allowCreate && <option value="__create__" style={optionStyle}>{t('app.importLab.createOption')}</option>}
         {filteredAccounts.map((ea) => (
           <option key={ea.id} value={ea.id} style={optionStyle}>
-            {(ea.name || `Sans nom · ${ea.id.slice(0, 6)}`)} · {ea.plan_size} · {ea.status}
+            {(ea.name || t('app.importLab.unnamed').replace('{id}', ea.id.slice(0, 6)))} · {ea.plan_size} · {ea.status}
             {ea.rithmic_account_id ? ` · 🔗 ${ea.rithmic_account_id.slice(-12)}` : ''}
           </option>
         ))}
@@ -1538,7 +1541,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
           {/* Ligne 1 : Nom + Plan size + Status auto-détecté */}
           <div className="il-form-row" style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <MicroLabel>Nom du compte (auto-renommé)</MicroLabel>
+              <MicroLabel>{t('app.importLab.accountNameAuto')}</MicroLabel>
               <input
                 type="text"
                 placeholder="PRO 7"
@@ -1570,7 +1573,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                 color: account.type === 'FUNDED' ? T.color.green : T.color.amber,
                 borderRadius: T.radius.md, fontFamily: T.font.mono, letterSpacing: '0.05em',
               }}>
-                {account.type === 'FUNDED' ? '💰 Financé' : '🎯 Challenge'}
+                {account.type === 'FUNDED' ? t('app.importLab.statusFunded') : '🎯 Challenge'}
               </div>
             </div>
           </div>
@@ -1587,11 +1590,11 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
               textTransform: 'uppercase', letterSpacing: '0.1em',
               marginBottom: 8, fontFamily: T.font.mono,
             }}>
-              {account.type === 'FUNDED' ? 'Achat du challenge initial' : 'Achat du challenge'}
+              {account.type === 'FUNDED' ? t('app.importLab.buyInitial') : t('app.importLab.buy')}
             </div>
             <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ flex: 1, minWidth: 140 }}>
-                <MicroLabel>Date d'achat</MicroLabel>
+                <MicroLabel>{t('app.importLab.buyDate')}</MicroLabel>
                 <input
                   type="date"
                   value={mapping.buyDate || ''}
@@ -1600,7 +1603,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                 />
               </div>
               <div style={{ flex: 1, minWidth: 140 }}>
-                <MicroLabel>Coût du challenge ($)</MicroLabel>
+                <MicroLabel>{t('app.importLab.challengeCost')}</MicroLabel>
                 <input
                   type="number" min="0" step="0.01"
                   placeholder="165.00"
@@ -1625,11 +1628,11 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                 textTransform: 'uppercase', letterSpacing: '0.1em',
                 marginBottom: 8, fontFamily: T.font.mono,
               }}>
-                Passage en compte financé
+                {t('app.importLab.fundedTitle')}
               </div>
               <div className="il-form-row" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1, minWidth: 140 }}>
-                  <MicroLabel>Date passage financé</MicroLabel>
+                  <MicroLabel>{t('app.importLab.fundedDate')}</MicroLabel>
                   <input
                     type="date"
                     value={mapping.fundedDate || ''}
@@ -1638,7 +1641,7 @@ function MappingBlock({ mapping, existingAccounts, existingFirms, loadingExistin
                   />
                 </div>
                 <div style={{ flex: 1, minWidth: 140 }}>
-                  <MicroLabel>Frais activation ($) — 0 si aucun</MicroLabel>
+                  <MicroLabel>{t('app.importLab.activationFee')}</MicroLabel>
                   <input
                     type="number" min="0" step="0.01"
                     placeholder="0"
@@ -1690,6 +1693,7 @@ function MicroLabel({ children }) {
 // (which can silently match the wrong firm if the user has overlapping
 // naming, multiple PropFirms with the same Rithmic backend, etc.).
 function FirmPicker({ firms, selectedFirmId, onChange, loading }) {
+  const t = useT()
   return (
     <div>
       <div style={{
@@ -1697,7 +1701,7 @@ function FirmPicker({ firms, selectedFirmId, onChange, loading }) {
         textTransform: 'uppercase', letterSpacing: '0.12em',
         marginBottom: 8, fontFamily: T.font.mono,
       }}>
-        PropFirm cible {loading ? '· chargement…' : ''}
+        {t('app.importLab.targetFirm')} {loading ? t('app.importLab.loadingSuffix') : ''}
       </div>
       <select
         value={selectedFirmId || ''}
@@ -1716,7 +1720,7 @@ function FirmPicker({ firms, selectedFirmId, onChange, loading }) {
           outline: 'none',
         }}
       >
-        <option value="">— Sélectionne la PropFirm dans laquelle importer —</option>
+        <option value="">{t('app.importLab.selectFirm')}</option>
         {(firms || []).map(f => (
           <option key={f.id} value={f.id} style={{ background: T.color.surfaceSolid, color: T.color.text }}>
             {f.name}
@@ -1724,7 +1728,7 @@ function FirmPicker({ firms, selectedFirmId, onChange, loading }) {
         ))}
       </select>
       <div style={{ fontSize: 11, color: T.color.text3, marginTop: 8, lineHeight: 1.5 }}>
-        Les comptes de cette firme seront proposés pour le mapping — challenge, échoués et financés.
+        {t('app.importLab.firmHint')}
       </div>
     </div>
   )
@@ -1732,6 +1736,7 @@ function FirmPicker({ firms, selectedFirmId, onChange, loading }) {
 
 // Petit bouton toggle pour basculer "filtré sur firme X" / "tout afficher"
 function FilterToggle({ showAll, setShowAll, firmName }) {
+  const t = useT()
   return (
     <button
       type="button"
@@ -1745,7 +1750,7 @@ function FilterToggle({ showAll, setShowAll, firmName }) {
         fontFamily: T.font.mono, letterSpacing: '0.05em',
       }}
     >
-      {showAll ? `↺ Filtrer sur ${firmName}` : '👁 Tout afficher'}
+      {showAll ? t('app.importLab.filterOn').replace('{firm}', firmName) : t('app.importLab.showAll')}
     </button>
   )
 }
@@ -1754,10 +1759,11 @@ function FilterToggle({ showAll, setShowAll, firmName }) {
 // TABLE : preview des 10 premiers trades
 // ============================================================================
 function TradesPreviewTable({ trades }) {
+  const t = useT()
   return (
     <div style={{ marginTop: 14 }}>
       <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8, fontFamily: T.font.mono }}>
-        Aperçu — {Math.min(10, trades.length)} premiers trades
+        {t('app.importLab.previewTitle').replace('{n}', Math.min(10, trades.length))}
       </div>
       <div style={{ overflowX: 'auto', maxHeight: 320, border: `1px solid ${T.color.border}`, borderRadius: T.radius.md }}>
         <table style={{ width: '100%', fontSize: 11, fontFamily: T.font.mono, borderCollapse: 'collapse', background: T.color.surfaceSolid }}>
@@ -1773,17 +1779,17 @@ function TradesPreviewTable({ trades }) {
             </tr>
           </thead>
           <tbody>
-            {trades.slice(0, 10).map((t, i) => (
+            {trades.slice(0, 10).map((tr, i) => (
               <tr key={i} style={{ borderTop: `1px solid ${T.color.border}` }}>
-                <td style={td}>{t.date}</td>
-                <td style={td}>{t.instrument}</td>
-                <td style={{ ...td, color: t.side === 'LONG' ? T.color.green : T.color.red, fontWeight: 600 }}>{t.side}</td>
-                <td style={{ ...td, textAlign: 'right' }}>{t.qty}</td>
-                <td style={{ ...td, textAlign: 'right' }}>{t.entryPrice}</td>
-                <td style={{ ...td, textAlign: 'right' }}>{t.exitPrice}</td>
-                <td style={{ ...td, textAlign: 'right', color: t.netPnL >= 0 ? T.color.green : T.color.red, fontWeight: 600 }}>{t.netPnL.toFixed(2)}</td>
-                <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>{t.fillCount}</td>
-                <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>{formatHold(t.holdSeconds)}</td>
+                <td style={td}>{tr.date}</td>
+                <td style={td}>{tr.instrument}</td>
+                <td style={{ ...td, color: tr.side === 'LONG' ? T.color.green : T.color.red, fontWeight: 600 }}>{tr.side}</td>
+                <td style={{ ...td, textAlign: 'right' }}>{tr.qty}</td>
+                <td style={{ ...td, textAlign: 'right' }}>{tr.entryPrice}</td>
+                <td style={{ ...td, textAlign: 'right' }}>{tr.exitPrice}</td>
+                <td style={{ ...td, textAlign: 'right', color: tr.netPnL >= 0 ? T.color.green : T.color.red, fontWeight: 600 }}>{tr.netPnL.toFixed(2)}</td>
+                <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>{tr.fillCount}</td>
+                <td style={{ ...td, textAlign: 'right', color: T.color.text3 }}>{formatHold(tr.holdSeconds)}</td>
               </tr>
             ))}
           </tbody>
@@ -1791,7 +1797,7 @@ function TradesPreviewTable({ trades }) {
       </div>
       {trades.length > 10 && (
         <div style={{ padding: 8, fontSize: 11, color: T.color.text3, textAlign: 'center', fontFamily: T.font.mono }}>
-          ... et {trades.length - 10} autres
+          {t('app.importLab.andMore').replace('{n}', trades.length - 10)}
         </div>
       )}
     </div>
@@ -1802,22 +1808,23 @@ function TradesPreviewTable({ trades }) {
 // BLOC commun : sélecteur Dry Run / Import + bouton lancement
 // ============================================================================
 function ExecutionSection({ dryRun, setDryRun, importing, onLaunch, label }) {
+  const t = useT()
   return (
-    <Section title="3 · Mode d'exécution">
+    <Section title={t('app.importLab.stepMode')}>
       <Card>
         <label style={modeRowStyle(dryRun, T.color.blueSoft, T.color.blueRing)}>
           <input type="radio" name="exec-mode" checked={dryRun} onChange={() => setDryRun(true)} style={{ marginTop: 3 }} />
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>🔍 Dry Run (recommandé)</div>
-            <div style={{ fontSize: 12, color: T.color.text2 }}>Simule et affiche le rapport. <strong>N'écrit rien en DB.</strong></div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{t('app.importLab.dryRunTitle')}</div>
+            <div style={{ fontSize: 12, color: T.color.text2 }}>{t('app.importLab.dryRunDesc')}<strong>{t('app.importLab.dryRunStrong')}</strong></div>
           </div>
         </label>
 
         <label style={modeRowStyle(!dryRun, T.color.amberSoft, 'var(--amber)')}>
           <input type="radio" name="exec-mode" checked={!dryRun} onChange={() => setDryRun(false)} style={{ marginTop: 3 }} />
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2, color: T.color.amber }}>⚠️ Import réel</div>
-            <div style={{ fontSize: 12, color: T.color.text2 }}>Écrit en Supabase. Confirmation popup requise.</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2, color: T.color.amber }}>{t('app.importLab.realTitle')}</div>
+            <div style={{ fontSize: 12, color: T.color.text2 }}>{t('app.importLab.realDesc')}</div>
           </div>
         </label>
 
@@ -1830,8 +1837,8 @@ function ExecutionSection({ dryRun, setDryRun, importing, onLaunch, label }) {
             style={!dryRun ? { background: T.color.amber, color: '#000' } : {}}
           >
             {importing
-              ? '⏳ Traitement...'
-              : dryRun ? `🔍 Lancer le dry run (${label})` : `⚠️ Lancer l'import réel (${label})`
+              ? t('app.importLab.processing')
+              : dryRun ? t('app.importLab.launchDry').replace('{label}', label) : t('app.importLab.launchReal').replace('{label}', label)
             }
           </Btn>
         </div>
@@ -1844,17 +1851,18 @@ function ExecutionSection({ dryRun, setDryRun, importing, onLaunch, label }) {
 // BLOC : affichage du résultat (rapport)
 // ============================================================================
 function ResultSection({ result, onReset, kind }) {
+  const t = useT()
   const r = result.report
   return (
-    <Section title="4 · Rapport">
+    <Section title={t('app.importLab.stepReport')}>
       <Card style={{
         borderColor: result.ok ? T.color.green : T.color.red,
         background: result.ok ? 'var(--green-bg)' : 'rgba(239,68,68,0.05)',
       }}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: result.ok ? T.color.green : T.color.red }}>
           {result.ok
-            ? (r.dryRun ? '🔍 Dry run terminé avec succès' : '✅ Import réel terminé')
-            : '❌ Erreur durant l\'import'
+            ? (r.dryRun ? t('app.importLab.dryDone') : t('app.importLab.realDone'))
+            : t('app.importLab.importError')
           }
         </div>
 
@@ -1871,18 +1879,18 @@ function ResultSection({ result, onReset, kind }) {
         <div style={{ fontSize: 13, color: T.color.text2, lineHeight: 1.9, fontFamily: T.font.mono }}>
           {kind === 'trades' ? (
             <>
-              <div>• Firmes créées : <strong style={{ color: T.color.text }}>{r.createdFirms}</strong></div>
-              <div>• Comptes créés : <strong style={{ color: T.color.text }}>{r.createdAccounts}</strong></div>
-              <div>• Comptes réutilisés : <strong style={{ color: T.color.text }}>{r.reusedAccounts}</strong></div>
-              <div>• Trades insérés : <strong style={{ color: T.color.green }}>{r.insertedTrades}</strong></div>
-              <div>• Doublons ignorés : <strong style={{ color: T.color.text3 }}>{r.skippedDuplicates}</strong></div>
+              <div>{t('app.importLab.rFirmsCreated')}<strong style={{ color: T.color.text }}>{r.createdFirms}</strong></div>
+              <div>{t('app.importLab.rAccountsCreated')}<strong style={{ color: T.color.text }}>{r.createdAccounts}</strong></div>
+              <div>{t('app.importLab.rAccountsReused')}<strong style={{ color: T.color.text }}>{r.reusedAccounts}</strong></div>
+              <div>{t('app.importLab.rTradesInserted')}<strong style={{ color: T.color.green }}>{r.insertedTrades}</strong></div>
+              <div>{t('app.importLab.rDuplicates')}<strong style={{ color: T.color.text3 }}>{r.skippedDuplicates}</strong></div>
             </>
           ) : (
             <>
-              <div>• Comptes créés : <strong style={{ color: T.color.green }}>{r.created || 0}</strong></div>
-              <div>• Comptes mis à jour : <strong style={{ color: T.color.green }}>{r.updated}</strong></div>
-              <div>• Comptes liquidés détectés : <strong style={{ color: r.liquidated > 0 ? T.color.red : T.color.text3 }}>{r.liquidated}</strong></div>
-              <div>• Comptes ignorés (skip) : <strong style={{ color: T.color.text3 }}>{r.skipped}</strong></div>
+              <div>{t('app.importLab.rAccountsCreated')}<strong style={{ color: T.color.green }}>{r.created || 0}</strong></div>
+              <div>{t('app.importLab.rAccountsUpdated')}<strong style={{ color: T.color.green }}>{r.updated}</strong></div>
+              <div>{t('app.importLab.rLiquidated')}<strong style={{ color: r.liquidated > 0 ? T.color.red : T.color.text3 }}>{r.liquidated}</strong></div>
+              <div>{t('app.importLab.rSkipped')}<strong style={{ color: T.color.text3 }}>{r.skipped}</strong></div>
             </>
           )}
         </div>
@@ -1890,24 +1898,24 @@ function ResultSection({ result, onReset, kind }) {
         {r.perAccount?.length > 0 && (
           <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${T.color.border}` }}>
             <div style={{ fontSize: 11, color: T.color.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-              Détail par compte
+              {t('app.importLab.perAccount')}
             </div>
             {r.perAccount.map((p, i) => (
               <div key={i} style={{ fontSize: 12, color: T.color.text2, fontFamily: T.font.mono, marginBottom: 4 }}>
                 {kind === 'trades' ? (
-                  <><code>{p.rithmicId}</code> → {p.tradesToInsert} insérés, {p.skipped} skip</>
+                  <><code>{p.rithmicId}</code> → {t('app.importLab.perTrades').replace('{ins}', p.tradesToInsert).replace('{skip}', p.skipped)}</>
                 ) : (
                   <>
                     <span style={{
                       color: p.action === 'created' ? T.color.green : T.color.blueLight,
                       fontWeight: 600, marginRight: 4,
                     }}>
-                      {p.action === 'created' ? '➕ CRÉÉ' : '↻ UPDATED'}
+                      {p.action === 'created' ? t('app.importLab.createdTag') : '↻ UPDATED'}
                     </span>
                     <code>{p.rithmicId}</code>
                     {p.name && <> · <strong style={{ color: T.color.text }}>{p.name}</strong></>}
                     {' '}→ bal ${p.balance.toFixed(2)} / min ${p.minBalance.toFixed(2)} / buffer ${p.bufferDD.toFixed(2)}
-                    {p.liquidated && <span style={{ color: T.color.red }}> · 💀 LIQUIDÉ</span>}
+                    {p.liquidated && <span style={{ color: T.color.red }}>{t('app.importLab.liquidatedTag')}</span>}
                   </>
                 )}
               </div>
@@ -1917,7 +1925,7 @@ function ResultSection({ result, onReset, kind }) {
 
         {r.errors?.length > 0 && (
           <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${T.color.red}` }}>
-            <div style={{ fontSize: 11, color: T.color.red, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Erreurs</div>
+            <div style={{ fontSize: 11, color: T.color.red, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{t('app.importLab.errors')}</div>
             {r.errors.map((e, i) => (
               <div key={i} style={{ fontSize: 12, color: T.color.red, fontFamily: T.font.mono, marginBottom: 4 }}>· {e}</div>
             ))}
@@ -1925,11 +1933,11 @@ function ResultSection({ result, onReset, kind }) {
         )}
 
         <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
-          <Btn variant="ghost" size="sm" onClick={onReset}>↺ Nouveau fichier</Btn>
+          <Btn variant="ghost" size="sm" onClick={onReset}>{t('app.importLab.newFile')}</Btn>
           {result.ok && !r.dryRun && (
             <Link href={kind === 'trades' ? '/app/journal?origin=import' : '/app'} style={{ textDecoration: 'none' }}>
               <Btn variant="blue" size="sm">
-                {kind === 'trades' ? '→ Voir dans le Journal' : '→ Voir mes comptes'}
+                {kind === 'trades' ? t('app.importLab.seeJournal') : t('app.importLab.seeAccounts')}
               </Btn>
             </Link>
           )}
@@ -1944,6 +1952,7 @@ function ResultSection({ result, onReset, kind }) {
 // ============================================================================
 
 function DropZone({ fileName, dragOver, onDrop, onDragOver, onDragLeave, onClick, placeholder }) {
+  const t = useT()
   return (
     <div
       onDrop={onDrop}
@@ -1960,10 +1969,10 @@ function DropZone({ fileName, dragOver, onDrop, onDragOver, onDragLeave, onClick
     >
       <div style={{ fontSize: 36, marginBottom: 12 }}>{fileName ? '📄' : '📁'}</div>
       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: T.color.text }}>
-        {fileName || 'Glisse ton fichier CSV ici'}
+        {fileName || t('app.importLab.dropHere')}
       </div>
       <div style={{ fontSize: 12, color: T.color.text3 }}>
-        ou clique pour parcourir · {placeholder}
+        {t('app.importLab.orClick').replace('{placeholder}', placeholder)}
       </div>
     </div>
   )
@@ -1978,8 +1987,9 @@ function ErrorCard({ message }) {
 }
 
 function LoadingNote() {
+  const t = useT()
   return (
-    <div style={{ fontSize: 11, color: T.color.text3, marginTop: 6 }}>⏳ Chargement des comptes existants...</div>
+    <div style={{ fontSize: 11, color: T.color.text3, marginTop: 6 }}>{t('app.importLab.loadingAccounts')}</div>
   )
 }
 
