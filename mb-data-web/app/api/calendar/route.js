@@ -136,6 +136,7 @@ async function fetchFMP(range) {
   const res = await fetch(url, {
     cache: 'no-store',
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; QuantaraBot/1.0)' },
+    signal: AbortSignal.timeout(SOURCE_TIMEOUT_MS),
   })
   if (!res.ok) {
     console.error('[FMP] HTTP', res.status, await res.text().catch(() => ''))
@@ -165,6 +166,19 @@ async function fetchFMP(range) {
   })
 }
 
+// Une source qui échoue — réseau, délai, HTML à la place du JSON, format
+// inattendu — rend null au lieu de lever : sinon l'exception sautait le repli
+// ForexFactory et la route finissait en 500 alors qu'une source répondait.
+const SOURCE_TIMEOUT_MS = 8000
+async function safely(name, fn) {
+  try {
+    return await fn()
+  } catch (err) {
+    console.error(`[${name}]`, err?.name === 'TimeoutError' ? 'timeout' : err?.message)
+    return null
+  }
+}
+
 // ── ForexFactory fetcher (fallback, no actuals) ──────────────────────────
 function ffUrl(week) {
   return week === 'next'
@@ -178,6 +192,7 @@ async function fetchFF(week, range) {
       'User-Agent': 'Mozilla/5.0 (compatible; QuantaraBot/1.0)',
       'Accept': 'application/json,text/plain,*/*',
     },
+    signal: AbortSignal.timeout(SOURCE_TIMEOUT_MS),
   })
   if (!res.ok) {
     console.error('[FF] HTTP', res.status)
@@ -249,7 +264,7 @@ export async function GET(request) {
     let hasActuals = false
 
     // 1) Try FMP first if API key configured (gives actuals)
-    events = await fetchFMP(range)
+    events = await safely('FMP', () => fetchFMP(range))
     if (events && events.length > 0) {
       source = 'fmp'
       hasActuals = events.some(e => !!e.actual)
@@ -257,10 +272,15 @@ export async function GET(request) {
 
     // 2) Fallback to ForexFactory (full schedule + forecast/previous but no actuals)
     if (!events || events.length === 0) {
-      events = await fetchFF(week, range)
+      events = await safely('FF', () => fetchFF(week, range))
       if (events) source = 'forexfactory'
     }
 
+    // Les deux sources sont tombées : mieux vaut le dernier calendrier connu,
+    // même périmé, qu'un écran vide. Il est signalé comme tel.
+    if (!events && cached) {
+      return Response.json({ ...cached.payload, stale: true }, { headers: { 'X-Cache': 'STALE' } })
+    }
     if (!events) {
       return Response.json({
         error: 'Both sources (FMP + ForexFactory) unreachable. Try again in a few minutes.',

@@ -313,6 +313,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
   // and shows a discreet footnote suggesting FMP_API_KEY for live actuals.
   const [source, setSource] = useState(null)
   const [sourceHasActuals, setSourceHasActuals] = useState(false)
+  const [stale, setStale] = useState(false)
   const t = T[lang] || T.fr
   const today = todayFF()
   const nowTs = Date.now()
@@ -327,6 +328,7 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
       setEvents(data.events || [])
       setSource(data.source || null)
       setSourceHasActuals(!!data.hasActuals)
+      setStale(!!data.stale)
       setLastUpd(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
     } catch (e) { setError(e.message); setEvents([]) }
     setLoading(false)
@@ -744,14 +746,23 @@ export default function CalendarPage({ lang = 'fr', onLangChange }) {
             </>
           )}
         </div>
+        {stale && (
+          <div role="status" style={{ fontSize: 11, color: 'var(--amber)', marginTop: 4 }}>
+            {lang === 'fr'
+              ? 'Les sources ne répondent pas : dernier calendrier connu affiché.'
+              : lang === 'es'
+              ? 'Las fuentes no responden: se muestra el último calendario conocido.'
+              : 'The sources are not responding: showing the last known calendar.'}
+          </div>
+        )}
         {/* Honest note when source doesn't provide actuals */}
         {source === 'forexfactory' && (
           <div style={{ fontSize: 10, opacity: 0.65, marginTop: 4 }}>
             {lang === 'fr'
-              ? 'Note : ce flux fournit forecast + previous mais pas les résultats publiés. Pour les "Réel" en temps réel, configure FMP_API_KEY (free) sur Vercel.'
+              ? 'Cette source donne les prévisions et les valeurs précédentes, pas les résultats publiés.'
               : lang === 'es'
-              ? 'Nota: este flujo proporciona forecast + previous pero no resultados publicados. Para "Real" en tiempo real, configura FMP_API_KEY (gratis) en Vercel.'
-              : 'Note: this feed provides forecast + previous but not released results. For live "Actual" values, configure FMP_API_KEY (free) on Vercel.'}
+              ? 'Esta fuente da las previsiones y los valores anteriores, no los resultados publicados.'
+              : 'This source gives forecasts and previous values, not released results.'}
           </div>
         )}
       </div>
