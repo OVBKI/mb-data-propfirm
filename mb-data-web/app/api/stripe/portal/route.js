@@ -26,7 +26,7 @@ export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const limit = rateLimit({ key: `stripe-portal:${auth.user.id}`, windowMs: 60_000, max: 10 })
+  const limit = await rateLimit({ key: `stripe-portal:${auth.user.id}`, windowMs: 60_000, max: 10 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   if (!process.env.STRIPE_SECRET_KEY) {

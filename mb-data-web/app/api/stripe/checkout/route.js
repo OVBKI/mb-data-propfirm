@@ -27,7 +27,7 @@ export async function POST(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const limit = rateLimit({ key: `stripe-checkout:${auth.user.id}`, windowMs: 60_000, max: 5 })
+  const limit = await rateLimit({ key: `stripe-checkout:${auth.user.id}`, windowMs: 60_000, max: 5 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   if (!process.env.STRIPE_SECRET_KEY) {

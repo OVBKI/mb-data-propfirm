@@ -237,7 +237,7 @@ export async function GET(request) {
 
     // ── Sécurité #1 : rate limit ──
     const ip = getClientIp(request)
-    const limit = rateLimit({ key: `calendar:${ip}`, windowMs: 60_000, max: 30 })
+    const limit = await rateLimit({ key: `calendar:${ip}`, windowMs: 60_000, max: 30 })
     if (!limit.allowed) {
       return rateLimitResponse(limit, 'Trop de requêtes calendrier. Ralentis un peu.')
     }

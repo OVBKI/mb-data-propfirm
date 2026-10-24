@@ -14,7 +14,7 @@ import { rateLimit, rateLimitResponse } from '../../../../lib/rateLimit'
 
 export async function POST(req) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
-  const limit = rateLimit({ key: `unsubscribe:${ip}`, windowMs: 60_000, max: 20 })
+  const limit = await rateLimit({ key: `unsubscribe:${ip}`, windowMs: 60_000, max: 20 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   const sp = new URL(req.url).searchParams

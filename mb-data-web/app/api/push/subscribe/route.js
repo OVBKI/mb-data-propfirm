@@ -9,7 +9,7 @@ export async function POST(req) {
   try {
     // Rate limit: 10 req/min per IP
     const ip = getClientIp(req)
-    const limit = rateLimit({ key: `push-subscribe:${ip}`, windowMs: 60_000, max: 10 })
+    const limit = await rateLimit({ key: `push-subscribe:${ip}`, windowMs: 60_000, max: 10 })
     if (!limit.allowed) return rateLimitResponse(limit)
 
     const auth = await verifyAuth(req)

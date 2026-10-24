@@ -24,7 +24,7 @@ export async function GET(request) {
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
   // Rate limit: 3 req/min per user (export is heavy — multiple DB queries)
-  const limit = rateLimit({ key: `export:${auth.user.id}`, windowMs: 60_000, max: 3 })
+  const limit = await rateLimit({ key: `export:${auth.user.id}`, windowMs: 60_000, max: 3 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

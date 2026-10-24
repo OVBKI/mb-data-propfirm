@@ -38,7 +38,7 @@ export async function POST(request) {
   }
 
   // Chaque génération coûte un appel au modèle : 4 par heure et par utilisateur.
-  const limit = rateLimit({ key: `ai-review:${userId}`, windowMs: 3_600_000, max: 4 })
+  const limit = await rateLimit({ key: `ai-review:${userId}`, windowMs: 3_600_000, max: 4 })
   if (!limit.allowed) return rateLimitResponse(limit, 'Tu as généré plusieurs revues coup sur coup. Réessaie dans une heure.')
 
   try {

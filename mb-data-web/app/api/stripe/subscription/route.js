@@ -25,7 +25,7 @@ export async function GET(request) {
   const auth = await verifyAuth(request)
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
-  const limit = rateLimit({ key: `stripe-sub:${auth.user.id}`, windowMs: 60_000, max: 20 })
+  const limit = await rateLimit({ key: `stripe-sub:${auth.user.id}`, windowMs: 60_000, max: 20 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   const supabase = getSupabase()

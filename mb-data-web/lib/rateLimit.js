@@ -1,32 +1,20 @@
-// lib/rateLimit.js — Rate limiter in-memory pour routes /api/*
+// lib/rateLimit.js — limitation de débit des routes /api/*.
 //
-// USAGE :
-//   import { rateLimit } from '@/lib/rateLimit'
+// USAGE (dans une route, toujours avec await) :
+//   const limit = await rateLimit({ key: `waitlist:${ip}`, windowMs: 60_000, max: 5 })
+//   if (!limit.allowed) return rateLimitResponse(limit)
 //
-//   export async function POST(request) {
-//     const ip = getClientIp(request)
-//     const limit = rateLimit({ key: `waitlist:${ip}`, windowMs: 60_000, max: 5 })
-//     if (!limit.allowed) {
-//       return Response.json(
-//         { error: 'Too many requests, slow down.' },
-//         { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
-//       )
-//     }
-//     // ... logique route
-//   }
+// Les compteurs vivent dans Postgres (table rate_limits, fonction atomique
+// rate_limit_hit, voir supabase-schema.sql) : ils survivent aux démarrages à
+// froid et sont partagés entre les instances Vercel. En mémoire, chaque
+// instance avait son compteur, remis à zéro à chaque démarrage.
 //
-// IMPLÉMENTATION :
-//   - Sliding window simple via Map<string, { count, resetAt }>
-//   - Mémoire partagée pour les requêtes sur la MÊME instance Vercel (function warm)
-//   - Les cold starts repartent de zéro (pas grave : un attaquant qui spam
-//     paye le coût du cold start aussi)
-//   - Cleanup auto toutes les 5 min pour éviter la fuite mémoire
-//
-// LIMITATIONS connues :
-//   - Pas de persistance cross-instance (Vercel peut avoir 2-3 instances en parallèle)
-//     → un attaquant pourrait avoir 2-3× la limite réelle. Acceptable pour MVP.
-//   - Pour une vraie protection en prod, utiliser Upstash Redis (gratuit < 10k req/jour)
-//     ou Vercel KV. À considérer si Quantara atteint > 1000 utilisateurs actifs.
+// Si la base ne répond pas (variables absentes, fonction pas encore créée,
+// panne), on retombe sur le compteur EN MÉMOIRE de l'instance plutôt que de
+// bloquer ou d'ouvrir complètement la route.
+// Les clés sont hachées avant stockage : une IP n'est jamais écrite en clair.
+import { createHash } from 'crypto'
+import { createClient } from '@supabase/supabase-js'
 
 const buckets = new Map() // key → { count: number, resetAt: number (timestamp ms) }
 
@@ -54,7 +42,7 @@ function ensureCleanup() {
  * @param {number} opts.max       Nombre max d'appels dans la fenêtre (défaut 60)
  * @returns {{ allowed: boolean, remaining: number, resetAt: number, retryAfter?: number }}
  */
-export function rateLimit({ key, windowMs = 60_000, max = 60 }) {
+export function rateLimitMemory({ key, windowMs = 60_000, max = 60 }) {
   ensureCleanup()
   const now = Date.now()
   const entry = buckets.get(key)
@@ -78,6 +66,40 @@ export function rateLimit({ key, windowMs = 60_000, max = 60 }) {
   // Incrémente le compteur
   entry.count += 1
   return { allowed: true, remaining: max - entry.count, resetAt: entry.resetAt }
+}
+
+let db = null
+function client() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  if (!db) db = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+  return db
+}
+
+export function hashKey(key) {
+  return createHash('sha256').update(String(key)).digest('hex').slice(0, 40)
+}
+
+/**
+ * Compte un appel pour `key` et dit s'il est autorisé.
+ * @returns {Promise<{ allowed: boolean, remaining: number, resetAt: number, retryAfter?: number }>}
+ */
+export async function rateLimit({ key, windowMs = 60_000, max = 60 }) {
+  const c = client()
+  if (c) {
+    try {
+      const { data, error } = await c.rpc('rate_limit_hit', { p_key: hashKey(key), p_window_ms: Math.round(windowMs), p_max: max })
+      const row = Array.isArray(data) ? data[0] : data
+      if (!error && row) {
+        const resetAt = new Date(row.reset_at).getTime()
+        return row.allowed
+          ? { allowed: true, remaining: Math.max(0, max - row.hits), resetAt }
+          : { allowed: false, remaining: 0, resetAt, retryAfter: Math.max(1, Math.ceil((resetAt - Date.now()) / 1000)) }
+      }
+    } catch { /* repli en mémoire ci-dessous */ }
+  }
+  return rateLimitMemory({ key, windowMs, max })
 }
 
 /**

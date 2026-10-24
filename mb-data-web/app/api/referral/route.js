@@ -18,7 +18,7 @@ export async function GET(request) {
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
   // Rate limit: 10 req/min per user
-  const limit = rateLimit({ key: `referral-get:${auth.user.id}`, windowMs: 60_000, max: 10 })
+  const limit = await rateLimit({ key: `referral-get:${auth.user.id}`, windowMs: 60_000, max: 10 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   const supabase = getSupabase()
@@ -53,7 +53,7 @@ export async function POST(request) {
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
   // Rate limit: 10 req/min per user
-  const limit = rateLimit({ key: `referral-post:${auth.user.id}`, windowMs: 60_000, max: 10 })
+  const limit = await rateLimit({ key: `referral-post:${auth.user.id}`, windowMs: 60_000, max: 10 })
   if (!limit.allowed) return rateLimitResponse(limit)
 
   let body

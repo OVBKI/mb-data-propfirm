@@ -29,7 +29,7 @@ export async function POST(req) {
 
   // Rate limit : 5 résolutions / minute / IP
   // Suffisant pour un user qui fait quelques tentatives de login, bloque le scraping.
-  const limit = rateLimit({ key: `resolve-username:${ip}`, windowMs: 60_000, max: 5 })
+  const limit = await rateLimit({ key: `resolve-username:${ip}`, windowMs: 60_000, max: 5 })
   if (!limit.allowed) {
     return rateLimitResponse(limit, 'Trop de tentatives. Réessaye dans 1 minute.')
   }

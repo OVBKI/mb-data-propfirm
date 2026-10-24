@@ -29,7 +29,7 @@ export async function POST(req) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
     || req.headers.get('x-real-ip')
     || 'unknown'
-  const limit = rateLimit({ key: `groups-join:${ip}`, windowMs: 60_000, max: 10 })
+  const limit = await rateLimit({ key: `groups-join:${ip}`, windowMs: 60_000, max: 10 })
   if (!limit.allowed) {
     return rateLimitResponse(limit, 'Trop de tentatives. Réessaye dans 1 minute.')
   }

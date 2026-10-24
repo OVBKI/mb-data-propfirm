@@ -40,7 +40,7 @@ export async function POST(request) {
   if (auth.error) return Response.json({ error: auth.error }, { status: auth.status })
 
   // La connexion ProjectX est elle-même limitée : 10 appels par 10 minutes suffisent.
-  const limit = rateLimit({ key: `topstepx:${auth.user.id}`, windowMs: 600_000, max: 10 })
+  const limit = await rateLimit({ key: `topstepx:${auth.user.id}`, windowMs: 600_000, max: 10 })
   if (!limit.allowed) return rateLimitResponse(limit, 'Trop de tentatives. Réessaie dans quelques minutes.')
 
   let body

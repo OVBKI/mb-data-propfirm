@@ -33,7 +33,7 @@ export async function POST(req) {
 
   // 🛡 Rate limit : 3 inscriptions / minute / IP (mai 2026 — audit Agent #1)
   // Protège contre spam d'inscriptions waitlist (coût Resend + risque blacklist domaine)
-  const limit = rateLimit({ key: `waitlist:${ip}`, windowMs: 60_000, max: 3 })
+  const limit = await rateLimit({ key: `waitlist:${ip}`, windowMs: 60_000, max: 3 })
   if (!limit.allowed) {
     return rateLimitResponse(limit, 'Trop d\'inscriptions depuis cette IP. Réessaye dans 1 minute.')
   }

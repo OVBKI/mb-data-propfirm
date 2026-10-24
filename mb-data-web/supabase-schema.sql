@@ -801,6 +801,40 @@ create policy "Users manage own trading rules" on trading_rule_items
 create index if not exists trading_setups_user_idx on trading_setups(user_id);
 create index if not exists trading_rule_items_user_idx on trading_rule_items(user_id);
 
+-- RATE_LIMITS (octobre 2026) — compteurs de limitation de débit des routes
+-- /api/*, partagés entre instances Vercel (lib/rateLimit.js). Clé hachée côté
+-- serveur. Service role uniquement : RLS activée, aucune policy, et la
+-- fonction n'est exécutable que par service_role.
+create table if not exists rate_limits (
+  key text primary key,
+  hits integer not null,
+  reset_at timestamptz not null
+);
+alter table rate_limits enable row level security;
+
+-- Un seul INSERT … ON CONFLICT : atomique, même sous des appels simultanés.
+create or replace function rate_limit_hit(p_key text, p_window_ms integer, p_max integer)
+returns table (allowed boolean, hits integer, reset_at timestamptz)
+language plpgsql security definer set search_path = public as $$
+declare
+  v_hits integer;
+  v_reset timestamptz;
+begin
+  insert into rate_limits as r (key, hits, reset_at)
+  values (p_key, 1, now() + make_interval(secs => p_window_ms / 1000.0))
+  on conflict (key) do update set
+    hits = case when r.reset_at <= now() then 1 else r.hits + 1 end,
+    reset_at = case when r.reset_at <= now() then now() + make_interval(secs => p_window_ms / 1000.0) else r.reset_at end
+  returning r.hits, r.reset_at into v_hits, v_reset;
+  -- Ménage occasionnel des compteurs expirés depuis plus d'un jour.
+  if random() < 0.01 then
+    delete from rate_limits where rate_limits.reset_at < now() - interval '1 day';
+  end if;
+  return query select v_hits <= p_max, v_hits, v_reset;
+end $$;
+revoke all on function rate_limit_hit(text, integer, integer) from public, anon, authenticated;
+grant execute on function rate_limit_hit(text, integer, integer) to service_role;
+
 -- AI_REVIEW_OPTIN (octobre 2026) — revue hebdomadaire du journal par IA.
 -- Désactivée par défaut : l'activer envoie un résumé des trades à l'API
 -- Anthropic (voir la politique de confidentialité). Inscriptible par le client,
