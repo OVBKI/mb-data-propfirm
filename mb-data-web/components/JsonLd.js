@@ -91,7 +91,7 @@ export const SOFTWARE_SCHEMA = {
     description: 'Beta gratuite — aucune carte bancaire requise',
   },
   featureList: [
-    'Suivi multi-comptes PropFirm (12 firmes futures et 9 firmes CFD)',
+    'Suivi multi-comptes PropFirm (14 firmes futures et 9 firmes CFD)',
     'Calcul automatique du trailing drawdown (End-of-Day et Intraday)',
     'Consistency rule recalculée à chaque trade',
     'Journal de trades manuel détaillé',

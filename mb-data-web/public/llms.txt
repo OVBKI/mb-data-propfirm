@@ -1,11 +1,11 @@
 # Quantara
 
-> Journal de trading SaaS pour traders PropFirm futures. Suivi des drawdowns, du ROI et des payouts sur 12 PropFirms futures (dont Topstep, Apex, Lucid) et 9 PropFirms CFD. Multi-comptes, en français et en anglais. Beta gratuite, édité par Quantara Technologies LLC (New Mexico, USA).
+> Journal de trading SaaS pour traders PropFirm futures. Suivi des drawdowns, du ROI et des payouts sur 14 PropFirms futures (dont Topstep, Apex, Lucid) et 9 PropFirms CFD. Multi-comptes, en français et en anglais. Beta gratuite, édité par Quantara Technologies LLC (New Mexico, USA).
 
 ## Pages principales
 
 - [Accueil](https://quantara.tech): vue d'ensemble produit, fonctionnalités, et inscription beta
-- [Comparateur PropFirm](https://quantara.tech/compare): compare 12 PropFirms futures side-by-side (drawdown, split, payout)
+- [Comparateur PropFirm](https://quantara.tech/compare): compare 14 PropFirms futures side-by-side (drawdown, split, payout)
 - [Simulateur Drawdown](https://quantara.tech/tools/drawdown-simulator): calculateur trailing drawdown gratuit (EOD/Intraday)
 - [Démo](https://quantara.tech/demo): aperçu du dashboard sans inscription
 - [Pricing](https://quantara.tech/pricing): plan Free et plan Pro (liste d'attente)
@@ -13,7 +13,7 @@
 - [Quantara vs Excel](https://quantara.tech/compare/quantara-vs-excel): pourquoi remplacer ton tableur
 - [Sécurité](https://quantara.tech/security): architecture sécurité, RLS Supabase, RGPD
 - [Documentation](https://quantara.tech/docs): guides utilisateur, FAQ
-- [PropFirms](https://quantara.tech/firms): les 12 PropFirms futures, leurs règles et l'import des trades
+- [PropFirms](https://quantara.tech/firms): les 14 PropFirms futures, leurs règles et l'import des trades
 - [CGU](https://quantara.tech/legal/cgu): conditions générales d'utilisation
 - [Politique de confidentialité](https://quantara.tech/legal/privacy): traitement des données
 - [Mentions légales](https://quantara.tech/legal/imprint): éditeur, contact

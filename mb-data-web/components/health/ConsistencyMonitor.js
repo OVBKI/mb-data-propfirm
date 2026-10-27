@@ -31,6 +31,8 @@ const CONSISTENCY_THRESHOLDS = {
   'Phidias Propfirm': 0.4,
   'Funded Futures Network': 0.4,
   'FuturesELites': 0.4,
+  'TradeDay': 0.3,                  // Quick Pay 30% (Fast Pass 45%)
+  'Funded Futures Family': 0.4,     // 40% en financé (Prime, Premier+, Velocity)
 }
 
 function ratioColor(ratio, threshold) {

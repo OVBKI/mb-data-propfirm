@@ -8,7 +8,7 @@ const ROWS = [
   { feature: 'Consistency rule audit', quantara: '✅ Real-time', competitor: '⚠️ Manual pivot table', quantaraWins: true },
   { feature: 'Payout tracking', quantara: '✅ With profit split %', competitor: '⚠️ Manual entry', quantaraWins: true },
   { feature: 'Multi-firm dashboard', quantara: '✅ Unified view', competitor: '⚠️ Multiple tabs', quantaraWins: true },
-  { feature: 'PropFirm rules pre-filled', quantara: '✅ 12 futures firms', competitor: '❌ Research yourself', quantaraWins: true },
+  { feature: 'PropFirm rules pre-filled', quantara: '✅ 14 futures firms', competitor: '❌ Research yourself', quantaraWins: true },
   { feature: 'Equity curve', quantara: '✅ Per account', competitor: '⚠️ Build chart manually', quantaraWins: true },
   { feature: 'Push alerts (billing)', quantara: '✅ 2 days before', competitor: '❌ No alerts', quantaraWins: true },
   { feature: 'Billing calendar', quantara: '✅ Auto-calculated', competitor: '⚠️ Manual dates', quantaraWins: true },

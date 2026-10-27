@@ -50,7 +50,7 @@ export default function LandingFallback() {
             Le <strong>calendrier économique intégré</strong> t'aide à anticiper la volatilité avant chaque session.
           </p>
           <p style={{ marginTop: 12 }}>
-            <Link href="/compare" style={{ color: '#4d8fff', textDecoration: 'none' }}>Compare les 12 PropFirms futures supportées</Link> côte à côte :
+            <Link href="/compare" style={{ color: '#4d8fff', textDecoration: 'none' }}>Compare les 14 PropFirms futures supportées</Link> côte à côte :
             tailles de comptes, drawdown types, profit splits et frais. Consulte la{' '}
             <Link href="/pricing" style={{ color: '#4d8fff', textDecoration: 'none' }}>page tarifs</Link> — Quantara est <strong>gratuit pendant la beta</strong>,
             sans carte bancaire. Explore le{' '}
@@ -62,7 +62,7 @@ export default function LandingFallback() {
         <section style={{ marginBottom: 40 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f0ede8', marginBottom: 16 }}>Fonctionnalités clés</h2>
           <ul style={{ lineHeight: 2, fontSize: 14, color: '#c0c5d4', paddingLeft: 20 }}>
-            <li>Multi PropFirm — 12 firmes futures et 9 firmes CFD pré-configurées</li>
+            <li>Multi PropFirm — 14 firmes futures et 9 firmes CFD pré-configurées</li>
             <li>Import CSV Rithmic (Performance Statement + Trader Dashboard)</li>
             <li>Journal de trading avec screenshots, tags et courbes equity</li>
             <li>Trailing drawdown automatique (EOD, Intraday, Statique)</li>

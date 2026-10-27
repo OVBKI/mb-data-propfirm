@@ -70,7 +70,7 @@ const SECTIONS_FR = [
     id: 'rules',
     title: 'Règles PropFirms',
     items: [
-      { q: 'Quelles PropFirms sont supportées ?', a: '12 firmes futures pré-configurées : Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite, Alpha Futures et FundedNext Futures, plus 9 firmes CFD. Voir /firms pour le détail et l\'import des trades.' },
+      { q: 'Quelles PropFirms sont supportées ?', a: '14 firmes futures pré-configurées : Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite, Alpha Futures, FundedNext Futures, TradeDay et Funded Futures Family, plus 9 firmes CFD. Voir /firms pour le détail et l\'import des trades.' },
       { q: 'Mes règles ne sont pas à jour, c\'est normal ?', a: 'Les PropFirms changent leurs règles régulièrement. Quantara fait au mieux pour rester à jour. Si tu vois une incohérence, tu peux toujours modifier les règles d\'un compte individuel directement dans le formulaire de création/édition. Sinon, signale-le à contact@quantara.tech.' },
       { q: 'Comment savoir si je suis dans les règles drawdown trailing ?', a: 'Le dashboard affiche pour chaque compte ta balance actuelle et le seuil DD calculé en temps réel. Les courbes equity dans le journal affichent la ligne DD trailing (statique, EOD ou intraday selon la firme).' },
     ],
@@ -141,7 +141,7 @@ const SECTIONS_EN = [
     id: 'rules',
     title: 'PropFirm rules',
     items: [
-      { q: 'Which PropFirms are supported?', a: '12 futures firms pre-configured: Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite, Alpha Futures and FundedNext Futures, plus 9 CFD firms. See /firms for details and trade import.' },
+      { q: 'Which PropFirms are supported?', a: '14 futures firms pre-configured: Topstep, Apex Trader Funding, Bulenox, Lucid Trading, Tradeify, Take Profit Trader, My Funded Futures, Phidias Propfirm, Funded Futures Network, FuturesElite, Alpha Futures, FundedNext Futures, TradeDay and Funded Futures Family, plus 9 CFD firms. See /firms for details and trade import.' },
       { q: 'My rules are out of date, is that normal?', a: 'PropFirms change their rules regularly. Quantara does its best to stay up to date. If you see an inconsistency, you can always edit the rules of an individual account directly in the create/edit form. Otherwise, report it to contact@quantara.tech.' },
       { q: 'How do I know if I\'m within the trailing drawdown rules?', a: 'The dashboard displays your current balance and the live-computed DD threshold for each account. Journal equity curves show the trailing DD line (static, EOD or intraday per firm).' },
     ],

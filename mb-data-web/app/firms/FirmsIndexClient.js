@@ -132,7 +132,7 @@ export default function FirmsIndexClient() {
             {` (ES/NQ partout, crypto futures partiellement). Toutes les fiches ci-dessus détaillent ces points firm par firm.`}
           </p>
           <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.7, margin: 0 }}>
-            {`Quantara connaît les règles de chacune de ces 12 firmes, programme par programme : drawdown, consistency, profit target, payouts. Il les applique à tes comptes pour te donner une vue unifiée quand tu diversifies sur plusieurs PropFirms.`}
+            {`Quantara connaît les règles de chacune de ces 14 firmes, programme par programme : drawdown, consistency, profit target, payouts. Il les applique à tes comptes pour te donner une vue unifiée quand tu diversifies sur plusieurs PropFirms.`}
           </p>
         </section>
 

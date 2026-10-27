@@ -71,5 +71,16 @@ export function getFirmLogo(name, color, size=36) {
     )
   }
 
+  // Monogrammes pour les firms sans logo intégré : sigle blanc sur la couleur de marque.
+  const MONOGRAMS = { 'TradeDay': ['TD', '#1d4ed8'], 'Funded Futures Family': ['FFF', '#0f766e'] }
+  if (MONOGRAMS[name]) {
+    const [label, bg] = MONOGRAMS[name]
+    return (
+      <div style={{width:size,height:size,borderRadius:8,background:bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        <span style={{fontSize:size*(label.length > 2 ? 0.32 : 0.42),fontWeight:800,color:'#fff',letterSpacing:'-0.03em',lineHeight:1}}>{label}</span>
+      </div>
+    )
+  }
+
   return <div style={{width:size,height:size,borderRadius:8,background:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*0.4,fontWeight:700,color:'#fff',flexShrink:0}}>{name.charAt(0)}</div>
 }

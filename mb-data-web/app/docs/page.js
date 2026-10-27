@@ -43,7 +43,7 @@ const DOCS_FAQ_SCHEMA = {
       name: 'Which PropFirms are supported by Quantara?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: '12 futures firms are pre-configured, from Topstep and Apex Trader Funding to Alpha Futures and FundedNext Futures, plus 9 CFD firms. See /firms for the full list and how trades are imported.',
+        text: '14 futures firms are pre-configured, from Topstep and Apex Trader Funding to FundedNext Futures, TradeDay and Funded Futures Family, plus 9 CFD firms. See /firms for the full list and how trades are imported.',
       },
     },
     {

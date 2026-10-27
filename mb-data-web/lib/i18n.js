@@ -112,7 +112,7 @@ const FR = {
     dashboard: {
       label: 'TABLEAU DE BORD',
       title: "Tous tes comptes PropFirm en un coup d'œil.",
-      subtitle: 'Balance, drawdown, consistency, statut. Sur 12 PropFirms futures. Mis à jour à chaque trade enregistré.',
+      subtitle: 'Balance, drawdown, consistency, statut. Sur 14 PropFirms futures. Mis à jour à chaque trade enregistré.',
     },
     analytics: {
       label: 'ANALYTICS',
@@ -2111,7 +2111,7 @@ const FR = {
 
   // === AnimatedStats — 4 chiffres ===
   stats: {
-    propfirms: { value: '12', label: 'PropFirms futures (+ 9 CFD)' },
+    propfirms: { value: '14', label: 'PropFirms futures (+ 9 CFD)' },
     accounts:  { value: '∞',   label: 'Comptes & trades pendant la bêta' },
     langs:     { value: '2',   label: 'Langues (FR/EN)' },
     privacy:   { value: '100%', label: 'Tes données t\'appartiennent' },
@@ -2157,7 +2157,7 @@ const FR = {
     subheading: 'Conçu par et pour les traders PropFirm. Chaque feature résout un problème réel.',
     multipropfirms: {
       title: 'Suivi multi-PropFirms',
-      desc: 'Topstep, Apex, Bulenox, Lucid, Tradeify, MFFU, Phidias, TPT et plus. Règles drawdown / profit split / payout target pré-remplies pour 12 firmes futures et 9 firmes CFD.',
+      desc: 'Topstep, Apex, Bulenox, Lucid, Tradeify, MFFU, Phidias, TPT et plus. Règles drawdown / profit split / payout target pré-remplies pour 14 firmes futures et 9 firmes CFD.',
     },
     journal: {
       title: 'Journal de trading complet',

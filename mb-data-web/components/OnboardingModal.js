@@ -53,6 +53,8 @@ const FIRM_SUGGESTIONS = [
   { name: 'Funded Futures Network', color: '#a86bff' },
   { name: 'FuturesELites',          color: '#f472b6' },
   { name: 'Alpha Futures',          color: '#0a3a2a' },
+  { name: 'TradeDay',               color: '#1d4ed8' },
+  { name: 'Funded Futures Family',  color: '#0f766e' },
 ]
 
 // Génère 30 trades fictifs réalistes pour le compte démo

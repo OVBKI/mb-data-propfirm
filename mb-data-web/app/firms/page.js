@@ -16,7 +16,7 @@ export const metadata = {
   openGraph: {
     title: 'PropFirm Reviews 2026 — Toutes les firmes futures comparées',
     description:
-      'Topstep, Apex, Bulenox, Lucid, Tradeify, TPT, MFFU, Phidias, FFN, FuturesELites, Alpha Futures — règles 2026 vérifiées.',
+      'Topstep, Apex, Bulenox, Lucid, Tradeify, TPT, MFFU, Phidias, FFN, FuturesELites, Alpha Futures, FundedNext, TradeDay, Funded Futures Family — règles 2026 vérifiées.',
     url: 'https://quantara.tech/firms',
     type: 'website',
     images: ['/og-image.webp'],

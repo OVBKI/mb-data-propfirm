@@ -7,7 +7,7 @@ export const revalidate = 3600 // ISR: revalidate every hour
 export const metadata = {
   title: 'Compare PropFirm Rules — Topstep, Apex, Lucid, MFFU & More | Quantara',
   description:
-    'Compare 12 PropFirm futures rules side-by-side: trailing drawdown (EOD vs intraday), profit split, payout speed, consistency rules, and pricing. Free, no login required.',
+    'Compare 14 PropFirm futures rules side-by-side: trailing drawdown (EOD vs intraday), profit split, payout speed, consistency rules, and pricing. Free, no login required.',
   alternates: {
     canonical: 'https://quantara.tech/compare',
   },
@@ -22,7 +22,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Compare PropFirm Rules — Quantara',
     description:
-      'Side-by-side comparison of 12 PropFirm futures rules. Trailing drawdown, profit split, payout speed — all in one place.',
+      'Side-by-side comparison of 14 PropFirm futures rules. Trailing drawdown, profit split, payout speed — all in one place.',
   },
 }
 
@@ -71,7 +71,7 @@ const COMPARE_WEBPAGE_SCHEMA = {
   '@id': 'https://quantara.tech/compare',
   url: 'https://quantara.tech/compare',
   name: 'Compare PropFirm Rules — Quantara',
-  description: 'Side-by-side comparison of 12 PropFirm futures rules: drawdown, profit split, payout speed, consistency rules.',
+  description: 'Side-by-side comparison of 14 PropFirm futures rules: drawdown, profit split, payout speed, consistency rules.',
   isPartOf: { '@id': 'https://quantara.tech/#website' },
   about: {
     '@type': 'Thing',

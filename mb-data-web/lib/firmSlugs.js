@@ -477,6 +477,86 @@ export const FIRM_META = {
       },
     ],
   },
+  'TradeDay': {
+    tagline: 'Deux programmes mensuels, aucune perte journalière, un drawdown qui s\'arrête au solde de départ.',
+    description: 'TradeDay 2026, règles vérifiées : Quick Pay (Intraday ou EOD) et Fast Pass, drawdown verrouillé au solde de départ, aucune DLL, comptes 25K à 150K.',
+    intro: 'TradeDay est une prop firm futures basée à Chicago, en activité depuis 2020. Depuis la refonte « TradeDay 2.0 » de mai 2026, l\'offre tient en deux programmes, vendus en abonnement mensuel de 25K à 150K. Quick Pay mise sur la vitesse : un seul jour de trading suffit pour demander un payout une fois financé, en échange d\'un partage à 50/50 jusqu\'à 4 000 $ de profit net, puis 80/20. Il existe en deux variantes de drawdown d\'évaluation, Intraday ou EOD, mais attention : une fois financé, Quick Pay passe toujours en trailing intraday, quelle que soit la variante achetée. Fast Pass reste en EOD du début à la fin, paie 80/20 dès le premier dollar et demande cinq journées profitables avant chaque payout, avec une règle de consistance de 45%. Sur tous les programmes, le drawdown suit le plus haut solde puis s\'arrête au solde de départ, et il n\'y a aucune limite de perte journalière. Les annonces macro de niveau 1 (FOMC, CPI, NFP) sont interdites à ±2 minutes et tout doit être fermé à 15h50 CT. Depuis août 2026, on peut trader sur Rithmic en plus de Tradovate.',
+    website: 'https://www.tradeday.com/',
+    founded: '2020',
+    country: 'États-Unis (Chicago)',
+    platform: 'Tradovate · NinjaTrader · TradingView (via Tradovate) · Rithmic (R|Trader Pro, Quantower, ATAS, Sierra Chart)',
+    ddType: 'Trailing intraday ou EOD selon le programme, arrêté au solde de départ',
+    splits: 'Quick Pay : 50/50 jusqu\'à 4 000 $ de profit net, puis 80/20. Fast Pass : 80/20. Compte live : 90/10.',
+    keyFacts: [
+      'Aucune perte journalière, sur aucun programme',
+      'Drawdown arrêté au solde de départ',
+      'Quick Pay : payout possible après un seul jour financé',
+      'Quick Pay passe en drawdown intraday une fois financé',
+      'News de niveau 1 interdites à ±2 minutes',
+    ],
+    faqs: [
+      {
+        q: 'Quelle est la différence entre Quick Pay et Fast Pass ?',
+        a: 'Quick Pay demande cinq jours d\'évaluation avec 30% de consistance, puis permet un payout dès le premier jour financé, mais partage les gains à 50/50 jusqu\'à 4 000 $ de profit net avant de passer à 80/20. Fast Pass se valide plus vite (45% de consistance), reste en drawdown EOD une fois financé et paie 80/20 dès le départ, mais exige cinq journées profitables et plafonne chaque payout.',
+      },
+      {
+        q: 'Le drawdown de TradeDay est-il intraday ou EOD ?',
+        a: 'Cela dépend du programme. Quick Pay Intraday est intraday partout. Quick Pay EOD est en fin de journée pendant l\'évaluation, puis passe en intraday une fois financé. Fast Pass est en fin de journée du début à la fin. Dans tous les cas, le seuil suit le plus haut solde puis s\'arrête au solde de départ : sur un 100K, il passe de 97 000 $ à 100 000 $ quand le solde atteint 103 000 $.',
+      },
+      {
+        q: 'TradeDay a-t-il une limite de perte journalière ?',
+        a: 'Non. Aucun programme TradeDay n\'impose de perte journalière maximale : seul le drawdown trailing compte.',
+      },
+      {
+        q: 'Peut-on trader les annonces économiques chez TradeDay ?',
+        a: 'Pas les annonces de niveau 1 (FOMC, CPI, NFP, et EIA ou rapports agricoles sur les produits concernés) : les positions sont liquidées 2 minutes avant et le trading reprend 2 minutes après. Une erreur ponctuelle ne fait pas échouer le compte.',
+      },
+      {
+        q: 'Combien de comptes peut-on avoir chez TradeDay ?',
+        a: 'Dix au total depuis septembre 2026, dont cinq comptes financés simulés et cinq comptes live au maximum, tous chez le même broker.',
+      },
+    ],
+  },
+  'Funded Futures Family': {
+    tagline: 'Six programmes publics, 90% de partage partout, et un financement direct sans évaluation (S2F).',
+    description: 'Funded Futures Family 2026, règles vérifiées : Prime, Premier+, Velocity et financement direct S2F, drawdown EOD ou intraday, 90% de partage, comptes 25K à 150K.',
+    intro: 'Funded Futures Family (FFF) est une prop firm futures californienne, basée à Temecula. À ne pas confondre avec Funded Futures Network : les deux noms se ressemblent, mais ce sont deux sociétés aux règles différentes. FFF vend six programmes publics. Prime, Premier+ et Velocity sont des évaluations en abonnement mensuel qui s\'arrêtent à la réussite ; S2F (« Straight to Funded ») est un financement direct, payé une seule fois, sans objectif à atteindre. Prime se valide en un seul jour et n\'impose pas de consistance pendant l\'évaluation, mais 40% une fois financé. Premier+ existe en deux variantes : EOD, dont le drawdown d\'évaluation est plus serré que celui du compte financé, et Intraday, dont le drawdown d\'évaluation ne se verrouille jamais. Velocity a les objectifs les plus hauts mais un drawdown un peu plus large, en intraday sauf option payante. Le partage est de 90% sur tous les programmes, sans frais d\'activation. Côté trading, les bots sont interdits, tout est fermé à 16h45 ET, et il faut passer au moins un trade par semaine pour garder un compte ouvert.',
+    website: 'https://www.fundedfuturesfamily.com/',
+    founded: 'N/A',
+    country: 'États-Unis (Temecula, Californie)',
+    platform: 'Tradovate · WealthCharts · NinjaTrader et TradingView (via Tradovate) · Rithmic en live',
+    ddType: 'EOD trailing (Prime, Premier+ EOD, S2F) ou intraday (Premier+ Intraday, Velocity)',
+    splits: '90% sur tous les programmes. 80/20 au Professional Stage, avant le passage en live.',
+    keyFacts: [
+      '90% de partage sur les six programmes publics',
+      'S2F : financement direct, paiement unique, pas d\'objectif',
+      'Prime : évaluation en un seul jour, sans consistance',
+      'Aucun frais d\'activation',
+      'Un trade par semaine minimum, flat à 16h45 ET',
+    ],
+    faqs: [
+      {
+        q: 'Funded Futures Family et Funded Futures Network, c\'est la même firme ?',
+        a: 'Non. Funded Futures Family LLC est basée à Temecula, en Californie ; Funded Futures Network est une autre société. Les programmes, les prix, les drawdowns et les règles de payout n\'ont rien en commun.',
+      },
+      {
+        q: 'Quels programmes Funded Futures Family propose-t-il ?',
+        a: 'Six programmes publics : Prime, Premier+ (en variante EOD ou Intraday) et Velocity, qui sont des évaluations mensuelles, puis S2F Standard et S2F Payday, deux financements directs payés une seule fois. Les programmes « Labs » et Prestige sont réservés aux invitations et ne sont pas suivis ici.',
+      },
+      {
+        q: 'Comment fonctionne le drawdown du Premier+ ?',
+        a: 'Un compte Premier+ a deux drawdowns. Pendant l\'évaluation, la variante EOD a un drawdown plus serré (750 $ sur un 25K) qui se fige au solde de départ, et la variante Intraday a un drawdown de 1 000 $ qui ne se verrouille jamais. Une fois financé, le drawdown est le même pour les deux (1 000 $ sur un 25K) et il est remonté au solde de départ à la première demande de payout.',
+      },
+      {
+        q: 'Qu\'est-ce que le S2F Payday ?',
+        a: 'Un financement direct en 50K seulement, payé 699,99 $ une fois. Il a un drawdown EOD de 2 000 $ et, fait rare, une perte journalière de 1 000 $ qui fait échouer le compte. Il faut 7 jours à 200 $ ou plus et 3 000 $ de profit entre deux payouts.',
+      },
+      {
+        q: 'Combien de comptes peut-on ouvrir chez Funded Futures Family ?',
+        a: 'Cinq comptes financés simulés par foyer, et un seul compte live par foyer.',
+      },
+    ],
+  },
 }
 
 // Helpers pour récupérer les firms ordonnées (utilisé sur l'index)

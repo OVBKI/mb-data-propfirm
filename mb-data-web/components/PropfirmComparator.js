@@ -205,6 +205,34 @@ const FIRM_META = {
     hallmark: '🌟 Overnight + Weekend + Hold News autorisés · 3 plans (Premium/Zero/Advanced) · Volumetrica + dXFeed',
     tags: ['Overnight OK', 'Hold news', '3 plans', '90% split', 'Multi-platforms'],
   },
+  'TradeDay': {
+    displayName: 'TradeDay',
+    color: '#1d4ed8',
+    ddType: 'Mixed',
+    ddDetail: 'Quick Pay Intraday ou EOD en éval (INTRADAY une fois financé) · Fast Pass EOD · lock au solde de départ',
+    hasDLL: false,
+    pricingModel: 'monthly',
+    pricingNote: '$45-265/mo (remise permanente 55% / 50%)',
+    splitMax: 90,
+    payoutSpeed: '1-3j',
+    statusBadge: null,
+    hallmark: 'Quick Pay : payout dès 1 jour financé (50/50 jusqu\'à $4K) · Fast Pass 80/20 · Chicago depuis 2020',
+    tags: ['No DLL', 'Mensuel', 'News Tier 1 interdites', 'Rithmic ou Tradovate'],
+  },
+  'Funded Futures Family': {
+    displayName: 'Funded Futures Family',
+    color: '#0f766e',
+    ddType: 'Mixed',
+    ddDetail: 'Prime / Premier+ EOD / S2F : EOD trailing · Premier+ Intraday et Velocity : intraday',
+    hasDLL: false, // sauf S2F Payday (DLL $1,000 éliminatoire)
+    pricingModel: 'mixed',
+    pricingNote: '$89-675/mo · S2F one-time $329-734',
+    splitMax: 90,
+    payoutSpeed: '1-3j',
+    statusBadge: 'new',
+    hallmark: '6 programmes publics : Prime (1 jour), Premier+, Velocity, financement direct S2F · 90% partout',
+    tags: ['90% split', 'S2F direct funded', 'Pas de frais d\'activation', 'Flat 16h45 ET'],
+  },
 }
 
 // Filtres disponibles

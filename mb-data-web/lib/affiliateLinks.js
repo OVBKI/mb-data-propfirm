@@ -19,6 +19,9 @@ export const AFFILIATE_LINKS = {
   'FuturesElite': 'https://futureselites.com/?ref=quantara', // alias display name
   'Phidias Propfirm': 'https://phidiaspropfirm.com/?ref=quantara',
   'Alpha Futures': 'https://alpha-futures.com/?ref=quantara',
+  // Pas encore de compte affilié : lien direct, sans paramètre de parrainage.
+  'TradeDay': 'https://www.tradeday.com/',
+  'Funded Futures Family': 'https://www.fundedfuturesfamily.com/',
 }
 
 export function getAffiliateLink(firmName) {

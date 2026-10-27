@@ -973,6 +973,182 @@ export const FIRM_COMPARISON_MAP = {
       },
     ],
   },
+  'TradeDay': {
+    // Quick Pay se vend en deux variantes de drawdown d'évaluation, qui changent la
+    // mécanique : deux entrées. Une fois financé, Quick Pay est TOUJOURS intraday,
+    // d'où « EOD / Intraday » pour la variante EOD.
+    models: [
+      {
+        name: 'Quick Pay Intraday',
+        ddType: 'Trailing',   // trailing intraday, verrouillé au solde de départ
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Quick Pay Intraday' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Quick Pay Intraday' },
+          objectif: { key: 'Objectif de profit', model: 'Quick Pay Intraday' },
+          consistance: { key: 'Consistency (éval)', model: 'Quick Pay Intraday' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Quick Pay Intraday' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Quick Pay Intraday' },
+          buffer: { key: 'Règle buffer', model: 'Quick Pay Intraday' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'Quick Pay Intraday' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'Quick Pay Intraday' },
+          consistance: { key: 'Consistency (financé)', model: 'Quick Pay Intraday' },
+        },
+      },
+      {
+        name: 'Quick Pay EOD',
+        ddType: 'EOD / Intraday',   // EOD en éval, intraday une fois financé
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Quick Pay EOD' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Quick Pay EOD' },
+          objectif: { key: 'Objectif de profit', model: 'Quick Pay EOD' },
+          consistance: { key: 'Consistency (éval)', model: 'Quick Pay EOD' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Quick Pay EOD' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Quick Pay EOD' },
+          buffer: { key: 'Règle buffer', model: 'Quick Pay EOD' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'Quick Pay EOD' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'Quick Pay EOD' },
+          consistance: { key: 'Consistency (financé)', model: 'Quick Pay EOD' },
+        },
+      },
+      {
+        name: 'Fast Pass',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Fast Pass' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Fast Pass' },
+          objectif: { key: 'Objectif de profit', model: 'Fast Pass' },
+          consistance: { key: 'Consistency (éval)', model: 'Fast Pass' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Fast Pass' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Fast Pass' },
+          buffer: { key: 'Règle buffer', model: 'Fast Pass' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'Fast Pass' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'Fast Pass' },
+          consistance: { key: 'Consistency (financé)', model: 'Fast Pass' },
+        },
+      },
+    ],
+  },
+  'Funded Futures Family': {
+    // ⚠ Premier+ EOD et Premier+ Intraday : le drawdown d'ÉVALUATION diffère, celui
+    //   du financé est commun ('Drawdown financé'). Les S2F sont des financements
+    //   directs : pas de case de challenge.
+    models: [
+      {
+        name: 'Prime',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Prime' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Prime' },
+          objectif: { key: 'Objectif de profit', model: 'Prime' },
+          consistance: { key: 'Consistency (éval)', model: 'Prime' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown financé', model: 'Prime' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Prime' },
+          buffer: { key: 'Règle buffer', model: 'Prime' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'Prime' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'Prime' },
+          consistance: { key: 'Consistency (financé)', model: 'Prime' },
+        },
+      },
+      {
+        name: 'Premier+ EOD',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Premier+ EOD' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Premier+ EOD' },
+          objectif: { key: 'Objectif de profit', model: 'Premier+ EOD' },
+          consistance: { key: 'Consistency (éval)', model: 'Premier+ EOD' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown financé', model: 'Premier+ EOD' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Premier+ EOD' },
+          buffer: { key: 'Règle buffer', model: 'Premier+ EOD' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'Premier+ EOD' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'Premier+ EOD' },
+          consistance: { key: 'Consistency (financé)', model: 'Premier+ EOD' },
+        },
+      },
+      {
+        name: 'Premier+ Intraday',
+        ddType: 'Trailing',   // l'évaluation ne se verrouille jamais
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Premier+ Intraday' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Premier+ Intraday' },
+          objectif: { key: 'Objectif de profit', model: 'Premier+ Intraday' },
+          consistance: { key: 'Consistency (éval)', model: 'Premier+ Intraday' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown financé', model: 'Premier+ Intraday' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Premier+ Intraday' },
+          buffer: { key: 'Règle buffer', model: 'Premier+ Intraday' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'Premier+ Intraday' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'Premier+ Intraday' },
+          consistance: { key: 'Consistency (financé)', model: 'Premier+ Intraday' },
+        },
+      },
+      {
+        name: 'Velocity',
+        ddType: 'Trailing',   // intraday ; EOD en option payante
+        challenge: {
+          drawdown: { key: 'Drawdown trailing max', model: 'Velocity' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Velocity' },
+          objectif: { key: 'Objectif de profit', model: 'Velocity' },
+          consistance: { key: 'Consistency (éval)', model: 'Velocity' },
+        },
+        funded: {
+          drawdown: { key: 'Drawdown financé', model: 'Velocity' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'Velocity' },
+          buffer: { key: 'Règle buffer', model: 'Velocity' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'Velocity' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'Velocity' },
+          consistance: { key: 'Consistency (financé)', model: 'Velocity' },
+        },
+      },
+      {
+        name: 'S2F Standard',
+        ddType: 'EOD',
+        challenge: {
+          drawdown: null,
+          dailyDrawdown: null,
+          objectif: null,
+          consistance: null,
+        },
+        funded: {
+          drawdown: { key: 'Drawdown financé', model: 'S2F Standard' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'S2F Standard' },
+          buffer: { key: 'Règle buffer', model: 'S2F Standard' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'S2F Standard' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'S2F Standard' },
+          consistance: { key: 'Consistency (financé)', model: 'S2F Standard' },
+        },
+      },
+      {
+        name: 'S2F Payday',
+        ddType: 'EOD',   // 50K seulement
+        challenge: {
+          drawdown: null,
+          dailyDrawdown: null,
+          objectif: null,
+          consistance: null,
+        },
+        funded: {
+          drawdown: { key: 'Drawdown financé', model: 'S2F Payday' },
+          dailyDrawdown: { key: 'Perte journalière (DLL)', model: 'S2F Payday' },
+          buffer: { key: 'Règle buffer', model: 'S2F Payday' },
+          jourMin: { key: 'Jours de trading min (payout)', model: 'S2F Payday' },
+          minDailyProfit: { key: 'Profit min jour valide', model: 'S2F Payday' },
+          consistance: { key: 'Consistency (financé)', model: 'S2F Payday' },
+        },
+      },
+    ],
+  },
 }
 
 // ---------------------------------------------------------------------------
@@ -980,7 +1156,7 @@ export const FIRM_COMPARISON_MAP = {
 // ---------------------------------------------------------------------------
 
 // Ordered list of firm names for the comparator (reuses FIRM_SUGGESTIONS order).
-// Only firms present in the curated map are returned (all 11 are mapped).
+// Only firms present in the curated map are returned (every catalogue firm is mapped).
 // Programmes réellement disponibles pour une firme, et — si `plan` est fourni —
 // pour CETTE taille de compte. C'est ce que le sélecteur « type de compte »
 // affiche à la création.

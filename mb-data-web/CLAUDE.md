@@ -725,6 +725,33 @@ duplication, les options, l'identité des références, les presets, l'aller-ret
 d'import/export et la réparation d'une disposition abîmée.
 
 
+## TradeDay et Funded Futures Family — 2026-10
+
+Deux firmes futures ajoutées (le catalogue passe à **14**), règles vérifiées en
+octobre 2026 sur les sites officiels et leurs centres d'aide (tradeday.freshdesk.com,
+intercom.help/funded-futures-family). Les sources et les contradictions officielles
+sont notées en tête de chaque entrée de `PROPFIRM_RULES`.
+
+- **TradeDay** (Chicago, 2020) : Quick Pay en deux variantes de drawdown
+  d'évaluation (Intraday, EOD) et Fast Pass (EOD). Une fois financé, Quick Pay est
+  TOUJOURS intraday, d'où `ddType: 'EOD / Intraday'` pour Quick Pay EOD. Le
+  drawdown s'arrête au solde de départ, ce qui correspond à la mécanique `eod` de
+  `computeDdFloor` : la firme est dans `EOD_TRAILING_FIRMS`. Aucune DLL.
+- **Funded Futures Family** (Temecula, Californie), à ne pas confondre avec Funded
+  Futures Network. Six programmes publics ; Labs, Prestige et Base sont exclus
+  (sur invitation ou retirés du sélecteur). Les S2F sont des financements directs :
+  pas de cases de challenge dans le comparateur, prix dans `Prix (one-time)`.
+- **Piège Premier+** : drawdown d'ÉVALUATION (`Drawdown trailing max`) différent du
+  drawdown FINANCÉ (`Drawdown financé`). Le comparateur lit le bon des deux ;
+  `maxDrawdown()` n'a pas de notion de phase et rend celui de l'évaluation, plus
+  serré, donc prudent sur un compte financé.
+- **Contrats** : les cellules à plan d'échelle (FFF financé, TradeDay Fast Pass
+  financé) et Prime (2 ou 3 minis selon l'option achetée) sont volontairement
+  illisibles pour `maxContracts` (mot « selon ») : une limite fausse déclencherait
+  de fausses alertes de dépassement.
+- Liens sans affiliation dans `lib/affiliateLinks.js`, monogrammes « TD » et
+  « FFF » dans `lib/firmLogos.js`.
+
 ## Audit du catalogue PropFirms — 2026-08
 
 Vérification firme par firme des règles et des types de compte, contre les sources
@@ -866,6 +893,8 @@ Le mécanisme construit pour Apex est désormais appliqué à **tout le catalogu
 | FuturesElite | Starter · Pro · Instant Funded |
 | Alpha Futures | Premium · Zero · Advanced |
 | FundedNext Futures | Flex · Legacy · Rapid Pro · Rapid Daily |
+| TradeDay | Quick Pay Intraday · Quick Pay EOD · Fast Pass |
+| Funded Futures Family | Prime · Premier+ EOD · Premier+ Intraday · Velocity · S2F Standard · S2F Payday |
 
 ### Programmes ajoutés
 **Phidias Premium** (overnight et week-end autorisés, split 75 → 100 %),

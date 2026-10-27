@@ -1486,6 +1486,145 @@ export const PROPFIRM_RULES = {
       'Délai de traitement':      {'25k':'~24h annoncé, bonus $1,000 si dépassé','50k':'~24h annoncé, bonus $1,000 si dépassé','100k':'~24h annoncé, bonus $1,000 si dépassé','150k':'~24h annoncé, bonus $1,000 si dépassé'},
     }
   },
+  'TradeDay': {
+    // VÉRIFIÉ OCTOBRE 2026 — sources : tradeday.com (cartes de prix et de règles),
+    // centre d'aide tradeday.freshdesk.com (drawdown, objectifs, consistance,
+    // payouts Quick Pay et Fast Pass, chemin vers le live, contrats, news, horaires),
+    // blog officiel (TradeDay 2.0 du 29 mai 2026, changements Fast Pass du 26 juillet,
+    // 25K du 1er septembre, 10 comptes du 8 septembre).
+    //
+    // DEUX PROGRAMMES depuis TradeDay 2.0, en quatre tailles (25/50/100/150K) :
+    //   • Quick Pay, en deux variantes de drawdown d'ÉVALUATION : Intraday et EOD.
+    //     ⚠ Une fois financé, Quick Pay est TOUJOURS en trailing INTRADAY, quelle que
+    //       soit la variante d'évaluation (« regardless of the drawdown on the
+    //       evaluation »). Le Quick Pay EOD change donc de mécanique au passage.
+    //   • Fast Pass, en EOD seulement, en évaluation comme en financé.
+    // Les anciens programmes (dont le drawdown statique) ne sont plus vendus.
+    //
+    // MÉCANIQUE : trailing (intraday sur l'équité latente, ou EOD sur le solde de
+    // clôture mais appliqué en temps réel), qui s'ARRÊTE au solde de départ. Exemple
+    // officiel en 100K : le seuil passe de 97 000 $ à 100 000 $ quand le solde
+    // atteint 103 000 $. AUCUNE perte journalière sur aucun programme.
+    //
+    // ⚠ TARIFS MENSUELS : facturés tous les 30 jours jusqu'à réussite ou résiliation.
+    //   La remise de 55 % (Quick Pay) / 50 % (Fast Pass) est devenue le tarif courant
+    //   le 26-27 juillet 2026 : c'est ce montant qu'on pré-remplit, le prix barré suit.
+    plans: ['25k','50k','100k','150k'],
+    rules: {
+      // ⚠ SYNTAXE « Programme : valeur · Programme : valeur », noms EN ENTIER
+      //   (« Quick Pay Intraday », « Quick Pay EOD », « Fast Pass »).
+      //
+      // === OBJECTIFS ET RISQUE ===
+      'Objectif de profit':       {'25k':'$1,500 (tous programmes)','50k':'$3,000','100k':'$6,000','150k':'$9,000'},
+      'Drawdown trailing max':    {'25k':'Quick Pay Intraday/Quick Pay EOD/Fast Pass : $1,000','50k':'Quick Pay Intraday/Quick Pay EOD/Fast Pass : $2,000','100k':'Quick Pay Intraday/Quick Pay EOD/Fast Pass : $3,000','150k':'Quick Pay Intraday/Quick Pay EOD/Fast Pass : $4,500'},
+      'Type de drawdown':         {'25k':'Quick Pay Intraday : intraday en éval et en financé · Quick Pay EOD : EOD en éval, INTRADAY une fois financé · Fast Pass : EOD en éval et en financé','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Verrouillage du drawdown': {'25k':'S\'arrête au solde de départ ($25,000) ; en Fast Pass il y est aussi remonté dès la 1re demande de payout','50k':'Au solde de départ ($50,000)','100k':'Au solde de départ ($100,000)','150k':'Au solde de départ ($150,000)'},
+      'Perte journalière (DLL)':  {'25k':'Aucune (tous programmes)','50k':'Aucune','100k':'Aucune','150k':'Aucune'},
+      // === VALIDATION ET CONSISTANCE ===
+      'Jours requis (éval)':      {'25k':'Quick Pay Intraday/Quick Pay EOD : 5 · Fast Pass : 3 (la FAQ 2.0 dit « aucun minimum » : contradiction officielle)','50k':'Quick Pay Intraday/Quick Pay EOD : 5 · Fast Pass : 3','100k':'Quick Pay Intraday/Quick Pay EOD : 5 · Fast Pass : 3','150k':'Quick Pay Intraday/Quick Pay EOD : 5 · Fast Pass : 3'},
+      'Consistency (éval)':       {'25k':'Quick Pay Intraday/Quick Pay EOD : 30% · Fast Pass : 45%','50k':'Quick Pay Intraday/Quick Pay EOD : 30% · Fast Pass : 45%','100k':'Quick Pay Intraday/Quick Pay EOD : 30% · Fast Pass : 45%','150k':'Quick Pay Intraday/Quick Pay EOD : 30% · Fast Pass : 45%'},
+      'Consistance — mécanique':  {'25k':'Meilleur jour ÷ profit total. Dépasser le seuil en évaluation n\'échoue pas le compte : l\'objectif MONTE jusqu\'à ce que le meilleur jour repasse sous la limite (un jour à $1,200 sur un plan à 30% exige $4,000 au total)','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Consistency (financé)':    {'25k':'Quick Pay Intraday/Quick Pay EOD : aucune · Fast Pass : 45% du profit brut (comptes ouverts depuis le 26 juillet 2026)','50k':'Quick Pay Intraday/Quick Pay EOD : aucune · Fast Pass : 45%','100k':'Quick Pay Intraday/Quick Pay EOD : aucune · Fast Pass : 45%','150k':'Quick Pay Intraday/Quick Pay EOD : aucune · Fast Pass : 45%'},
+      // Jours avant un payout (lu par le pré-remplissage et la préparation au payout).
+      'Jours de trading min (payout)':{'25k':'Quick Pay Intraday/Quick Pay EOD : 1 · Fast Pass : 5 journées profitables, non consécutives','50k':'Quick Pay Intraday/Quick Pay EOD : 1 · Fast Pass : 5','100k':'Quick Pay Intraday/Quick Pay EOD : 1 · Fast Pass : 5','150k':'Quick Pay Intraday/Quick Pay EOD : 1 · Fast Pass : 5'},
+      'Profit min jour valide':   {'25k':'Fast Pass : $100 · Quick Pay Intraday/Quick Pay EOD : aucun seuil','50k':'Fast Pass : $150 · Quick Pay Intraday/Quick Pay EOD : aucun seuil','100k':'Fast Pass : $200 · Quick Pay Intraday/Quick Pay EOD : aucun seuil','150k':'Fast Pass : $250 · Quick Pay Intraday/Quick Pay EOD : aucun seuil'},
+      'Règle buffer':             {'25k':'Aucune (les deux politiques de payout le disent ; un ancien article parle d\'une « Buffer Zone », probablement périmé)','50k':'Aucune','100k':'Aucune','150k':'Aucune'},
+      // === TRADING ===
+      'Contrats max (éval)':      {'25k':'2 minis / 20 micros','50k':'5 minis / 50 micros','100k':'10 minis / 50 micros','150k':'15 minis / 50 micros'},
+      'Contrats max (financé)':   {'25k':'Quick Pay Intraday/Quick Pay EOD : 2 minis / 20 micros · Fast Pass : selon le plan d\'échelle, 1 mini au départ puis +1 par $2,000 de profit EOD','50k':'Quick Pay Intraday/Quick Pay EOD : 5 minis / 50 micros · Fast Pass : selon le plan d\'échelle, 2 minis au départ puis +1 par $2,000','100k':'Quick Pay Intraday/Quick Pay EOD : 10 minis / 50 micros · Fast Pass : selon le plan d\'échelle, 3 minis au départ puis +1 par $2,000','150k':'Quick Pay Intraday/Quick Pay EOD : 15 minis / 50 micros · Fast Pass : selon le plan d\'échelle, 4 minis au départ puis +1 par $2,000'},
+      'Trading des news':         {'25k':'INTERDIT pendant les annonces Tier 1 (FOMC, CPI, NFP ; EIA et rapports agricoles sur leurs produits) : liquidation 2 min avant, reprise 2 min après. Une erreur ponctuelle n\'échoue pas le compte','50k':'Interdit autour des annonces Tier 1 (±2 min)','100k':'Interdit autour des annonces Tier 1 (±2 min)','150k':'Interdit autour des annonces Tier 1 (±2 min)'},
+      'Positions overnight':      {'25k':'Day trading seulement : positions autorisées dans la session (ouverte à 17h CT), clôture obligatoire 10 min avant la fermeture, liquidation automatique à 15h50 CT','50k':'Clôture avant 15h50 CT','100k':'Clôture avant 15h50 CT','150k':'Clôture avant 15h50 CT'},
+      'Automatisation et copie':  {'25k':'Pas d\'API ; bots tiers interdits ; automatisation perso sur NinjaTrader, Tradovate, TradingView, Jigsaw ou Quantower ; 200 trades/jour max ; copie depuis son propre compte autorisée ; hedging entre comptes interdit','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Comptes simultanés':       {'25k':'10 au total, dont 5 Funded Sim et 5 Funded Live max (depuis le 8 sept. 2026) ; aucun achat possible tant qu\'un compte Live est ouvert ; tous les comptes chez le même broker','50k':'10 au total (5 Sim + 5 Live)','100k':'10 au total (5 Sim + 5 Live)','150k':'10 au total (5 Sim + 5 Live)'},
+      'Inactivité':               {'25k':'Compte inactif 30 jours : peut être clôturé ; Tradovate archive un compte sans connexion depuis un mois (compté comme échoué)','50k':'30 jours','100k':'30 jours','150k':'30 jours'},
+      'Plateformes':              {'25k':'Tradovate (données CQG ; NinjaTrader, TradingView, Jigsaw via Tradovate) ou Rithmic depuis le 10 août 2026 (R|Trader Pro, Quantower, ATAS, Sierra Chart, Bookmap…). NinjaTrader Desktop non pris en charge sur Rithmic','50k':'Tradovate ou Rithmic','100k':'Tradovate ou Rithmic','150k':'Tradovate ou Rithmic'},
+      // === TARIFS — MENSUELS ===
+      'Prix mensuel (évaluation)':{'25k':'Quick Pay Intraday : $45/mois (prix barré $100) · Quick Pay EOD : $54/mois ($120) · Fast Pass : $65/mois ($130)','50k':'Quick Pay Intraday : $59/mois ($131) · Quick Pay EOD : $79/mois ($175) · Fast Pass : $95/mois ($189)','100k':'Quick Pay Intraday : $108/mois ($240) · Quick Pay EOD : $129/mois ($285) · Fast Pass : $175/mois ($350)','150k':'Quick Pay Intraday : $162/mois ($360) · Quick Pay EOD : $180/mois ($400) · Fast Pass : $265/mois ($530)'},
+      'Coût du reset':            {'25k':'Quick Pay Intraday : $45 · Quick Pay EOD : $54 · Fast Pass : $65','50k':'Quick Pay Intraday : $59 · Quick Pay EOD : $79 · Fast Pass : $95','100k':'Quick Pay Intraday : $108 (page d\'accueil) ou $96 (FAQ facturation) · Quick Pay EOD : $129 · Fast Pass : $175 ou $165','150k':'Quick Pay Intraday : $162 ou $144 · Quick Pay EOD : $180 · Fast Pass : $265 ou $250'},
+      'Frais activation':         {'25k':'$0 — aucun frais d\'activation','50k':'$0','100k':'$0','150k':'$0'},
+      'Code promo':               {'25k':'TDNEW affiché « pour le meilleur prix » (montant de la remise non publié)','50k':'TDNEW','100k':'TDNEW','150k':'TDNEW'},
+      // === PAYOUTS ===
+      'Répartition gains':        {'25k':'Quick Pay Intraday/Quick Pay EOD : 50/50 jusqu\'à $4,000 de profit net, puis 80/20 · Fast Pass : 80/20 · Funded Live : 90/10','50k':'Quick Pay Intraday/Quick Pay EOD : 50/50 jusqu\'à $4,000, puis 80/20 · Fast Pass : 80/20','100k':'Quick Pay Intraday/Quick Pay EOD : 50/50 jusqu\'à $4,000, puis 80/20 · Fast Pass : 80/20','150k':'Quick Pay Intraday/Quick Pay EOD : 50/50 jusqu\'à $4,000, puis 80/20 · Fast Pass : 80/20'},
+      'Payout minimum':           {'25k':'$250 (tous programmes)','50k':'$250','100k':'$250','150k':'$250'},
+      'Plafond par cycle':        {'25k':'Fast Pass : $750 et 50% du solde (comptes ouverts depuis le 26 juillet 2026) · Quick Pay Intraday/Quick Pay EOD : aucun plafond publié','50k':'Fast Pass : $1,500 ($2,000 avant le 26 juillet) et 50% du solde · Quick Pay Intraday/Quick Pay EOD : aucun plafond publié','100k':'Fast Pass : $1,875 ($2,500 avant le 26 juillet) et 50% du solde · Quick Pay Intraday/Quick Pay EOD : aucun plafond publié','150k':'Fast Pass : $2,250 ($3,000 avant le 26 juillet) et 50% du solde · Quick Pay Intraday/Quick Pay EOD : aucun plafond publié'},
+      'Drawdown après payout':    {'25k':'Quick Pay Intraday/Quick Pay EOD : calculé sur le profit BRUT (profit actuel + payouts), il continue donc de suivre après un retrait · Fast Pass : remonté au solde de départ dès la 1re demande','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Passage en live':          {'25k':'Quick Pay Intraday/Quick Pay EOD : compte mis en pause et revu à $10,000 de profit brut, le profit au-delà est PERDU, transfert sous 10 jours ouvrés, drawdown live à $0 · Fast Pass : à la 5e demande de payout (parfois avant), compte live à solde $0 avec le même drawdown EOD','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Funded Live — frais':      {'25k':'Données CME pro $156/mois par marché + $2/mois Tradovate, commissions réelles ; liquidation si le solde passe sous $500 ; 3 mois d\'attente après la perte d\'un compte live','50k':'Liquidation sous $500','100k':'Liquidation sous $750','150k':'Liquidation sous $1,000'},
+      'Délai de traitement':      {'25k':'Sous 24h ouvrées, via Riseworks ; virement international $15, US gratuit, crypto L1 $2.50 + gas, L2 gratuit','50k':'Sous 24h ouvrées (Riseworks)','100k':'Sous 24h ouvrées (Riseworks)','150k':'Sous 24h ouvrées (Riseworks)'},
+    }
+  },
+  'Funded Futures Family': {
+    // VÉRIFIÉ OCTOBRE 2026 — sources : fundedfuturesfamily.com (cartes de plans et
+    // script du sélecteur de plans, qui porte tous les prix), centre d'aide
+    // intercom.help/funded-futures-family (73 articles), FAQ et CGU du site.
+    //
+    // ⚠ NE PAS CONFONDRE avec 'Funded Futures Network' (FFN) : autre firme, autres règles.
+    //   Funded Futures Family LLC, Temecula (Californie).
+    //
+    // PROGRAMMES PUBLICS (ceux qu'on peut acheter sans invitation) :
+    //   • Prime         — évaluation mensuelle, EOD, 1 jour minimum, 40% de consistance en financé
+    //   • Premier+ EOD  — évaluation mensuelle, drawdown d'éval EOD plus SERRÉ que le financé
+    //   • Premier+ Intraday — évaluation mensuelle, drawdown d'éval intraday qui ne se verrouille jamais
+    //   • Velocity      — évaluation mensuelle, intraday (EOD en option payante), objectifs plus hauts
+    //   • S2F Standard  — financé direct, paiement unique, EOD
+    //   • S2F Payday    — financé direct, 50K seulement, paiement unique, perte journalière ÉLIMINATOIRE
+    // Non intégrés : les programmes « Labs » sur invitation (Sniper, Choice, S2F
+    // Accelerate), Prestige (sur invitation) et Base (plus proposé au sélecteur).
+    //
+    // ⚠ Premier+ : un même compte a deux drawdowns. Celui de l'ÉVALUATION (Premier+ EOD :
+    //   $750/$1,500/$2,500/$4,000) et celui du FINANCÉ ($1,000/$2,000/$3,000/$4,500).
+    //   maxDrawdown() lit la première clé (l'évaluation) : sur un compte financé la jauge
+    //   est donc prudente, plus serrée que la réalité. Le comparateur, lui, affiche le
+    //   drawdown financé via 'Drawdown financé'.
+    plans: ['25k','50k','100k','150k'],
+    rules: {
+      // ⚠ SYNTAXE « Programme : valeur · Programme : valeur », noms EN ENTIER.
+      //
+      // === OBJECTIFS ET RISQUE ===
+      'Objectif de profit':       {'25k':'Prime : $1,250 · Premier+ EOD/Premier+ Intraday : $1,500 · Velocity : $2,500 · S2F Standard : aucun objectif (financé direct)','50k':'Prime : $3,000 · Premier+ EOD/Premier+ Intraday : $3,000 · Velocity : $4,000 · S2F Standard/S2F Payday : aucun objectif (financé direct)','100k':'Prime : $6,000 · Premier+ EOD/Premier+ Intraday : $6,000 · Velocity : $7,000 · S2F Standard : aucun objectif (financé direct)','150k':'Prime : $9,000 · Premier+ EOD/Premier+ Intraday : $9,000 · Velocity : $10,000 · S2F Standard : aucun objectif (financé direct)'},
+      'Drawdown trailing max':    {'25k':'Prime : $1,000 · Premier+ EOD : $750 · Premier+ Intraday : $1,000 · Velocity : $1,250 · S2F Standard : $1,000','50k':'Prime : $2,000 · Premier+ EOD : $1,500 · Premier+ Intraday : $2,000 · Velocity : $2,250 · S2F Standard : $2,000 · S2F Payday : $2,000','100k':'Prime : $3,000 · Premier+ EOD : $2,500 · Premier+ Intraday : $3,000 · Velocity : $3,250 · S2F Standard : $3,000','150k':'Prime : $4,500 · Premier+ EOD : $4,000 · Premier+ Intraday : $4,500 · Velocity : $4,750 · S2F Standard : $4,500'},
+      'Drawdown financé':         {'25k':'Prime : $1,000 · Premier+ EOD/Premier+ Intraday : $1,000 · Velocity : $1,250 · S2F Standard : $1,000','50k':'Prime : $2,000 · Premier+ EOD/Premier+ Intraday : $2,000 · Velocity : $2,250 · S2F Standard : $2,000 · S2F Payday : $2,000','100k':'Prime : $3,000 · Premier+ EOD/Premier+ Intraday : $3,000 · Velocity : $3,250 · S2F Standard : $3,000','150k':'Prime : $4,500 · Premier+ EOD/Premier+ Intraday : $4,500 · Velocity : $4,750 · S2F Standard : $4,500'},
+      'Type de drawdown':         {'25k':'Prime : EOD trailing en éval et en financé · Premier+ EOD : EOD trailing en éval · Premier+ Intraday : intraday trailing en éval, sans verrouillage · Premier+ (financé) : EOD selon le site, EOD ou intraday selon le centre d\'aide · Velocity : intraday trailing (EOD avec l\'option payante) · S2F Standard/S2F Payday : EOD trailing','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Verrouillage du drawdown': {'25k':'Prime/S2F Standard (financé) : le plancher se fige au solde de départ quand la plus haute clôture atteint $26,000 · Premier+ EOD (éval) : se fige au solde de départ · Premier+ (financé) : remonté au solde de départ à la 1re demande de payout · Premier+ Intraday (éval) : jamais · Velocity : non publié','50k':'Prime/S2F Standard/S2F Payday : verrou à $50,000 quand la plus haute clôture atteint $52,000','100k':'Prime/S2F Standard : verrou à $100,000 quand la plus haute clôture atteint $103,000','150k':'Prime/S2F Standard : verrou à $150,000 quand la plus haute clôture atteint $154,500'},
+      'Perte journalière (DLL)':  {'25k':'Aucune (tous programmes)','50k':'S2F Payday : $1,000, ÉLIMINATOIRE (échoue le compte) · Prime/Premier+ EOD/Premier+ Intraday/Velocity/S2F Standard : aucune','100k':'Aucune','150k':'Aucune'},
+      'Payout après drawdown':    {'25k':'Un payout ne remet jamais le drawdown à zéro (sauf Premier+, remonté au solde de départ à la 1re demande)','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      // === VALIDATION ET CONSISTANCE ===
+      'Jours requis (éval)':      {'25k':'Prime : 1 · Premier+ EOD/Premier+ Intraday : 1 (option FastPass) ou 2 (Standard) · Velocity : 3 · S2F Standard : sans objet','50k':'Prime : 1 · Premier+ EOD/Premier+ Intraday : 1 (FastPass) ou 2 (Standard) · Velocity : 3 · S2F Standard/S2F Payday : sans objet','100k':'Prime : 1 · Premier+ EOD/Premier+ Intraday : 1 ou 2 · Velocity : 3 · S2F Standard : sans objet','150k':'Prime : 1 · Premier+ EOD/Premier+ Intraday : 1 ou 2 · Velocity : 3 · S2F Standard : sans objet'},
+      'Consistency (éval)':       {'25k':'Prime : aucune · Premier+ EOD/Premier+ Intraday : aucune avec l\'option FastPass, 50% en Standard selon le site · Velocity : 40% · S2F Standard : sans objet','50k':'Prime : aucune · Premier+ EOD/Premier+ Intraday : aucune (FastPass) ou 50% (Standard) · Velocity : 40% · S2F Standard/S2F Payday : sans objet','100k':'Prime : aucune · Premier+ EOD/Premier+ Intraday : aucune (FastPass) ou 50% (Standard) · Velocity : 40% · S2F Standard : sans objet','150k':'Prime : aucune · Premier+ EOD/Premier+ Intraday : aucune (FastPass) ou 50% (Standard) · Velocity : 40% · S2F Standard : sans objet'},
+      'Consistency (financé)':    {'25k':'Prime : 40% (meilleur jour ÷ profit total, remis à zéro après chaque payout) · Premier+ EOD/Premier+ Intraday : 40% par cycle (comptes achetés depuis le 9 sept. 2026) · Velocity : 40% (aucune avec l\'option Daily Payout) · S2F Standard : 25% (la carte de la page d\'accueil dit 45%)','50k':'Prime : 40% · Premier+ EOD/Premier+ Intraday : 40% · Velocity : 40% · S2F Standard : 25% · S2F Payday : 40%','100k':'Prime : 40% · Premier+ EOD/Premier+ Intraday : 40% · Velocity : 40% · S2F Standard : 25%','150k':'Prime : 40% · Premier+ EOD/Premier+ Intraday : 40% · Velocity : 40% · S2F Standard : 25%'},
+      'Jours de trading min (payout)':{'25k':'Prime : 3 jours à $200 ou plus · Premier+ EOD/Premier+ Intraday : 5 jours à $200 ou plus · Velocity : 3 jours à $200 ou plus (quotidien avec l\'option Daily Payout) · S2F Standard : 7 jours à $200 ou plus','50k':'Prime : 3 · Premier+ EOD/Premier+ Intraday : 5 · Velocity : 3 · S2F Standard/S2F Payday : 7','100k':'Prime : 3 · Premier+ EOD/Premier+ Intraday : 5 · Velocity : 3 · S2F Standard : 7','150k':'Prime : 3 · Premier+ EOD/Premier+ Intraday : 5 · Velocity : 3 · S2F Standard : 7'},
+      'Profit min jour valide':   {'25k':'$200 (tous programmes)','50k':'$200','100k':'$200','150k':'$200'},
+      'Profit requis par payout': {'25k':'Prime : $300 depuis le dernier payout · Premier+ EOD/Premier+ Intraday : au moins $1 de profit net depuis le dernier payout · Velocity : $1,500 · S2F Standard : $1,500 au 1er payout, puis $1,000','50k':'Prime : $500 · Premier+ EOD/Premier+ Intraday : au moins $1 · Velocity : $3,000 · S2F Standard : $3,000 puis $2,000 · S2F Payday : $3,000 entre deux payouts','100k':'Prime : $750 · Premier+ EOD/Premier+ Intraday : au moins $1 · Velocity : $6,000 · S2F Standard : $6,000 puis $3,000','150k':'Prime : $1,000 · Premier+ EOD/Premier+ Intraday : au moins $1 · Velocity : $9,000 · S2F Standard : $9,000 puis $4,500'},
+      'Règle buffer':             {'25k':'Prime : solde au-dessus de $26,100 · Premier+ EOD/Premier+ Intraday : aucun buffer · Velocity/S2F Standard : non publié','50k':'Prime : solde au-dessus de $52,100 · Premier+ EOD/Premier+ Intraday : aucun buffer · Velocity/S2F Standard/S2F Payday : non publié','100k':'Prime : solde au-dessus de $103,100 · Premier+ EOD/Premier+ Intraday : aucun buffer · Velocity/S2F Standard : non publié','150k':'Prime : solde au-dessus de $154,600 · Premier+ EOD/Premier+ Intraday : aucun buffer · Velocity/S2F Standard : non publié'},
+      // === TRADING ===
+      'Contrats max (éval)':      {'25k':'Prime : selon l\'option, 2 (Standard) ou 3 (Max) minis · Premier+ EOD/Premier+ Intraday : 2 minis / 20 micros · Velocity : 3 minis / 30 micros · S2F Standard : 1 mini / 10 micros','50k':'Prime : selon l\'option, 4 (Standard) ou 5 (Max) minis · Premier+ EOD/Premier+ Intraday : 4 minis / 40 micros · Velocity : 5 minis / 50 micros · S2F Standard/S2F Payday : 5 minis / 50 micros','100k':'Prime : selon l\'option, 6 (Standard) ou 10 (Max) minis · Premier+ EOD/Premier+ Intraday : 6 minis / 60 micros · Velocity : 10 minis / 100 micros · S2F Standard : 10 minis / 100 micros','150k':'Prime : selon l\'option, 10 (Standard) ou 15 (Max) minis · Premier+ EOD/Premier+ Intraday : 10 minis / 100 micros · Velocity : 15 minis / 150 micros · S2F Standard : 15 minis / 150 micros'},
+      // Plan d'échelle en financé : la limite dépend du profit, pas d'un chiffre fixe.
+      'Contrats max (financé)':   {'25k':'Selon le plan d\'échelle : 1 contrat de $0 à $999 de profit, 2 jusqu\'à $1,999, 3 au-delà','50k':'Selon le plan d\'échelle : 3 jusqu\'à $1,499, 4 jusqu\'à $1,999, 5 au-delà','100k':'Selon le plan d\'échelle : 4, puis 6, 7 et 10 à partir de $3,000','150k':'Selon le plan d\'échelle : 5, puis 7, 10, 12 et 15 à partir de $4,500'},
+      'Trading des news':         {'25k':'Autorisé en général ; straddles, strangles et paris uniquement sur la news interdits ; pas de trade à moins de 2% d\'une limite de prix CME','50k':'Autorisé (sauf straddles et paris sur la news)','100k':'Autorisé (sauf straddles et paris sur la news)','150k':'Autorisé (sauf straddles et paris sur la news)'},
+      'Positions overnight':      {'25k':'Session de nuit autorisée, mais tout est fermé automatiquement à 16h45 ET (réouverture 18h00 ET) : aucune position à la clôture ni le week-end','50k':'Flat à 16h45 ET','100k':'Flat à 16h45 ET','150k':'Flat à 16h45 ET'},
+      'Automatisation et copie':  {'25k':'Bots, algorithmes et EA interdits ; copie entre SES PROPRES comptes autorisée ; VPS, proxys et hébergement de bots interdits, VPN personnel toléré','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Micro-scalping':           {'25k':'Plus de 50% des trades ET du profit doivent venir de trades tenus plus de 10 secondes ; un trade risquant 80% ou plus de la limite de perte est signalé « tout ou rien »','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Inactivité':               {'25k':'Au moins un trade de 10 secondes ou plus par semaine ; une semaine entière sans trade ferme le compte définitivement','50k':'1 trade par semaine minimum','100k':'1 trade par semaine minimum','150k':'1 trade par semaine minimum'},
+      'Comptes simultanés':       {'25k':'5 comptes financés simulés par FOYER, 1 compte live par foyer ; S2F : 5 actifs','50k':'5 financés par foyer','100k':'5 financés par foyer','150k':'5 financés par foyer'},
+      'Plateformes':              {'25k':'Tradovate et WealthCharts (sélecteur) ; NinjaTrader et TradingView via Tradovate (centre d\'aide) ; Rithmic en live, données à la charge du trader','50k':'Tradovate, WealthCharts, NinjaTrader, TradingView','100k':'Tradovate, WealthCharts, NinjaTrader, TradingView','150k':'Tradovate, WealthCharts, NinjaTrader, TradingView'},
+      // === TARIFS ===
+      // Évaluations : abonnement MENSUEL qui s'arrête à la réussite. S2F : paiement unique.
+      'Prix mensuel (évaluation)':{'25k':'Prime : $129/mois (option Standard ; Max $144) · Premier+ EOD : $119/mois (Standard ; FastPass $144) · Premier+ Intraday : $89/mois (Standard ; FastPass $114) · Velocity : $179/mois','50k':'Prime : $179/mois (Standard ; Max $204) · Premier+ EOD : $159/mois (Standard ; FastPass $194) · Premier+ Intraday : $119/mois (Standard ; FastPass $154) · Velocity : $265/mois','100k':'Prime : $279/mois (Standard ; Max $319) · Premier+ EOD : $249/mois (Standard ; FastPass $299) · Premier+ Intraday : $189/mois (Standard ; FastPass $229) · Velocity : $475/mois','150k':'Prime : $365/mois (Standard ; Max $425) · Premier+ EOD : $459/mois (Standard ; FastPass $529) · Premier+ Intraday : $259/mois (Standard ; FastPass $319) · Velocity : $675/mois'},
+      'Prix (one-time)':          {'25k':'S2F Standard : $329','50k':'S2F Standard : $649 · S2F Payday : $699.99','100k':'S2F Standard : $629 (moins cher que le 50K, tel qu\'affiché sur le site)','150k':'S2F Standard : $734'},
+      'Coût du reset':            {'25k':'Prime : $128 (Standard) / $143 (Max) · Premier+ EOD : $118 / $143 · Premier+ Intraday : $88 / $113 · Velocity : $78 · S2F : aucun reset','50k':'Prime : $178 / $203 · Premier+ EOD : $158 / $193 · Premier+ Intraday : $118 / $153 · Velocity : $124','100k':'Prime : $278 / $318 · Premier+ EOD : $248 / $298 · Premier+ Intraday : $188 / $228 · Velocity : $224','150k':'Prime : $364 / $424 · Premier+ EOD : $458 / $528 · Premier+ Intraday : $258 / $318 · Velocity : $324'},
+      'Options payantes':         {'25k':'Velocity : paiement quotidien +$29, drawdown EOD au lieu d\'intraday +$30','50k':'Velocity : quotidien +$39, EOD +$50','100k':'Velocity : quotidien +$59, EOD +$80','150k':'Velocity : quotidien +$69, EOD +$110'},
+      'Frais activation':         {'25k':'$0 — aucun frais d\'activation (le compte financé doit être activé sous 7 jours)','50k':'$0','100k':'$0','150k':'$0'},
+      'Codes promo':              {'25k':'FIRST50 : -50% sur la première évaluation Prime, Premier+ ou Velocity et $250 ajoutés au 1er payout (une fois, pas sur S2F)','50k':'FIRST50','100k':'FIRST50','150k':'FIRST50'},
+      // === PAYOUTS ===
+      'Répartition gains':        {'25k':'90% (tous programmes) ; 80/20 au Professional Stage','50k':'90%','100k':'90%','150k':'90%'},
+      'Cadence payout':           {'25k':'Prime : tous les 3 jours de trading · Premier+ EOD/Premier+ Intraday : tous les 5 jours · Velocity : tous les 3 jours, ou quotidien avec l\'option · S2F Standard : tous les 7 jours','50k':'idem 25K (S2F Payday : tous les 7 jours)','100k':'idem 25K','150k':'idem 25K'},
+      'Plafond par cycle':        {'25k':'Prime : $1,000 au 1er payout, puis $1,500 · Premier+ EOD/Premier+ Intraday : 50% du profit, jusqu\'à $1,000 · Velocity : $750 ($600 en quotidien) · S2F Standard : $1,000','50k':'Prime : $2,000 puis $2,500 · Premier+ EOD/Premier+ Intraday : 50%, jusqu\'à $2,000 · Velocity : $1,250 ($1,000) · S2F Standard : $2,000, $2,500 au 4e · S2F Payday : $1,000 aux deux premiers, $1,250 ensuite','100k':'Prime : $3,000 puis $3,500 · Premier+ EOD/Premier+ Intraday : 50%, jusqu\'à $2,500 · Velocity : $2,250 ($1,500) · S2F Standard : $2,500, $3,000 au 4e','150k':'Prime : $3,500 puis $4,000 · Premier+ EOD/Premier+ Intraday : 50%, jusqu\'à $3,000 · Velocity : $3,250 ($2,500) · S2F Standard : $3,000, $3,500 au 4e'},
+      'Payout minimum':           {'25k':'Non publié pour les programmes publics','50k':'Non publié','100k':'Non publié','150k':'Non publié'},
+      'Passage en live':          {'25k':'Professional Stage après 3 payouts approuvés ou $10,000 de payouts simulés, après revue de risque (split 80/20, tous les comptes simulés fermés) ; live sur Rithmic après $5,000 de payouts au Professional Stage','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+      'Délai de traitement':      {'25k':'Via Rise : demande avant 17h ET un jour ouvré revue le jour même, paiement sous 1 à 3 jours ouvrés','50k':'1 à 3 jours ouvrés','100k':'1 à 3 jours ouvrés','150k':'1 à 3 jours ouvrés'},
+      'Programmes sur invitation':{'25k':'Non intégrés ici : Labs (Sniper, Choice, S2F Accelerate), Prestige ; Base n\'est plus proposé au sélecteur','50k':'idem 25K','100k':'idem 25K','150k':'idem 25K'},
+    }
+  },
 }
 
 export const FIRM_COLORS = ['#2d6fff','#1db87a','#e8504a','#fac775','#a78bfa','#f472b6','#34d399','#fb923c']
@@ -1504,6 +1643,8 @@ export const FIRM_SUGGESTIONS = [
   'FuturesELites',
   'Alpha Futures',
   'FundedNext Futures',
+  'TradeDay',
+  'Funded Futures Family',
 ]
 
 // Couleurs associées à chaque firm suggérée (utilisées pour le default logo si pas de SVG custom)
@@ -1520,6 +1661,8 @@ export const FIRM_SUGGESTION_COLORS = {
   'FuturesELites':          '#f472b6',
   'Alpha Futures':          '#0a3a2a',
   'FundedNext Futures':     '#00a99d',
+  'TradeDay':               '#2563eb',
+  'Funded Futures Family':  '#0f766e',
 }
 export const STATUS_COLORS = { 'Financé': '#1db87a', 'Challenge': '#fac775', 'Échoué': '#e8504a' }
 
@@ -1659,6 +1802,10 @@ const EOD_TRAILING_FIRMS = new Set([
   'Funded Futures Network', // EOD
   'FuturesELites',          // EOD
   'FundedNext Futures',     // MLL trailing EOD, verrouillé au solde initial + $100
+  'TradeDay',               // trailing (intraday ou EOD selon le programme) qui S'ARRÊTE au
+                            // solde de départ : c'est la mécanique « eod » de computeDdFloor
+                            // (verrou au solde initial). La pure « trailing » ne verrouille pas.
+  'Funded Futures Family',  // Prime, Premier+ EOD et S2F en EOD trailing ; Velocity en intraday
   'Alpha Futures',          // MLL EOD trailing, lock au solde initial — les trois
                             // programmes (Premium, Zero, Advanced) sont marqués
                             // ddType:'EOD' dans futuresComparison.js. Sans cette

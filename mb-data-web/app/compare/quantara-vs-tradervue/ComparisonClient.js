@@ -2,7 +2,7 @@
 import ComparisonPage from '../../../components/ComparisonPage'
 
 const ROWS = [
-  { feature: 'PropFirm rules pre-filled', quantara: '✅ 12 futures firms', competitor: '❌ No', quantaraWins: true },
+  { feature: 'PropFirm rules pre-filled', quantara: '✅ 14 futures firms', competitor: '❌ No', quantaraWins: true },
   { feature: 'Trailing drawdown tracking', quantara: '✅ EOD + Intraday', competitor: '❌ No', quantaraWins: true },
   { feature: 'Consistency rule audit', quantara: '✅ Real-time', competitor: '❌ No', quantaraWins: true },
   { feature: 'Payout tracking + profit split', quantara: '✅ Automatic', competitor: '❌ No', quantaraWins: true },
