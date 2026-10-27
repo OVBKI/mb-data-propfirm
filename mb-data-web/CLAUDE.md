@@ -725,6 +725,37 @@ duplication, les options, l'identité des références, les presets, l'aller-ret
 d'import/export et la réparation d'une disposition abîmée.
 
 
+## Ventes de formation — /admin/formations (2026-10)
+
+Suivi des ventes de formation de l'équipe, dans le panneau admin (entrée
+« Formations » de la barre latérale).
+
+| Fichier | Rôle |
+|---|---|
+| `lib/formationSales.js` | Calculs PURS : échéancier, reste à payer, prochain paiement, retard, totaux, calendrier. Testé (`formationSales.test.js`) |
+| `app/api/admin/formations/route.js` | GET / POST / PUT / PATCH (une échéance payée ou non) / DELETE, `verifyAdmin` + service role |
+| `app/admin/formations/page.js` | Tuiles de synthèse, tableau, échéancier dépliable, calendrier mensuel, modale de saisie |
+
+**SQL à jouer sur Supabase** (fin de `supabase-schema.sql`) : tables
+`formation_sales` et `formation_installments`, RLS activée SANS policy. Ce sont des
+données clients ; seule la route admin (service role) y accède. Sans ces tables, la
+page affiche le message « recolle supabase-schema.sql ».
+
+Le modèle : une vente porte un ÉCHÉANCIER, une ligne par paiement attendu (date,
+montant, `paid_at`). Tout le reste en découle. Quatre règles :
+- **Montants en centimes** dans les calculs : 1 000 € en 3 fois donne
+  333,33 + 333,33 + 333,34, le reste va sur la dernière échéance.
+- **L'échéancier doit totaliser le prix au centime près** : vérifié dans la page ET
+  dans la route (même fonction `saleError`).
+- **Les frais divers sont des coûts du vendeur** (commission, frais bancaires,
+  affiliation) : ils se retranchent du net, ils ne s'ajoutent pas à ce que doit le
+  client.
+- **Recalculer l'échéancier ne touche jamais un paiement reçu** : changer le prix ou
+  le nombre de paiements ne régénère que les échéances non payées.
+
+Une échéance due AUJOURD'HUI n'est pas en retard ; elle le devient le lendemain
+(date locale, pas UTC). Les montants sont en euros.
+
 ## TradeDay et Funded Futures Family — 2026-10
 
 Deux firmes futures ajoutées (le catalogue passe à **14**), règles vérifiées en

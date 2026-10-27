@@ -1079,3 +1079,45 @@ create index if not exists journal_entries_user_month_idx
 --   drop table if exists tradovate_credentials;
 --   alter table accounts drop column if exists tradovate_account_id;
 -- ============================================================================
+
+
+-- ============================================================================
+-- VENTES DE FORMATION (/admin/formations) — 2026-10
+-- ----------------------------------------------------------------------------
+-- Suivi des ventes de formation de l'équipe : client, prix vendu, mode de
+-- paiement, échéancier, frais divers. Calculs dans lib/formationSales.js.
+--
+-- RLS activée SANS policy : ni anon ni authenticated n'y ont accès. Seule la
+-- route /api/admin/formations (service role, verifyAdmin) lit et écrit. Ce sont
+-- des données clients (noms, e-mails, montants) : elles ne doivent jamais être
+-- lisibles depuis le navigateur avec la clé anon.
+-- ============================================================================
+create table if not exists formation_sales (
+  id uuid default gen_random_uuid() primary key,
+  client_name text not null check (length(trim(client_name)) > 0),
+  client_email text,
+  formation text,
+  sale_date date not null default current_date,
+  price numeric(12,2) not null check (price > 0),
+  payment_mode text not null default 'once' check (payment_mode in ('once', 'installments')),
+  -- Frais divers : [{ "label": "Commission Stripe", "amount": 36.50 }, …]
+  fees jsonb not null default '[]'::jsonb check (jsonb_typeof(fees) = 'array'),
+  note text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table formation_sales enable row level security;
+create index if not exists formation_sales_date_idx on formation_sales(sale_date desc);
+
+-- Une ligne par paiement attendu. paid_at null = pas encore payé.
+create table if not exists formation_installments (
+  id uuid default gen_random_uuid() primary key,
+  sale_id uuid not null references formation_sales(id) on delete cascade,
+  due_date date not null,
+  amount numeric(12,2) not null check (amount > 0),
+  paid_at date,
+  created_at timestamptz default now()
+);
+alter table formation_installments enable row level security;
+create index if not exists formation_installments_sale_idx on formation_installments(sale_id);
+create index if not exists formation_installments_due_idx on formation_installments(due_date);
