@@ -391,6 +391,7 @@ grant execute on function public.username_available(text)         to anon, authe
 --     auth.jwt() ->> 'email' in (
 --       'bakkali-omar@hotmail.com',
 --       'omar.mbtrading@gmail.com',
+--       'mb.trading63@gmail.com',
 --       'admin@quantara.tech'
 --     )
 --   );
@@ -401,6 +402,7 @@ grant execute on function public.username_available(text)         to anon, authe
 --     auth.jwt() ->> 'email' in (
 --       'bakkali-omar@hotmail.com',
 --       'omar.mbtrading@gmail.com',
+--       'mb.trading63@gmail.com',
 --       'admin@quantara.tech'
 --     )
 --   );

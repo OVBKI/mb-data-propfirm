@@ -19,6 +19,7 @@
 export const ADMIN_EMAILS = [
   'bakkali-omar@hotmail.com',
   'omar.mbtrading@gmail.com',
+  'mb.trading63@gmail.com',
   'admin@quantara.tech',
 ]
 
