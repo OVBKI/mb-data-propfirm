@@ -38,10 +38,10 @@ async function guard(request) {
 
 // Une table absente (SQL pas encore joué sur Supabase) donne un message utile
 // plutôt qu'un code PostgREST incompréhensible.
+const isMissingTable = (error) => error?.code === '42P01' || error?.code === 'PGRST205' || /does not exist|schema cache/i.test(error?.message || '')
 function dbError(error) {
-  const missing = error?.code === '42P01' || error?.code === 'PGRST205' || /does not exist|schema cache/i.test(error?.message || '')
   return json({
-    error: missing
+    error: isMissingTable(error)
       ? 'Les tables formation_sales et formation_installments n\'existent pas encore : recolle supabase-schema.sql dans l\'éditeur SQL de Supabase.'
       : error?.message || 'Erreur base de données',
   }, 500)
@@ -89,7 +89,11 @@ export async function GET(request) {
   if (sales.error) return dbError(sales.error)
   const inst = await fetchAll(() => admin.from('formation_installments').select('id, sale_id, due_date, amount, paid_at').order('due_date').order('id'))
   if (inst.error) return dbError(inst.error)
-  return json({ sales: sales.data, installments: inst.data })
+  // Les dépenses sont arrivées après les ventes : si leur table manque encore, les
+  // ventes s'affichent quand même et la page signale le SQL à coller.
+  const exp = await fetchAll(() => admin.from('formation_expenses').select('*').order('expense_date', { ascending: false }).order('id'))
+  if (exp.error && !isMissingTable(exp.error)) return dbError(exp.error)
+  return json({ sales: sales.data, installments: inst.data, expenses: exp.data || [], expensesMissing: !!exp.error })
 }
 
 export async function POST(request) {

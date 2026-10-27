@@ -1,6 +1,7 @@
 'use client'
 // Admin — ventes de formation : qui a acheté, à quel prix, comment il paie, ce
-// qu'il reste à encaisser, les frais, et un calendrier qui résume tout.
+// qu'il reste à encaisser, les frais, les dépenses de l'activité (publicité,
+// outils…) et un calendrier qui résume tout.
 //
 // Données : /api/admin/formations (service role). Calculs : lib/formationSales.js,
 // partagés avec la route qui revalide tout avant d'écrire.
@@ -12,6 +13,7 @@ import Skeleton from '../../../components/Skeleton'
 import {
   buildSchedule, feesTotal, saleError, saleSummary, portfolioTotals, monthGrid,
   calendarItems, monthTotals, todayLocalISO, toCents, fromCents, FREQUENCIES,
+  EXPENSE_CATEGORIES, MAX_REPEAT, categoryLabel, expenseError, expensesByCategory, expensesTotal,
 } from '../../../lib/formationSales'
 
 async function adminFetch(url, options = {}) {
@@ -47,6 +49,7 @@ const CHIP = {
   due:     { fg: 'var(--blue-light)', bg: 'var(--blue-bg)', label: 'à venir' },
   overdue: { fg: 'var(--red)', bg: 'var(--red-bg)', label: 'en retard' },
   sale:    { fg: 'var(--amber)', bg: 'var(--amber-bg)', label: 'vente' },
+  expense: { fg: 'var(--violet)', bg: 'var(--violet-bg)', label: 'dépense' },
 }
 const FILTERS = [
   { id: 'all', label: 'Toutes' },
@@ -68,6 +71,10 @@ const th = {
 const td = { padding: '12px 9px', borderBottom: `1px solid ${C.border}`, fontSize: 13, verticalAlign: 'top' }
 const num = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
 const srOnly = { position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }
+
+function emptyExpense() {
+  return { id: null, expense_date: todayLocalISO(), category: 'ads', label: '', amount: '', note: '', repeat: 1 }
+}
 
 function emptyForm() {
   const today = todayLocalISO()
@@ -102,6 +109,10 @@ export default function AdminFormationsPage() {
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [busy, setBusy] = useState(null)
+  const [expenses, setExpenses] = useState([])
+  const [expensesMissing, setExpensesMissing] = useState(false)
+  const [expCat, setExpCat] = useState('all')
+  const [expForm, setExpForm] = useState(null)
   const [cursor, setCursor] = useState(() => {
     const d = new Date()
     return { y: d.getFullYear(), m: d.getMonth() + 1 }
@@ -113,6 +124,8 @@ export default function AdminFormationsPage() {
       const json = await adminFetch('/api/admin/formations')
       setSales(json.sales || [])
       setInstallments(json.installments || [])
+      setExpenses(json.expenses || [])
+      setExpensesMissing(!!json.expensesMissing)
     } catch (err) {
       setError(err.message)
     }
@@ -128,7 +141,9 @@ export default function AdminFormationsPage() {
     return m
   }, [installments])
   const rows = useMemo(() => sales.map((s) => ({ sale: s, sum: saleSummary(s, bySale[s.id] || [], today) })), [sales, bySale, today])
-  const totals = useMemo(() => portfolioTotals(sales, bySale, today), [sales, bySale, today])
+  const totals = useMemo(() => portfolioTotals(sales, bySale, today, expenses), [sales, bySale, today, expenses])
+  const expByCat = useMemo(() => expensesByCategory(expenses), [expenses])
+  const shownExpenses = expCat === 'all' ? expenses : expenses.filter((e) => e.category === expCat)
   const visible = rows.filter(({ sale, sum }) => {
     if (filter !== 'all' && sum.status !== filter) return false
     const q = query.trim().toLowerCase()
@@ -136,7 +151,7 @@ export default function AdminFormationsPage() {
     return [sale.client_name, sale.client_email, sale.formation].some((v) => String(v || '').toLowerCase().includes(q))
   })
 
-  const items = useMemo(() => calendarItems(sales, bySale, today), [sales, bySale, today])
+  const items = useMemo(() => calendarItems(sales, bySale, today, expenses), [sales, bySale, today, expenses])
   const yyyymm = `${cursor.y}-${String(cursor.m).padStart(2, '0')}`
   const month = monthTotals(items, yyyymm)
   const grid = monthGrid(cursor.y, cursor.m)
@@ -245,13 +260,47 @@ export default function AdminFormationsPage() {
     setSaving(false)
   }
 
+  function openExpense(e) {
+    setExpForm(e
+      ? { id: e.id, expense_date: e.expense_date, category: e.category, label: e.label || '', amount: String(e.amount), note: e.note || '', repeat: 1 }
+      : emptyExpense())
+  }
+  const expFormError = expForm ? expenseError(expForm) : null
+
+  async function saveExpense() {
+    if (expFormError) return
+    setSaving(true)
+    try {
+      await adminFetch('/api/admin/formations/expenses', {
+        method: expForm.id ? 'PUT' : 'POST',
+        body: JSON.stringify({ ...expForm, amount: Number(expForm.amount), repeat: Number(expForm.repeat) }),
+      })
+      setExpForm(null)
+      load()
+    } catch (err) {
+      alert('Erreur : ' + err.message)
+    }
+    setSaving(false)
+  }
+
+  async function removeExpense(e) {
+    if (!confirm(`Supprimer la dépense « ${e.label} » (${money(e.amount)}) ?`)) return
+    try {
+      await adminFetch(`/api/admin/formations/expenses?id=${e.id}`, { method: 'DELETE' })
+      load()
+    } catch (err) {
+      alert('Erreur : ' + err.message)
+    }
+  }
+
   const tiles = [
     { label: 'Vendu', value: money(totals.sold), hint: `${totals.count} vente${totals.count > 1 ? 's' : ''}` },
     { label: 'Encaissé', value: money(totals.collected), hint: `${totals.complete} payée${totals.complete > 1 ? 's' : ''} en totalité`, tone: 'var(--green)' },
     { label: 'Reste à encaisser', value: money(totals.remaining), hint: 'échéances non payées' },
     { label: 'En retard', value: money(totals.overdue), hint: `${totals.late} client${totals.late > 1 ? 's' : ''} concerné${totals.late > 1 ? 's' : ''}`, tone: totals.overdue > 0 ? 'var(--red)' : undefined },
-    { label: 'Frais divers', value: money(totals.fees), hint: 'commissions, frais, support' },
-    { label: 'Net', value: money(totals.net), hint: 'vendu moins les frais' },
+    { label: 'Frais des ventes', value: money(totals.fees), hint: 'saisis sur les ventes' },
+    { label: 'Dépenses', value: money(totals.expenses), hint: 'publicité, outils…' },
+    { label: 'Bénéfice', value: money(totals.profit), hint: 'encaissé − frais − dépenses', tone: totals.profit < 0 ? 'var(--red)' : 'var(--green)' },
   ]
 
   return (
@@ -259,7 +308,10 @@ export default function AdminFormationsPage() {
       <div style={{ fontSize: 11, color: 'var(--red)', letterSpacing: '0.16em', marginBottom: 10, textTransform: 'uppercase', fontWeight: 600 }}>Admin</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 8 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>Ventes de formation</h1>
-        <button onClick={openNew} style={{ ...btnPrimary, minHeight: 36 }}>+ Nouvelle vente</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => openExpense(null)} style={{ ...btnGhost, minHeight: 36 }}>+ Dépense</button>
+          <button onClick={openNew} style={{ ...btnPrimary, minHeight: 36 }}>+ Nouvelle vente</button>
+        </div>
       </div>
       <p style={{ fontSize: 13, color: C.text3, marginBottom: 22, maxWidth: 680 }}>
         Chaque vente a son échéancier : les paiements attendus, leur date et leur montant.
@@ -273,7 +325,7 @@ export default function AdminFormationsPage() {
       )}
 
       {/* Résumé */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(138px, 1fr))', gap: 10, marginBottom: 24 }}>
         {tiles.map((t) => (
           <div key={t.label} style={{ ...cardStyle, padding: '14px 16px' }}>
             <div style={{ ...labelStyle, marginBottom: 8 }}>{t.label}</div>
@@ -417,6 +469,73 @@ export default function AdminFormationsPage() {
         )}
       </div>
 
+      {/* Dépenses générales */}
+      <div style={{ ...cardStyle, padding: 0, marginBottom: 28 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', padding: '14px 16px', borderBottom: `1px solid ${C.border}` }}>
+          <div>
+            <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Dépenses</h2>
+            <div style={{ fontSize: 12, color: C.text3, marginTop: 2 }}>Ce que l&apos;activité coûte sans être liée à une vente : publicité, outils, prestataires…</div>
+          </div>
+          <button onClick={() => openExpense(null)} style={{ ...smallBtn, color: C.text, fontWeight: 600 }}>+ Ajouter une dépense</button>
+        </div>
+        {expensesMissing ? (
+          <div style={{ padding: 16, fontSize: 13, color: C.red }}>
+            La table des dépenses n&apos;existe pas encore : colle le bloc SQL « formation_expenses » dans l&apos;éditeur SQL de Supabase.
+          </div>
+        ) : loading ? (
+          <div style={{ padding: 16 }}><Skeleton.Table rows={3} /></div>
+        ) : expenses.length === 0 ? (
+          <div style={{ padding: '32px 20px', textAlign: 'center', color: C.text3, fontSize: 13 }}>
+            Aucune dépense enregistrée. Ajoute ta publicité, tes abonnements ou tes prestataires pour voir ton vrai bénéfice.
+          </div>
+        ) : (
+          <>
+            <div role="group" aria-label="Filtrer les dépenses par catégorie" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
+              {[{ value: 'all', label: 'Toutes', total: expensesTotal(expenses) }, ...expByCat].map((c) => (
+                <button key={c.value} onClick={() => setExpCat(c.value)} aria-pressed={expCat === c.value} style={{
+                  ...smallBtn,
+                  color: expCat === c.value ? C.text : C.text2,
+                  fontWeight: expCat === c.value ? 600 : 500,
+                  background: expCat === c.value ? 'var(--tint2)' : 'var(--tint1)',
+                }}>{c.label} · <span style={num}>{money(c.total)}</span></button>
+              ))}
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 620 }}>
+                <thead>
+                  <tr>
+                    <th style={th}>Date</th>
+                    <th style={th}>Dépense</th>
+                    <th style={th}>Catégorie</th>
+                    <th style={th}>Montant</th>
+                    <th style={{ ...th, textAlign: 'right' }}><span style={srOnly}>Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shownExpenses.map((e) => (
+                    <tr key={e.id}>
+                      <td style={{ ...td, ...num }}>{fmtDay(e.expense_date)}</td>
+                      <td style={{ ...td, overflowWrap: 'anywhere' }}>
+                        <div style={{ fontWeight: 600 }}>{e.label}</div>
+                        {e.note && <div style={{ fontSize: 11.5, color: C.text3, marginTop: 2 }}>{e.note}</div>}
+                      </td>
+                      <td style={td}><span style={pill(CHIP.expense)}>{categoryLabel(e.category)}</span></td>
+                      <td style={{ ...td, ...num, fontWeight: 600 }}>{money(e.amount)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: 6 }}>
+                          <button onClick={() => openExpense(e)} aria-label={`Modifier la dépense ${e.label}`} title="Modifier" style={iconBtn}>✎</button>
+                          <button onClick={() => removeExpense(e)} aria-label={`Supprimer la dépense ${e.label}`} title="Supprimer" style={{ ...iconBtn, color: C.red }}>✕</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Calendrier */}
       <div style={{ ...cardStyle, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -433,6 +552,8 @@ export default function AdminFormationsPage() {
             <span>Attendu <strong style={{ ...num, color: C.text }}>{money(month.expected)}</strong></span>
             <span>Encaissé <strong style={{ ...num, color: 'var(--green)' }}>{money(month.collected)}</strong></span>
             <span>En retard <strong style={{ ...num, color: month.overdue > 0 ? C.red : C.text }}>{money(month.overdue)}</strong></span>
+            <span>Dépenses <strong style={{ ...num, color: 'var(--violet)' }}>{money(month.expenses)}</strong></span>
+            <span title="Encaissé − frais des ventes du mois − dépenses du mois">Résultat <strong style={{ ...num, color: month.result < 0 ? C.red : C.text }}>{money(month.result)}</strong></span>
           </div>
         </div>
 
@@ -459,6 +580,19 @@ export default function AdminFormationsPage() {
                     </div>
                     <div style={{ display: 'grid', gap: 3 }}>
                       {list.map((it, k) => {
+                        if (it.kind === 'expense') {
+                          return (
+                            <button key={k} onClick={() => openExpense(expenses.find((e) => e.id === it.id))}
+                              title={`Dépense · ${categoryLabel(it.category)} · ${it.label} · ${money(it.amount)}`}
+                              style={{
+                                display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+                                fontFamily: 'inherit', fontSize: 10.5, lineHeight: 1.3, padding: '3px 5px', borderRadius: 5,
+                                color: CHIP.expense.fg, background: CHIP.expense.bg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              }}>
+                              − {it.label} · <span style={num}>{money(it.amount)}</span>
+                            </button>
+                          )
+                        }
                         const s = CHIP[it.kind === 'sale' ? 'sale' : it.status]
                         return (
                           <button key={k} onClick={() => focusSale(it.saleId)}
@@ -480,7 +614,7 @@ export default function AdminFormationsPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12, fontSize: 11.5, color: C.text3 }}>
-          {[['sale', '★ Vente'], ['paid', 'Échéance payée'], ['due', 'Échéance à venir'], ['overdue', 'Échéance en retard']].map(([k, l]) => (
+          {[['sale', '★ Vente'], ['paid', 'Échéance payée'], ['due', 'Échéance à venir'], ['overdue', 'Échéance en retard'], ['expense', '− Dépense']].map(([k, l]) => (
             <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: 3, background: CHIP[k].bg, border: `1px solid ${CHIP[k].fg}` }} />{l}
             </span>
@@ -617,6 +751,70 @@ export default function AdminFormationsPage() {
               <button onClick={() => setForm(null)} disabled={saving} style={btnGhost}>Annuler</button>
               <button onClick={save} disabled={saving || !!formError} style={{ ...btnPrimary, opacity: formError ? 0.5 : 1, cursor: formError ? 'not-allowed' : 'pointer' }}>
                 {saving ? 'Enregistrement…' : form.id ? 'Enregistrer' : 'Créer la vente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale dépense */}
+      {expForm && (
+        <div onClick={() => !saving && setExpForm(null)} style={{
+          position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+        }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="expense-modal-title" onClick={(e) => e.stopPropagation()} style={{
+            ...panelStyle, padding: 24, width: '100%', maxWidth: 520, maxHeight: '92vh', overflowY: 'auto',
+          }}>
+            <h3 id="expense-modal-title" style={{ fontSize: 18, fontWeight: 700, margin: '0 0 18px' }}>
+              {expForm.id ? 'Modifier la dépense' : 'Nouvelle dépense'}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="e-label" style={labelStyle}>Dépense *</label>
+                <input id="e-label" value={expForm.label} onChange={(e) => setExpForm((f) => ({ ...f, label: e.target.value }))}
+                  placeholder="Ex : Meta Ads campagne octobre" style={inputStyle} autoFocus />
+              </div>
+              <div>
+                <label htmlFor="e-category" style={labelStyle}>Catégorie *</label>
+                <select id="e-category" value={expForm.category} onChange={(e) => setExpForm((f) => ({ ...f, category: e.target.value }))} style={inputStyle}>
+                  {EXPENSE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="e-amount" style={labelStyle}>Montant (€) *</label>
+                <input id="e-amount" type="number" min="0" step="0.01" inputMode="decimal" value={expForm.amount}
+                  onChange={(e) => setExpForm((f) => ({ ...f, amount: e.target.value }))} style={{ ...inputStyle, ...num }} />
+              </div>
+              <div>
+                <label htmlFor="e-date" style={labelStyle}>Date *</label>
+                <input id="e-date" type="date" value={expForm.expense_date} onChange={(e) => setExpForm((f) => ({ ...f, expense_date: e.target.value }))} style={inputStyle} />
+              </div>
+              {!expForm.id && (
+                <div>
+                  <label htmlFor="e-repeat" style={labelStyle}>Répéter</label>
+                  <select id="e-repeat" value={expForm.repeat} onChange={(e) => setExpForm((f) => ({ ...f, repeat: Number(e.target.value) }))} style={inputStyle}>
+                    <option value={1}>Une seule fois</option>
+                    {[2, 3, 6, 12, MAX_REPEAT].map((n) => <option key={n} value={n}>Chaque mois pendant {n} mois</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
+            {!expForm.id && expForm.repeat > 1 && toCents(expForm.amount) > 0 && (
+              <p style={{ fontSize: 12, color: C.text3, margin: '0 0 12px' }}>
+                {expForm.repeat} lignes de {money(expForm.amount)}, soit {money(fromCents(toCents(expForm.amount) * expForm.repeat))} au total. Chaque mois se modifie ou se supprime ensuite séparément.
+              </p>
+            )}
+            <label htmlFor="e-note" style={labelStyle}>Note</label>
+            <textarea id="e-note" rows={2} value={expForm.note} onChange={(e) => setExpForm((f) => ({ ...f, note: e.target.value }))}
+              style={{ ...inputStyle, resize: 'vertical', marginBottom: 14 }} />
+            {expFormError && (expForm.label || expForm.amount) && (
+              <div role="alert" style={{ fontSize: 12.5, color: C.red, marginBottom: 12 }}>{expFormError}</div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setExpForm(null)} disabled={saving} style={btnGhost}>Annuler</button>
+              <button onClick={saveExpense} disabled={saving || !!expFormError} style={{ ...btnPrimary, opacity: expFormError ? 0.5 : 1, cursor: expFormError ? 'not-allowed' : 'pointer' }}>
+                {saving ? 'Enregistrement…' : expForm.id ? 'Enregistrer' : 'Ajouter la dépense'}
               </button>
             </div>
           </div>

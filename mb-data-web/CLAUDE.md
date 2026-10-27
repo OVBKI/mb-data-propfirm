@@ -756,6 +756,24 @@ montant, `paid_at`). Tout le reste en découle. Quatre règles :
 Une échéance due AUJOURD'HUI n'est pas en retard ; elle le devient le lendemain
 (date locale, pas UTC). Les montants sont en euros.
 
+### Dépenses générales (ajout 2026-10)
+Table `formation_expenses` (même régime : RLS sans policy) et route
+`app/api/admin/formations/expenses/route.js` (POST / PUT / DELETE ; la lecture passe
+par le GET des ventes, qui renvoie `expensesMissing: true` si la table n'existe pas
+encore, sans bloquer les ventes).
+
+- **Deux sortes de frais, à ne pas confondre** : les *frais divers* d'une vente
+  (commission sur CE paiement) restent sur la vente ; les *dépenses* (publicité,
+  outils, prestataires) n'appartiennent à aucune vente.
+- **Bénéfice = encaissé − frais des ventes − dépenses.** Du réellement encaissé,
+  pas du vendu : un client qui doit encore 800 € ne finance pas la pub de ce mois.
+- **Résultat du mois** (calendrier) : encaissé du mois − frais des ventes vendues ce
+  mois − dépenses du mois.
+- **« Répéter chaque mois »** crée une ligne par mois (un seul INSERT, tout ou rien) ;
+  chaque mois se modifie ou se supprime ensuite seul.
+- Les catégories vivent dans `EXPENSE_CATEGORIES` (pas de contrainte SQL) : en
+  ajouter une ne demande aucun SQL.
+
 ## TradeDay et Funded Futures Family — 2026-10
 
 Deux firmes futures ajoutées (le catalogue passe à **14**), règles vérifiées en

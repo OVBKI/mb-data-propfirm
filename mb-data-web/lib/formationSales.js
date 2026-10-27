@@ -146,9 +146,11 @@ export function saleSummary(sale, installments, today = todayLocalISO()) {
   }
 }
 
-// Totaux du haut de page, sur toutes les ventes.
-export function portfolioTotals(sales, installmentsBySale, today = todayLocalISO()) {
-  const sum = { sold: 0, collected: 0, remaining: 0, overdue: 0, fees: 0, net: 0, count: 0, complete: 0, late: 0 }
+// Totaux du haut de page, sur toutes les ventes et toutes les dépenses.
+// Bénéfice = ce qui est réellement encaissé, moins les frais des ventes, moins les
+// dépenses générales : ce qui reste en poche aujourd'hui, pas une promesse.
+export function portfolioTotals(sales, installmentsBySale, today = todayLocalISO(), expenses = []) {
+  const sum = { sold: 0, collected: 0, remaining: 0, overdue: 0, fees: 0, net: 0, count: 0, complete: 0, late: 0, expenses: 0, profit: 0 }
   for (const s of sales || []) {
     const r = saleSummary(s, installmentsBySale[s.id] || [], today)
     sum.sold += toCents(r.total)
@@ -161,8 +163,56 @@ export function portfolioTotals(sales, installmentsBySale, today = todayLocalISO
     if (r.status === 'complete') sum.complete += 1
     if (r.status === 'late') sum.late += 1
   }
-  for (const k of ['sold', 'collected', 'remaining', 'overdue', 'fees', 'net']) sum[k] = fromCents(sum[k])
+  sum.expenses = toCents(expensesTotal(expenses))
+  sum.profit = sum.collected - sum.fees - sum.expenses
+  for (const k of ['sold', 'collected', 'remaining', 'overdue', 'fees', 'net', 'expenses', 'profit']) sum[k] = fromCents(sum[k])
   return sum
+}
+
+// ---------------------------------------------------------------------------
+// DÉPENSES GÉNÉRALES — ce que l'activité coûte sans être rattaché à une vente :
+// publicité, outils, prestataires… Les « frais divers » d'une vente restent sur la
+// vente ; une campagne Meta qui amène dix clients n'appartient à aucun d'eux.
+// ---------------------------------------------------------------------------
+export const EXPENSE_CATEGORIES = [
+  { value: 'ads', label: 'Publicité' },
+  { value: 'tools', label: 'Outils et abonnements' },
+  { value: 'contractor', label: 'Prestataires' },
+  { value: 'content', label: 'Contenu et matériel' },
+  { value: 'bank', label: 'Frais bancaires' },
+  { value: 'other', label: 'Autre' },
+]
+export const categoryLabel = (v) => (EXPENSE_CATEGORIES.find((c) => c.value === v) || EXPENSE_CATEGORIES.at(-1)).label
+
+export const MAX_REPEAT = 24
+
+export function expensesTotal(expenses) {
+  return fromCents((expenses || []).reduce((s, e) => s + toCents(e?.amount), 0))
+}
+
+// Raison pour laquelle une dépense ne peut pas être enregistrée, ou null.
+export function expenseError({ label, amount, expense_date, category, repeat = 1 }) {
+  if (!String(label || '').trim()) return 'Donne un nom à la dépense (ex : Meta Ads octobre).'
+  if (!(toCents(amount) > 0)) return 'Le montant doit être supérieur à 0.'
+  if (!isISODate(expense_date)) return 'La date est invalide.'
+  if (!EXPENSE_CATEGORIES.some((c) => c.value === category)) return 'Choisis une catégorie.'
+  const r = Number(repeat)
+  if (!Number.isInteger(r) || r < 1 || r > MAX_REPEAT) return `La répétition va de 1 à ${MAX_REPEAT} mois.`
+  return null
+}
+
+// Une dépense répétée chaque mois (abonnement, budget pub mensuel) devient autant
+// de lignes, une par mois : chacune se modifie ou se supprime seule ensuite.
+export function expandRepeat(expense, repeat = 1) {
+  const n = Math.max(1, Math.min(MAX_REPEAT, Math.floor(Number(repeat) || 1)))
+  return Array.from({ length: n }, (_, i) => ({ ...expense, expense_date: addMonths(expense.expense_date, i) }))
+}
+
+// Total par catégorie, dans l'ordre de la liste, catégories vides exclues.
+export function expensesByCategory(expenses) {
+  const by = {}
+  for (const e of expenses || []) by[e.category] = (by[e.category] || 0) + toCents(e.amount)
+  return EXPENSE_CATEGORIES.filter((c) => by[c.value]).map((c) => ({ ...c, total: fromCents(by[c.value]) }))
 }
 
 // Les 42 cases (6 semaines, lundi en premier) d'un mois de calendrier.
@@ -181,32 +231,39 @@ export function monthGrid(year, month /* 1-12 */) {
 //   • 'sale'        le jour de la vente
 //   • 'installment' chaque échéance, à sa date prévue, avec son état
 //                   (payée, à venir, en retard)
-export function calendarItems(sales, installmentsBySale, today = todayLocalISO()) {
+//   • 'expense'     chaque dépense générale, à sa date
+export function calendarItems(sales, installmentsBySale, today = todayLocalISO(), expenses = []) {
   const out = {}
   const push = (date, item) => { (out[date] ||= []).push(item) }
   for (const s of sales || []) {
-    push(s.sale_date, { kind: 'sale', saleId: s.id, client: s.client_name, amount: Number(s.price) || 0 })
+    push(s.sale_date, { kind: 'sale', saleId: s.id, client: s.client_name, amount: Number(s.price) || 0, fees: feesTotal(s.fees) })
     for (const it of installmentsBySale[s.id] || []) {
       const status = it.paid_at ? 'paid' : it.due_date < today ? 'overdue' : 'due'
       push(it.due_date, { kind: 'installment', saleId: s.id, id: it.id, client: s.client_name, amount: Number(it.amount) || 0, status, paid_at: it.paid_at || null })
     }
   }
+  for (const e of expenses || []) {
+    push(e.expense_date, { kind: 'expense', id: e.id, label: e.label, category: e.category, amount: Number(e.amount) || 0 })
+  }
   return out
 }
 
-// Bilan d'un mois ('YYYY-MM') : ce qui était attendu, encaissé, en retard, vendu.
+// Bilan d'un mois ('YYYY-MM') : ce qui était attendu, encaissé, en retard, vendu,
+// dépensé, et le résultat (encaissé − frais des ventes du mois − dépenses).
 export function monthTotals(items, yyyymm) {
-  const t = { expected: 0, collected: 0, overdue: 0, sold: 0 }
+  const t = { expected: 0, collected: 0, overdue: 0, sold: 0, fees: 0, expenses: 0, result: 0 }
   for (const [date, list] of Object.entries(items || {})) {
     if (!date.startsWith(yyyymm)) continue
     for (const it of list) {
       const c = toCents(it.amount)
-      if (it.kind === 'sale') { t.sold += c; continue }
+      if (it.kind === 'sale') { t.sold += c; t.fees += toCents(it.fees); continue }
+      if (it.kind === 'expense') { t.expenses += c; continue }
       t.expected += c
       if (it.status === 'paid') t.collected += c
       if (it.status === 'overdue') t.overdue += c
     }
   }
+  t.result = t.collected - t.fees - t.expenses
   for (const k of Object.keys(t)) t[k] = fromCents(t[k])
   return t
 }

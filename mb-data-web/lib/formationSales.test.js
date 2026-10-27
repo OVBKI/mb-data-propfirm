@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   addMonths, addDays, buildSchedule, feesTotal, saleError, saleSummary,
   portfolioTotals, monthGrid, calendarItems, monthTotals, isISODate, todayLocalISO,
+  expenseError, expandRepeat, expensesByCategory, expensesTotal, categoryLabel,
 } from './formationSales'
 
 describe('dates', () => {
@@ -110,7 +111,42 @@ describe('portfolioTotals', () => {
     }
     expect(portfolioTotals(sales, by, '2026-11-01')).toEqual({
       sold: 800, collected: 500, remaining: 300, overdue: 150, fees: 20, net: 780, count: 2, complete: 1, late: 1,
+      expenses: 0, profit: 480,
     })
+  })
+  it('le bénéfice retire les frais des ventes ET les dépenses de ce qui est encaissé', () => {
+    const sales = [{ id: 1, price: 1000, fees: [{ amount: 30 }] }]
+    const by = { 1: [{ due_date: '2026-10-01', amount: 1000, paid_at: '2026-10-01' }] }
+    const t = portfolioTotals(sales, by, '2026-11-01', [{ amount: 250.5 }, { amount: 99.99 }])
+    expect(t.expenses).toBe(350.49)
+    expect(t.profit).toBe(619.51)
+  })
+})
+
+describe('dépenses', () => {
+  const ok = { label: 'Meta Ads', amount: 250, expense_date: '2026-10-01', category: 'ads' }
+  it('valide une dépense cohérente et refuse le reste', () => {
+    expect(expenseError(ok)).toBeNull()
+    expect(expenseError({ ...ok, label: ' ' })).toMatch(/nom/)
+    expect(expenseError({ ...ok, amount: 0 })).toMatch(/montant/)
+    expect(expenseError({ ...ok, expense_date: '2026-13-01' })).toMatch(/date/)
+    expect(expenseError({ ...ok, category: 'casino' })).toMatch(/catégorie/)
+    expect(expenseError({ ...ok, repeat: 25 })).toMatch(/1 à 24/)
+    expect(expenseError({ ...ok, repeat: 1.5 })).toMatch(/1 à 24/)
+  })
+  it('une dépense répétée devient une ligne par mois, jour ramené en fin de mois', () => {
+    expect(expandRepeat({ ...ok, expense_date: '2026-01-31' }, 3).map((e) => e.expense_date))
+      .toEqual(['2026-01-31', '2026-02-28', '2026-03-31'])
+    expect(expandRepeat(ok, 1)).toHaveLength(1)
+  })
+  it('totaux par catégorie, dans l\'ordre de la liste, sans les catégories vides', () => {
+    const list = [{ category: 'tools', amount: 29 }, { category: 'ads', amount: 100 }, { category: 'ads', amount: 50.5 }]
+    expect(expensesByCategory(list)).toEqual([
+      { value: 'ads', label: 'Publicité', total: 150.5 },
+      { value: 'tools', label: 'Outils et abonnements', total: 29 },
+    ])
+    expect(expensesTotal(list)).toBe(179.5)
+    expect(categoryLabel('inconnue')).toBe('Autre')
   })
 })
 
@@ -131,8 +167,15 @@ describe('calendrier', () => {
     const items = calendarItems(sales, by, '2026-10-27')
     expect(items['2026-10-01'].map((i) => i.kind)).toEqual(['sale', 'installment'])
     expect(items['2026-10-20'][0].status).toBe('overdue')
-    expect(monthTotals(items, '2026-10')).toEqual({ expected: 600, collected: 300, overdue: 300, sold: 600 })
-    expect(monthTotals(items, '2026-11')).toEqual({ expected: 0, collected: 0, overdue: 0, sold: 0 })
+    expect(monthTotals(items, '2026-10')).toEqual({ expected: 600, collected: 300, overdue: 300, sold: 600, fees: 0, expenses: 0, result: 300 })
+    expect(monthTotals(items, '2026-11')).toEqual({ expected: 0, collected: 0, overdue: 0, sold: 0, fees: 0, expenses: 0, result: 0 })
+  })
+  it('le résultat du mois retire les frais des ventes du mois et ses dépenses', () => {
+    const sales = [{ id: 's', client_name: 'Jean', price: 600, sale_date: '2026-10-01', fees: [{ amount: 18 }] }]
+    const by = { s: [{ id: 1, due_date: '2026-10-01', amount: 600, paid_at: '2026-10-01' }] }
+    const items = calendarItems(sales, by, '2026-10-27', [{ id: 'e', label: 'Meta Ads', category: 'ads', amount: 120, expense_date: '2026-10-05' }])
+    expect(items['2026-10-05']).toEqual([{ kind: 'expense', id: 'e', label: 'Meta Ads', category: 'ads', amount: 120 }])
+    expect(monthTotals(items, '2026-10')).toMatchObject({ collected: 600, fees: 18, expenses: 120, result: 462 })
   })
   it('feesTotal ignore une liste absente', () => {
     expect(feesTotal(null)).toBe(0)

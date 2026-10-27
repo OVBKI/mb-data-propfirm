@@ -1123,3 +1123,21 @@ create table if not exists formation_installments (
 alter table formation_installments enable row level security;
 create index if not exists formation_installments_sale_idx on formation_installments(sale_id);
 create index if not exists formation_installments_due_idx on formation_installments(due_date);
+
+-- Dépenses générales de l'activité formation (publicité, outils, prestataires…),
+-- non rattachées à une vente. Même régime que les deux tables ci-dessus : RLS
+-- activée SANS policy, seule la route admin (service role) y accède.
+-- La catégorie est contrôlée par l'application (EXPENSE_CATEGORIES dans
+-- lib/formationSales.js) : en ajouter une ne demande pas de toucher au SQL.
+create table if not exists formation_expenses (
+  id uuid default gen_random_uuid() primary key,
+  expense_date date not null default current_date,
+  category text not null default 'other',
+  label text not null check (length(trim(label)) > 0),
+  amount numeric(12,2) not null check (amount > 0),
+  note text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table formation_expenses enable row level security;
+create index if not exists formation_expenses_date_idx on formation_expenses(expense_date desc);
