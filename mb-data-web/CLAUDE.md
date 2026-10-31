@@ -725,6 +725,24 @@ duplication, les options, l'identité des références, les presets, l'aller-ret
 d'import/export et la réparation d'une disposition abîmée.
 
 
+## Widget « Dépenses, payouts et net » (2026-10)
+
+Trois courbes sur un même axe dans la Vue d'ensemble : payouts, dépenses et leur
+différence (le net). Widget `cashflow` (`components/dashboard/widgets.js`), calculs
+purs dans `lib/cashflowChart.js` (testés). Options : période (12 mois par défaut) et
+cumulé ou mois par mois.
+
+- **Segments droits, pas de lissage** : une courbe lissée dépasse entre deux points
+  et ferait passer le net sous zéro un mois où il ne l'a jamais été.
+- **Zéro toujours dans l'axe**, tracé en pointillé quand le net passe dessous.
+- **L'axe est calculé dans la devise d'affichage** (`factor`, `unit`) : des
+  graduations rondes en euros converties en dollars donnaient « 11,7k $ ».
+- **Dessiné à sa largeur réelle** (ResizeObserver) et non étiré depuis un viewBox
+  fixe, sinon le texte des axes doublait de taille sur un widget de 4 colonnes.
+- **Placement chez les utilisateurs existants** : `ADOPTED_FROM.cashflow = 'net'`.
+  Il se pose derrière « Résultat net » avec sa visibilité, au lieu d'arriver masqué
+  au fond du tiroir comme un widget inédit.
+
 ## Ventes de formation — /admin/formations (2026-10)
 
 Suivi des ventes de formation de l'équipe, dans le panneau admin (entrée

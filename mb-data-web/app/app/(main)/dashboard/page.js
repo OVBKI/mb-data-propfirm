@@ -8,7 +8,7 @@ import { useT, useLanguage } from '../../../../components/LanguageProvider'
 import DashboardGrid from '../../../../components/dashboard/DashboardGrid'
 import AiReviewWidget from '../../../../components/dashboard/AiReviewWidget'
 import {
-  useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, NetWidget, EquityWidget, HealthWidget,
+  useOverviewData, InsightWidget, PayoutsWidget, SpentWidget, NetWidget, CashflowWidget, EquityWidget, HealthWidget,
   YearlyWidget, AccountCurvesWidget, FirmCostWidget,
 } from '../../../../components/dashboard/widgets'
 import { useDashboardLayout } from '../../../../lib/hooks/useDashboardLayout'
@@ -415,6 +415,9 @@ export default function DashboardPage() {
                 return <SpentWidget instance={w} series={overview.series} money={money} totalSpentEUR={totalSpentEUR} firms={firms} accts={accts} S={S} />
               case 'net':
                 return <NetWidget instance={w} series={overview.series} totalPayoutsEUR2={totalPayoutsEUR2} totalSpentEUR={totalSpentEUR} fmtMoney={fmtMoney} fmtMoneyNet={fmtMoneyNet} S={S} />
+              case 'cashflow':
+                return <CashflowWidget instance={w} series={overview.series} fmtMoney={fmtMoney} fmtMoneyNet={fmtMoneyNet}
+                  factor={currency === 'eur' ? 1 : 1 / rates.USD} unit={currency === 'eur' ? '€' : '$'} S={S} />
               case 'equity':
                 return <EquityWidget instance={w} series={overview.series} S={S} />
               case 'health':

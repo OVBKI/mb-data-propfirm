@@ -10,11 +10,12 @@
 // SVG résout `var(--…)` alors qu'un canvas ne le ferait pas — donc pas de
 // reconstruction à chaque bascule de thème.
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT, useLanguage } from '../LanguageProvider'
 import { drawdownMargin, maxDrawdownFor } from '../../lib/drawdownHealth'
 import EquityOverlayChart from '../EquityOverlayChart'
 import { firmEconomics } from '../../lib/firmEconomics'
+import { cashflowLines, niceScale, labelIndexes } from '../../lib/cashflowChart'
 
 // Nombre de mois couverts par chaque valeur de l'option « période ». `all` est
 // borné : au-delà, l'axe devient illisible et la requête ne rapporte plus rien.
@@ -365,6 +366,158 @@ export function NetWidget({ instance, series, totalPayoutsEUR2, totalSpentEUR, f
               <strong style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fmtMoney(spent)}</strong>
             </span>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CASHFLOW_LINES = [
+  { key: 'payout', labelKey: 'app.widgets.cashflowPayouts', color: 'var(--green)', width: 2 },
+  { key: 'spent', labelKey: 'app.widgets.cashflowSpent', color: 'var(--red)', width: 2 },
+  { key: 'net', labelKey: 'app.widgets.cashflowNet', color: 'var(--blue)', width: 3 },
+]
+
+// Dépenses, payouts et net sur un même axe. Les tracés sont des segments droits,
+// pas des courbes lissées : un lissage dépasse entre deux points et ferait passer
+// le net sous zéro un mois où il ne l'a jamais été.
+//
+// Le SVG est dessiné à sa largeur RÉELLE en pixels (ResizeObserver), pas étiré
+// depuis un viewBox fixe : sur un widget de 4 colonnes, un viewBox de 600 grossit
+// le texte des axes du double.
+//
+// L'axe est calculé dans la devise d'AFFICHAGE (`factor` = EUR → devise) : des
+// graduations rondes en euros converties en dollars donnaient « 11,7k $ ».
+export function CashflowWidget({ instance, series, fmtMoney, fmtMoneyNet, factor = 1, unit = '€', S }) {
+  const t = useT()
+  const { locale } = useLanguage()
+  const rows = seriesOf(series, instance)
+  const cumulative = opt(instance, 'cumulative', true)
+  const lines = useMemo(() => cashflowLines(rows, cumulative), [rows, cumulative])
+  const [hover, setHover] = useState(null)
+  const boxRef = useRef(null)
+  const [W, setW] = useState(600)
+  const empty = lines.totals.payout === 0 && lines.totals.spent === 0
+
+  useEffect(() => {
+    const el = boxRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return undefined
+    const ro = new ResizeObserver(([entry]) => setW(Math.max(280, Math.round(entry.contentRect.width))))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [empty])
+
+  const n = rows.length
+  const shown = (v) => v * factor
+  const scale = niceScale([...lines.payout, ...lines.spent, ...lines.net].map(shown), 5)
+  const compact = new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'fr-FR', { notation: 'compact', maximumFractionDigits: 1 })
+  const H = 260, L = 64, R = 14, T = 10, B = 36
+  const pw = W - L - R
+  const ph = H - T - B
+  const x = (i) => L + (n > 1 ? (i * pw) / (n - 1) : pw / 2)
+  const y = (v) => T + ((scale.max - shown(v)) / (scale.max - scale.min)) * ph
+  const yTick = (d) => T + ((scale.max - d) / (scale.max - scale.min)) * ph
+  const path = (vals) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+  const monthLabel = (b, opts = { month: 'short' }) => b.month.toLocaleDateString(locale === 'en' ? 'en-GB' : 'fr-FR', opts)
+  const valueOf = (key, v) => (key === 'net' ? fmtMoneyNet(v, 0) : fmtMoney(v, 0))
+
+  // Le point survolé : le mois le plus proche du pointeur, en coordonnées du viewBox.
+  const onMove = (e) => {
+    const box = e.currentTarget.getBoundingClientRect()
+    if (!box.width || n === 0) return
+    const px = ((e.clientX - box.left) / box.width) * W
+    const i = n > 1 ? Math.round(((px - L) / pw) * (n - 1)) : 0
+    setHover(Math.min(n - 1, Math.max(0, i)))
+  }
+
+  const focus = hover ?? n - 1
+  const tipLeft = n ? (x(focus) / W) * 100 : 50
+
+  return (
+    <div style={{ ...cardOf(S), display: 'flex', flexDirection: 'column' }}>
+      <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.015em', margin: 0 }}>{titleOf(t, instance, 'app.widgets.cashflow')}</h2>
+      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
+        {t(cumulative ? 'app.widgets.cashflowSubCum' : 'app.widgets.cashflowSubRaw')} · {t(`app.widgets.val.range.${opt(instance, 'range', '12m')}`)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 22px', marginTop: 14 }}>
+        {CASHFLOW_LINES.map((l) => (
+          <div key={l.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
+            <i style={{ width: 14, height: l.width, borderRadius: 2, background: l.color }} />
+            <span style={{ color: 'var(--text3)' }}>{t(l.labelKey)}</span>
+            <strong style={{
+              fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+              color: l.key === 'net' ? (lines.totals.net >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--text)',
+            }}>
+              {valueOf(l.key, lines.totals[l.key])}
+            </strong>
+          </div>
+        ))}
+      </div>
+
+      {empty ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 140, fontSize: 13, color: 'var(--text3)' }}>
+          {t('app.widgets.cashflowEmpty')}
+        </div>
+      ) : (
+        <div ref={boxRef} style={{ position: 'relative', marginTop: 10 }}>
+          {hover !== null && (
+            <div style={{
+              position: 'absolute', top: 0, left: `${tipLeft}%`,
+              transform: `translateX(${tipLeft > 70 ? '-105%' : tipLeft < 30 ? '5%' : '-50%'})`,
+              background: 'var(--surface-solid)', border: '1px solid var(--border2)', borderRadius: 10,
+              padding: '8px 10px', fontSize: 12, pointerEvents: 'none', zIndex: 2, minWidth: 150,
+              boxShadow: 'var(--shadow-card)',
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 4, textTransform: 'capitalize' }}>{monthLabel(rows[focus], { month: 'long', year: 'numeric' })}</div>
+              {CASHFLOW_LINES.map((l) => (
+                <div key={l.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, lineHeight: 1.6 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text3)' }}>
+                    <i style={{ width: 8, height: 8, borderRadius: 2, background: l.color }} />{t(l.labelKey)}
+                  </span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{valueOf(l.key, lines[l.key][focus])}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', maxWidth: '100%', touchAction: 'pan-y' }}
+               role="img"
+               aria-label={t('app.widgets.cashflowAria')
+                 .replace('{payout}', fmtMoney(lines.totals.payout, 0))
+                 .replace('{spent}', fmtMoney(lines.totals.spent, 0))
+                 .replace('{net}', fmtMoneyNet(lines.totals.net, 0))}
+               onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
+            <g fontSize="11" fill="var(--text3)" textAnchor="end" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {scale.ticks.map((d) => (
+                <g key={d}>
+                  <line x1={L} x2={W - R} y1={yTick(d)} y2={yTick(d)}
+                        stroke={d === 0 ? 'var(--text3)' : 'var(--chart-grid)'}
+                        strokeDasharray={d === 0 && scale.min < 0 ? '4 4' : undefined}
+                        strokeOpacity={d === 0 ? 0.6 : 1} />
+                  <text x={L - 10} y={yTick(d) + 4}>{compact.format(d)} {unit}</text>
+                </g>
+              ))}
+            </g>
+            {hover !== null && (
+              <line x1={x(focus)} x2={x(focus)} y1={T} y2={T + ph} stroke="var(--text3)" strokeOpacity="0.5" />
+            )}
+            {CASHFLOW_LINES.map((l) => (
+              <g key={l.key}>
+                <path d={path(lines[l.key])} fill="none" stroke={l.color} strokeWidth={l.width}
+                      strokeLinejoin="round" strokeLinecap="round" />
+                <circle cx={x(focus)} cy={y(lines[l.key][focus])} r={hover !== null ? 4 : 3.5}
+                        fill={l.color} stroke="var(--surface-solid)" strokeWidth="1.5" />
+              </g>
+            ))}
+            <g fontSize="11" fill="var(--text3)" textAnchor="middle">
+              {labelIndexes(n, Math.max(3, Math.floor(pw / 70))).map((i) => (
+                // Le premier et le dernier mois s'alignent sur le bord du tracé au
+                // lieu d'être centrés dessus : centrés, ils débordaient du SVG.
+                <text key={rows[i].key} x={x(i)} y={H - 8}
+                      textAnchor={n > 1 && i === n - 1 ? 'end' : n > 1 && i === 0 ? 'start' : 'middle'}>{monthLabel(rows[i])}</text>
+              ))}
+            </g>
+          </svg>
         </div>
       )}
     </div>

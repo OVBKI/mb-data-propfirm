@@ -68,6 +68,18 @@ export const WIDGETS = {
       breakdown: { type: 'toggle', default: true, labelKey: 'app.widgets.optBreakdown' },
     },
   },
+  // Trois courbes sur un même axe : payouts, dépenses et leur différence. Là où
+  // « Trajectoire » montre les deux flux, celui-ci montre aussi le résultat, qui
+  // peut passer sous zéro : l'axe garde donc une ligne du zéro.
+  cashflow: {
+    titleKey: 'app.widgets.cashflow',
+    minW: 2, defaultW: 4, minH: 1, defaultH: 2,
+    duplicable: true,
+    options: {
+      range: { type: 'select', values: RANGE_VALUES, default: '12m', labelKey: 'app.widgets.optRange' },
+      cumulative: { type: 'toggle', default: true, labelKey: 'app.widgets.optCumulative' },
+    },
+  },
   equity: {
     titleKey: 'app.widgets.equity',
     minW: 2, defaultW: 2, minH: 1, defaultH: 2,
@@ -192,21 +204,21 @@ const inst = (id, w, h, visible = true) => makeInstance(id, { w, h, visible })
 export const DEFAULT_LAYOUTS = {
   overview: [
     inst('insight', 2, 1), inst('payouts', 1, 1), inst('spent', 1, 1),
-    inst('net', 2, 1), inst('equity', 2, 2), inst('health', 2, 2),
+    inst('net', 2, 1), inst('cashflow', 4, 2), inst('equity', 2, 2), inst('health', 2, 2),
     inst('firms', 4, 2), inst('calendar', 4, 2),
     inst('byFirm', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
     inst('aiReview', 4, 2),
     inst('yearly', 2, 1, false), inst('firmCost', 4, 1, false), inst('accountCurves', 4, 2, false),
   ],
   performance: [
-    inst('equity', 4, 2), inst('net', 2, 1), inst('byFirm', 2, 1),
+    inst('equity', 4, 2), inst('net', 2, 1), inst('cashflow', 4, 2), inst('byFirm', 2, 1),
     inst('yearly', 2, 1), inst('stats', 1, 1), inst('ranking', 1, 1),
     inst('aiReview', 4, 2), inst('firmCost', 4, 1), inst('accountCurves', 4, 2),
     inst('insight', 2, 1, false), inst('payouts', 1, 1, false), inst('spent', 1, 1, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('calendar', 4, 2, false),
   ],
   payouts: [
-    inst('payouts', 2, 1), inst('spent', 2, 1), inst('net', 4, 1), inst('calendar', 4, 2),
+    inst('payouts', 2, 1), inst('spent', 2, 1), inst('net', 4, 1), inst('cashflow', 4, 2), inst('calendar', 4, 2),
     inst('ranking', 2, 1), inst('byFirm', 2, 1), inst('firmCost', 4, 1), inst('aiReview', 4, 2, false),
     inst('insight', 2, 1, false), inst('equity', 2, 2, false),
     inst('health', 2, 2, false), inst('firms', 4, 2, false), inst('stats', 1, 1, false),
@@ -215,7 +227,7 @@ export const DEFAULT_LAYOUTS = {
   risk: [
     inst('insight', 2, 1), inst('health', 2, 2), inst('firms', 4, 2),
     inst('payouts', 1, 1, false), inst('spent', 1, 1, false), inst('net', 2, 1, false),
-    inst('equity', 2, 2, false), inst('calendar', 4, 2, false), inst('byFirm', 2, 1, false),
+    inst('cashflow', 4, 2, false), inst('equity', 2, 2, false), inst('calendar', 4, 2, false), inst('byFirm', 2, 1, false),
     inst('stats', 1, 1, false), inst('ranking', 1, 1, false),
     inst('yearly', 2, 1, false), inst('firmCost', 4, 1, false), inst('aiReview', 4, 2, false), inst('accountCurves', 4, 2, false),
   ],
@@ -320,7 +332,12 @@ export function normalizeLayoutFor(section, raw) {
 // « Résultat net » était affiché en gros au milieu de « Santé des comptes », qui
 // parle de marge de drawdown. Deux sujets, deux widgets : le chiffre déménage et
 // suit son ancien hôte dans les dispositions déjà enregistrées.
-const ADOPTED_FROM = { net: 'health' }
+//
+// « Dépenses, payouts et net » (cashflow) a été demandé pour la Vue d'ensemble :
+// le poser masqué au fond du tiroir le rendrait introuvable pour qui l'a demandé.
+// Il se pose donc derrière « Résultat net », dont il trace l'évolution, et
+// reprend sa visibilité.
+const ADOPTED_FROM = { net: 'health', cashflow: 'net' }
 
 function clamp(value, min, max, fallback) {
   const n = Number(value)

@@ -79,6 +79,15 @@ describe('normalizeLayoutFor — reprise et réparation', () => {
     expect(out[at].visible).toBe(true)
   })
 
+  it('pose le graphique « dépenses, payouts et net » derrière « résultat net », visible comme lui', () => {
+    const out = normalizeLayout([{ id: 'health', visible: true }, { id: 'net', visible: true }])
+    const at = out.findIndex(x => x.id === 'cashflow')
+    expect(out[at - 1].id).toBe('net')
+    expect(out[at].visible).toBe(true)
+    // Et masqué si « résultat net » l'est : on ne réorganise pas un écran choisi.
+    expect(normalizeLayout([{ id: 'net', visible: false }]).find(x => x.id === 'cashflow').visible).toBe(false)
+  })
+
   it('ne rend pas « résultat net » visible si « santé » était masqué', () => {
     const out = normalizeLayout([{ id: 'health', visible: false }])
     expect(out.find(x => x.id === 'net').visible).toBe(false)
