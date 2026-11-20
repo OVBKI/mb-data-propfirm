@@ -118,6 +118,7 @@ app/
       settings/page.js   # Réglages : profil, abonnement, notifications, apparence, données
       rules/page.js      # Comparateur de règles (cartes)
       myrules/page.js    # MyRulesPage (plan, setups, règles perso)
+      budget/page.js     # Calculateur de budget (components/BudgetCalculator, lib/budgetCalculator)
       import-lab/page.js # Import CSV Rithmic
       groups/page.js     # Groupes — admins seulement (couche sociale masquée, lib/features.js)
       analytics/, profile/, journal-sync/ # Redirections (fusionnés, voir « Enlevé — 2026-10 »)
@@ -724,6 +725,41 @@ tiroir sans réorganiser l'écran.
 duplication, les options, l'identité des références, les presets, l'aller-retour
 d'import/export et la réparation d'une disposition abîmée.
 
+
+## Calculateur de budget — /app/budget (2026-11)
+
+Combien une personne peut consacrer chaque mois aux challenges, selon sa
+situation. Huit questions une à une (entrées, charges fixes, dépenses courantes,
+crédits, épargne disponible, personnes à charge, stabilité des revenus,
+expérience), puis deux plafonds : **soft** et **agressif**.
+
+| Fichier | Rôle |
+|---|---|
+| `lib/budgetCalculator.js` | L'algorithme, PUR et testé (`budgetCalculator.test.js`) |
+| `components/BudgetCalculator.js` | Questionnaire + résultats + tableau « Comment c'est calculé » |
+| `app/app/(main)/budget/page.js` | La route ; entrée « Budget » du rail et de ⌘K |
+
+**L'algorithme** : plafond = reste à vivre (entrées − charges − crédits) × part
+(10 % soft, 25 % agressive) × stabilité (1 / 0,75 / 0,5) × personnes à charge
+(−10 % chacune, jusqu'à 3) × expérience (0,8 / 1 / 1,15) × endettement × épargne
+de précaution, arrondi vers le bas au multiple de 5. Chaque coefficient est rendu
+dans `factors` et affiché : l'utilisateur voit d'où vient le chiffre.
+
+- **Épargne de précaution** = (charges + crédits) × 3, 6 ou 9 mois selon la
+  stabilité, + 1 mois par personne à charge. Soft : **rien** tant qu'elle n'est pas
+  à moitié constituée, puis montée linéaire. Agressive : jamais moins de la moitié.
+- **Endettement au-delà de 33 % des entrées** : la soft ne propose rien.
+- **Reste à vivre ≤ 0 ou aucune entrée** : zéro dans les deux approches.
+- **Enveloppe de départ** : seulement sur l'épargne AU-DELÀ de la précaution
+  (5 % soft, 15 % agressive). L'épargne de précaution n'est jamais entamée.
+- Sous le prix d'un challenge, le plafond est traduit en rythme (« 1 challenge
+  tous les N mois ») au lieu d'un « moins d'un challenge » inutilisable.
+- Prix de référence : la **médiane** des challenges de l'utilisateur (un 300K
+  isolé ne doit pas fausser), sinon 150 € convertis. « Déjà dépensé ce mois-ci »
+  reprend les règles de comptage du dashboard (`spentInMonthEUR`).
+
+**Confidentialité** : les réponses restent dans le navigateur
+(`localStorage` `quantara_budget_v1`), jamais en base. Aucun SQL.
 
 ## Widget « Dépenses, payouts et net » (2026-10)
 

@@ -21,6 +21,7 @@ const PAGES = [
   { href: '/app/calendar',  key: 'app.sidebar.calendar' },
   { href: '/app/myrules',   key: 'app.sidebar.myrules' },
   { href: '/app/rules',     key: 'app.sidebar.rules' },
+  { href: '/app/budget',    key: 'app.sidebar.budget' },
   { href: '/app/alerts',    key: 'app.sidebar.alerts' },
   { href: '/app/settings',  key: 'app.sidebar.settings' },
 ]

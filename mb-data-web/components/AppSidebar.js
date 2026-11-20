@@ -33,7 +33,7 @@ import QLogoIcon from './QLogoIcon'
 const G = {
   dashboard: '▤', firms: '◈', health: '♡', journal: '▦', trades: '≡',
   heatmaps: '▩', myrules: '◇', rules: '⚖', payouts: '◉',
-  calendar: '☷', alerts: '▲', settings: '⚙',
+  calendar: '☷', alerts: '▲', settings: '⚙', budget: '¤',
 }
 
 // Le cadenas est un marqueur d’état, pas un glyphe de navigation : un SVG
@@ -116,6 +116,7 @@ export default function AppSidebar({
     { g: G.heatmaps, label: t('app.sidebar.heatmaps'), key: 'heatmaps' },
     { g: G.myrules, label: t('app.sidebar.myrules'), key: 'myrules' },
     { g: G.rules, label: t('app.sidebar.rules'), key: 'rules' },
+    { g: G.budget, label: t('app.sidebar.budget'), key: 'budget' },
     { g: G.calendar, label: t('app.sidebar.calendar'), key: 'calendar' },
     { g: G.alerts, label: t('app.sidebar.alerts'), key: 'alerts', badge: alertsBadgeCount },
     {
